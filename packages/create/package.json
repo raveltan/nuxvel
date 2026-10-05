@@ -1,6 +1,6 @@
 {
   "name": "create-nuxvel",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Scaffolds a new Nuxt app with nuxvel installed.",
   "keywords": [
     "nuxt",
