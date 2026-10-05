@@ -1,7 +1,7 @@
 import { defineComponent, h } from "vue";
 import { describe, expect, it, onTestFinished, vi } from "vitest";
 import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
-import { useQueryCache } from "@pinia/colada";
+import { useQuery, useQueryCache } from "@pinia/colada";
 import { authClient } from "#imports";
 
 const SESSION = {
@@ -100,6 +100,28 @@ describe("useUser()", () => {
     await signOut();
 
     expect(queryCache?.getQueryData(["post", "mine"])).toBeUndefined();
+  });
+
+  it("clears the data of a query a mounted component still uses on signOut()", async () => {
+    const signOutHandler = { method: "POST" as const, handler: () => ({ success: true }) };
+    registerEndpoint("/api/auth/sign-out", signOutHandler);
+    registerEndpoint(`${window.location.origin}/api/auth/sign-out`, signOutHandler);
+
+    let signOut: () => Promise<void> = async () => {};
+    const wrapper = await mountSuspended(
+      defineComponent({
+        setup() {
+          signOut = useUser().signOut;
+          const { data } = useQuery({ key: ["post", "mounted"], query: async () => "private post" });
+          return () => h("p", data.value ?? "nothing");
+        },
+      }),
+    );
+    await vi.waitFor(() => expect(wrapper.text()).toBe("private post"));
+
+    await signOut();
+
+    await vi.waitFor(() => expect(wrapper.text()).toBe("nothing"));
   });
 
   it("deletes the service worker's page cache and ends this device's push subscription on signOut()", async () => {

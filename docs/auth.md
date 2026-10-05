@@ -306,7 +306,7 @@ const { user, isPending, signOut } = useUser();
 - On a [`cached` page](./rendering.md#cached-pages-and-the-signed-in-user), the shared copy has no session. The browser loads the session after hydration, and `user` then changes from `null` to the signed-in user.
 - A sign-up, sign-in or sign-out through `authClient` starts a refresh of the session before the call resolves. The middleware waits for that refresh, so a `navigateTo()` right after the call sees the new state.
 
-`signOut()` ends the session, clears `user` and removes every cached query. With `nuxvel.pwa` set, it also deletes the service worker's page cache and ends the push subscription of the device (see [PWA](./pwa.md#offline)). No data from the previous user stays in the page. The server also closes the [realtime streams](./realtime.md#authorizing-a-connection) of the session. `signOut()` does not navigate, so choose the next page yourself. The starter's `app` layout does this from its user menu. See [Frontend](./frontend.md#layouts).
+`signOut()` ends the session, clears `user` and removes every cached query. A query that a mounted component still uses loses its data and goes back to `pending`. With `nuxvel.pwa` set, it also deletes the service worker's page cache and ends the push subscription of the device (see [PWA](./pwa.md#offline)). No data from the previous user stays in the page. The server also closes the [realtime streams](./realtime.md#authorizing-a-connection) of the session. `signOut()` does not navigate, so choose the next page yourself. The starter's `app` layout does this from its user menu. See [Frontend](./frontend.md#layouts).
 
 ## Bot protection
 

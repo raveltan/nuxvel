@@ -19,7 +19,8 @@ import type { SocialProvider } from "../auth/social-provider";
  * `user` is `null` while signed out and while the session is still
  * loading; `isPending` distinguishes the two. `user.role` is the `role`
  * column of the `user` table. `signOut()` ends the session on the
- * server, clears `user`, drops every cached query and deletes the
+ * server, clears `user`, drops every cached query (one still in use
+ * goes back to `pending` without data) and deletes the
  * service worker's page cache. It also ends the push subscription of
  * this device in the browser. The next user of the device thus never
  * sees the previous user's data or gets their notifications. Navigate
@@ -68,7 +69,10 @@ export function useUser() {
     session.value = null;
     queryCache.cancelQueries();
 
-    for (const entry of queryCache.getEntries()) queryCache.remove(entry);
+    for (const entry of queryCache.getEntries()) {
+      if (entry.active) queryCache.setEntryState(entry, { status: "pending", data: undefined, error: null });
+      else queryCache.remove(entry);
+    }
     if ("caches" in globalThis) await caches.delete("nuxvel-pages");
     const registered = "serviceWorker" in navigator ? await navigator.serviceWorker.getRegistration() : undefined;
     await (await registered?.pushManager.getSubscription())?.unsubscribe();
