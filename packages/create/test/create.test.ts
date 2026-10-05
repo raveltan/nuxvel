@@ -360,6 +360,12 @@ describe("create-nuxvel", () => {
     }
   });
 
+  it("allows the install scripts of esbuild, msgpackr-extract, msw and vue-demi, in the starter and in the repo", () => {
+    const allowScripts = { esbuild: true, "msgpackr-extract": true, msw: true, "vue-demi": true };
+    expect(JSON.parse(readFileSync(join(templateDir, "package.json"), "utf8")).allowScripts).toEqual(allowScripts);
+    expect(JSON.parse(readFileSync(rootManifest, "utf8")).allowScripts).toEqual(allowScripts);
+  });
+
   it("names the package after the directory as a valid npm name, keeps the imports field and scaffolds the tests tsconfig", async () => {
     const scratchDir = mkdtempSync(join(tmpdir(), "nuxvel-create-"));
     const appDir = join(scratchDir, "My App");

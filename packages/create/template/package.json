@@ -58,5 +58,11 @@
     "workerDirectory": [
       ".storybook/public"
     ]
+  },
+  "allowScripts": {
+    "esbuild": true,
+    "msgpackr-extract": true,
+    "msw": true,
+    "vue-demi": true
   }
 }

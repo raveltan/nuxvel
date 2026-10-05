@@ -32,5 +32,11 @@
     "@vitest/browser-playwright": "^5.0.1",
     "monocart-coverage-reports": "^2.13.0",
     "storybook": "^10.6.1"
+  },
+  "allowScripts": {
+    "esbuild": true,
+    "msgpackr-extract": true,
+    "msw": true,
+    "vue-demi": true
   }
 }

@@ -59,7 +59,7 @@ npm create nuxvel .          # the current directory's name
 
 | File | Purpose |
 |---|---|
-| `package.json` | the `dev`, `build`, `preview`, `test`, `test:functional`, `test:ui`, `test:e2e`, `test:arch`, `typecheck`, `storybook` and `storybook:build` scripts. `@nuxvel/nuxt` and `@nuxvel/cli` use the version range of `create-nuxvel` (`^<version>`) |
+| `package.json` | the `dev`, `build`, `preview`, `test`, `test:functional`, `test:ui`, `test:e2e`, `test:arch`, `typecheck`, `storybook` and `storybook:build` scripts. `@nuxvel/nuxt` and `@nuxvel/cli` use the version range of `create-nuxvel` (`^<version>`). `allowScripts` lets npm 11 run the install scripts of `esbuild`, `msgpackr-extract`, `msw` and `vue-demi` |
 | `nv` | runs the `nuxvel` CLI installed in the app: `./nv db:migrate`, `./nv make:action create-task`. On Windows, run `node nv db:migrate` |
 | `nuxt.config.ts` | `modules: ['@nuxvel/nuxt']` and the `nuxvel` block. The block sets [`mail.from`](./mail.md#configuration), [`auth.signInPath`](./auth.md#protecting-pages) to `/sign-in`, [`seo`](./seo.md), [`pwa`](./pwa.md) and [`queue.outboxRetention`](./queues.md#pruning-the-outbox). The other options are there as comments. The `i18n` key sets two [locales](./i18n.md#configuration), English (`en`) and Chinese (`zh`). The file also sets `<html lang="en">`. With two locales, the `lang` of each page comes from its locale |
 | `locales/en.json`, `locales/zh.json` | the [translations](./i18n.md#translation-files) of each page, layout and component of the starter. The two files have the same keys. To keep only English, see [Keeping only English](./i18n.md#keeping-only-english) |
