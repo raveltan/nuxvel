@@ -367,6 +367,10 @@ describe("create-nuxvel", () => {
     expect(JSON.parse(readFileSync(rootManifest, "utf8")).allowScripts).toEqual(allowScripts);
   });
 
+  it("keeps every shade of the starter palette in the CSS, where Nuxt UI reads the primary color at run time", () => {
+    expect(readFileSync(join(templateDir, "app/assets/css/main.css"), "utf8")).toMatch(/^@theme static \{$/m);
+  });
+
   it.for([join(templateDir, "nuxt.config.ts"), playgroundConfig])("turns off DevTools telemetry in %s", (path) => {
     expect(readFileSync(path, "utf8")).toContain("devtools: { enabled: true, telemetry: false },");
   });

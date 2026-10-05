@@ -2,7 +2,7 @@
 @import "@nuxt/ui";
 @import "@nuxvel/nuxt/ui.css";
 
-@theme {
+@theme static {
   --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
 

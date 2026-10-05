@@ -79,7 +79,7 @@ Nuxt UI gives each component a colour by its role: `primary`, `secondary`, `succ
 
 ### The palettes
 
-A palette is eleven shades, from `50` to `950`. Tailwind CSS reads them from the `@theme` block of the main CSS file. Replace the `crimson` shades in `app/assets/css/main.css`:
+A palette is eleven shades, from `50` to `950`. Tailwind CSS reads them from the `@theme` block of the main CSS file. The block is `@theme static`: Nuxt UI reads the shades of `primary` and `neutral` as CSS variables at run time, and a plain `@theme` keeps only the shades that a class uses. Replace the `crimson` shades in `app/assets/css/main.css`:
 
 ```css
 /* app/assets/css/main.css */
@@ -87,7 +87,7 @@ A palette is eleven shades, from `50` to `950`. Tailwind CSS reads them from the
 @import "@nuxt/ui";
 @import "@nuxvel/nuxt/ui.css";
 
-@theme {
+@theme static {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Fraunces", ui-serif, Georgia, serif;
   --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
