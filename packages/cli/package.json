@@ -74,11 +74,11 @@
     "@nuxt/nitro-server": "^4.5.2",
     "@nuxvel/nuxt": "*",
     "@nuxvel/test-helpers": "*",
-    "@types/node": "^22.20.3",
+    "@types/node": "^26.6.4",
     "bullmq": "^6.3.8",
     "esbuild": "^0.25.12",
     "ioredis": "^6.0.0",
-    "typescript": "^5.9.3",
+    "typescript": "^7.0.2",
     "vitest": "^5.0.1",
     "yaml": "^2.9.1"
   },
