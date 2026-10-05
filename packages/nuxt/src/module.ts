@@ -491,7 +491,7 @@ export default defineNuxtModule<ModuleOptions>().with({
           disableWatcher: true,
           translationPayloads: { mode: "source" },
           // the library joins each entry to the root of each layer, so an absolute path does not work
-          additionalTranslationDirs: [relative(nuxt.options.rootDir, writeNuxvelLocales(nuxt, nuxvelLocalesSource))],
+          additionalTranslationDirs: [relative(nuxt.options.rootDir, writeNuxvelLocales(nuxt, nuxvelLocalesSource, nuxvel?.seo))],
         },
         ...storybookI18nOverrides(nuxt),
       },

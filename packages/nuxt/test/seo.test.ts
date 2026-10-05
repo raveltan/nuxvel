@@ -46,6 +46,13 @@ describe("nuxvel.seo", async () => {
     expect(html).toContain('<meta name="twitter:site" content="@theblog">');
   });
 
+  it.for(["/sign-in", "/zh/sign-in"])("gives the site config of %s the site name and description, not their translation keys", async (path) => {
+    const html = await guest().$fetch<string>(path);
+
+    expect(html).toMatch(/__NUXT_SITE_CONFIG__=.*name:"The Blog"/);
+    expect(html).toMatch(/__NUXT_SITE_CONFIG__=.*description:"Notes on building web apps\."/);
+  });
+
   it("serves a robots.txt that allows crawling and points at the sitemap", async () => {
     const robots = await guest().$fetch<string>("/robots.txt");
 
