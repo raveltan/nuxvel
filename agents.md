@@ -45,6 +45,21 @@ not a framework that hides Nuxt.
   commit: through `@nuxvel/nuxt`, `@nuxvel/cli` or
   `packages/create/template/`, with its test and its `docs/` page. Never
   fix it only for this repo.
+- **Apps made with nuxvel already exist, and every release must reach
+  them.** An app gets `@nuxvel/nuxt` and `@nuxvel/cli` updates through
+  `npm update`; the files of `packages/create/template/` were copied once
+  and never update. So a fix or feature lives in the packages, not only
+  in the template. A change an existing app cannot take by upgrading the
+  packages alone is a breaking change: a renamed or removed API, config
+  key, file convention or CLI flag, a new required env var, migration or
+  config line, or a template change the app must copy by hand. Avoid one
+  when an additive path exists (keep the old name working beside the
+  new). When it cannot be avoided, the same commit adds an entry under
+  `## Unreleased` in `CHANGELOG.md` with the exact steps an app takes to
+  upgrade. A non-breaking user-visible change gets a one-line entry
+  there too. The release commit renames `## Unreleased` to the version.
+  While nuxvel is `0.x`, `^0.2.0` stops at `0.3.0`, so a breaking
+  release bumps the minor version and a fix bumps the patch.
 - **The framework assumes nothing about the app's own code.** The
   starter's files (seeders, demo user, pages) belong to the app once it
   is generated, and the app may change or delete them. The CLI and the
