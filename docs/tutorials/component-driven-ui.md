@@ -38,15 +38,13 @@ The new app has Storybook already: the `.storybook/` folder, the MSW worker and 
 npm run dev
 ```
 
-`npm run dev` runs `nuxvel dev`. It starts Storybook next to the app on a free port, and it prints the Storybook address in its summary:
+In a second terminal, start Storybook:
 
-```
-  App        https://catalogue.localhost
-  DevTools   https://catalogue.localhost/__nuxt_devtools__/client/
-  Storybook  https://storybook.catalogue.localhost
+```bash
+npm run storybook
 ```
 
-With `./nv dev --no-https`, the row shows `http://localhost:<port>`. Keep the dev server open. Storybook reloads a story when you save its file, so the Storybook tab is where you build each component in this tutorial.
+Storybook runs at `http://localhost:6006`. Keep both open. Storybook reloads a story when you save its file, so the Storybook tab is where you build each component in this tutorial.
 
 Open the Storybook address. The sidebar has two groups:
 
@@ -984,7 +982,7 @@ A failed story prints a link, as above: `Click to debug the error directly in St
 npm run storybook
 ```
 
-The Interactions panel lists each step of the `play` function: each `fill`, `click`, `hover` and `expect`, with the step that failed in red. The controls of the panel go back one step and run the story again. While the dev server runs, the same panel is in the Storybook tab that `nuxvel dev` started. See [Storybook: debug a failed story](../storybook.md#debug-a-failed-story).
+The Interactions panel lists each step of the `play` function: each `fill`, `click`, `hover` and `expect`, with the step that failed in red. The controls of the panel go back one step and run the story again. The same panel is in the Storybook tab that `npm run storybook` opened. See [Storybook: debug a failed story](../storybook.md#debug-a-failed-story).
 
 ## 8. The pages
 

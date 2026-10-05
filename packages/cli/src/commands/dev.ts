@@ -1,4 +1,4 @@
-import { ROLE_ENV, STORYBOOK_PORT_ENV } from "@nuxvel/nuxt/cli";
+import { ROLE_ENV } from "@nuxvel/nuxt/cli";
 import { changedMigrations } from "@nuxvel/nuxt/migrations";
 import { defineCommand } from "citty";
 import postgres from "postgres";
@@ -7,7 +7,6 @@ import { readMigrationsConfig } from "../database/migrations-config.ts";
 import { CHANGED_MIGRATIONS_HINT, hasJournal, pendingMigrations } from "../database/pending-migrations.ts";
 import { loadDevConfig, printDevSummary } from "../dev/dev-summary.ts";
 import { portlessInvocation } from "../dev/portless-invocation.ts";
-import { aliasStorybook, portlessSkipped, storybookPort } from "../dev/storybook.ts";
 import { errorMessage } from "../error-message.ts";
 import { loadEnvFile } from "../env/load-env-file.ts";
 import { asksForHelp } from "../help-args.ts";
@@ -101,16 +100,13 @@ export default defineCommand({
     loadEnvFile(cwd);
     await prepareDevDatabase(cwd);
     const config = await loadDevConfig(cwd);
-    const port = await storybookPort(cwd, config.nuxvel?.storybook);
-    const storybook = port ? { port, aliased: Boolean(portless) && !portlessSkipped() } : undefined;
-    const appUrl = await printDevSummary({ cwd, config, nuxtArgs, portlessName: portless?.name, queue, services, storybook });
+    const appUrl = await printDevSummary({ cwd, config, nuxtArgs, portlessName: portless?.name, queue, services });
 
     const env: Record<string, string> = {
       ...(process.env.NUXT_SITE_URL ? {} : { NUXT_SITE_URL: appUrl }),
       NUXT_LOCK: "1",
       NODE_OPTIONS: [process.env.NODE_OPTIONS, "--enable-source-maps"].filter(Boolean).join(" "),
       ...(queue ? { [ROLE_ENV]: "worker" } : {}),
-      ...(storybook ? { [STORYBOOK_PORT_ENV]: String(storybook.port) } : {}),
     };
 
     if (!portless) {
@@ -118,7 +114,6 @@ export default defineCommand({
       return;
     }
 
-    if (storybook?.aliased) aliasStorybook(cwd, portless.name, storybook.port);
     report(`Starting nuxt dev through portless as ${portless.name} (--no-https for plain nuxt dev)`);
     process.exitCode = await runNodeTool(cwd, "portless", portless.args, { installHint: "npm i -D @nuxvel/cli", env });
   },

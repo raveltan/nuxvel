@@ -1,4 +1,3 @@
-import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { cpSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
@@ -6,7 +5,7 @@ import { createServer } from "node:http";
 import { basename, extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { stripVTControlCharacters } from "node:util";
-import { hasNuxtModule, loadNuxt } from "@nuxt/kit";
+import { loadNuxt } from "@nuxt/kit";
 import { expect } from "@nuxvel/nuxt/testing";
 import { freePort } from "@nuxvel/test-helpers/free-port";
 import { run } from "@nuxvel/test-helpers/run";
@@ -190,17 +189,16 @@ for (const file of ["_PostSearch.vue", "_PostSearch.stories.ts", "_LiveForm.vue"
 cpSync(join(repoRoot, "packages/create/template/vitest.config.ts"), join(appDir, "vitest.config.ts"));
 afterAll(() => rmSync(appDir, { recursive: true, force: true }));
 
-async function storybookInstalled(test: boolean) {
-  const nuxt = await loadNuxt({ cwd: appDir, dev: false, overrides: { test, buildDir: join(appDir, ".nuxt") } });
-  const installed = hasNuxtModule("@nuxtjs/storybook", nuxt);
+async function storybookModules(dev: boolean) {
+  const nuxt = await loadNuxt({ cwd: appDir, dev, overrides: { test: false, buildDir: join(appDir, ".nuxt") } });
+  const names = nuxt.options._installedModules.map(({ meta }) => meta?.name ?? "").filter((name) => name.includes("storybook"));
   await nuxt.close();
-  return installed;
+  return names;
 }
 
 describe("Storybook", () => {
-  it("installs @nuxtjs/storybook for an app with .storybook/, but not in a test build", { timeout: 60_000 }, async () => {
-    expect(await storybookInstalled(false)).toBe(true);
-    expect(await storybookInstalled(true)).toBe(false);
+  it.for([true, false])("installs no Storybook module in an app with .storybook/ (dev %s)", { timeout: 60_000 }, async (dev) => {
+    expect(await storybookModules(dev)).toEqual([]);
   });
 
   it("builds the nuxvel stories and the app stories, with Nuxt UI styles and MSW mocks, in an app with Open Graph images", { timeout: 180_000 }, async () => {
@@ -267,32 +265,6 @@ describe("Storybook", () => {
     } finally {
       await browser.close();
       server.close();
-    }
-  });
-
-  it("serves Storybook inside nuxt dev without a proxy loop, devtools or a wrong HMR port", { timeout: 180_000 }, async () => {
-    const { TEST: _test, VITEST: _vitest, NODE_ENV: _nodeEnv, ...env } = process.env;
-    const [nuxtPort, storybookPort] = [await freePort(), await freePort()];
-    const dev = spawn("npx", ["nuxt", "dev", "--host", "127.0.0.1", "--port", String(nuxtPort)], {
-      cwd: appDir,
-      env: { ...env, NUXVEL_STORYBOOK_PORT: String(storybookPort), PORTLESS_URL: "https://playground.localhost", STORYBOOK_DISABLE_TELEMETRY: "1" },
-      detached: true,
-    });
-    let output = "";
-    dev.stdout.on("data", (chunk) => (output += chunk));
-    dev.stderr.on("data", (chunk) => (output += chunk));
-    const get = (port: number, path: string) => fetch(`http://127.0.0.1:${port}${path}`).catch(() => undefined);
-    const icon = "/api/_nuxt_icon/lucide.json?icons=arrow-up-down";
-    try {
-      await expect.poll(async () => (await get(storybookPort, "/iframe.html"))?.status, { timeout: 150_000, interval: 500 }).toBe(200);
-
-      await expect.poll(async () => (await get(nuxtPort, icon))?.status, { timeout: 60_000, interval: 500, message: output }).toBe(200);
-      expect((await get(storybookPort, icon))?.status, output).toBe(200);
-      expect(await (await get(storybookPort, "/iframe.html"))?.text()).toContain("window.__NUXT_DEVTOOLS_DISABLE__ = true");
-      expect(await (await get(storybookPort, "/@vite/client"))?.text()).toMatch(/hmrPort = 443\b/);
-      expect(stripVTControlCharacters(output)).not.toMatch(/NUXT_B7002|EADDRNOTAVAIL/);
-    } finally {
-      if (dev.pid) process.kill(-dev.pid);
     }
   });
 

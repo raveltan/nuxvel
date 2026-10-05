@@ -15,7 +15,7 @@ import { moduleDefaults } from "./setup/resolved-options";
 import { applyRouteRules } from "./setup/route-rules";
 import { trackNitroScan } from "./setup/nitro-scan";
 import { setupPwa } from "./setup/pwa";
-import { adaptInheritedViteToStorybook, dropFontsPluginInStorybook, includeStorybookTypes, localizeStorybook, prebundleSanitizeHtmlInStorybook, isStorybookBuild, storybookDependency, storybookI18nOverrides } from "./setup/storybook";
+import { dropFontsPluginInStorybook, includeStorybookTypes, localizeStorybook, prebundleSanitizeHtmlInStorybook, isStorybookBuild, storybookI18nOverrides } from "./setup/storybook";
 import { addAutoImports, addSharedSchemaImports } from "./setup/auto-imports";
 import { addComponents } from "./setup/components";
 import { setupMaintenance } from "./setup/maintenance";
@@ -175,20 +175,6 @@ export interface ModuleOptions extends NuxvelRuntimeConfig {
    * ```
    */
   pwa?: PwaOptions;
-  /**
-   * Installs `@nuxtjs/storybook` when the app has a `.storybook/` folder.
-   * `nuxt dev` then starts Storybook next to the dev server. A test build
-   * never installs it. Set `false` to keep the folder but not install
-   * the module. `storybook build` and `storybook dev` still work.
-   *
-   * @defaultValue `true`
-   *
-   * @example
-   * ```ts
-   * nuxvel: { storybook: false }
-   * ```
-   */
-  storybook?: boolean;
   /**
    * The email and password auth of Better Auth: where the `auth`
    * middleware sends a signed-out visitor, the social providers and the
@@ -521,7 +507,6 @@ export default defineNuxtModule<ModuleOptions>().with({
             ...(nuxvel.seo.ogImage && !isStorybookBuild(nuxt) ? { "nuxt-og-image": {} } : {}),
           }
         : {}),
-      ...storybookDependency(nuxt, nuxvel?.storybook),
       ...(nuxvel?.pwa ? { "@vite-pwa/nuxt": { defaults: vitePwaOptions(nuxvel.pwa, nuxt.options.buildId) } } : {}),
     };
   },
@@ -539,9 +524,8 @@ export default defineNuxtModule<ModuleOptions>().with({
       if (localizedSeo) addServerPlugin(runtimeFile("./runtime/server/plugins/sitemap-locale-alternates"));
     }
     setupPwa(nuxt, options, runtimeFile);
-    includeStorybookTypes(nuxt, options.storybook);
+    includeStorybookTypes(nuxt);
     dropFontsPluginInStorybook(nuxt);
-    adaptInheritedViteToStorybook(nuxt);
     prebundleSanitizeHtmlInStorybook(nuxt);
     localizeStorybook(nuxt, nuxvelLocalesDir(nuxt));
     // useQuery's onServerPrefetch marks a useId boundary; stripped from the client, ids under a query mismatch on hydration

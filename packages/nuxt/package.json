@@ -183,7 +183,6 @@
     "@nuxt/ui": "^4.11.2",
     "@nuxtjs/robots": "^6.2.3",
     "@nuxtjs/sitemap": "^8.5.1",
-    "@nuxtjs/storybook": "^10.0.0",
     "@openfeature/core": "^1.12.0",
     "@openfeature/server-sdk": "^1.23.0",
     "@pinia/colada": "^1.4.5",

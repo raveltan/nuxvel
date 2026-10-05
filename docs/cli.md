@@ -229,7 +229,6 @@ When the dev services are healthy, and before the output of `nuxt dev`, `nuxvel 
 | `App` | The portless URL, from `portless get <app>`. With plain `nuxt dev`: `http://localhost:<port>`, from `--port`, `PORT`, `NUXT_PORT` or `3000`. |
 | `DevTools` | The Nuxt DevTools client of the app. In the browser, `Shift` + `Alt` + `D` also opens it. |
 | `API docs` | The [API reference page](openapi.md#the-api-reference-page), `<app><api.restPrefix>/docs`, when `nuxvel.api.openapi` is set in `nuxt.config.ts`. |
-| `Storybook` | When the app has `.storybook/` and `nuxvel.storybook` is not `false`: `https://storybook.<app>.localhost` through portless. With plain `nuxt dev`: `http://localhost:<port>`. See [Storybook](./storybook.md#running-storybook). |
 | `Postgres` | `NUXT_DATABASE_URL`. |
 | `Redis` | `NUXT_REDIS_URL`. |
 | `Mailpit` | The published port of port `8025` of the `mailpit` service, from `docker compose ps`. |
@@ -243,7 +242,7 @@ In a terminal, `nuxt dev` runs behind [portless](https://github.com/vercel-labs/
 
 The first run asks for your password one time, to bind port 443 and to trust that CA. To stay off the privileged port, start the proxy yourself with `npx portless proxy start -p 1355`. The app is then at `https://<app>.localhost:1355`. Sign-in and tRPC mutations work on the proxied origin the same as on `localhost`. The dev SeaweedFS accepts uploads from all origins.
 
-When the app has `.storybook/`, `nuxt dev` also starts Storybook. `nuxvel dev` gives Storybook a free port. Behind portless, it registers `storybook.<app>` for that port with `portless alias`, so Storybook is at `https://storybook.<app>.localhost`. When `nuxvel dev` stops, it removes the alias. This also occurs on Ctrl-C and when `nuxt dev` fails.
+`nuxvel dev` does not start Storybook. Run `npm run storybook` next to it. See [Storybook](./storybook.md#running-storybook).
 
 Outside an interactive terminal, or in CI, portless cannot ask for your password. There, `nuxvel dev` runs plain `nuxt dev` and says so. This applies to a Playwright `webServer` and to a CI job. Pass `--https` to use portless there too.
 

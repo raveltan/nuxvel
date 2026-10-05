@@ -314,101 +314,18 @@ describe("nuxvel dev", () => {
     expect(stderr).toContain("  API docs  http://localhost:4123/api/rest/docs\n");
   });
 
-  it("passes a free Storybook port to nuxt dev and prints http://localhost:<port> without portless", async () => {
-    const dir = scratchDir("dev-storybook-plain");
-    const env = { ...process.env, CI: "1" };
-    const dev = () => runCliWithEnv(dir, env, "dev", "--port", "4123");
-
+  it("does not start Storybook in an app with .storybook/, and prints no Storybook row", async () => {
+    const dir = scratchDir("dev-storybook");
     writeFakeTool(dir, "nuxt", "console.log(`storybook port ${process.env.NUXVEL_STORYBOOK_PORT}`);");
     writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "shop" }));
-
-    const without = await dev();
-
-    expect(without.stdout.trim(), without.stderr).toBe("storybook port undefined");
-    expect(without.stderr).not.toContain("Storybook");
-
     mkdirSync(join(dir, ".storybook"));
-    const withStorybook = await dev();
-    const port = withStorybook.stdout.match(/storybook port (\d+)/)?.[1];
 
-    expect(port, withStorybook.stderr).toBeDefined();
-    expect(withStorybook.stderr).toContain(`  Storybook  http://localhost:${port}\n`);
+    const { stdout, stderr, exitCode } = await runCliWithEnv(dir, { ...process.env, CI: "1" }, "dev", "--port", "4123");
 
-    writeFileSync(join(dir, "nuxt.config.ts"), "export default defineNuxtConfig({ nuxvel: { storybook: false } });\n");
-    const disabled = await dev();
-
-    expect(disabled.stdout.trim(), disabled.stderr).toBe("storybook port undefined");
-    expect(disabled.stderr).not.toContain("Storybook");
+    expect(exitCode, stderr).toBe(0);
+    expect(stdout.trim(), stderr).toBe("storybook port undefined");
+    expect(stderr).not.toContain("Storybook");
   });
-
-  it("serves Storybook at https://storybook.<app>.localhost through portless and removes the route when dev stops", async () => {
-    const dir = scratchDir("dev-storybook-portless");
-    const stateDir = scratchDir("dev-storybook-portless-state");
-    const routes = join(stateDir, "routes.json");
-    const proxyPort = await freePort();
-    const env = {
-      ...process.env,
-      PORTLESS_STATE_DIR: stateDir,
-      PORTLESS_PORT: String(proxyPort),
-      PORTLESS_SYNC_HOSTS: "0",
-    };
-    const storybookRoute = () => readFileSync(routes, "utf8").includes("storybook.shop.localhost");
-
-    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "shop" }));
-    mkdirSync(join(dir, ".storybook"));
-    writeFakeTool(
-      dir,
-      "nuxt",
-      [
-        'import { readFileSync } from "node:fs";',
-        'import { createServer } from "node:http";',
-        'if (process.env.FAKE_NUXT_FAILS) {',
-        '  console.log(readFileSync(`${process.env.PORTLESS_STATE_DIR}/routes.json`, "utf8"));',
-        "  process.exit(1);",
-        "}",
-        'createServer((request, response) => response.end("storybook")).listen(Number(process.env.NUXVEL_STORYBOOK_PORT), "127.0.0.1");',
-      ].join("\n"),
-    );
-
-    const proxy = spawn(
-      process.execPath,
-      [portlessCli, "proxy", "start", "--foreground", "--skip-trust", "-p", String(proxyPort)],
-      { env, stdio: "ignore" },
-    );
-    onTestFinished(() => stop(proxy));
-    const ca = await waitFor(async () => {
-      try {
-        return readFileSync(join(stateDir, "ca.pem"));
-      } catch {
-        return undefined;
-      }
-    });
-    await waitFor(() => listening(proxyPort));
-
-    const dev = startCli(dir, ["dev", "--https"], { env, group: true });
-    onTestFinished(() => dev.stop());
-
-    const storybook = new URL(`https://storybook.shop.localhost:${proxyPort}`);
-    const page = await waitFor(async () => {
-      const response = await proxiedRequest(storybook, ca, "/").catch(() => undefined);
-      return response?.status === 200 ? response.body : undefined;
-    }, 30_000).catch(() => {
-      throw new Error(`Storybook never answered through portless:\n${dev.output()}`);
-    });
-
-    expect(page).toBe("storybook");
-    expect(stripAnsi(dev.output())).toContain(`  Storybook  ${storybook.origin}\n`);
-
-    await dev.stop("SIGINT");
-
-    expect(storybookRoute(), dev.output()).toBe(false);
-
-    const failed = await runCliWithEnv(dir, { ...env, FAKE_NUXT_FAILS: "1" }, "dev", "--https");
-
-    expect(failed.exitCode).toBe(1);
-    expect(failed.stdout).toContain("storybook.shop.localhost");
-    expect(storybookRoute(), failed.stderr).toBe(false);
-  }, 60_000);
 
   it("keeps serving while a generator adds a file, and picks up the generated name", async () => {
     const appDir = scratchPlayground("dev-make");
@@ -577,7 +494,7 @@ describe("nuxvel dev", () => {
   }, 300_000);
 
   it(
-    "signs a user in on the proxied https://<app>.localhost origin and serves Storybook at https://storybook.<app>.localhost",
+    "signs a user in on the proxied https://<app>.localhost origin",
     async () => {
       const appDir = scratchPlayground("dev-https");
       const stateDir = scratchDir("dev-https-portless");
@@ -658,15 +575,6 @@ describe("nuxvel dev", () => {
       expect(mutation.status, mutation.body).toBe(200);
 
       await dev.waitForOutput("worker listening on queue");
-
-      const storybook = new URL(`https://storybook.dev-https-app.localhost:${proxyPort}`);
-      const iframe = await waitFor(async () => {
-        const response = await proxiedRequest(storybook, ca, "/iframe.html").catch(() => undefined);
-        return response?.status === 200 ? response.body : undefined;
-      }, 120_000).catch(() => {
-        throw new Error(`Storybook never answered through portless:\n${dev.output()}`);
-      });
-      expect(iframe).toContain("<title>Storybook</title>");
     },
     240_000,
   );

@@ -5,7 +5,7 @@ import { publishedPorts } from "../services/published-ports.ts";
 import { isInteractive, report, style } from "../ui/output.ts";
 import { portlessCli } from "./portless-invocation.ts";
 
-type DevConfig = { nuxvel?: { api?: { openapi?: object; restPrefix?: string }; storybook?: boolean } };
+type DevConfig = { nuxvel?: { api?: { openapi?: object; restPrefix?: string } } };
 type Options = {
   cwd: string;
   config: DevConfig;
@@ -13,7 +13,6 @@ type Options = {
   portlessName?: string;
   queue: boolean;
   services: boolean;
-  storybook?: { port: number; aliased: boolean };
 };
 
 function portArg(nuxtArgs: string[]) {
@@ -53,11 +52,6 @@ function apiDocs({ nuxvel }: DevConfig, app: string) {
   return `${app}${nuxvel.api.restPrefix ?? "/api/v1"}/docs`;
 }
 
-function storybookUrl(storybook: Options["storybook"], app: string) {
-  if (!storybook) return undefined;
-  return storybook.aliased ? app.replace("://", "://storybook.") : `http://localhost:${storybook.port}`;
-}
-
 export async function printDevSummary(options: Options) {
   const app = await appUrl(options);
   const port = options.services ? await publishedPorts(options.cwd) : () => undefined;
@@ -69,7 +63,6 @@ export async function printDevSummary(options: Options) {
     ["App", app],
     ["DevTools", `${app}/__nuxt_devtools__/client/`],
     ["API docs", apiDocs(options.config, app)],
-    ["Storybook", storybookUrl(options.storybook, app)],
     ["Postgres", process.env.NUXT_DATABASE_URL],
     ["Redis", process.env.NUXT_REDIS_URL],
     ["Mailpit", mailpit],

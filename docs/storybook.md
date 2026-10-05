@@ -2,7 +2,7 @@
 
 ## Introduction
 
-[Storybook](https://storybook.js.org) shows the components of your app one at a time, without a server. A story is one state of one component, for example a date in a given format. nuxvel uses the Nuxt integration of Storybook: the module [`@nuxtjs/storybook`](https://storybook.nuxtjs.org) and the framework `@storybook-vue/nuxt`.
+[Storybook](https://storybook.js.org) shows the components of your app one at a time, without a server. A story is one state of one component, for example a date in a given format. nuxvel uses the Nuxt framework of Storybook, `@storybook-vue/nuxt`.
 
 ## Setup
 
@@ -250,9 +250,8 @@ Some requests of the app have no handler and get a 404 in Storybook, for example
 
 ## Running Storybook
 
-- `nuxt dev` starts Storybook next to the dev server when the app has `.storybook/`. The Nuxt DevTools get a Storybook tab. The story page itself has no Nuxt DevTools.
-- `nuxvel dev` gives Storybook a free port and prints its URL in the dev summary. Behind portless, Storybook is at `https://storybook.<app>.localhost`. With `--no-https`, it is at `http://localhost:<port>`. See [`nuxvel dev`](./cli.md#nuxvel-dev).
-- `npm run storybook` starts Storybook alone, on port 6006.
+- `npm run storybook` starts Storybook on port 6006. Run it in its own terminal, next to `npm run dev`.
+- `nuxt dev` and `nuxvel dev` do not start Storybook.
 - `npm run storybook:build` writes a static site to `storybook-static/`. Any static file server can serve it.
 
 ## Play functions
@@ -347,36 +346,12 @@ In the Storybook UI, the test widget runs the check only when its "Accessibility
 
 ## How it works
 
-When the app has a `.storybook/` folder, the nuxvel module installs `@nuxtjs/storybook`. The module is a dependency of `@nuxvel/nuxt`, so the app does not install it. nuxvel also adds `.storybook/` to the generated `tsconfig`, so `nuxt typecheck` checks `main.ts`. A story under `app/` is already in the app `tsconfig`.
+When the app has a `.storybook/` folder, nuxvel adds it to the generated `tsconfig`, so `nuxt typecheck` checks `main.ts`. A story under `app/` is already in the app `tsconfig`.
 
 `@storybook-vue/nuxt` loads the Nuxt app as a production build without SSR, and uses its Vite configuration for the stories. The app's modules, plugins and CSS thus apply to each story. With `nuxvel.ui` on, Nuxt UI and its styles are in each story. You do not import the CSS in `.storybook/preview.ts`.
-
-A test build (`nuxt.options.test`, for example under Vitest) never installs `@nuxtjs/storybook`.
 
 While Storybook builds, the module removes the `nuxt-fonts-public-assets` plugin of `@nuxt/fonts` 0.14, because it crashes on each font request and stops `nuxvel test:ui`. Fonts still load in the Storybook page. The app needs no code for this.
 
 While Storybook builds, the module also asks Vite to pre-bundle `sanitize-html`. It is a CommonJS package, so without the pre-bundle a story whose component imports a schema with `richText()` fails with "does not provide an export named 'default'". The module also does not install `nuxt-og-image` in this build. Storybook has no server rendering, and the module would print "Nuxt OG Image is enabled but SSR is disabled". The build of the app keeps `nuxt-og-image`.
 
 The nuxvel stories are in `@nuxvel/nuxt`, next to their components. `nuxt-module-build` normally leaves `*.stories.*` files out of a module's `dist/`. The nuxvel build keeps them. The module also tells Nuxt to ignore `*.stories.*` in its component folder, so a story is never registered as a component.
-
-`nuxvel dev` sets the internal environment variable `NUXVEL_STORYBOOK_PORT` to the free port. The module gives this port to `@nuxtjs/storybook` as its `port` option. Behind portless, `nuxvel dev` runs `portless alias storybook.<app> <port>` before `nuxt dev` starts. It runs `portless alias --remove storybook.<app>` when it exits. The portless proxy also tells Vite to accept `.localhost` hosts, so the Storybook page loads on the proxied origin. The hot reload of the story page also connects through portless, on port 443.
-
-In `nuxt dev`, `@storybook-vue/nuxt` 10 copies the Vite plugins of the app into the Vite server of Storybook. The module adapts this copy, and the app needs no code for this:
-
-- It removes the `nuxt:dev-server` plugin. In the copy, this plugin gives the Storybook middleware to the Nuxt dev server. Storybook sends the requests for `/_nuxt`, `/_ipx` and the icons to Nuxt, so each such request went back to Nuxt in a loop and failed with a 502.
-- It removes two pre-bundle entries that do not exist with Storybook 10 (a `jsdoc-type-pratt-parser` path, and `react-dom/client` when the app does not install `react-dom`). Without this, Nuxt prints `NUXT_B7002` on each start.
-- It sets `window.__NUXT_DEVTOOLS_DISABLE__` on the story page, so the Nuxt DevTools and the nuxvel browser problem reporter do not run in a story.
-
-## Configuration
-
-To keep `.storybook/` but stop `nuxt dev` from starting Storybook, set `storybook` to `false`:
-
-```ts
-// nuxt.config.ts
-export default defineNuxtConfig({
-  modules: ["@nuxvel/nuxt"],
-  nuxvel: { storybook: false },
-});
-```
-
-`storybook dev` and `storybook build` still work with this setting.

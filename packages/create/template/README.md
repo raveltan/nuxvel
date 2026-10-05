@@ -31,7 +31,6 @@ Before the dev server starts, `npm run dev` prints the addresses of the app and 
 ```
   App        https://my-app.localhost
   DevTools   https://my-app.localhost/__nuxt_devtools__/client/
-  Storybook  https://storybook.my-app.localhost
   Postgres   postgres://nuxvel:nuxvel@localhost:5432/nuxvel
   Redis      redis://localhost:6379
   Mailpit    http://localhost:8025
@@ -47,7 +46,7 @@ Mailpit shows every mail that the app sends. The nuxvel tab in DevTools shows jo
 npm run storybook
 ```
 
-Storybook shows each component alone, with no server. `npm run dev` also starts it, at `https://storybook.<name>.localhost`. The stories of the nuxvel components are there from the start. `./nv make:story AppLogo` writes a story for `app/components/AppLogo.vue`. `npm run storybook:build` writes a static site to `storybook-static/`. See the [Storybook guide](https://github.com/raveltan/nuxvel/blob/main/docs/storybook.md).
+Storybook shows each component alone, with no server, at `http://localhost:6006`. Run it next to `npm run dev`; the dev server does not start it. The stories of the nuxvel components are there from the start. `./nv make:story AppLogo` writes a story for `app/components/AppLogo.vue`. `npm run storybook:build` writes a static site to `storybook-static/`. See the [Storybook guide](https://github.com/raveltan/nuxvel/blob/main/docs/storybook.md).
 
 ## Signing in as the demo user
 

@@ -11,7 +11,6 @@ export { queueVersionsListingSchema } from "./runtime/server/cli/queue-versions-
 export { scheduleListingSchema } from "./runtime/server/cli/schedule-listing";
 export { COMMAND_ENV, type NuxvelCommand } from "./runtime/server/cli/command";
 export { COMMAND_PLUGIN } from "./command-plugin";
-export { STORYBOOK_PORT_ENV } from "./setup/storybook";
 export { ROLE_ENV, WORKER_CONCURRENCY_ENV, WORKER_QUEUES_ENV } from "./runtime/server/worker/role";
 export { definitionName, domainPatterns, KIND_SUFFIXES } from "./named-files";
 export { camelCase } from "./definition-namespaces";

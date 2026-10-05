@@ -104,7 +104,7 @@ The prefix tells you who reads a variable. The app server reads a `NUXT_*` varia
 
 Settings follow one rule. The address and credentials of a service, such as `databaseUrl` or `mailUrl`, are top-level runtime config that a `NUXT_*` variable sets. How nuxvel behaves, such as the sender of a mail or the sign-in path, is a module option under the `nuxvel` key. One service can thus have settings in both places: `NUXT_MAIL_URL` sets the SMTP server, and `nuxvel.mail.from` sets the sender.
 
-Module options go under the `nuxvel` key. The options are `mail`, `audit`, `experiments`, `database`, `queue`, `realtime`, `security`, `health`, `billing`, `rendering`, `auth`, `api`, `ui`, `perf`, `seo`, `pwa` and `storybook`. Each guide describes its option:
+Module options go under the `nuxvel` key. The options are `mail`, `audit`, `experiments`, `database`, `queue`, `realtime`, `security`, `health`, `billing`, `rendering`, `auth`, `api`, `ui`, `perf`, `seo` and `pwa`. Each guide describes its option:
 
 ```ts
 export default defineNuxtConfig({
@@ -150,8 +150,6 @@ export default defineNuxtConfig({
 
 `pwa` makes the app an installable progressive web app with an offline page. It takes `name`, `shortName`, `themeColor` and `icons`. See [Progressive web app](./pwa.md#installing-the-app).
 
-`storybook: false` stops `nuxt dev` from starting Storybook in an app with `.storybook/`. See [Storybook](./storybook.md#configuration).
-
 `realtime.maxConnections` is the number of realtime connections that one user, or one guest IP address, can keep open. See [Realtime: limits](./realtime.md#limits).
 
 `security.trustProxy` reads the client IP from the `X-Forwarded-For` header. Set it when the app runs behind a proxy. See [Security: client IP behind a proxy](./security.md#client-ip-behind-a-proxy).
@@ -164,7 +162,7 @@ export default defineNuxtConfig({
 
 `queue.outboxRetention` is how long an `outbox` row stays after it reached the queue. The default is `"7 days"`. See [Queues: pruning the outbox](./queues.md#pruning-the-outbox).
 
-On the server, `useNuxvelConfig()` returns the runtime part of this block, as merged into runtime config: `mail`, `audit`, `experiments`, `database` without `database.unindexedForeignKeys`, `queue`, `realtime`, `security`, `health`, `billing`, `api` without `api.docs`, and `siteName` from `seo.siteName`. Its type is `NuxvelRuntimeConfig` from `@nuxvel/nuxt`. The build-time options `ui`, `perf`, `rendering`, `auth`, `seo`, `pwa` and `storybook` are not in it:
+On the server, `useNuxvelConfig()` returns the runtime part of this block, as merged into runtime config: `mail`, `audit`, `experiments`, `database` without `database.unindexedForeignKeys`, `queue`, `realtime`, `security`, `health`, `billing`, `api` without `api.docs`, and `siteName` from `seo.siteName`. Its type is `NuxvelRuntimeConfig` from `@nuxvel/nuxt`. The build-time options `ui`, `perf`, `rendering`, `auth`, `seo` and `pwa` are not in it:
 
 ```ts
 const from = useNuxvelConfig().mail?.from;
@@ -264,7 +262,7 @@ Every server helper is auto-imported. There are no barrel files. [Server auto-im
 - [Cache](./cache.md): `remember()`, `cacheForget()`, `cacheFlush()`, tags, `withLock()`
 - [Audit log](./audit.md): `audit()`, `audited()`, redaction, hash chain, retention
 - [Privacy](./privacy.md): `defineUserData()`, `nuxvel user:export`, `nuxvel user:erase`
-- [Storybook](./storybook.md): `.storybook/`, stories next to their components, play functions, component tests, Storybook in `nuxt dev`, `storybook build`
+- [Storybook](./storybook.md): `.storybook/`, stories next to their components, play functions, component tests, `npm run storybook`, `storybook build`
 - [Progressive web app](./pwa.md): the web app manifest, the service worker, the offline page, `<PwaInstallPrompt>`, `usePush()`, `<PushToggle>`, `sendPush()`
 
 ## Testing
