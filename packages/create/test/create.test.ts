@@ -414,6 +414,8 @@ describe("create-nuxvel", () => {
       for (const name of ["storybook", "@storybook-vue/nuxt", "msw", "msw-storybook-addon"]) {
         expect(manifest.devDependencies[name], name).toBe(playground.devDependencies[name]);
       }
+      // Without a direct esbuild, a lockfile-less install hoists drizzle-kit's esbuild@0.25 and fails vite's esbuild peer (ERESOLVE).
+      expect(manifest.devDependencies.esbuild).toBe("^0.28.0");
       expect(manifest.msw).toEqual({ workerDirectory: [".storybook/public"] });
 
       const packed = await run("npm", ["pack", "--dry-run", "--json"], packageDir);
