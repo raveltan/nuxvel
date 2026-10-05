@@ -17,7 +17,7 @@ function storageOrigin() {
 export default defineNuxtConfig({
   extends: process.env.PLAYGROUND_PROBES_LAYER ? ['../packages/nuxt/test/fixtures/probes'] : [],
   compatibilityDate: '2025-07-15',
-  devtools: { enabled: true },
+  devtools: { enabled: true, telemetry: false },
   modules: [testProbesOnly, '@nuxvel/nuxt'],
   security: {
     headers: {

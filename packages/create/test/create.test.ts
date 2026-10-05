@@ -12,6 +12,7 @@ const repoEnvExample = fileURLToPath(new URL("../../../.env.example", import.met
 const playgroundEnvExample = fileURLToPath(new URL("../../../playground/.env.example", import.meta.url));
 const docsIndex = fileURLToPath(new URL("../../../docs/index.md", import.meta.url));
 const packageDir = fileURLToPath(new URL("..", import.meta.url));
+const playgroundConfig = fileURLToPath(new URL("../../../playground/nuxt.config.ts", import.meta.url));
 const playgroundManifest = fileURLToPath(new URL("../../../playground/package.json", import.meta.url));
 const rootManifest = fileURLToPath(new URL("../../../package.json", import.meta.url));
 const repoNodeModules = fileURLToPath(new URL("../../../node_modules", import.meta.url));
@@ -364,6 +365,10 @@ describe("create-nuxvel", () => {
     const allowScripts = { esbuild: true, "msgpackr-extract": true, msw: true, "vue-demi": true };
     expect(JSON.parse(readFileSync(join(templateDir, "package.json"), "utf8")).allowScripts).toEqual(allowScripts);
     expect(JSON.parse(readFileSync(rootManifest, "utf8")).allowScripts).toEqual(allowScripts);
+  });
+
+  it.for([join(templateDir, "nuxt.config.ts"), playgroundConfig])("turns off DevTools telemetry in %s", (path) => {
+    expect(readFileSync(path, "utf8")).toContain("devtools: { enabled: true, telemetry: false },");
   });
 
   it("names the package after the directory as a valid npm name, keeps the imports field and scaffolds the tests tsconfig", async () => {

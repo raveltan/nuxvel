@@ -1,6 +1,6 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
-  devtools: { enabled: true },
+  devtools: { enabled: true, telemetry: false },
   modules: ['@nuxvel/nuxt'],
   css: ['~/assets/css/main.css'],
   nuxvel: {

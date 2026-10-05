@@ -8,7 +8,7 @@ In development, nuxvel adds a **nuxvel** tab to [Nuxt DevTools](https://devtools
 
 Open DevTools with `Shift + Alt + D` or the floating Nuxt icon. Then pick the **nuxvel** tab, under the server tabs. The tab shows after you authorize DevTools.
 
-You do not register anything. DevTools is on by default in a new Nuxt app. The tab shows while `devtools.enabled` is not `false` in `nuxt.config.ts`.
+You do not register anything. DevTools is on by default in a new Nuxt app. The tab shows while `devtools.enabled` is not `false` in `nuxt.config.ts`. The starter sets `devtools.telemetry: false`, so DevTools sends no usage statistics.
 
 The **Queue board** link at the top opens the [queue dashboard](./queues.md#the-dashboard) in a new window.
 
