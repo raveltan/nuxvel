@@ -1,6 +1,6 @@
 {
   "name": "@nuxvel/nuxt",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Nuxt module that gives a Nuxt app a production-ready backend: Postgres with Drizzle, a typed tRPC API, Zod validation, Better Auth, queues, mail, storage and realtime.",
   "keywords": [
     "nuxt",

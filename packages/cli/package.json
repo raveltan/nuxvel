@@ -1,6 +1,6 @@
 {
   "name": "@nuxvel/cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "The nuxvel CLI: dev services, migrations, generators, tests, builds and VPS deploys for nuxvel apps.",
   "keywords": [
     "nuxt",
@@ -67,7 +67,7 @@
     "zod": "^4.6.5"
   },
   "peerDependencies": {
-    "@nuxvel/nuxt": "^0.1.0"
+    "@nuxvel/nuxt": "^0.1.1"
   },
   "devDependencies": {
     "@jridgewell/trace-mapping": "^0.3.31",
