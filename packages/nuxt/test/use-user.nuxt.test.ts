@@ -118,10 +118,13 @@ describe("useUser()", () => {
       }),
     );
     await vi.waitFor(() => expect(wrapper.text()).toBe("private post"));
+    const warn = vi.spyOn(console, "warn");
+    onTestFinished(() => warn.mockRestore());
 
     await signOut();
 
     await vi.waitFor(() => expect(wrapper.text()).toBe("nothing"));
+    expect(warn.mock.calls.flat().join("\n")).not.toContain("PINIA_COLADA_R0010");
   });
 
   it("deletes the service worker's page cache and ends this device's push subscription on signOut()", async () => {
