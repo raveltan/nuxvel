@@ -1,0 +1,10 @@
+import { {{pgCoreImports}} } from "drizzle-orm/pg-core";
+import { {{databaseImports}} } from "@nuxvel/nuxt/database";
+{{referenceImports}}
+export const {{camelName}}Table = pgTable("{{snakeName}}", {
+  id: serial("id").primaryKey(),
+{{columns}}  ...timestamps(),
+{{softDeletesColumn}}}{{tableIndexes}});
+
+export type {{pascalName}}Row = typeof {{camelName}}Table.$inferSelect;
+export type New{{pascalName}}Row = typeof {{camelName}}Table.$inferInsert;

@@ -1,0 +1,11 @@
+export default defineTask({
+  meta: {
+    name: "{{name}}",
+    description: "Run the {{name}} task.",
+  },
+  run: async ({ payload }) => {
+    console.log("{{name}}", payload);
+
+    return { result: "ok" };
+  },
+});

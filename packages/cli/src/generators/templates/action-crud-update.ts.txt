@@ -1,0 +1,20 @@
+import { {{drizzleImports}} } from "drizzle-orm";
+import { {{tableCamelName}}Table } from "{{tableSchemaImport}}";
+{{parentImports}}import { update{{tablePascalName}}Input } from "#shared/schemas/{{tableName}}";
+
+export const {{exportName}} = defineAction({
+  input: update{{tablePascalName}}Input,
+  handler: async ({ id, ...fields }, ctx) => {
+    const row = await findOrFail({{tableCamelName}}Table, id);
+    await authorize(ctx.actor, "update", {{tableCamelName}}Table, row);
+{{parentChecks}}
+    if (Object.keys(fields).length === 0) return row;
+
+    return useDb()
+      .update({{tableCamelName}}Table)
+      .set(fields)
+      .where(eq({{tableCamelName}}Table.id, id))
+      .returning()
+      .then(firstOrFail);
+  },
+});

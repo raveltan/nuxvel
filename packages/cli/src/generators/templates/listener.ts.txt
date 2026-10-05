@@ -1,0 +1,8 @@
+import { {{eventExportName}} } from "{{eventImport}}";
+
+export const {{exportName}} = defineListener({
+  event: {{eventExportName}},
+  handler: async (payload) => {
+    console.log("{{name}}", payload);
+  },
+});

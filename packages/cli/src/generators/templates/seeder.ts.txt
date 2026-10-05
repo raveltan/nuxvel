@@ -1,0 +1,3 @@
+export const {{exportName}} = defineSeeder(async () => {
+  console.log("Seeding {{name}}");
+});

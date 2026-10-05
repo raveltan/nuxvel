@@ -1,0 +1,14 @@
+import { defineFactory } from "@nuxvel/nuxt/factories";
+import { expect, runAction } from "@nuxvel/nuxt/testing";
+import { describe, it } from "vitest";
+import { userTable } from "{{authSchemaPath}}";
+
+const userFactory = defineFactory(userTable);
+
+describe("{{domain}}/{{name}} action", () => {
+  it("runs as a user without throwing", async () => {
+    const actor = await userFactory();
+
+    await expect(runAction("{{domain}}.{{name}}", {{sample}}, { actingAs: actor })).resolves.toBeUndefined();
+  });
+});

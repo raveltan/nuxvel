@@ -1,0 +1,11 @@
+import { url } from "@nuxt/test-utils/e2e";
+import { expect, visit } from "@nuxvel/nuxt/testing";
+import { describe, it } from "vitest";
+
+describe("the {{pagePath}} page in a browser", () => {
+  it("opens without errors", async () => {
+    const page = await visit({ name: "{{routeName}}" });
+
+    await expect(page).toHaveURL(url("{{pagePath}}"));
+  });
+});

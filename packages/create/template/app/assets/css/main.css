@@ -1,0 +1,20 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+@import "@nuxvel/nuxt/ui.css";
+
+@theme {
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --color-crimson-50: #fff1f2;
+  --color-crimson-100: #ffe1e3;
+  --color-crimson-200: #ffc8cd;
+  --color-crimson-300: #ff9ea7;
+  --color-crimson-400: #fb6473;
+  --color-crimson-500: #ef3347;
+  --color-crimson-600: #d41531;
+  --color-crimson-700: #b20d27;
+  --color-crimson-800: #940f26;
+  --color-crimson-900: #7e1126;
+  --color-crimson-950: #46030f;
+}

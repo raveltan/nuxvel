@@ -1,0 +1,8 @@
+<template>
+  <MailLayout preview="{{title}}">
+    <EHeading>{{title}}</EHeading>
+    <EText>Write the message here.</EText>
+    <EButton href="https://example.com" background-color="#4f46e5">Open the app</EButton>
+    <EText font-size="14px" color="#6b7280">Or open <ELink href="https://example.com">example.com</ELink>.</EText>
+  </MailLayout>
+</template>

@@ -1,0 +1,9 @@
+import { {{tableCamelName}}Table } from "{{tableImport}}";
+
+export const {{exportName}} = defineBackfill({
+  table: {{tableCamelName}}Table,
+  batchSize: 1_000,
+  async handler(rows) {
+    console.log("{{name}}", rows.length);
+  },
+});

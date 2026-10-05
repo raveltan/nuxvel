@@ -1,0 +1,44 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": [
+      "node",
+      "@nuxt/nitro-server/augments"
+    ],
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "paths": {
+      "#app": ["./node_modules/nuxt/dist/app", "../../node_modules/nuxt/dist/app"],
+      "#app/*": ["./node_modules/nuxt/dist/app/*", "../../node_modules/nuxt/dist/app/*"]
+    }
+  },
+  "include": [
+    "src/cli.ts",
+    "src/eslint.ts",
+    "src/eslint",
+    "src/module.ts",
+    "src/schema.ts",
+    "src/env.ts",
+    "src/named-files.ts",
+    "src/events.ts",
+    "src/actions.ts",
+    "src/discovered-module.ts",
+    "src/policies.ts",
+    "src/upload-routes.ts",
+    "src/trpc-routers.ts",
+    "src/trpc-namespaces.ts",
+    "src/rendering.ts",
+    "src/private-page-guard.ts",
+    "src/seo.ts",
+    "src/storybook.ts",
+    "src/security-defaults.ts",
+    "src/h3-context.ts",
+    "src/error-handlers.ts",
+    "src/nitro-routes.ts",
+    "src/task-names.ts",
+    "build.config.ts",
+    "vitest.config.ts"
+  ]
+}

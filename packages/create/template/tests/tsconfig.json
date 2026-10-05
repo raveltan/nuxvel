@@ -1,0 +1,7 @@
+{
+  "extends": "../.nuxt/tsconfig.server.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "../.nuxt/tsconfig.tests.tsbuildinfo"
+  },
+  "include": ["./**/*", "../.nuxt/types/nitro-nuxt.d.ts", "../.nuxt/types/nitro.d.ts", "../.nuxt/types/typed-router.d.ts"]
+}

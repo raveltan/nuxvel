@@ -1,0 +1,265 @@
+{
+  "name": "@nuxvel/nuxt",
+  "version": "0.0.1",
+  "description": "Nuxt module that gives a Nuxt app a production-ready backend: Postgres with Drizzle, a typed tRPC API, Zod validation, Better Auth, queues, mail, storage and realtime.",
+  "keywords": [
+    "nuxt",
+    "nuxt-module",
+    "nuxvel",
+    "backend",
+    "drizzle",
+    "trpc",
+    "zod",
+    "better-auth",
+    "postgres"
+  ],
+  "license": "MIT",
+  "author": "Ravel Tanjaya",
+  "homepage": "https://github.com/raveltan/nuxvel#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/raveltan/nuxvel.git",
+    "directory": "packages/nuxt"
+  },
+  "bugs": {
+    "url": "https://github.com/raveltan/nuxvel/issues"
+  },
+  "type": "module",
+  "main": "./dist/module.mjs",
+  "exports": {
+    ".": {
+      "types": "./dist/types.d.mts",
+      "default": "./dist/module.mjs"
+    },
+    "./cli": {
+      "types": "./dist/cli.d.mts",
+      "default": "./dist/cli.mjs"
+    },
+    "./database": {
+      "types": "./dist/database.d.mts",
+      "default": "./dist/database.mjs"
+    },
+    "./env": {
+      "types": "./dist/env.d.mts",
+      "default": "./dist/env.mjs"
+    },
+    "./migrations": {
+      "types": "./dist/migrations.d.mts",
+      "default": "./dist/migrations.mjs"
+    },
+    "./eslint": {
+      "types": "./dist/eslint.d.mts",
+      "default": "./dist/eslint.mjs"
+    },
+    "./eslint/architecture": {
+      "types": "./dist/eslint/architecture.d.mts",
+      "default": "./dist/eslint/architecture.mjs"
+    },
+    "./factories": {
+      "types": "./dist/factories.d.mts",
+      "default": "./dist/factories.mjs"
+    },
+    "./factory-defaults": {
+      "types": "./dist/testing/factories/factory-defaults.d.mts",
+      "default": "./dist/testing/factories/factory-defaults.mjs"
+    },
+    "./storybook": {
+      "types": "./dist/storybook.d.mts",
+      "default": "./dist/storybook.mjs"
+    },
+    "./storybook/preview": {
+      "types": "./dist/storybook-preview.d.mts",
+      "default": "./dist/storybook-preview.mjs"
+    },
+    "./storybook/mocks": {
+      "types": "./dist/storybook-mocks.d.mts",
+      "default": "./dist/storybook-mocks.mjs"
+    },
+    "./storybook/test": {
+      "types": "./dist/storybook-test.d.mts",
+      "default": "./dist/storybook-test.mjs"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.mts",
+      "default": "./dist/testing/index.mjs"
+    },
+    "./testing/setup": {
+      "types": "./dist/testing/setup.d.mts",
+      "default": "./dist/testing/setup.mjs"
+    },
+    "./testing/database": {
+      "types": "./dist/testing/database-setup.d.mts",
+      "default": "./dist/testing/database-setup.mjs"
+    },
+    "./testing/global-setup": {
+      "types": "./dist/testing/global-setup.d.mts",
+      "default": "./dist/testing/global-setup.mjs"
+    },
+    "./testing/changes-reporter": {
+      "types": "./dist/testing/changes-reporter.d.mts",
+      "default": "./dist/testing/changes-reporter.mjs"
+    },
+    "./ui.css": "./dist/runtime/app/ui-overrides.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "client-dist"
+  ],
+  "scripts": {
+    "prepare": "nuxt-module-build build && npm run client:build",
+    "dev:prepare": "nuxt-module-build build --stub && npm run client:build",
+    "pretest": "node scripts/ensure-stub.mjs && npm run client:build && playwright-core install chromium-headless-shell chromium",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json && tsc -p test/type-fixtures/tsconfig.accessibility-page.json && tsc -p test/type-fixtures/tsconfig.e2e-expect.json && tsc -p test/type-fixtures/tsconfig.browser-timeout-config.json && tsc -p test/type-fixtures/tsconfig.action-fail-undeclared-code.json && tsc -p test/type-fixtures/tsconfig.fake-names.json && tsc -p test/type-fixtures/tsconfig.matcher-codes.json && tsc -p test/type-fixtures/tsconfig.schedule-timing.json && tsc -p test/type-fixtures/tsconfig.testing-source.json && tsc -p test/type-fixtures/tsconfig.storybook-source.json && tsc -p test/type-fixtures/tsconfig.trpc-reserved-names.json && nuxt typecheck client",
+    "client:build": "nuxt generate client"
+  },
+  "peerDependencies": {
+    "@nuxt/test-utils": "^4.3.2",
+    "@takumi-rs/core": "^2.14.0",
+    "@typescript-eslint/parser": "^8.70.1",
+    "axe-core": "^4.13.0",
+    "eslint": "^10.11.0",
+    "eslint-plugin-vuejs-accessibility": "^2.6.0",
+    "msw": "^2.15.0",
+    "nuxt": "^4",
+    "nuxt-og-image": "^6.9.0",
+    "playwright": "^1.63.0",
+    "storybook": "^10.6.1",
+    "stripe": "^23.0.0",
+    "vitest": "^5.0.1",
+    "vue": "^3.5.0"
+  },
+  "peerDependenciesMeta": {
+    "@nuxt/test-utils": {
+      "optional": true
+    },
+    "vitest": {
+      "optional": true
+    },
+    "@typescript-eslint/parser": {
+      "optional": true
+    },
+    "axe-core": {
+      "optional": true
+    },
+    "eslint-plugin-vuejs-accessibility": {
+      "optional": true
+    },
+    "eslint": {
+      "optional": true
+    },
+    "nuxt-og-image": {
+      "optional": true
+    },
+    "@takumi-rs/core": {
+      "optional": true
+    },
+    "playwright": {
+      "optional": true
+    },
+    "msw": {
+      "optional": true
+    },
+    "storybook": {
+      "optional": true
+    },
+    "stripe": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1137.0",
+    "@aws-sdk/s3-request-presigner": "^3.1137.0",
+    "@bull-board/api": "9.10.1",
+    "@bull-board/h3": "9.10.1",
+    "@faker-js/faker": "^10.6.0",
+    "@iconify-json/lucide": "^1.2.136",
+    "@jridgewell/trace-mapping": "^0.3.31",
+    "@nuxt/devtools-kit": "^3.4.2",
+    "@nuxt/icon": "^2.5.1",
+    "@nuxt/kit": "^4.5.2",
+    "@nuxt/schema": "^4.5.2",
+    "@nuxt/ui": "^4.11.2",
+    "@nuxtjs/robots": "^6.2.3",
+    "@nuxtjs/sitemap": "^8.5.1",
+    "@nuxtjs/storybook": "^10.0.0",
+    "@openfeature/core": "^1.12.0",
+    "@openfeature/server-sdk": "^1.23.0",
+    "@pinia/colada": "^1.4.5",
+    "@pinia/colada-nuxt": "^1.2.0",
+    "@pinia/nuxt": "^1.0.2",
+    "@sentry/node": "^10.75.2",
+    "@sentry/vue": "^10.75.2",
+    "@trpc/client": "^11.0.0",
+    "@trpc/server": "^11.0.0",
+    "@unhead/vue": "^3.4.1",
+    "@vite-pwa/nuxt": "^1.1.1",
+    "better-auth": "^1.7.5",
+    "bullmq": "^6.3.8",
+    "consola": "^3.4.2",
+    "defu": "^6.1.7",
+    "disposable-email-domains-js": "^1.26.0",
+    "drizzle-orm": "^0.45.2",
+    "file-type": "^22.1.1",
+    "h3": "^1.15.11",
+    "html-to-text": "^9.0.5",
+    "ioredis": "^6.0.0",
+    "mjml-core": "^5.4.1",
+    "mjml-preset-core": "^5.4.1",
+    "nitropack": "^2.13.4",
+    "nodemailer": "^10.0.10",
+    "nuxt-i18n-micro": "^3.30.0",
+    "nuxt-security": "^2.6.0",
+    "nuxt-site-config": "^4.2.3",
+    "ohash": "^2.0.11",
+    "pinia": "^4.0.3",
+    "postgres": "^3.4.9",
+    "radix3": "^1.1.2",
+    "sanitize-html": "^2.17.7",
+    "sharp": "^0.35.4",
+    "std-env": "^4.2.0",
+    "superjson": "^2.2.6",
+    "tailwindcss": "^4.3.3",
+    "tinyglobby": "^0.2.17",
+    "trpc-nuxt": "^2.1.3",
+    "trpc-to-openapi": "^3.3.0",
+    "unctx": "^3.0.1",
+    "unplugin-vue": "^8.0.0",
+    "vue-router": "^5.3.1",
+    "web-push": "^3.6.7",
+    "zod": "^4.6.5",
+    "zod-openapi": "^5.4.6"
+  },
+  "devDependencies": {
+    "@nuxt/devtools-ui-kit": "^3.4.2",
+    "@nuxt/module-builder": "^1.0.3",
+    "@nuxt/nitro-server": "^4.5.2",
+    "@nuxt/test-utils": "^4.3.2",
+    "@nuxvel/test-helpers": "*",
+    "@testing-library/vue": "^8.1.0",
+    "@types/html-to-text": "^9.0.4",
+    "@types/node": "^22.20.3",
+    "@types/nodemailer": "^8.0.2",
+    "@types/sanitize-html": "^2.16.1",
+    "@types/web-push": "^3.6.4",
+    "@typescript-eslint/parser": "^8.70.1",
+    "@vue/test-utils": "^2.5.1",
+    "axe-core": "^4.13.0",
+    "eslint": "^10.11.0",
+    "eslint-plugin-vuejs-accessibility": "^2.6.0",
+    "happy-dom": "^20.14.5",
+    "msw": "^2.15.0",
+    "nuxt": "^4.5.2",
+    "playwright": "^1.63.0",
+    "playwright-core": "^1.63.0",
+    "storybook": "^10.6.1",
+    "stripe": "^23.0.0",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.1",
+    "vue": "^3.5.42"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

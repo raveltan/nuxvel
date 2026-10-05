@@ -1,0 +1,6 @@
+export const {{exportName}} = defineSchedule({
+  at: { hour: 3 },
+  handler: async () => {
+    console.log("{{name}}");
+  },
+});

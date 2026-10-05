@@ -1,0 +1,9 @@
+import { h } from "vue";
+import { z } from "zod";
+import {{pascalName}} from "./templates/{{pascalName}}.vue";
+
+export const {{exportName}} = defineMail({
+  input: z.object({ to: z.email() }),
+  subject: () => "{{title}}",
+  render: () => h({{pascalName}}),
+});

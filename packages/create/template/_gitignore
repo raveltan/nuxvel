@@ -1,0 +1,17 @@
+node_modules
+.nuxt
+.nuxvel/*
+!.nuxvel/generated.json
+!.nuxvel/templates/
+!.nuxvel/known_hosts
+!.nuxvel/rehearsals.json
+.output
+.data
+dist
+.env
+.env.deploy
+*.log
+nuxvel-manifest.json
+.vitest/
+test-results/
+storybook-static

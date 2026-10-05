@@ -1,0 +1,16 @@
+import { defineFactory } from "@nuxvel/nuxt/factories";
+import { expectNotified, sendNotification } from "@nuxvel/nuxt/testing";
+import { describe, it } from "vitest";
+import { userTable } from "{{authSchemaPath}}";
+
+const userFactory = defineFactory(userTable);
+
+describe("{{name}} notification", () => {
+  it("reaches the user through the database channel", async () => {
+    const recipient = await userFactory();
+
+    await sendNotification(recipient, "{{name}}", { message: "Hello" });
+
+    await expectNotified(recipient, "{{name}}", { title: "{{title}}", body: "Hello" });
+  });
+});

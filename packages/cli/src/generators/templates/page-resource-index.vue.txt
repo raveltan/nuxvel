@@ -1,0 +1,120 @@
+<script setup lang="ts">
+definePageMeta({ middleware: "auth" });
+
+const trpc = useTRPC();
+const route = useRoute();
+const router = useRouter();
+const input = computed(() => listQueryParams({{tableCamelName}}ListInput.catch({ sort: [], filters: {} }).parse(route.query)));
+const rows = useQuery(() => trpc.{{tableCamelName}}.list.queryOptions(input.value));
+const confirm = useConfirm();
+
+const { mutate: remove, error: removeError } = useMutation(
+  optimistic(trpc.{{tableCamelName}}.delete.mutationOptions(), {
+    key: () => trpc.{{tableCamelName}}.list.key(input.value),
+    apply: (list, { id }) => ({ ...list, rows: list.rows.filter((row) => row.id !== id), total: list.total - 1 }),
+  }),
+);
+
+async function confirmDelete(id: number) {
+  const confirmed = await confirm({
+    title: "Delete {{titleLower}}?",
+    confirmLabel: "Delete",
+    color: "error",
+  });
+  if (confirmed) remove({ id });
+}
+
+const editId = computed(() => {
+  const id = Number(route.query.edit);
+  return route.query.edit !== undefined && Number.isInteger(id) && id > 0 ? id : undefined;
+});
+const editing = useQuery(() => ({
+  ...trpc.{{tableCamelName}}.byId.queryOptions({ id: editId.value ?? 0 }),
+  enabled: import.meta.client && editId.value !== undefined,
+}));
+const openError = ref<string>();
+
+function closeEdit() {
+  return router.replace({ query: { ...route.query, edit: undefined } });
+}
+
+onMounted(() =>
+  watch(
+    [() => route.query.edit, () => editing.error.value],
+    ([edit, error]) => {
+      if (edit === undefined || (editId.value !== undefined && !error)) return;
+
+      openError.value = error?.message ?? "There is no {{titleLower}} with this ID.";
+      closeEdit();
+    },
+    { immediate: true },
+  ),
+);
+
+useSeo({ title: "{{listTitle}}" });
+</script>
+
+<template>
+  <div class="space-y-6">
+    <div class="flex items-center justify-between gap-4">
+      <h1 class="text-2xl font-semibold">{{listTitle}}</h1>
+      <UButton :to="{ name: '{{tableName}}-new' }" icon="i-lucide-plus" label="New {{titleLower}}" />
+    </div>
+    <UAlert
+      v-if="removeError"
+      role="alert"
+      color="error"
+      variant="subtle"
+      title="Could not delete the {{titleLower}}."
+      :description="removeError.message"
+    />
+    <UAlert
+      v-if="openError"
+      role="alert"
+      color="error"
+      variant="subtle"
+      title="Could not open the {{titleLower}}."
+      :description="openError"
+      :close="true"
+      @update:open="openError = undefined"
+    />
+    <DataTable
+      :query="rows"
+      :columns="[{{tableColumns}}{ id: 'actions', header: 'Actions' }]"
+      :list="{{tableCamelName}}ListColumns"{{searchAttribute}}
+    >
+      <template #empty>
+        <UEmpty icon="i-lucide-inbox" title="Nothing here yet" />
+      </template>
+{{timestampCells}}      <template #actions-cell="{ row }">
+        <div class="flex gap-2">
+          <UButton
+            :to="{ query: { ...route.query, edit: row.original.id } }"
+            color="neutral"
+            variant="outline"
+            label="Edit"
+            :aria-label="`Edit {{titleLower}} ${row.original.id}`"
+            @click="openError = undefined"
+          />
+          <UButton
+            color="error"
+            variant="outline"
+            icon="i-lucide-trash"
+            label="Delete"
+            :aria-label="`Delete {{titleLower}} ${row.original.id}`"
+            @click="confirmDelete(row.original.id)"
+          />
+        </div>
+      </template>
+    </DataTable>
+    <UModal :open="editId !== undefined" title="Edit {{titleLower}}" @update:open="(open) => open || closeEdit()">
+      <template #body>
+        <QueryState :query="editing">
+          <template #default="{ data }">
+            <{{tablePascalName}}Form :key="data.id" :row="data" @saved="closeEdit" />
+          </template>
+        </QueryState>
+      </template>
+    </UModal>
+  </div>
+</template>

@@ -1,0 +1,82 @@
+{
+  "app": {
+    "home": "nuxvel home",
+    "skipToContent": "Skip to content",
+    "mainNav": "Main",
+    "language": "Language",
+    "docs": "Docs",
+    "signIn": "Sign in",
+    "signUp": "Sign up",
+    "signOut": "Sign out",
+    "copied": "Copied to clipboard",
+    "copy": "Copy {command}"
+  },
+  "error": {
+    "notFound": "Page not found",
+    "failed": "Something went wrong",
+    "requestId": "Request ID: {id}",
+    "goHome": "Go home"
+  },
+  "home": {
+    "title": "Welcome",
+    "running": "Your app is running",
+    "heading": "Welcome to nuxvel",
+    "intro": "A Nuxt app with the backend already built: a Postgres database, a typed API, sign-in, queues, mail and realtime. Put files in the right folders and nuxvel finds them.",
+    "signedInAs": "Signed in as {email}.",
+    "readDocs": "Read the docs",
+    "firstApp": "Build your first app",
+    "nextSteps": "Next steps",
+    "steps": {
+      "resource": "Generate a resource with a table, API and pages",
+      "migrate": "Apply its migration",
+      "test": "Run the tests",
+      "edit": "Edit this page in {file}"
+    },
+    "inTheBox": "What's in the box",
+    "allGuides": "All guides →",
+    "guide": "{feature} guide →",
+    "features": {
+      "database": { "title": "Database", "text": "Drizzle tables, migrations, seeders, pagination and full-text search." },
+      "api": { "title": "Typed API", "text": "tRPC routers checked by Zod, available over REST with an OpenAPI document." },
+      "authorization": { "title": "Auth & policies", "text": "Email and password sign-in, sessions, two-factor, and one policy per table." },
+      "queues": { "title": "Queues & mail", "text": "Background jobs, schedules and Vue mail templates, sent from the queue." },
+      "realtime": { "title": "Realtime", "text": "Channels, presence and live queries over server-sent events." },
+      "testing": { "title": "Testing", "text": "Parallel tests against real Postgres, factories and browser tests." }
+    }
+  },
+  "dev": {
+    "checking": "checking",
+    "reachable": "reachable",
+    "unreachable": "unreachable"
+  },
+  "signIn": {
+    "forgotPassword": "Forgot your password?",
+    "newHere": "New here?"
+  },
+  "signUp": {
+    "haveAccount": "Already have an account?"
+  },
+  "forgotPassword": {
+    "heading": "Reset your password",
+    "remembered": "Remembered it?"
+  },
+  "resetPassword": {
+    "heading": "Choose a new password",
+    "needLink": "Need a new link?",
+    "sendAgain": "Send it again"
+  },
+  "verifyEmail": {
+    "heading": "Confirm your email address",
+    "sentTo": "A link to confirm your address went to {email}. Open it to finish signing up. The link expires in 24 hours.",
+    "yourAddress": "your email address",
+    "resent": "A new link is on its way",
+    "resend": "Send the link again",
+    "resendFailed": "Could not send the link again"
+  },
+  "offline": {
+    "title": "Offline",
+    "heading": "You are offline",
+    "text": "Check your connection, then reload the page.",
+    "home": "Go to the home page"
+  }
+}

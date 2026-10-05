@@ -1,0 +1,10 @@
+import { z } from "zod";
+
+export const {{exportName}} = defineWebhook({
+  payload: z.object({ id: z.string(), type: z.string() }),
+  verify: hmac({ header: "x-signature", secret: "{{secretName}}" }),
+  eventId: ({ payload }) => payload.id,
+  handler: ({ payload }) => {
+    console.log("{{name}}", payload.type, payload.id);
+  },
+});

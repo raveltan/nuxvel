@@ -1,0 +1,8 @@
+import { z } from "zod";
+
+export const {{exportName}} = defineChannel({
+  events: {
+    updated: z.object({ id: z.number() }),
+  },
+  authorize: ({ user }) => user !== null,
+});

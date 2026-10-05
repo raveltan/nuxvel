@@ -1,0 +1,7 @@
+import { z } from "zod";
+
+export const {{exportName}} = defineNotification({
+  schema: z.object({ message: z.string() }),
+  via: ["database"],
+  toDatabase: ({ message }) => ({ title: "{{title}}", body: message }),
+});

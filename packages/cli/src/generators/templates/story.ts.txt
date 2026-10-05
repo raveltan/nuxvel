@@ -1,0 +1,12 @@
+import type { Meta, StoryObj } from "@storybook-vue/nuxt";
+import { expect } from "@nuxvel/nuxt/storybook/test";
+import {{component}} from "./{{file}}.vue";
+
+const meta = { component: {{component}} } satisfies Meta<typeof {{component}}>;
+export default meta;
+
+export const Default: StoryObj<typeof {{component}}> = {
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement).not.toBeEmptyDOMElement();
+  },
+};

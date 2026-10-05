@@ -1,0 +1,1 @@
+export const {{exportName}} = defineFlag({ default: false });

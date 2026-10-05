@@ -1,0 +1,13 @@
+import { expect, expectRow, runBackfill } from "@nuxvel/nuxt/testing";
+import { describe, it } from "vitest";
+import { backfillsTable } from "{{backfillsImport}}";
+
+describe("{{name}} backfill", () => {
+  it("runs to completion over every matching row", async () => {
+    await runBackfill("{{name}}");
+
+    const state = await expectRow(backfillsTable, { name: "{{name}}" });
+    expect(state.completedAt).toBeInstanceOf(Date);
+    expect(state.processed).toBe(state.total);
+  });
+});

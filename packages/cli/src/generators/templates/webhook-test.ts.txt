@@ -1,0 +1,29 @@
+import { deliverWebhook, expect, guest } from "@nuxvel/nuxt/testing";
+import { randomUUID } from "node:crypto";
+import { describe, it } from "vitest";
+
+process.env.{{secretName}} = "{{name}}-webhook-test-secret";
+
+describe("{{name}} webhook", () => {
+  it("accepts a delivery signed with the secret", async () => {
+    const response = await deliverWebhook("{{name}}", { id: randomUUID(), type: "{{name}}.created" });
+
+    expect(response.status).toBe(200);
+  });
+
+  it("rejects a signed delivery that does not match the payload schema", async () => {
+    const response = await deliverWebhook("{{name}}", { unexpected: true });
+
+    expect(response.status).toBe(400);
+  });
+
+  it("rejects a delivery with a bad signature", async () => {
+    const response = await guest().fetch("/api/webhooks/{{name}}", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-signature": "not-a-signature" },
+      body: JSON.stringify({ id: randomUUID(), type: "{{name}}.created" }),
+    });
+
+    expect(response.status).toBe(401);
+  });
+});

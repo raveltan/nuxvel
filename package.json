@@ -1,0 +1,36 @@
+{
+  "name": "nuxvel",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "playground"
+  ],
+  "packageManager": "npm@11.19.0",
+  "scripts": {
+    "dev": "trap 'docker compose stop' EXIT; trap 'exit 130' INT TERM; docker compose up -d --wait && npm exec --workspace playground -- nuxvel db:migrate && npm run dev --workspace playground",
+    "test": "npm run test --workspace packages/nuxt --workspace packages/cli --workspace packages/create",
+    "test:release": "npm run test:release --workspace packages/cli --workspace packages/create",
+    "test:deploy": "npm run test:deploy --workspace packages/cli",
+    "deps:upgrade": "npm update && npm run typecheck && npm test",
+    "test:coverage": "NODE_OPTIONS=--enable-source-maps mcr \"npm test\"",
+    "typecheck": "npm run typecheck --workspace packages/nuxt --workspace packages/cli --workspace packages/create --workspace packages/test-helpers --workspace playground",
+    "lint": "npm run lint --workspace playground",
+    "postinstall": "npm run dev:prepare --workspace packages/nuxt"
+  },
+  "overrides": {
+    "@nuxt/test-utils": {
+      "@nuxt/devtools-kit": "^3.4.2"
+    },
+    "nuxtseo-shared": {
+      "@nuxt/devtools-kit": "^3.4.2"
+    }
+  },
+  "devDependencies": {
+    "@storybook-vue/nuxt": "^10.0.0",
+    "@storybook/addon-a11y": "^10.6.1",
+    "@storybook/addon-vitest": "^10.6.1",
+    "@vitest/browser-playwright": "^5.0.1",
+    "monocart-coverage-reports": "^2.13.0",
+    "storybook": "^10.6.1"
+  }
+}

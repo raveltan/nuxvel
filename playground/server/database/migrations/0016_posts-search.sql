@@ -1,0 +1,2 @@
+ALTER TABLE "posts" ADD COLUMN "search_vector" "tsvector" GENERATED ALWAYS AS (setweight(to_tsvector('english', coalesce("title", '')), 'A') || setweight(to_tsvector('english', coalesce("body", '')), 'B')) STORED;--> statement-breakpoint
+CREATE INDEX "posts_search_vector_index" ON "posts" USING gin ("search_vector");

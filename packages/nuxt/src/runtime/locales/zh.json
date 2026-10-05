@@ -1,0 +1,98 @@
+{
+  "nuxvel": {
+    "authForm": {
+      "name": "姓名",
+      "email": "电子邮件",
+      "password": "密码",
+      "newPassword": "新密码",
+      "signIn": "登录",
+      "signUp": "注册",
+      "code": "验证码",
+      "codeDescription": "身份验证器应用中的验证码，或一个备用码。",
+      "verify": "验证",
+      "sendResetLink": "发送重置链接",
+      "resetLinkSent": "请查看您的收件箱",
+      "resetLinkSentDescription": "如果有账户使用此地址，重置密码的链接已经发出。",
+      "setNewPassword": "设置新密码",
+      "linkExpired": "此链接已失效或已被使用",
+      "linkExpiredDescription": "请在登录页面申请新的链接。",
+      "signInFailed": "无法登录",
+      "codeFailed": "无法检查验证码",
+      "signUpFailed": "无法注册",
+      "resetLinkFailed": "无法发送重置链接",
+      "resetFailed": "无法重置密码"
+    },
+    "socialSignIn": {
+      "continueWith": "使用 {provider} 继续",
+      "failed": "无法使用 {provider} 登录"
+    },
+    "notificationBell": {
+      "title": "通知",
+      "unread": "通知，{count} 条未读",
+      "unreadMark": "（未读）",
+      "markAllRead": "全部标为已读",
+      "empty": "还没有通知。",
+      "loading": "正在加载通知…"
+    },
+    "pushToggle": { "label": "推送通知" },
+    "pwaInstallPrompt": {
+      "newVersion": "有新版本可用",
+      "reload": "重新加载",
+      "install": "安装应用"
+    },
+    "maintenanceBanner": {
+      "back": "应用已恢复。",
+      "reload": "重新加载"
+    },
+    "offline": {
+      "title": "离线",
+      "heading": "您已离线",
+      "body": "请检查网络连接，然后重新加载页面。"
+    },
+    "queryState": {
+      "loading": "加载中…",
+      "failed": "出错了。",
+      "retry": "重试",
+      "empty": "这里还没有内容。"
+    },
+    "maintenance": { "title": "系统维护中" },
+    "confirmDialog": {
+      "cancel": "取消",
+      "confirm": "确认"
+    },
+    "presenceAvatars": { "label": "正在查看" },
+    "typingIndicator": {
+      "one": "{name} 正在输入…",
+      "two": "{first} 和 {second} 正在输入…",
+      "many": "{first} 和另外 {count} 人正在输入…"
+    },
+    "dataTableFilters": {
+      "yes": "是",
+      "no": "否",
+      "any": "不限",
+      "from": "{label}（起）",
+      "to": "{label}（止）",
+      "range": "{from} 至 {to}",
+      "quoted": "“{value}”",
+      "chip": "{label}：{value}",
+      "remove": "移除筛选条件 {filter}",
+      "clearAll": "清除所有筛选条件"
+    },
+    "dataTableSortButton": {
+      "sortBy": "按{label}排序",
+      "ascending": "{label}，升序",
+      "descending": "{label}，降序",
+      "hint": "按住 Shift 点击可按多列排序"
+    },
+    "searchInput": { "clear": "清除搜索" },
+    "uploadField": {
+      "drop": "拖放文件，或点击选择",
+      "uploading": "正在上传 {file}"
+    },
+    "upload": {
+      "refused": "存储服务拒绝了上传（{status}）",
+      "unreachable": "无法连接存储服务"
+    },
+    "actionForm": { "unsavedChanges": "您有未保存的更改。确定要离开此页面吗？" }
+  }
+}

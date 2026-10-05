@@ -1,0 +1,82 @@
+{
+  "app": {
+    "home": "nuxvel 首页",
+    "skipToContent": "跳到主要内容",
+    "mainNav": "主导航",
+    "language": "语言",
+    "docs": "文档",
+    "signIn": "登录",
+    "signUp": "注册",
+    "signOut": "退出登录",
+    "copied": "已复制到剪贴板",
+    "copy": "复制 {command}"
+  },
+  "error": {
+    "notFound": "页面不存在",
+    "failed": "出错了",
+    "requestId": "请求 ID：{id}",
+    "goHome": "返回首页"
+  },
+  "home": {
+    "title": "欢迎",
+    "running": "你的应用正在运行",
+    "heading": "欢迎使用 nuxvel",
+    "intro": "一个后端已经搭好的 Nuxt 应用：Postgres 数据库、类型化 API、登录、队列、邮件和实时通信。把文件放进对应的文件夹，nuxvel 就会找到它们。",
+    "signedInAs": "已登录为 {email}。",
+    "readDocs": "阅读文档",
+    "firstApp": "构建你的第一个应用",
+    "nextSteps": "下一步",
+    "steps": {
+      "resource": "生成一个带有数据表、API 和页面的资源",
+      "migrate": "应用它的迁移",
+      "test": "运行测试",
+      "edit": "在 {file} 中编辑此页面"
+    },
+    "inTheBox": "包含的功能",
+    "allGuides": "全部指南 →",
+    "guide": "{feature}指南 →",
+    "features": {
+      "database": { "title": "数据库", "text": "Drizzle 数据表、迁移、种子数据、分页和全文搜索。" },
+      "api": { "title": "类型化 API", "text": "由 Zod 校验的 tRPC 路由，也可通过带 OpenAPI 文档的 REST 访问。" },
+      "authorization": { "title": "认证与策略", "text": "邮箱密码登录、会话、双重验证，每张表一个策略。" },
+      "queues": { "title": "队列与邮件", "text": "后台任务、定时任务和 Vue 邮件模板，从队列发送。" },
+      "realtime": { "title": "实时", "text": "基于服务器发送事件的频道、在线状态和实时查询。" },
+      "testing": { "title": "测试", "text": "在真实 Postgres 上并行运行测试，带工厂函数和浏览器测试。" }
+    }
+  },
+  "dev": {
+    "checking": "检查中",
+    "reachable": "可连接",
+    "unreachable": "无法连接"
+  },
+  "signIn": {
+    "forgotPassword": "忘记密码？",
+    "newHere": "第一次来？"
+  },
+  "signUp": {
+    "haveAccount": "已有账号？"
+  },
+  "forgotPassword": {
+    "heading": "重置密码",
+    "remembered": "想起来了？"
+  },
+  "resetPassword": {
+    "heading": "设置新密码",
+    "needLink": "需要新的链接？",
+    "sendAgain": "重新发送"
+  },
+  "verifyEmail": {
+    "heading": "确认你的邮箱地址",
+    "sentTo": "确认链接已发送至 {email}。打开链接即可完成注册。链接在 24 小时后失效。",
+    "yourAddress": "你的邮箱地址",
+    "resent": "新的链接已发出",
+    "resend": "重新发送链接",
+    "resendFailed": "无法重新发送链接"
+  },
+  "offline": {
+    "title": "离线",
+    "heading": "你已离线",
+    "text": "请检查网络连接，然后刷新页面。",
+    "home": "前往首页"
+  }
+}

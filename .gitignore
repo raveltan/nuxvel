@@ -1,0 +1,12 @@
+node_modules
+.nuxt
+.nuxvel
+.output
+dist
+.env
+*.log
+.nuxtrc
+.nuxvel-test-*
+coverage
+test-results
+client-dist

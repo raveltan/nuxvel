@@ -1,0 +1,12 @@
+import { describe, it } from "vitest";
+import { expect } from "@nuxvel/nuxt/testing";
+import { {{exportName}} } from "./{{name}}.factory";
+
+describe("{{name}} factory", () => {
+  it("inserts a new row on every call", async () => {
+    const first = await {{exportName}}();
+    const second = await {{exportName}}();
+
+    expect(second).not.toEqual(first);
+  });
+});

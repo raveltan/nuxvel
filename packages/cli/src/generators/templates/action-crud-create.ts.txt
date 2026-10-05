@@ -1,0 +1,17 @@
+{{drizzleImport}}import { {{tableCamelName}}Table } from "{{tableSchemaImport}}";
+{{parentImports}}import { create{{tablePascalName}}Input } from "#shared/schemas/{{tableName}}";
+
+export const {{exportName}} = defineAction({
+  input: create{{tablePascalName}}Input,
+  handler: async (input, ctx) => {
+{{parentChecks}}    const row = await useDb()
+      .insert({{tableCamelName}}Table)
+      .values({ ...input, ownerId: ctx.actor.userId ?? ctx.actor.id })
+      .returning()
+      .then(firstOrFail);
+
+    await audit("{{domain}}.created", row);
+
+    return row;
+  },
+});

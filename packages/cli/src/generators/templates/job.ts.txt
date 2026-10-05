@@ -1,0 +1,8 @@
+import { z } from "zod";
+
+export const {{exportName}} = defineJob({
+  input: {{schema}},
+  handler: async (input) => {
+    console.log("{{name}}", input);
+  },
+});

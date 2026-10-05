@@ -1,0 +1,98 @@
+{
+  "nuxvel": {
+    "authForm": {
+      "name": "Name",
+      "email": "Email",
+      "password": "Password",
+      "newPassword": "New password",
+      "signIn": "Sign in",
+      "signUp": "Sign up",
+      "code": "Authentication code",
+      "codeDescription": "The code from your authenticator app, or a backup code.",
+      "verify": "Verify",
+      "sendResetLink": "Send reset link",
+      "resetLinkSent": "Check your inbox",
+      "resetLinkSentDescription": "If an account uses this address, a link to reset the password is on its way.",
+      "setNewPassword": "Set new password",
+      "linkExpired": "This link has expired or was used",
+      "linkExpiredDescription": "Ask for a new link from the sign-in page.",
+      "signInFailed": "Could not sign in",
+      "codeFailed": "Could not check the code",
+      "signUpFailed": "Could not sign up",
+      "resetLinkFailed": "Could not send the reset link",
+      "resetFailed": "Could not reset the password"
+    },
+    "socialSignIn": {
+      "continueWith": "Continue with {provider}",
+      "failed": "Could not sign in with {provider}"
+    },
+    "notificationBell": {
+      "title": "Notifications",
+      "unread": "Notifications, {count} unread",
+      "unreadMark": "(unread)",
+      "markAllRead": "Mark all read",
+      "empty": "No notifications yet.",
+      "loading": "Loading notifications…"
+    },
+    "pushToggle": { "label": "Push notifications" },
+    "pwaInstallPrompt": {
+      "newVersion": "A new version is available",
+      "reload": "Reload",
+      "install": "Install app"
+    },
+    "maintenanceBanner": {
+      "back": "The app is back.",
+      "reload": "Reload"
+    },
+    "offline": {
+      "title": "Offline",
+      "heading": "You are offline",
+      "body": "Check your connection, then reload the page."
+    },
+    "queryState": {
+      "loading": "Loading…",
+      "failed": "Something went wrong.",
+      "retry": "Try again",
+      "empty": "Nothing here yet."
+    },
+    "maintenance": { "title": "Down for maintenance" },
+    "confirmDialog": {
+      "cancel": "Cancel",
+      "confirm": "Confirm"
+    },
+    "presenceAvatars": { "label": "Viewing now" },
+    "typingIndicator": {
+      "one": "{name} is typing…",
+      "two": "{first} and {second} are typing…",
+      "many": "{first} and {count} others are typing…"
+    },
+    "dataTableFilters": {
+      "yes": "Yes",
+      "no": "No",
+      "any": "Any",
+      "from": "{label} from",
+      "to": "{label} to",
+      "range": "{from} to {to}",
+      "quoted": "\"{value}\"",
+      "chip": "{label}: {value}",
+      "remove": "Remove filter {filter}",
+      "clearAll": "Clear all filters"
+    },
+    "dataTableSortButton": {
+      "sortBy": "Sort by {label}",
+      "ascending": "{label}, sorted ascending",
+      "descending": "{label}, sorted descending",
+      "hint": "Shift-click to sort by more than one column"
+    },
+    "searchInput": { "clear": "Clear search" },
+    "uploadField": {
+      "drop": "Drop a file or click to choose",
+      "uploading": "Uploading {file}"
+    },
+    "upload": {
+      "refused": "Storage refused the upload ({status})",
+      "unreachable": "Could not reach storage"
+    },
+    "actionForm": { "unsavedChanges": "You have unsaved changes. Leave this page?" }
+  }
+}

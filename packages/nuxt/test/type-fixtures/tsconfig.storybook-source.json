@@ -1,0 +1,4 @@
+{
+  "extends": "./tsconfig.fake-names.json",
+  "files": ["nitro-globals.d.ts", "../../src/storybook-mocks.ts", "../../src/storybook-test.ts"]
+}

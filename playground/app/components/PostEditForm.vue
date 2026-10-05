@@ -1,0 +1,38 @@
+<script setup lang="ts">
+const props = defineProps<{ post: RouterOutputs["post"]["byId"] }>();
+
+const trpc = useTRPC();
+const queryCache = useQueryCache();
+
+const form = useActionForm(
+  updatePostInput,
+  toasted(trpc.post.update.mutationOptions(), "Post saved"),
+  {
+    defaults: { id: props.post.id, title: props.post.title, body: props.post.body },
+    failures: { "post.body-empty": "body" },
+    onSuccess: async () => {
+      await queryCache.invalidateQueries({ key: trpc.post.key() });
+      await navigateTo({ name: "posts" });
+    },
+  },
+);
+</script>
+
+<template>
+  <UForm
+    :ref="form.ref"
+    :schema="form.schema"
+    :state="form.state"
+    class="space-y-4"
+    @submit="form.submit"
+  >
+    <UFormField name="title" label="Title">
+      <UInput v-model="form.state.title" class="w-full" />
+    </UFormField>
+    <UFormField name="body" label="Body">
+      <UTextarea v-model="form.state.body" class="w-full" />
+    </UFormField>
+    <UAlert v-if="form.formError" color="error" :title="form.formError" />
+    <UButton type="submit" :loading="form.pending">Save post</UButton>
+  </UForm>
+</template>

@@ -1,0 +1,4 @@
+{
+  "extends": "./tsconfig.base.json",
+  "files": ["nitro-globals.d.ts", "action-fail-undeclared-code.ts"]
+}

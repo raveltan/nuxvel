@@ -1,0 +1,85 @@
+{
+  "name": "@nuxvel/cli",
+  "version": "0.0.1",
+  "description": "The nuxvel CLI: dev services, migrations, generators, tests, builds and VPS deploys for nuxvel apps.",
+  "keywords": [
+    "nuxt",
+    "nuxvel",
+    "cli",
+    "generators",
+    "migrations",
+    "deploy"
+  ],
+  "license": "MIT",
+  "author": "Ravel Tanjaya",
+  "homepage": "https://github.com/raveltan/nuxvel#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/raveltan/nuxvel.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/raveltan/nuxvel/issues"
+  },
+  "type": "module",
+  "bin": {
+    "nuxvel": "./bin/nuxvel.mjs"
+  },
+  "files": [
+    "bin",
+    "src"
+  ],
+  "exports": {
+    "./bin/nuxvel.mjs": "./bin/nuxvel.mjs",
+    "./deploy": "./src/deploy/define-deploy.ts"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "test": "vitest run --project commands",
+    "test:release": "vitest run --project release",
+    "test:deploy": "vitest run --project release test/deploy.release.test.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1137.0",
+    "@aws-sdk/s3-request-presigner": "^3.1137.0",
+    "@clack/prompts": "^1.7.0",
+    "@nuxt/kit": "^4.5.2",
+    "@typescript-eslint/parser": "^8.70.1",
+    "@typescript-eslint/typescript-estree": "^8.70.1",
+    "citty": "^0.2.2",
+    "consola": "^3.4.2",
+    "detect-libc": "^2.1.2",
+    "drizzle-orm": "^0.45.2",
+    "drizzle-seed": "^0.3.1",
+    "eslint": "^10.11.0",
+    "fflate": "^0.8.3",
+    "ohash": "^2.0.11",
+    "portless": "^0.15.6",
+    "postgres": "^3.4.9",
+    "std-env": "^4.2.0",
+    "tar": "^7.5.22",
+    "tinyglobby": "^0.2.17",
+    "tsx": "^4.23.15",
+    "vue-eslint-parser": "^10.4.1",
+    "zod": "^4.6.5"
+  },
+  "peerDependencies": {
+    "@nuxvel/nuxt": "*"
+  },
+  "devDependencies": {
+    "@jridgewell/trace-mapping": "^0.3.31",
+    "@nuxt/nitro-server": "^4.5.2",
+    "@nuxvel/nuxt": "*",
+    "@nuxvel/test-helpers": "*",
+    "@types/node": "^22.20.3",
+    "bullmq": "^6.3.8",
+    "esbuild": "^0.25.12",
+    "ioredis": "^6.0.0",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.1",
+    "yaml": "^2.9.1"
+  }
+}

@@ -1,0 +1,13 @@
+import { expect, renderMail } from "@nuxvel/nuxt/testing";
+import { describe, it } from "vitest";
+
+describe("{{name}} mail", () => {
+  it("renders its template to HTML and text", async () => {
+    const { subject, html, text } = await renderMail("{{name}}", { to: "ada@example.com" });
+
+    expect(subject).toBe("{{title}}");
+    expect(html).toContain(">{{title}}</h1>");
+    expect(html).toContain("<!--[if mso");
+    expect(text).toContain("Open the app https://example.com");
+  });
+});

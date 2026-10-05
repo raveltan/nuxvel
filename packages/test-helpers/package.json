@@ -1,0 +1,26 @@
+{
+  "name": "@nuxvel/test-helpers",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./cli": "./src/cli.ts",
+    "./fake-sentry": "./src/fake-sentry.ts",
+    "./free-port": "./src/free-port.ts",
+    "./pack-nuxvel": "./src/pack-nuxvel.ts",
+    "./run": "./src/run.ts",
+    "./services": "./src/services.ts",
+    "./sql": "./src/sql.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "postgres": "^3.4.9",
+    "vitest": "^5.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.3",
+    "typescript": "^5.9.3"
+  }
+}

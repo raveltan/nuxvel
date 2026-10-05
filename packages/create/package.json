@@ -1,0 +1,52 @@
+{
+  "name": "create-nuxvel",
+  "version": "0.0.1",
+  "description": "Scaffolds a new Nuxt app with nuxvel installed.",
+  "keywords": [
+    "nuxt",
+    "nuxvel",
+    "create",
+    "scaffold",
+    "starter"
+  ],
+  "license": "MIT",
+  "author": "Ravel Tanjaya",
+  "homepage": "https://github.com/raveltan/nuxvel#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/raveltan/nuxvel.git",
+    "directory": "packages/create"
+  },
+  "bugs": {
+    "url": "https://github.com/raveltan/nuxvel/issues"
+  },
+  "type": "module",
+  "bin": {
+    "create-nuxvel": "./bin/create-nuxvel.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "template"
+  ],
+  "scripts": {
+    "test": "vitest run --project scaffold",
+    "test:release": "vitest run --project release",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.7.0",
+    "tsx": "^4.23.15"
+  },
+  "devDependencies": {
+    "@nuxvel/test-helpers": "*",
+    "@types/node": "^22.20.3",
+    "drizzle-kit": "^0.31.10",
+    "drizzle-orm": "^0.45.2",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.1"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

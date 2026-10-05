@@ -1,0 +1,55 @@
+import { defineFactory } from "@nuxvel/nuxt/factories";
+import { actingAs, expect, expectConstantQueries, expectRow{{softDeleteImport}} } from "@nuxvel/nuxt/testing";
+import { describe, it } from "vitest";
+import { userTable } from "{{authSchemaPath}}";
+import { {{tableCamelName}}Table } from "{{tableSchemaImport}}";
+{{referenceImports}}
+const userFactory = defineFactory(userTable);
+{{referenceFactories}}const {{tableCamelName}}Factory = defineFactory({{tableCamelName}}Table, {
+  ownerId: async () => (await userFactory()).id,
+{{factoryFields}}});
+
+describe("{{tableName}} resource", () => {
+  it("creates a row for its owner", async () => {
+    const user = await userFactory();
+    const owner = actingAs(user).trpc;
+
+    const created = await owner.{{tableCamelName}}.create({{createInput}});
+    const listed = await owner.{{trpcPath}}.list();
+    const fetched = await owner.{{trpcPath}}.byId({ id: created.id });
+
+    expect(listed.rows.map((row) => row.id)).toContain(created.id);
+    expect(fetched.id).toBe(created.id);
+    await expectRow({{tableCamelName}}Table, { id: created.id });
+  });
+
+  it("updates a row for its owner", async () => {
+    const user = await userFactory();
+    const created = await {{tableCamelName}}Factory.for("ownerId", user)();
+    const owner = actingAs(user).trpc;
+
+    const updated = await owner.{{tableCamelName}}.update({{updateInput}});
+    const unchanged = await owner.{{tableCamelName}}.update({ id: created.id });
+
+    expect(updated.id).toBe(created.id);
+    expect(unchanged.updatedAt).toEqual(updated.updatedAt);
+  });
+
+  it("refuses to update the row of another user", async () => {
+    const user = await userFactory();
+    const created = await {{tableCamelName}}Factory();
+
+    await expect(
+      actingAs(await userFactory()).trpc.{{trpcPath}}.update({{updateInput}}),
+    ).rejects.toBeTrpcError("FORBIDDEN");
+  });
+{{extraTests}}
+  it("lists in a constant number of queries", async () => {
+    const owner = await userFactory();
+
+    await expectConstantQueries(async (size) => {
+      for (let row = 0; row < size; row++) await {{tableCamelName}}Factory({ ownerId: owner.id });
+      await actingAs(owner).trpc.{{trpcPath}}.list();
+    });
+  });
+});

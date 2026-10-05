@@ -1,0 +1,8 @@
+import { expect, runJob } from "@nuxvel/nuxt/testing";
+import { describe, it } from "vitest";
+
+describe("{{name}} job", () => {
+  it("runs its handler on a valid payload", async () => {
+    await expect(runJob("{{name}}", {{sample}})).resolves.toBeUndefined();
+  });
+});

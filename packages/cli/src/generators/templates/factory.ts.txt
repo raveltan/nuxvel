@@ -1,0 +1,4 @@
+import { defineFactory } from "@nuxvel/nuxt/factories";
+import { {{camelName}}Table } from "{{schemaImport}}";
+
+export const {{exportName}} = defineFactory({{camelName}}Table, {});

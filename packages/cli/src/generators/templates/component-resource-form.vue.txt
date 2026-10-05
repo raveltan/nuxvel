@@ -1,0 +1,26 @@
+<script setup lang="ts">
+const props = defineProps<{ row: RouterOutputs["{{tableCamelName}}"]["byId"] }>();
+const emit = defineEmits<{ saved: [] }>();
+
+const trpc = useTRPC();
+const queryCache = useQueryCache();
+{{referenceQueries}}
+const form = useActionForm(update{{tablePascalName}}Input, trpc.{{tableCamelName}}.update.mutationOptions(), {
+  defaults: {{updateDefaults}},
+  onSuccess: (saved) => {
+    queryCache.setQueriesData<RouterOutputs["{{tableCamelName}}"]["list"] | undefined>(
+      { key: trpc.{{tableCamelName}}.list.key() },
+      (list) => list && { ...list, rows: list.rows.map((row) => (row.id === saved.id ? saved : row)) },
+    );
+    queryCache.invalidateQueries({ key: trpc.{{tableCamelName}}.key() });
+    emit("saved");
+  },
+});
+</script>
+
+<template>
+  <UForm :ref="form.ref" :schema="form.schema" :state="form.state" class="space-y-4" @submit="form.submit">
+{{formFields}}    <UAlert v-if="form.formError" color="error" :title="form.formError" />
+    <UButton type="submit" :loading="form.pending" label="Save {{titleLower}}" />
+  </UForm>
+</template>

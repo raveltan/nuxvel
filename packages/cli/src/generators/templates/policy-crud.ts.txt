@@ -1,0 +1,5 @@
+import { {{camelName}}Table } from "{{schemaImport}}";
+
+export const {{exportName}} = definePolicy({{camelName}}Table, {
+  update: (actor, row) => row.ownerId === (actor.userId ?? actor.id) || actor.role === "admin",
+{{deleteRules}}});

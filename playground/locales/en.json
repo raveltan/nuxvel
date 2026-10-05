@@ -1,0 +1,12 @@
+{
+  "greeting": "Hello",
+  "mail": {
+    "welcome": {
+      "subject": "Welcome, {name}",
+      "preview": "Your account is ready.",
+      "heading": "Welcome, {name}!",
+      "body": "Thanks for signing up.",
+      "button": "Read the latest posts"
+    }
+  }
+}

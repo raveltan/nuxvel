@@ -1,0 +1,97 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { loadNuxt } from "@nuxt/kit";
+import { expect } from "@nuxvel/nuxt/testing";
+import { beforeAll, describe, it } from "vitest";
+import { playgroundDir, testBuildDir } from "./helpers/test-builds";
+
+const runtime = fileURLToPath(new URL("../src/runtime/", import.meta.url));
+const autoImportsDoc = fileURLToPath(new URL("../../../docs/auto-imports.md", import.meta.url));
+
+async function nitroImports() {
+  const nuxt = await loadNuxt({
+    cwd: playgroundDir,
+    ready: false,
+    overrides: { _prepare: true, buildDir: testBuildDir("server-imports") },
+  });
+  let imports: { name: string; as?: string; from: string }[] = [];
+
+  nuxt.hook("nitro:init", async (nitro) => {
+    imports = (await nitro.unimport?.getImports()) ?? [];
+  });
+  await nuxt.ready();
+  await nuxt.close();
+
+  return imports;
+}
+
+describe("server auto-imports", () => {
+  let names: string[];
+
+  beforeAll(async () => {
+    names = (await nitroImports())
+      .filter((entry) => entry.from.startsWith(runtime))
+      .map((entry) => entry.as ?? entry.name);
+  }, 120_000);
+
+  it("auto-imports the public server API", () => {
+    expect(names).toEqual(
+      expect.arrayContaining([
+        "useDb",
+        "currentLocale",
+        "transaction",
+        "defineAction",
+        "publicProcedure",
+        "authedProcedure",
+        "useCaller",
+        "dispatchAfterCommit",
+        "defineJob",
+        "sendMail",
+        "broadcast",
+        "can",
+        "JobName",
+        "SessionUser",
+      ]),
+    );
+  });
+
+  it("keeps nuxvel's internals out of the server's global scope", () => {
+    for (const internal of [
+      "handler",
+      "t",
+      "appRouter",
+      "errorFormatter",
+      "actorContext",
+      "requestIdContext",
+      "logActionCall",
+      "enqueueJob",
+      "installEffectReplacements",
+      "removeEffectReplacement",
+      "effectReplacement",
+      "publishObserved",
+      "subscribeObserved",
+      "findJob",
+      "findListener",
+      "findFlag",
+      "flagDefinitions",
+      "policyRegistry",
+      "ruleAllowsSystem",
+      "isRetryableJobError",
+      "isKnownTaxonomyError",
+      "countQueries",
+      "queryCountLogger",
+      "withUniqueViolationMapping",
+      "transactionContext",
+    ]) {
+      expect(names, internal).not.toContain(internal);
+    }
+  });
+
+  it("lists every server auto-import in docs/auto-imports.md", () => {
+    const documented = [
+      ...readFileSync(autoImportsDoc, "utf8").matchAll(/^\| `(\w+)` \|/gm),
+    ].map((match) => match[1]);
+
+    expect([...documented].sort()).toEqual([...new Set(names)].sort());
+  });
+});

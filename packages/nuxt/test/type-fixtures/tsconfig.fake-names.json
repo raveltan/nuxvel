@@ -1,0 +1,31 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "#app": ["../../../../node_modules/nuxt/dist/app"],
+      "#nuxvel/schema": ["./nuxvel-stubs/schema.ts"],
+      "#nuxvel/rate-limits": ["./nuxvel-stubs/rate-limits.ts"],
+      "#nuxvel/error-classifiers": ["./nuxvel-stubs/error-classifiers.ts"],
+      "#nuxvel/jobs": ["./nuxvel-stubs/jobs.ts"],
+      "#nuxvel/mails": ["./nuxvel-stubs/mails.ts"],
+      "#nuxvel/notifications": ["./nuxvel-stubs/notifications.ts"],
+      "#nuxvel/events": ["./nuxvel-stubs/events.ts"],
+      "#nuxvel/listeners": ["./nuxvel-stubs/listeners.ts"],
+      "#nuxvel/trpc-routers": ["./nuxvel-stubs/trpc-routers.ts"],
+      "#nuxvel/backfills": ["./nuxvel-stubs/backfills.ts"],
+      "#nuxvel/seeders": ["./nuxvel-stubs/seeders.ts"],
+      "#nuxvel/schedules": ["./nuxvel-stubs/schedules.ts"],
+      "#nuxvel/actions": ["./nuxvel-stubs/actions.ts"],
+      "#nuxvel/policies": ["./nuxvel-stubs/policies.ts"],
+      "#nuxvel/flags": ["./nuxvel-stubs/flags.ts"],
+      "#nuxvel/channels": ["./nuxvel-stubs/channels.ts"],
+      "#nuxvel/social-providers": ["./nuxvel-stubs/social-providers.ts"],
+      "#nuxvel/webhooks": ["./nuxvel-stubs/webhooks.ts"],
+      "#nuxvel/user-data": ["./nuxvel-stubs/user-data.ts"],
+      "#nuxvel/uploads": ["./nuxvel-stubs/uploads.ts"],
+      "#nuxvel/products": ["./nuxvel-stubs/products.ts"],
+      "#nuxvel/translations": ["./nuxvel-stubs/translations.ts"]
+    }
+  },
+  "files": ["nitro-globals.d.ts", "fake-names.ts"]
+}

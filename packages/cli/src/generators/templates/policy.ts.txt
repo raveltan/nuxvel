@@ -1,0 +1,3 @@
+import { {{camelName}}Table } from "{{schemaImport}}";
+
+export const {{exportName}} = definePolicy({{camelName}}Table, {});

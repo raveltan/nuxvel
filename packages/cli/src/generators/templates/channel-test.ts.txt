@@ -1,0 +1,8 @@
+import { expect, guest } from "@nuxvel/nuxt/testing";
+import { describe, it } from "vitest";
+
+describe("{{name}} channel", () => {
+  it("refuses a guest", async () => {
+    await expect(guest().listen("{{name}}")).rejects.toBeTrpcError("FORBIDDEN");
+  });
+});

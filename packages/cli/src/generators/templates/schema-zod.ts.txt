@@ -1,0 +1,16 @@
+import { z } from "zod";
+
+export const {{camelName}}IdInput = z.object({
+  id: z.number().int().positive(),
+});
+
+export const create{{pascalName}}Input = z.object({{createFields}});
+
+export const update{{pascalName}}Input = create{{pascalName}}Input.partial().extend({
+  id: {{camelName}}IdInput.shape.id,
+});
+
+// Sent to the browser as the output of every procedure that uses it: list only columns every caller may see.
+export const {{camelName}}Schema = z.object({
+{{rowFields}}});
+{{listInput}}

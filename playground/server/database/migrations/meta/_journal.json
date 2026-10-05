@@ -1,0 +1,237 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1789616717466,
+      "tag": "0000_sudden_redwing",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789632317105,
+      "tag": "0001_medical_green_goblin",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789643493879,
+      "tag": "0002_safe_sumo",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789649986085,
+      "tag": "0003_health-check-ownership",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789651019518,
+      "tag": "0004_amazing_morlun",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789653654411,
+      "tag": "0005_stormy_joshua_kane",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789655448824,
+      "tag": "0006_rare_thor_girl",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790035048024,
+      "tag": "0007_early_nekra",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790079581676,
+      "tag": "0008_mail-suppressions",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790124665068,
+      "tag": "0009_backfills",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790127815684,
+      "tag": "0010_flag-exposures",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1790129664078,
+      "tag": "0011_flag-conversions",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790136615629,
+      "tag": "0012_audit-hash-chain",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1790138085240,
+      "tag": "0013_audit-partitions",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1790153541959,
+      "tag": "0014_tags",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1790179529671,
+      "tag": "0015_outbox-undispatched-index",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1790283175913,
+      "tag": "0016_posts-search",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1790284933539,
+      "tag": "0017_posts-soft-deletes",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1790285965939,
+      "tag": "0018_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1790287499829,
+      "tag": "0019_api-keys",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1790288020620,
+      "tag": "0020_push-subscriptions",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790303470181,
+      "tag": "0021_outbox-dispatch-options",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1790307271627,
+      "tag": "0022_audit-subjects",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1790335754973,
+      "tag": "0023_two-factor",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1790337795266,
+      "tag": "0024_two-factor-verified-session",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1790340016420,
+      "tag": "0025_user-foreign-key-indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1790605644591,
+      "tag": "0026_webhook-endpoints",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1790817713643,
+      "tag": "0027_audit-log-append-only",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1790903697670,
+      "tag": "0028_audit-row-macs",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1790905712377,
+      "tag": "0029_push-subscription-sessions",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1790905712392,
+      "tag": "0030_push-subscription-sessions-index",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1791032336835,
+      "tag": "0031_user-locale",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1791081291299,
+      "tag": "0032_billing",
+      "breakpoints": true
+    }
+  ]
+}

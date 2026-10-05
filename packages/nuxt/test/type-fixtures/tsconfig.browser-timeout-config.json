@@ -1,0 +1,4 @@
+{
+  "extends": "./tsconfig.fake-names.json",
+  "files": ["nitro-globals.d.ts", "browser-timeout-config.ts"]
+}

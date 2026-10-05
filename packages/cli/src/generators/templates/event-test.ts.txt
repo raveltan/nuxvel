@@ -1,0 +1,10 @@
+import { emit, expectEmitted } from "@nuxvel/nuxt/testing";
+import { describe, it } from "vitest";
+
+describe("{{name}} event", () => {
+  it("emits with a valid payload", async () => {
+    await emit("{{name}}", {{sample}});
+
+    await expectEmitted("{{name}}");
+  });
+});

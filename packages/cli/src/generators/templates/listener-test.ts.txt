@@ -1,0 +1,10 @@
+import { emit, expectListenerQueued } from "@nuxvel/nuxt/testing";
+import { describe, it } from "vitest";
+
+describe("{{name}} listener", () => {
+  it("is queued when its event is emitted", async () => {
+    await emit("{{eventName}}", {{sample}});
+
+    await expectListenerQueued("{{name}}");
+  });
+});

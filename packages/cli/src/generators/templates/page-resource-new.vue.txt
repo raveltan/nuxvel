@@ -1,0 +1,30 @@
+<script setup lang="ts">
+definePageMeta({ middleware: "auth" });
+
+const trpc = useTRPC();
+const queryCache = useQueryCache();
+{{referenceQueries}}
+const form = useActionForm(create{{tablePascalName}}Input, trpc.{{tableCamelName}}.create.mutationOptions(), {
+  defaults: {{createDefaults}},
+  onSuccess: async (created) => {
+    queryCache.setQueriesData<RouterOutputs["{{tableCamelName}}"]["list"] | undefined>(
+      { key: trpc.{{tableCamelName}}.list.key() },
+      (list) => list && { ...list, rows: [created, ...list.rows], total: list.total + 1 },
+    );
+    queryCache.invalidateQueries({ key: trpc.{{tableCamelName}}.key() });
+    await navigateTo({ name: "{{tableName}}" });
+  },
+});
+
+useSeo({ title: "New {{titleLower}}" });
+</script>
+
+<template>
+  <div class="max-w-xl space-y-6">
+    <h1 class="text-2xl font-semibold">New {{titleLower}}</h1>
+    <UForm :ref="form.ref" :schema="form.schema" :state="form.state" class="space-y-4" @submit="form.submit">
+{{formFields}}      <UAlert v-if="form.formError" color="error" :title="form.formError" />
+      <UButton type="submit" :loading="form.pending" label="Create {{titleLower}}" />
+    </UForm>
+  </div>
+</template>

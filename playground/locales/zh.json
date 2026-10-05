@@ -1,0 +1,18 @@
+{
+  "greeting": "你好",
+  "mail": {
+    "welcome": {
+      "subject": "欢迎，{name}",
+      "preview": "您的账户已经就绪。",
+      "heading": "欢迎，{name}！",
+      "body": "感谢您的注册。",
+      "button": "阅读最新文章"
+    }
+  },
+  "nuxvel": {
+    "auth": {
+      "existingAccount": { "subject": "您已经有一个 playground 账户了" }
+    },
+    "authForm": { "signIn": "登录 playground" }
+  }
+}
