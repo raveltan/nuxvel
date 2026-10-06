@@ -106,6 +106,7 @@ export function addAutoImports(options: ResolvedOptions, runtimeFile: RuntimeFil
 
   addImports([
     { name: "isNetworkError", from: runtimeFile("./runtime/app/trpc/is-network-error") },
+    { name: "$api", from: runtimeFile("./runtime/app/trpc/api") },
     { name: "authClient", from: runtimeFile("./runtime/app/auth/client") },
     ...importsFrom(runtimeFile("./runtime/shared/auth/schemas"), ["signInSchema", "signUpSchema", "forgotPasswordSchema", "resetPasswordSchema"]),
   ]);

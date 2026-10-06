@@ -42,3 +42,5 @@ applies each step below that names a codemod.
   longer import their schemas.
 - `<QueryState>` and `<DataTable>` accept a `useQuery()` result wrapped
   in `reactive()`.
+- `$api` is the typed API of the app, the client that `useTRPC()` returns.
+  It is auto-imported in the app and usable in templates.

@@ -2,7 +2,7 @@
 
 ## Introduction
 
-nuxvel pages read and write data through the typed API. Forms use `useActionForm()`, which binds a shared schema and a mutation to a Nuxt UI `<UForm>`. Pages show the loading, error and empty states of a query with `<QueryState>`. Lists stay current with `useLiveQuery()` and `optimistic()`.
+nuxvel pages read and write data through the typed API, [`$api`](./api.md#calling-from-the-client). Forms use `useActionForm()`, which binds a shared schema and a mutation to a Nuxt UI `<UForm>`. Pages show the loading, error and empty states of a query with `<QueryState>`. Lists stay current with `useLiveQuery()` and `optimistic()`.
 
 ## Nuxt UI
 

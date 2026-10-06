@@ -332,14 +332,13 @@ const post = await useCaller().post.byId({ id: 1 });
 
 ```vue
 <script setup lang="ts">
-const trpc = useTRPC();
-const { data: posts } = useQuery(trpc.post.list.queryOptions());
+const { data: posts } = useQuery($api.post.list.queryOptions());
 </script>
 ```
 
-`useTRPC()` is an auto-imported composable. It sends calls through an `httpBatchLink` with the same superjson transformer. One batch carries at most 10 calls. The client sends more calls in more requests. The server refuses a bigger batch from any other client with `BAD_REQUEST`. During SSR it calls procedures in the same process, with the visitor's request headers. Thus an `authedProcedure` query renders signed in on the first load. A query that fails with `NOT_FOUND`, `FORBIDDEN` or `UNAUTHORIZED` during SSR renders its error state with HTTP 404, 403 or 401, see [Errors during server rendering](./frontend.md#errors-during-server-rendering).
+`$api` is the typed API of the app. It is auto-imported in components, pages, composables and plugins, and you can use it in templates. It finds the tRPC client of the current Nuxt app when you call a procedure, so call it where a composable can run: in `setup`, in a plugin or in route middleware. `useTRPC()` returns the same client. The client sends calls through an `httpBatchLink` with the same superjson transformer. One batch carries at most 10 calls. The client sends more calls in more requests. The server refuses a bigger batch from any other client with `BAD_REQUEST`. During SSR it calls procedures in the same process, with the visitor's request headers. Thus an `authedProcedure` query renders signed in on the first load. A query that fails with `NOT_FOUND`, `FORBIDDEN` or `UNAUTHORIZED` during SSR renders its error state with HTTP 404, 403 or 401, see [Errors during server rendering](./frontend.md#errors-during-server-rendering).
 
-Read data through `useQuery()`, so that the result is cached. See [Caching queries](#caching-queries-pinia-colada). For a one-off call, `await trpc.post.list.query()` also works.
+Read data through `useQuery()`, so that the result is cached. See [Caching queries](#caching-queries-pinia-colada). For a one-off call, `await $api.post.list.query()` also works.
 
 ```vue
 <script setup lang="ts">
@@ -347,7 +346,7 @@ defineProps<{ post: RouterOutputs["post"]["byId"] }>();
 </script>
 ```
 
-To name the type of a procedure, use the auto-imported `RouterInputs` and `RouterOutputs` types. Do not write the shape by hand. `RouterInputs["post"]["update"]` is what `trpc.post.update` takes.
+To name the type of a procedure, use the auto-imported `RouterInputs` and `RouterOutputs` types. Do not write the shape by hand. `RouterInputs["post"]["update"]` is what `$api.post.update` takes.
 
 ## Caching queries (Pinia Colada)
 

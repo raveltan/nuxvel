@@ -12,6 +12,13 @@ describe("tRPC during SSR", async () => {
     await expect(text(page, "request-id:trpc-ssr-request-id")).toBeVisible();
   });
 
+  it("renders a page that reaches the API through $api in its script and its template", async () => {
+    const page = await visit("/_api", { extraHTTPHeaders: { "x-request-id": "api-request-id" } });
+
+    await expect(text(page, "api-request-id:api-request-id")).toBeVisible();
+    await expect(text(page, "api-key:trpc.post.byId")).toBeVisible();
+  });
+
   it("renders the error state of a query with ssrCatchError, and keeps the tRPC error in the payload", async () => {
     const page = await visit("/_trpc-ssr-error");
 
