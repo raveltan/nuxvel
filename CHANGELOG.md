@@ -39,6 +39,11 @@ applies each step below that names a codemod.
   `.value` after its `data`, `error` and `state`. A
   `mockNuxtImport("useTRPC", ...)` has no replacement: `$api` reads
   `useNuxtApp().$trpc`, so mock that. Codemod: `use-trpc`.
+- Optional cleanup: a mutation invalidates the queries of its own
+  namespace, so a hand-written `queryCache.invalidateQueries({ key:
+  $api.post.key() })` in the `onSuccess` of `$api.post.update` only
+  fetches again. By hand: delete it, and the `useQueryCache()` it leaves
+  unused. Keep one for another namespace. Codemod: `invalidate`.
 
 ### Changes
 

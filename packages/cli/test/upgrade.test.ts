@@ -25,7 +25,7 @@ describe("nuxvel upgrade", () => {
 
     expect(unknown.exitCode).toBe(2);
     expect(unknown.stdout).toBe("");
-    expect(stripAnsi(unknown.stderr)).toContain("✖ No codemod named nope\n  → The codemods are test-aliases, imports, use-trpc");
+    expect(stripAnsi(unknown.stderr)).toContain("✖ No codemod named nope\n  → The codemods are test-aliases, imports, use-trpc, invalidate");
 
     writeFileSync(join(appDir, "package.json"), "{ not json");
 
@@ -410,6 +410,108 @@ describe("nuxvel upgrade", () => {
         ].join("\n"),
       );
       expect(readFileSync(kept, "utf8")).toBe(oldKept);
+    }, 60000);
+  });
+
+  describe("invalidate", () => {
+    it("removes the invalidation of the mutation's own namespace from its callbacks, with the queryCache it leaves unused, and leaves any other", async () => {
+      const appDir = scratchPlayground("upgrade-invalidate");
+      const page = join(appDir, "app", "pages", "report-posts.vue");
+      const composable = join(appDir, "app", "composables", "use-report-post.ts");
+      const oldPage = [
+        '<script setup lang="ts">',
+        "const trpc = useTRPC();",
+        "const queryCache = useQueryCache();",
+        "",
+        "const create = useMutation({",
+        "  ...trpc.post.create.mutationOptions(),",
+        "  onSuccess: () => queryCache.invalidateQueries({ key: trpc.post.key() }),",
+        "});",
+        'const form = useActionForm(updatePostInput, toasted($api.post.update.mutationOptions(), "Post saved"), {',
+        '  defaults: { id: 1, title: "", body: "" },',
+        "  onSuccess: async () => {",
+        "    await queryCache.invalidateQueries({ key: $api.post.byId.key({ id: 1 }) });",
+        '    await navigateTo({ name: "posts" });',
+        "  },",
+        "});",
+        "const remove = $api.post.delete.useMutation({ onSettled: () => useQueryCache().invalidateQueries({ key: $api.post.list.key() }) });",
+        "const restore = $api.post.restore.useMutation({ onSuccess: () => queryCache.invalidateQueries({ key: $api.post.key(), exact: true }) });",
+        "const publish = $api.post.publish.useMutation({",
+        "  onSuccess: async () => {",
+        "    await queryCache.invalidateQueries({ key: $api.feed.key() });",
+        "  },",
+        "});",
+        "</script>",
+        "",
+        "<template>",
+        "  <p>{{ create.status.value }} {{ form.pending }} {{ remove.status }} {{ restore.status }} {{ publish.status }}</p>",
+        "</template>",
+        "",
+      ].join("\n");
+      const oldComposable = [
+        'import { useMutation, useQueryCache } from "@pinia/colada";',
+        "",
+        "export function useReportPost() {",
+        "  const queryCache = useQueryCache();",
+        "",
+        "  return useMutation({ ...$api.post.create.mutationOptions(), onSuccess: () => queryCache.invalidateQueries({ key: $api.post.key() }) });",
+        "}",
+        "",
+      ].join("\n");
+      mkdirSync(join(appDir, "app", "composables"), { recursive: true });
+      writeFileSync(page, oldPage);
+      writeFileSync(composable, oldComposable);
+
+      const applied = await runCliAt(appDir, "upgrade", "--only", "invalidate");
+
+      expect(applied.exitCode, applied.stderr).toBe(0);
+      expect(applied.stdout).toContain("updated: app/pages/report-posts.vue\n");
+      expect(applied.stdout).toContain("updated: app/composables/use-report-post.ts\n");
+      expect(readFileSync(page, "utf8")).toBe(
+        [
+          '<script setup lang="ts">',
+          "const trpc = useTRPC();",
+          "const queryCache = useQueryCache();",
+          "",
+          "const create = useMutation({",
+          "  ...trpc.post.create.mutationOptions(),",
+          "});",
+          'const form = useActionForm(updatePostInput, toasted($api.post.update.mutationOptions(), "Post saved"), {',
+          '  defaults: { id: 1, title: "", body: "" },',
+          "  onSuccess: async () => {",
+          '    await navigateTo({ name: "posts" });',
+          "  },",
+          "});",
+          "const remove = $api.post.delete.useMutation();",
+          "const restore = $api.post.restore.useMutation({ onSuccess: () => queryCache.invalidateQueries({ key: $api.post.key(), exact: true }) });",
+          "const publish = $api.post.publish.useMutation({",
+          "  onSuccess: async () => {",
+          "    await queryCache.invalidateQueries({ key: $api.feed.key() });",
+          "  },",
+          "});",
+          "</script>",
+          "",
+          "<template>",
+          "  <p>{{ create.status.value }} {{ form.pending }} {{ remove.status }} {{ restore.status }} {{ publish.status }}</p>",
+          "</template>",
+          "",
+        ].join("\n"),
+      );
+      expect(readFileSync(composable, "utf8")).toBe(
+        [
+          'import { useMutation } from "@pinia/colada";',
+          "",
+          "export function useReportPost() {",
+          "  return useMutation({ ...$api.post.create.mutationOptions() });",
+          "}",
+          "",
+        ].join("\n"),
+      );
+
+      const again = await runCliAt(appDir, "upgrade", "--only", "invalidate");
+
+      expect(again.exitCode, again.stderr).toBe(0);
+      expect(again.stdout).not.toContain("report");
     }, 60000);
   });
 });
