@@ -13,6 +13,7 @@ import { signedInTooLongAgo } from "../auth/fresh-sign-in";
 import { auth, type SessionUser } from "../utils/auth";
 import { requestCaller } from "../utils/use-auth";
 import { failureDetails } from "./failure-details";
+import { collectInvalidated } from "../actions/invalidation-scope";
 import { currentLocale } from "../i18n/current-locale";
 import { type TRPCContext, t } from "./trpc";
 
@@ -74,7 +75,8 @@ const baseProcedure = t.procedure
     }
 
     return next();
-  });
+  })
+  .use(({ type, next }) => (type === "mutation" ? collectInvalidated(currentEvent(), () => next()) : next()));
 
 /**
  * Base procedure for endpoints that do not require a session.

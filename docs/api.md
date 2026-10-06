@@ -410,6 +410,14 @@ A key is `"trpc"`, then the router path, then the input:
 
 These helpers use the names `key`, `queryOptions`, `useQuery`, `mutationOptions`, `useMutation` and `then`. A router or procedure with one of these names fails `nuxt typecheck`. Rename it.
 
+### What a mutation invalidates
+
+```http
+x-nuxvel-invalidates: %5B%5B%22post%22%2C%22list%22%5D%2C%5B%22posts%22%5D%5D
+```
+
+A mutation response names the tags that its actions invalidated, in the header `x-nuxvel-invalidates`: the [`invalidates`](./actions.md#invalidating-cached-values) of each action that committed, nested actions included, as URL-encoded JSON. Each tag is an array: `"post:list"` is `["post", "list"]`, `["post", { id: 1 }]` stays as it is, and a glob such as `"posts:*"` is the prefix before it, `["posts"]`. The value above is `[["post","list"],["posts"]]`. The header is missing when no action of the mutation declared `invalidates`, when the mutation fails, and on a query.
+
 ## Optimistic updates
 
 ```ts

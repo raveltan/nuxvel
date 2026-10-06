@@ -287,7 +287,7 @@ export const updatePostAction = defineAction({
 });
 ```
 
-A function gets the result of the handler and the parsed input, and returns the tags. Write it after `handler`: TypeScript reads the result type of the handler first.
+A function gets the result of the handler and the parsed input, and returns the tags. Write it after `handler`: TypeScript reads the result type of the handler first. A mutation that runs the action names its tags in its response, see [API](./api.md#what-a-mutation-invalidates).
 
 ## Action rules
 

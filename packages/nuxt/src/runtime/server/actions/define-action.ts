@@ -5,6 +5,7 @@ import { classifyError } from "../errors/classify";
 import { awaitingName } from "../discovery/definition-name";
 import { ValidationFailedError } from "../errors/taxonomy";
 import { ActionError } from "./action-error";
+import { reportInvalidated } from "./invalidation-scope";
 import { type ActionRateLimit, actionRateLimiter } from "./action-rate-limit";
 import { actorContext } from "./context";
 import { localeScope, currentLocale } from "../i18n/current-locale";
@@ -182,11 +183,12 @@ export function defineAction<
       const runHandler = async () => {
         const output = await config.handler(result.data, ctx, fail);
 
-        const invalidates =
-          typeof config.invalidates === "function" ? config.invalidates(output, result.data) : (config.invalidates ?? []);
+        if (config.invalidates !== undefined) {
+          const invalidates =
+            typeof config.invalidates === "function" ? config.invalidates(output, result.data) : config.invalidates;
 
-        if (invalidates.length > 0) {
           await onCommit(async () => {
+            reportInvalidated(invalidates);
             for (const tag of invalidates) await cacheForget(prefixOrGlob(tag));
           });
         }

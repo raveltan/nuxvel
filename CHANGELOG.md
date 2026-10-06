@@ -77,3 +77,6 @@ applies each step below that names a codemod.
   `posts:list`), or a function `(output, input) => tags`. A string with
   `*`, `?` or `[` stays a glob. A plain string such as `"posts:list"`,
   which forgot that one key, now also forgets the keys under it.
+- A tRPC mutation response carries the header `x-nuxvel-invalidates`:
+  the tags its actions' `invalidates` declared and committed, as
+  URL-encoded JSON arrays (`"posts:*"` is sent as `["posts"]`).
