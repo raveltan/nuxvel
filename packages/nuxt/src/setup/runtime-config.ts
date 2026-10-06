@@ -55,6 +55,7 @@ export function applyRuntimeConfig(nuxt: Nuxt, options: ResolvedOptions) {
   nuxt.options.runtimeConfig.pushVapidPrivateKey ??= "";
   nuxt.options.runtimeConfig.pushVapidSubject ??= "";
   nuxt.options.runtimeConfig.public.signInPath ??= options.auth.signInPath;
+  nuxt.options.runtimeConfig.public.invalidateFallback ??= options.api.invalidateFallback;
   const social: Partial<Record<string, boolean>> = options.auth.social;
   const socialProviders = socialProviderList.filter(
     (id): id is SocialProviderId => social[id] === true && id !== "cognito" && id !== "tiktok",

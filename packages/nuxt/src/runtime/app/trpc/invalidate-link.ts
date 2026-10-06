@@ -2,7 +2,7 @@ import type { EntryKey, useQueryCache } from "@pinia/colada";
 import type { Operation, OperationResultEnvelope, TRPCClientError, TRPCLink } from "@trpc/client";
 import type { AnyTRPCRouter } from "@trpc/server";
 import { observable } from "@trpc/server/observable";
-import { type ClientTag, readInvalidatesHeader } from "../../shared/trpc/invalidates-header";
+import { type ClientTag, type InvalidateFallback, readInvalidatesHeader } from "../../shared/trpc/invalidates-header";
 
 function responseHeaders(context: Record<string, unknown> | undefined): Headers | undefined {
   const response = context?.response;
@@ -21,10 +21,14 @@ function namespaceOf(op: Operation): ClientTag[] {
   return namespace.length === 0 ? [] : [namespace];
 }
 
-function invalidatedTags(op: Operation, envelope: OperationResultEnvelope<unknown, TRPCClientError<AnyTRPCRouter>>) {
+function invalidatedTags(
+  op: Operation,
+  envelope: OperationResultEnvelope<unknown, TRPCClientError<AnyTRPCRouter>>,
+  fallback: InvalidateFallback,
+) {
   const headers = responseHeaders(envelope.context);
   const declared = (headers && readInvalidatesHeader(headers)) ?? [];
-  const tags = [...declared, ...namespaceOf(op)];
+  const tags = [...declared, ...(fallback === "namespace" ? namespaceOf(op) : [])];
 
   return [...new Map(tags.map((tag) => [JSON.stringify(tag), tag])).values()];
 }
@@ -44,18 +48,22 @@ function invalidateAfterCallbacks(queryCache: ReturnType<typeof useQueryCache>, 
  * mutation: once a mutation succeeds, it invalidates the Pinia Colada
  * key `["trpc", ...tag]` of each tag its response names in
  * `x-nuxvel-invalidates`, and of the mutation's router namespace
- * (`post.delete` invalidates `["trpc", "post"]`). It does so after the
+ * (`post.delete` invalidates `["trpc", "post"]`) unless `fallback()`
+ * gives `false`. It does so after the
  * `onSuccess` and `onSettled` of the mutation, and leaves a query that
  * they already fetch again. A failed mutation and a query invalidate
  * nothing. The `nuxvel:trpc` plugin adds it in the browser.
  */
-export function createInvalidateLink<TRouter extends AnyTRPCRouter>(queryCache: () => ReturnType<typeof useQueryCache>): TRPCLink<TRouter> {
+export function createInvalidateLink<TRouter extends AnyTRPCRouter>(
+  queryCache: () => ReturnType<typeof useQueryCache>,
+  fallback: () => InvalidateFallback,
+): TRPCLink<TRouter> {
   return () =>
     ({ op, next }) =>
       observable((observer) =>
         next(op).subscribe({
           next: (envelope) => {
-            if (op.type === "mutation") invalidateAfterCallbacks(queryCache(), invalidatedTags(op, envelope).map(keyOf));
+            if (op.type === "mutation") invalidateAfterCallbacks(queryCache(), invalidatedTags(op, envelope, fallback()).map(keyOf));
             observer.next(envelope);
           },
           error: (error) => observer.error(error),

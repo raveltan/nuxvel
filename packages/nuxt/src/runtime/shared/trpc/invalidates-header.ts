@@ -2,6 +2,13 @@ export const INVALIDATES_HEADER = "x-nuxvel-invalidates";
 
 export type ClientTag = unknown[];
 
+/**
+ * What a mutation invalidates in the client cache besides the tags its
+ * response names: `"namespace"` adds its router namespace, `false`
+ * adds nothing. Set with `nuxvel.api.invalidateFallback`.
+ */
+export type InvalidateFallback = "namespace" | false;
+
 export function clientTag(tag: string | readonly unknown[]): ClientTag {
   if (typeof tag !== "string") return [...tag];
 

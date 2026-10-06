@@ -48,8 +48,8 @@ export default defineNuxtPlugin({
         }),
       );
 
-    const invalidate = createInvalidateLink<AppRouter>(() => useQueryCache(nuxtApp.$pinia));
-    const { app } = useRuntimeConfig();
+    const { app, public: publicConfig } = useRuntimeConfig();
+    const invalidate = createInvalidateLink<AppRouter>(() => useQueryCache(nuxtApp.$pinia), () => publicConfig.invalidateFallback);
     const client = createTRPCClient<AppRouter>({
       links: [watchOutdated, ...(import.meta.client ? [invalidate] : []), createTrpcClientLink<AppRouter>(trpcEndpoint(app.baseURL), useRequestEvent()?.fetch, app.buildId, () => nuxtApp.$getLocale?.())],
     });

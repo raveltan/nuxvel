@@ -156,7 +156,6 @@ const form = useActionForm(createPostInput, $api.post.create.mutationOptions(), 
       { key: $api.post.list.key() },
       (list) => list && { ...list, rows: [created, ...list.rows], total: list.total + 1 },
     );
-    queryCache.invalidateQueries({ key: $api.post.key() });
     await navigateTo({ name: "post" });
   },
 });
@@ -796,6 +795,15 @@ After a mutation succeeds, the client refetches the queries that it changed. You
 - The router namespace of the mutation: `$api.post.delete` also invalidates every query under `$api.post`, so a mutation without `invalidates` refreshes its own namespace. A procedure at the root of the router has no namespace.
 
 The client invalidates them in Pinia Colada after the `onSuccess` and `onSettled` of the mutation: an active query fetches again, and an inactive one fetches when a component uses it next. A query that these callbacks already fetch again does not fetch twice, so an `invalidateQueries()` that you wrote by hand still works, but you can remove it. A failed mutation invalidates nothing, and neither does a mutation during SSR.
+
+```ts
+// nuxt.config.ts
+export default defineNuxtConfig({
+  nuxvel: { api: { invalidateFallback: false } },
+});
+```
+
+With `invalidateFallback: false`, a mutation invalidates only the tags that its response names, and a mutation without `invalidates` invalidates nothing. The default is `"namespace"`.
 
 ## Optimistic updates
 

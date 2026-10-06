@@ -3,7 +3,7 @@ import { setResponseHeader, setResponseStatus } from "h3";
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { useQueryCache } from "@pinia/colada";
-import { $api } from "#imports";
+import { $api, useRuntimeConfig } from "#imports";
 
 function respondWithEcho(invalidates?: unknown[][]) {
   registerEndpoint("/api/trpc/health.echo", {
@@ -128,5 +128,23 @@ describe("a mutation invalidates", () => {
 
     await vi.waitFor(() => expect(wrapper.text()).toBe("pong success"));
     await vi.waitFor(() => expect(calls).toEqual(["ping", "ping"]));
+  });
+
+  it("invalidates only the tags its response names when invalidateFallback is false", async () => {
+    const config = useRuntimeConfig().public;
+    config.invalidateFallback = false;
+    onTestFinished(() => {
+      config.invalidateFallback = "namespace";
+    });
+    respondWithEcho([["post"]]);
+    const invalidated = spyOnInvalidation();
+
+    await $api.health.echo.mutate("hello");
+    respondWithEcho([]);
+    await $api.health.echo.mutate("hello");
+    respondWithEcho([["tag"]]);
+    await $api.health.echo.mutate("hello");
+
+    await vi.waitFor(() => expect(invalidated).toEqual([["trpc", "post"], ["trpc", "tag"]]));
   });
 });

@@ -103,3 +103,7 @@ applies each step below that names a codemod.
   after the mutation's `onSuccess` and `onSettled`. An
   `invalidateQueries()` written by hand still works and fetches no query
   twice; it can go.
+- `nuxvel.api.invalidateFallback: false` stops a mutation from
+  invalidating the queries of its router namespace in the client: it
+  invalidates only the tags its response names. The default is
+  `"namespace"`.
