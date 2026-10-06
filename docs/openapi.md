@@ -161,12 +161,8 @@ An unknown, revoked or expired key gets HTTP 401. The request does not fall back
 
 ```vue
 <script setup lang="ts">
-const queryCache = useQueryCache();
-
 const keys = $api.apiKeys.list.useQuery();
-const createKey = $api.apiKeys.create.useMutation({
-  onSettled: () => queryCache.invalidateQueries({ key: $api.apiKeys.key() }),
-});
+const createKey = $api.apiKeys.create.useMutation();
 const newKey = ref<string>();
 
 async function create() {
