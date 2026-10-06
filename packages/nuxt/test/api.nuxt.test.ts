@@ -1,6 +1,6 @@
 import { defineComponent, h, isReactive, isRef, nextTick, reactive, ref, unref } from "vue";
 import { getQuery, getRequestHeader } from "h3";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { useQueryCache } from "@pinia/colada";
 import { $api } from "#imports";
@@ -28,6 +28,12 @@ function respondWithPing() {
     },
   });
   return calls;
+}
+
+async function mountForTest(component: Parameters<typeof mountSuspended>[0]) {
+  const wrapper = await mountSuspended(component);
+  onTestFinished(() => wrapper.unmount());
+  return wrapper;
 }
 
 describe("$api", () => {
@@ -85,7 +91,7 @@ describe("$api.<query>.useQuery()", () => {
   it("fetches the procedure and fetches again when the input getter changes", async () => {
     const ids = respondWithPostTitles();
     const id = ref(1);
-    const wrapper = await mountSuspended(
+    const wrapper = await mountForTest(
       defineComponent({
         setup() {
           const post = $api.post.byId.useQuery(() => ({ id: id.value }));
@@ -103,7 +109,7 @@ describe("$api.<query>.useQuery()", () => {
 
   it("calls a procedure without input", async () => {
     respondWithPing();
-    const wrapper = await mountSuspended(
+    const wrapper = await mountForTest(
       defineComponent({
         setup() {
           const ping = $api.health.ping.useQuery();
@@ -117,7 +123,7 @@ describe("$api.<query>.useQuery()", () => {
 
   it("sends nothing while enabled is false", async () => {
     const calls = respondWithPing();
-    const wrapper = await mountSuspended(
+    const wrapper = await mountForTest(
       defineComponent({
         setup() {
           const ping = $api.health.ping.useQuery(undefined, { enabled: false });
@@ -140,9 +146,9 @@ describe("$api.<query>.useQuery()", () => {
       },
     });
 
-    const first = await mountSuspended(ping);
+    const first = await mountForTest(ping);
     await vi.waitFor(() => expect(first.text()).toBe("pong"));
-    await mountSuspended(ping);
+    await mountForTest(ping);
 
     await vi.waitFor(() => expect(calls).toEqual(["ping", "ping"]));
   });
@@ -150,7 +156,7 @@ describe("$api.<query>.useQuery()", () => {
   it("refetches through the reactive result", async () => {
     const calls = respondWithPing();
     let refetch = () => {};
-    const wrapper = await mountSuspended(
+    const wrapper = await mountForTest(
       defineComponent({
         setup() {
           const ping = $api.health.ping.useQuery();
@@ -182,7 +188,7 @@ describe("$api.<mutation>.useMutation()", () => {
 
   async function mountEcho(options: object = {}) {
     let echo: ReturnType<typeof $api.health.echo.useMutation> | undefined;
-    const wrapper = await mountSuspended(
+    const wrapper = await mountForTest(
       defineComponent({
         setup() {
           const mutation = $api.health.echo.useMutation(options);

@@ -1,5 +1,5 @@
 import { defineComponent, h } from "vue";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, onTestFinished, vi } from "vitest";
 import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { useQuery } from "@pinia/colada";
 import { readBody, setResponseHeader, setResponseStatus } from "h3";
@@ -24,6 +24,7 @@ describe("client tRPC plugin", () => {
     });
 
     const wrapper = await mountSuspended(component);
+    onTestFinished(() => wrapper.unmount());
 
     expect(wrapper.text()).toContain("pong");
   });
@@ -70,6 +71,7 @@ describe("client tRPC plugin", () => {
         },
       }),
     );
+    onTestFinished(() => wrapper.unmount());
 
     await vi.waitFor(() =>
       expect(wrapper.text()).toBe("true: Can't reach the server. Check your connection and try again."),
