@@ -34,7 +34,7 @@ const APP_TYPE_IMPORTS: Record<string, string[]> = {
   "use-maintenance": ["MaintenanceStatus"],
   "use-notifications": ["NotificationEntry"],
   "use-presence": ["PresenceRoom", "PresenceRoomOf"],
-  "use-trpc": ["RouterInputs", "RouterOutputs"],
+  "router-types": ["RouterInputs", "RouterOutputs"],
 };
 
 function publicAppTypeImports(runtimeFile: RuntimeFile) {

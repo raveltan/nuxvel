@@ -30,6 +30,15 @@ applies each step below that names a codemod.
   the preset does the same. Codemod: `imports`.
 - A router or procedure named `useQuery` or `useMutation` fails `nuxt
   typecheck`, as `$api` reserves these names. Rename it.
+- `useTRPC()` is removed, use the auto-imported `$api`: it is the same
+  client, and also works in templates. By hand: delete `const trpc =
+  useTRPC();` and write `$api` where the code used `trpc`, replace
+  `useTRPC()` by `$api` elsewhere, and change `ReturnType<typeof
+  useTRPC>` to `typeof $api`. Write `$api.<path>.useQuery(input)` in
+  place of `useQuery($api.<path>.queryOptions(input))`, and drop the
+  `.value` after its `data`, `error` and `state`. A
+  `mockNuxtImport("useTRPC", ...)` has no replacement: `$api` reads
+  `useNuxtApp().$trpc`, so mock that. Codemod: `use-trpc`.
 
 ### Changes
 
@@ -52,7 +61,7 @@ applies each step below that names a codemod.
   longer import their schemas.
 - `<QueryState>` and `<DataTable>` accept a `useQuery()` result wrapped
   in `reactive()`.
-- `$api` is the typed API of the app, the client that `useTRPC()` returns.
+- `$api` is the typed API of the app, the client of `$trpc`.
   It is auto-imported in the app and usable in templates.
 - Every query procedure of `$api` has `.useQuery(input, options?)`: it
   runs `useQuery()` and returns its result wrapped in `reactive()`.

@@ -22,8 +22,8 @@ function liveBuildId(error: unknown) {
  * the server answers `CLIENT_OUTDATED`, the plugin calls Nuxt's
  * `app:manifest:update` hook, so the next navigation reloads the page, as
  * after Nuxt's own outdated-build check. Every call also carries the
- * locale of the current page for {@link currentLocale}. Prefer the
- * `useTRPC()` composable for reading it. Named `nuxvel:trpc`, so an app
+ * locale of the current page for {@link currentLocale}. Read it
+ * through the auto-imported `$api`. Named `nuxvel:trpc`, so an app
  * plugin can `dependsOn` it.
  */
 export default defineNuxtPlugin({

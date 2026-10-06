@@ -77,6 +77,11 @@ function createPostWithWrongInput() {
   createPost.mutate({ headline: "Hello" });
 }
 
+function removedUseTRPC() {
+  // @ts-expect-error useTRPC() is gone, use $api
+  return useTRPC();
+}
+
 function pingWithoutInput() {
   // @ts-expect-error post.byId needs an input
   return $api.post.byId.queryOptions();
@@ -85,7 +90,7 @@ function pingWithoutInput() {
 
 <template>
   <div>
-    {{ apiIsTyped }} {{ queryOptionsAreTyped }} {{ mutationInputIsTyped }} {{ pingWithoutInput }}
+    {{ apiIsTyped }} {{ queryOptionsAreTyped }} {{ mutationInputIsTyped }} {{ pingWithoutInput }} {{ removedUseTRPC }}
     {{ useQueryDataIsTyped }} {{ useQueryErrorIsTyped }} {{ pingIsString }} {{ useQueryWithoutInput }} {{ useQueryWithWrongOption }}
     {{ useMutationDataIsTyped }} {{ useMutationErrorIsTyped }} {{ useMutationInputIsTyped }} {{ createPostWithWrongInput }}
     {{ $api.post.byId.key({ id: 1 }) }}
