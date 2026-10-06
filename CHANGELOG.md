@@ -107,3 +107,7 @@ applies each step below that names a codemod.
   invalidating the queries of its router namespace in the client: it
   invalidates only the tags its response names. The default is
   `"namespace"`.
+- `.useMutation()` and `.mutationOptions()` of `$api` take `invalidate`:
+  tags, a function `(result, input) => tags`, or `false`, in place of
+  what the response names and the namespace. `useActionForm()`,
+  `toasted()` and `optimistic()` keep it.

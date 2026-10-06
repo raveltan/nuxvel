@@ -2,7 +2,7 @@ import type { EntryKey, useQueryCache } from "@pinia/colada";
 import type { Operation, OperationResultEnvelope, TRPCClientError, TRPCLink } from "@trpc/client";
 import type { AnyTRPCRouter } from "@trpc/server";
 import { observable } from "@trpc/server/observable";
-import { type ClientTag, type InvalidateFallback, readInvalidatesHeader } from "../../shared/trpc/invalidates-header";
+import { type ClientTag, clientTag, type InvalidateFallback, readInvalidatesHeader } from "../../shared/trpc/invalidates-header";
 
 function responseHeaders(context: Record<string, unknown> | undefined): Headers | undefined {
   const response = context?.response;
@@ -21,14 +21,27 @@ function namespaceOf(op: Operation): ClientTag[] {
   return namespace.length === 0 ? [] : [namespace];
 }
 
+function overriddenTags(op: Operation, envelope: OperationResultEnvelope<unknown, TRPCClientError<AnyTRPCRouter>>) {
+  if (!("invalidate" in op.context)) return undefined;
+
+  const { invalidate } = op.context;
+  const result = "data" in envelope.result ? envelope.result.data : undefined;
+  const tags: unknown = typeof invalidate === "function" ? invalidate(result, op.input) : invalidate;
+
+  return Array.isArray(tags)
+    ? tags.filter((tag): tag is string | unknown[] => typeof tag === "string" || Array.isArray(tag)).map(clientTag)
+    : [];
+}
+
 function invalidatedTags(
   op: Operation,
   envelope: OperationResultEnvelope<unknown, TRPCClientError<AnyTRPCRouter>>,
   fallback: InvalidateFallback,
 ) {
+  const override = overriddenTags(op, envelope);
   const headers = responseHeaders(envelope.context);
   const declared = (headers && readInvalidatesHeader(headers)) ?? [];
-  const tags = [...declared, ...(fallback === "namespace" ? namespaceOf(op) : [])];
+  const tags = override ?? [...declared, ...(fallback === "namespace" ? namespaceOf(op) : [])];
 
   return [...new Map(tags.map((tag) => [JSON.stringify(tag), tag])).values()];
 }
@@ -49,7 +62,8 @@ function invalidateAfterCallbacks(queryCache: ReturnType<typeof useQueryCache>, 
  * key `["trpc", ...tag]` of each tag its response names in
  * `x-nuxvel-invalidates`, and of the mutation's router namespace
  * (`post.delete` invalidates `["trpc", "post"]`) unless `fallback()`
- * gives `false`. It does so after the
+ * gives `false`. The `invalidate` of the call's context, from
+ * `mutationOptions({ invalidate })`, replaces both. It does so after the
  * `onSuccess` and `onSettled` of the mutation, and leaves a query that
  * they already fetch again. A failed mutation and a query invalidate
  * nothing. The `nuxvel:trpc` plugin adds it in the browser.

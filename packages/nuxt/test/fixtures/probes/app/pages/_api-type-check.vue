@@ -72,6 +72,16 @@ const useMutationInputIsTyped: IsAny<Parameters<typeof updatePost.mutate>[0]> ex
     ? true
     : never = true;
 
+const invalidatingCreate = $api.post.create.useMutation({
+  invalidate: (created, input) => [["post", typed(created).id], typed(input).title],
+});
+const invalidatingUpdate = $api.post.update.mutationOptions({ invalidate: ["post", ["post", "byId", { id: 1 }]] });
+
+function invalidateWithWrongTag() {
+  // @ts-expect-error a tag is a string or an array of key parts
+  return $api.post.update.mutationOptions({ invalidate: [1] });
+}
+
 function createPostWithWrongInput() {
   // @ts-expect-error post.create takes a title and a body
   createPost.mutate({ headline: "Hello" });
@@ -93,6 +103,7 @@ function pingWithoutInput() {
     {{ apiIsTyped }} {{ queryOptionsAreTyped }} {{ mutationInputIsTyped }} {{ pingWithoutInput }} {{ removedUseTRPC }}
     {{ useQueryDataIsTyped }} {{ useQueryErrorIsTyped }} {{ pingIsString }} {{ useQueryWithoutInput }} {{ useQueryWithWrongOption }}
     {{ useMutationDataIsTyped }} {{ useMutationErrorIsTyped }} {{ useMutationInputIsTyped }} {{ createPostWithWrongInput }}
+    {{ invalidatingCreate.status }} {{ invalidatingUpdate.mutation.name }} {{ invalidateWithWrongTag }}
     {{ $api.post.byId.key({ id: 1 }) }}
     <p>
       <!-- @vue-expect-error id is a number -->

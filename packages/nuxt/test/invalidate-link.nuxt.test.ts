@@ -2,8 +2,8 @@ import { defineComponent, h } from "vue";
 import { setResponseHeader, setResponseStatus } from "h3";
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
-import { useQueryCache } from "@pinia/colada";
-import { $api, useRuntimeConfig } from "#imports";
+import { useMutation, useQueryCache } from "@pinia/colada";
+import { $api, toasted, useRuntimeConfig } from "#imports";
 
 function respondWithEcho(invalidates?: unknown[][]) {
   registerEndpoint("/api/trpc/health.echo", {
@@ -146,5 +146,55 @@ describe("a mutation invalidates", () => {
     await $api.health.echo.mutate("hello");
 
     await vi.waitFor(() => expect(invalidated).toEqual([["trpc", "post"], ["trpc", "tag"]]));
+  });
+
+  it("invalidates the tags of its invalidate option in place of the response's and the namespace", async () => {
+    respondWithEcho([["post"]]);
+    const invalidated = spyOnInvalidation();
+
+    await $api.health.echo.mutationOptions({ invalidate: ["tag", "post:byId", ["post", "list", { page: 2 }]] }).mutation("hello");
+
+    await vi.waitFor(() =>
+      expect(invalidated).toEqual([["trpc", "tag"], ["trpc", "post", "byId"], ["trpc", "post", "list", { page: 2 }]]),
+    );
+  });
+
+  it("computes the tags of an invalidate function from the result and the input", async () => {
+    respondWithEcho();
+    const invalidated = spyOnInvalidation();
+
+    await $api.health.echo.mutationOptions({ invalidate: (result, input) => [["echo", result, input]] }).mutation("hi");
+
+    await vi.waitFor(() => expect(invalidated).toEqual([["trpc", "echo", "hello", "hi"]]));
+  });
+
+  it("invalidates nothing with invalidate: false", async () => {
+    respondWithEcho([["post"]]);
+    const invalidated = spyOnInvalidation();
+
+    await $api.health.echo.mutationOptions({ invalidate: false }).mutation("hello");
+    await $api.health.echo.mutationOptions({ invalidate: ["tag"] }).mutation("hello");
+
+    await vi.waitFor(() => expect(invalidated).toEqual([["trpc", "tag"]]));
+  });
+
+  it("takes invalidate in .useMutation(), and keeps it through toasted()", async () => {
+    respondWithEcho([["post"]]);
+    const invalidated = spyOnInvalidation();
+    const mutations: ((text: string) => Promise<string>)[] = [];
+    const wrapper = await mountSuspended(
+      defineComponent({
+        setup() {
+          mutations.push($api.health.echo.useMutation({ invalidate: ["tag"] }).mutateAsync);
+          mutations.push(useMutation(toasted($api.health.echo.mutationOptions({ invalidate: ["flag"] }), "Sent")).mutateAsync);
+          return () => h("p");
+        },
+      }),
+    );
+    onTestFinished(() => wrapper.unmount());
+
+    for (const mutate of mutations) await mutate("hello");
+
+    await vi.waitFor(() => expect(invalidated).toEqual([["trpc", "tag"], ["trpc", "flag"]]));
   });
 });

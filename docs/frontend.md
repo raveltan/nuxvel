@@ -805,6 +805,14 @@ export default defineNuxtConfig({
 
 With `invalidateFallback: false`, a mutation invalidates only the tags that its response names, and a mutation without `invalidates` invalidates nothing. The default is `"namespace"`.
 
+```ts
+const createPost = $api.post.create.useMutation({ invalidate: ["post", "feed"] });
+const rename = $api.post.update.useMutation({ invalidate: (post) => [["post", "byId", { id: post.id }]] });
+const ping = $api.health.echo.useMutation({ invalidate: false });
+```
+
+`invalidate` on `.useMutation()` or `.mutationOptions()` replaces what the call invalidates: the tags that you list, the tags that a function of the result and the input returns, or nothing with `false`. The response's tags and the namespace then do not count. A tag is a string or an array, as in `invalidates`: `"post:byId"` is `["post", "byId"]`. `useActionForm()`, `toasted()` and `optimistic()` keep the `invalidate` of the `mutationOptions()` that you pass them.
+
 ## Optimistic updates
 
 ```ts

@@ -21,6 +21,7 @@ import type {
   TRPCRouterRecord,
 } from "@trpc/server";
 import { type MaybeRefOrGetter, type Reactive, reactive, toValue } from "vue";
+import type { CacheKey } from "../../shared/cache/cache-key";
 
 type Output<
   TRouter extends AnyTRPCRouter,
@@ -72,6 +73,33 @@ export type TRPCUseQueryReturn<
   TProcedure extends AnyTRPCProcedure,
 > = Reactive<UseQueryReturn<Output<TRouter, TProcedure>, TRPCClientError<TRouter>>>;
 
+/**
+ * Which queries a mutation invalidates after it succeeds, in place of
+ * the tags its response names and its router namespace: a list of tags
+ * (`"post"`, `["post", "byId", { id: 1 }]`), a function of the result and
+ * the input that returns them, or `false` for none. A tag matches every
+ * query under `$api.<tag>`.
+ */
+export type TRPCInvalidate<
+  TRouter extends AnyTRPCRouter,
+  TProcedure extends AnyTRPCProcedure,
+> =
+  | false
+  | readonly CacheKey[]
+  | ((result: Output<TRouter, TProcedure>, input: inferProcedureInput<TProcedure>) => readonly CacheKey[]);
+
+/** The options `mutationOptions()` takes. */
+export interface TRPCMutationOptionsInput<
+  TRouter extends AnyTRPCRouter,
+  TProcedure extends AnyTRPCProcedure,
+> {
+  /**
+   * Replaces what the mutation invalidates after it succeeds, see
+   * {@link TRPCInvalidate}.
+   */
+  invalidate?: TRPCInvalidate<TRouter, TProcedure>;
+}
+
 /** What `mutationOptions()` returns: a native `useMutation()` options object. */
 export interface TRPCMutationOptions<
   TRouter extends AnyTRPCRouter,
@@ -85,7 +113,7 @@ export interface TRPCMutationOptions<
 /**
  * The options `.useMutation()` takes: Pinia Colada's `useMutation()`
  * options without `mutation`, which the procedure provides, such as
- * `onSuccess`, `onError` or `onSettled`.
+ * `onSuccess`, `onError` or `onSettled`, and `invalidate`.
  */
 export type TRPCUseMutationOptions<
   TRouter extends AnyTRPCRouter,
@@ -94,7 +122,8 @@ export type TRPCUseMutationOptions<
 > = Omit<
   UseMutationOptions<Output<TRouter, TProcedure>, inferProcedureInput<TProcedure>, TRPCClientError<TRouter>, TContext>,
   "mutation"
->;
+> &
+  TRPCMutationOptionsInput<TRouter, TProcedure>;
 
 /**
  * What `.useMutation()` returns: Pinia Colada's `useMutation()` result
@@ -157,9 +186,19 @@ interface DecoratedMutation<
    * Builds `{ mutation }` for Pinia Colada's `useMutation()`. Each call
    * of `mutationOptions()` picks one idempotency key and sends it with
    * every mutation, so a procedure with `idempotent()` runs the same
-   * input once.
+   * input once. `useActionForm()`, `toasted()` and `optimistic()` keep
+   * its `invalidate`.
+   *
+   * @param options.invalidate Replaces what the mutation invalidates
+   * after it succeeds: tags, a function `(result, input) => tags`, or
+   * `false` for none.
+   *
+   * @example
+   * ```ts
+   * const form = useActionForm(createPostInput, $api.post.create.mutationOptions({ invalidate: ["post", "tag"] }));
+   * ```
    */
-  mutationOptions(): TRPCMutationOptions<TRouter, TProcedure>;
+  mutationOptions(options?: TRPCMutationOptionsInput<TRouter, TProcedure>): TRPCMutationOptions<TRouter, TProcedure>;
   /**
    * Runs Pinia Colada's `useMutation()` for this procedure and returns
    * its result wrapped in `reactive()`. Call it in `setup`, like
@@ -167,6 +206,9 @@ interface DecoratedMutation<
    * key and sends it with every `mutate()`.
    *
    * @param options Pinia Colada's `useMutation()` options, without `mutation`.
+   * @param options.invalidate Replaces what the mutation invalidates
+   * after it succeeds: tags, a function `(result, input) => tags`, or
+   * `false` for none.
    *
    * @example
    * ```ts
@@ -266,8 +308,9 @@ function useProcedureQuery(client: object, procedurePath: string[], [input, opti
   );
 }
 
-function mutationOptionsOf(client: object, procedurePath: string[]) {
-  const context = { idempotencyKey: crypto.randomUUID() };
+function mutationOptionsOf(client: object, procedurePath: string[], options: unknown) {
+  const invalidate = typeof options === "object" && options !== null && "invalidate" in options ? { invalidate: options.invalidate } : {};
+  const context = { idempotencyKey: crypto.randomUUID(), ...invalidate };
 
   return {
     mutation: async (mutationInput: unknown) => call(client, [...procedurePath, "mutate"], [mutationInput, { context }]),
@@ -275,7 +318,9 @@ function mutationOptionsOf(client: object, procedurePath: string[]) {
 }
 
 function useProcedureMutation(client: object, procedurePath: string[], options: unknown) {
-  return reactive(useMutation({ ...(typeof options === "object" ? options : {}), ...mutationOptionsOf(client, procedurePath) }));
+  const colada = typeof options === "object" && options !== null ? Object.fromEntries(Object.entries(options).filter(([name]) => name !== "invalidate")) : {};
+
+  return reactive(useMutation({ ...colada, ...mutationOptionsOf(client, procedurePath, options) }));
 }
 
 function pathProxy(client: object, path: string[]): unknown {
@@ -293,7 +338,7 @@ function pathProxy(client: object, path: string[]): unknown {
             call(client, [...procedurePath, "query"], [args[0], { signal: context?.signal }]),
         };
       if (method === "useQuery") return useProcedureQuery(client, procedurePath, args);
-      if (method === "mutationOptions") return mutationOptionsOf(client, procedurePath);
+      if (method === "mutationOptions") return mutationOptionsOf(client, procedurePath, args[0]);
       if (method === "useMutation") return useProcedureMutation(client, procedurePath, args[0]);
 
       return call(client, path, args);

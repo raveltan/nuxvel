@@ -386,7 +386,7 @@ const createPost = $api.post.create.useMutation({
 </template>
 ```
 
-`.useMutation(options?)` runs Pinia Colada's `useMutation()` for the procedure and returns its result wrapped in `reactive()`: `createPost.mutate()`, `createPost.data`, `createPost.error` and `createPost.isLoading`, without `.value`. `options` are the options of Pinia Colada's `useMutation()`, without `mutation`: `onMutate`, `onSuccess`, `onError`, `onSettled` and the others. Call it in `setup`, as `useMutation()`. After it succeeds, the queries of its namespace and of the tags it names fetch again, see [Frontend: invalidation](./frontend.md#invalidation).
+`.useMutation(options?)` runs Pinia Colada's `useMutation()` for the procedure and returns its result wrapped in `reactive()`: `createPost.mutate()`, `createPost.data`, `createPost.error` and `createPost.isLoading`, without `.value`. `options` are the options of Pinia Colada's `useMutation()`, without `mutation`: `onMutate`, `onSuccess`, `onError`, `onSettled` and the others. Call it in `setup`, as `useMutation()`. After it succeeds, the queries of its namespace and of the tags it names fetch again. The option `invalidate` replaces them for this call, see [Frontend: invalidation](./frontend.md#invalidation).
 
 nuxvel installs Pinia Colada. `useQuery`, `useMutation` and `useQueryCache` are auto-imported. Each procedure on `$api` builds their options, so you do not write a key by hand.
 
@@ -395,7 +395,7 @@ nuxvel installs Pinia Colada. `useQuery`, `useMutation` and `useQueryCache` are 
 | `$api.post.byId.useQuery(input, options?)` | the result of `useQuery`, in `reactive()` | |
 | `$api.post.byId.queryOptions(input)` | `{ key, query }` | `useQuery` |
 | `$api.post.create.useMutation(options?)` | the result of `useMutation`, in `reactive()` | |
-| `$api.post.create.mutationOptions()` | `{ mutation }` | `useMutation` |
+| `$api.post.create.mutationOptions(options?)` | `{ mutation }` | `useMutation` |
 | `$api.post.byId.key(input?)` | `["trpc", "post", "byId", input]` | cache reads and writes |
 | `$api.post.key()` | `["trpc", "post"]` | invalidating a whole namespace |
 
