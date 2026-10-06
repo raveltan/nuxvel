@@ -1,7 +1,3 @@
-<script setup lang="ts">
-definePageMeta({ layout: "auth", middleware: "guest" });
-</script>
-
 <template>
   <h1 class="mb-4 text-lg font-semibold">{{ $t("app.signIn") }}</h1>
   <AuthForm mode="sign-in" />

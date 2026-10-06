@@ -1074,6 +1074,22 @@ export default defineDeploy({
     );
   });
 
+  it("make:resource --ui writes the pages into the (app) route group when the app has one, with no definePageMeta", async () => {
+    const fixtureCwd = scratchDir("make-resource-app-group");
+    buildNuxtFixture(fixtureCwd);
+    mkdirSync(join(fixtureCwd, "pages", "(app)"), { recursive: true });
+
+    const { exitCode, stdout } = await runCliAt(fixtureCwd, "make:resource", "gadget", "--ui");
+
+    expect(exitCode).toBe(0);
+    expect(stripAnsi(stdout)).toContain("Created pages/(app)/gadget/index.vue");
+    const list = readFileSync(join(fixtureCwd, "pages", "(app)", "gadget", "index.vue"), "utf-8");
+    const newPage = readFileSync(join(fixtureCwd, "pages", "(app)", "gadget", "new.vue"), "utf-8");
+    expect(list.startsWith('<script setup lang="ts">\nconst route = useRoute();\n')).toBe(true);
+    expect(newPage).not.toContain("definePageMeta");
+    expect(existsSync(join(fixtureCwd, "pages", "gadget"))).toBe(false);
+  });
+
   it("make:resource with fields writes them into the schema, and the generated test sends a sample value for each", async () => {
     const fixtureCwd = scratchDir("make-resource-fields");
 

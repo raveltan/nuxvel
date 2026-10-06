@@ -71,8 +71,8 @@ A room has a name and an owner. A member is one user in one room. A message has 
 ✔ Created server/actions/room/delete-room.action.ts
 ✔ Created server/trpc/routers/room.router.ts
 ✔ Created server/trpc/routers/room.router.test.ts
-✔ Created app/pages/room/index.vue
-✔ Created app/pages/room/new.vue
+✔ Created app/pages/(app)/room/index.vue
+✔ Created app/pages/(app)/room/new.vue
 ✔ Created app/components/RoomForm.vue
 ◇ Updated types (nuxt prepare) (10.0s)
 ✔ Created server/database/schema/room-member.schema.ts
@@ -421,10 +421,10 @@ export const roomRouter = {
 
 A room where the user is not a member gives `NOT_FOUND` from `byId`. The database filters the rows, so the router does not load a room that the user may not see.
 
-The list page must link to the room page of chapter 6. In `app/pages/room/index.vue`, add a slot for the `name` column before the `#actions-cell` slot:
+The list page must link to the room page of chapter 6. In `app/pages/(app)/room/index.vue`, add a slot for the `name` column before the `#actions-cell` slot:
 
 ```vue
-<!-- app/pages/room/index.vue -->
+<!-- app/pages/(app)/room/index.vue -->
       <template #name-cell="{ row }">
         <ULink :to="{ name: 'room-id', params: { id: row.original.id } }" class="font-medium">{{ row.original.name }}</ULink>
       </template>
@@ -872,10 +872,8 @@ The page is a route with a param, so give the path in quotes:
 Replace the generated page:
 
 ```vue
-<!-- app/pages/room/[id].vue -->
+<!-- app/pages/(app)/room/[id].vue -->
 <script setup lang="ts">
-definePageMeta({ middleware: "auth" });
-
 const id = Number(useRoute().params.id);
 const { user } = useUser();
 const room = $api.room.byId.useQuery({ id });

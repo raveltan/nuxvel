@@ -1,8 +1,5 @@
 <script setup lang="ts">
-definePageMeta({ middleware: "auth", layout: "app" });
-
-const route = useRoute();
-const input = computed(() => paginationSchema.catch({}).parse(route.query));
+const { query: input } = useRouteInput({ query: paginationSchema });
 
 const posts = useLiveQuery(() => $api.post.list.queryOptions(input.value), {
   channel: "posts",

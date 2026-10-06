@@ -1,7 +1,5 @@
 <script setup lang="ts">
-definePageMeta({ middleware: "auth" });
-
-const route = useRoute();
+{{pageMeta}}const route = useRoute();
 const router = useRouter();
 const input = computed(() => listQueryParams({{tableCamelName}}ListInput.catch({ sort: [], filters: {} }).parse(route.query)));
 const rows = $api.{{tableCamelName}}.list.useQuery(() => input.value);

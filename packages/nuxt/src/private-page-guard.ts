@@ -28,7 +28,7 @@ export function joinPath(parent: string, path: string) {
 }
 
 function usesAuthMiddleware(page: NuxtPage) {
-  return [page.meta?.middleware].flat().includes("auth");
+  return [page.meta?.middleware, page.meta?.groupMiddleware].flat().includes("auth");
 }
 
 export function authedPatterns(pages: NuxtPage[], parent = "/", inherited = false): string[] {

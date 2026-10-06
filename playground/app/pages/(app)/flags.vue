@@ -1,6 +1,4 @@
 <script setup lang="ts">
-definePageMeta({ middleware: "auth", layout: "app" });
-
 const rollout = useFlag("probe-rollout");
 const cta = useExperiment("probe-cta");
 </script>

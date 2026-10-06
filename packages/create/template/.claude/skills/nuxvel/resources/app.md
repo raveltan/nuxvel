@@ -5,10 +5,13 @@ Auto-imported: composables, components, `shared/schemas/*`, `RouterInputs`, `Rou
 ## Page with a query and a form
 
 ```vue
+<!-- app/pages/(app)/post/index.vue -->
 <script setup lang="ts">
-definePageMeta({ middleware: "auth" });
+import { z } from "zod";
+
 const { ts, localeRoute } = useI18n();
-const posts = $api.post.list.useQuery({ page: 1 });
+const { query } = useRouteInput({ query: z.object({ page: z.coerce.number().int().min(1).default(1) }) });
+const posts = $api.post.list.useQuery(() => query.value);
 useSeo(() => ({ title: ts("post.title") }));
 </script>
 
@@ -96,6 +99,8 @@ SSR: `NOT_FOUND`/`FORBIDDEN`/`UNAUTHORIZED` render the `error` slot with 404/403
 ## Pages and links
 
 - `app/pages/post/[id].vue` → route `post-id`. `useRoute("post-id").params.id` is typed.
+- Route groups: `app/pages/(app)/post/index.vue` → `/post`, route `post`, with `{ middleware: "auth", layout: "app" }`. `app/pages/(guest)/` gets `{ middleware: "guest", layout: "auth" }`. `definePageMeta` in the page wins. More groups: `nuxvel.pages.groups` in `nuxt.config.ts`.
+- `useRouteInput({ query, params })` parses `route.query`/`route.params` with Zod into computed refs. An invalid value falls back to its `.default()`, never throws. Query values are strings: use `z.coerce`.
 - `navigateTo(localeRoute({ name: "post-id", params: { id } }))` with `localeRoute` from `useI18n()`. `<UButton :to="$localeRoute({ name: 'post' })">`. See [i18n.md](i18n.md).
-- Auth: `definePageMeta({ middleware: "auth" })`. Layouts: `home`, `default`, `app`, `auth`.
+- Auth outside a group: `definePageMeta({ middleware: "auth" })`. Layouts: `home`, `default`, `app`, `auth`.
 - Rendering presets in `nuxt.config.ts` `nuxvel.rendering`: `cached`, `private` (user data), `client`.

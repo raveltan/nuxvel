@@ -56,13 +56,13 @@ Each preset becomes a `routeRules` entry. If you also write a `routeRules` entry
 ## Signed-in pages
 
 ```vue
-<!-- app/pages/dashboard.vue -->
-<script setup lang="ts">
-definePageMeta({ middleware: "auth" });
-</script>
+<!-- app/pages/(app)/dashboard.vue -->
+<template>
+  <h1>Dashboard</h1>
+</template>
 ```
 
-A page with the `auth` middleware is never cached. The same applies to a page nested under such a page. This includes a page with an optional param (`[[tab]].vue`), a catch-all page (`[...path].vue`) and each `alias` of the page. For an optional or catch-all param, nuxvel turns off the cache for all the paths under the part of the path before that param. This is true even if a preset or a `routeRules` entry caches the route. nuxvel renders the page with the `private` preset and turns off the cache, ISR and prerender for it. At build time, it shows a warning:
+A page in the `(app)` [route group](./frontend.md#route-groups) has the `auth` middleware. A page with the `auth` middleware is never cached. The same applies to a page nested under such a page. This includes a page with an optional param (`[[tab]].vue`), a catch-all page (`[...path].vue`) and each `alias` of the page. For an optional or catch-all param, nuxvel turns off the cache for all the paths under the part of the path before that param. This is true even if a preset or a `routeRules` entry caches the route. nuxvel renders the page with the `private` preset and turns off the cache, ISR and prerender for it. At build time, it shows a warning:
 
 ```
 [nuxvel] /dashboard uses the auth middleware but its route rules cache it; rendering it with the private preset instead.

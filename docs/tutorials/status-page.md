@@ -824,9 +824,8 @@ const form = useActionForm($api.incident.postUpdate, {
 The `toast` option shows a toast after each success. The select starts at the current status of the incident. The button names the incident, so each form on the list has a button with its own name. Add the two pages under `/admin`:
 
 ```vue
-<!-- app/pages/admin/index.vue -->
+<!-- app/pages/(app)/admin/index.vue -->
 <script setup lang="ts">
-definePageMeta({ layout: "app", middleware: "auth" });
 useSeo({ title: "Incidents" });
 
 const current = $api.status.current.useQuery();
@@ -856,9 +855,8 @@ const current = $api.status.current.useQuery();
 ```
 
 ```vue
-<!-- app/pages/admin/new.vue -->
+<!-- app/pages/(app)/admin/new.vue -->
 <script setup lang="ts">
-definePageMeta({ layout: "app", middleware: "auth" });
 useSeo({ title: "New incident" });
 </script>
 
@@ -1819,7 +1817,7 @@ const monitorIncidents = useFlag("monitor-incidents");
 ```
 
 ```vue
-<!-- app/pages/admin/index.vue -->
+<!-- app/pages/(app)/admin/index.vue -->
       <UButton :to="{ name: 'admin-new' }" icon="i-lucide-plus" label="New incident" />
     </div>
     <MonitorPausedAlert />

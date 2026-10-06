@@ -1,7 +1,5 @@
 <script setup lang="ts">
-definePageMeta({ middleware: "auth" });
-
-const queryCache = useQueryCache();
+{{pageMeta}}const queryCache = useQueryCache();
 {{referenceQueries}}
 const form = useActionForm($api.{{tableCamelName}}.create, {
   defaults: {{createDefaults}},

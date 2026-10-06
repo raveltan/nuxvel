@@ -163,6 +163,25 @@ applies each step below that names a codemod.
 
 ### Changes
 
+- `make:resource --ui` writes its pages into `app/pages/(app)/` when the
+  app has that folder, with no `definePageMeta`.
+- New apps start with an empty `app/pages/(app)/` folder, so
+  `make:resource --ui` writes its pages there.
+- New apps keep their sign-in, sign-up, verify-email, forgot-password
+  and reset-password pages in `app/pages/(guest)/`, with no
+  `definePageMeta`. The URLs stay the same. An existing app keeps its
+  pages where they are.
+- `useRouteInput({ query, params })` parses the query and the params of
+  the route with a Zod schema each, into computed refs. An invalid value
+  falls back to the default of its key and never throws.
+- A page under `app/pages/(app)/` gets `{ middleware: "auth", layout:
+  "app" }` and a page under `app/pages/(guest)/` gets `{ middleware:
+  "guest", layout: "auth" }`. `nuxvel.pages.groups` changes a group or
+  adds one. The group's middleware runs first, from a global route
+  middleware, and then the page's own middleware, inline functions
+  included. Any other key the page sets in `definePageMeta` wins. A page outside a
+  group is unchanged. An app that already has a folder named
+  `(app)` or `(guest)` now gets this meta on its pages.
 - `defineNotification({ message })` builds one message for the
   database row, the web push and the mail: `mail: $mails.<path>` sends
   that mail with the message as its input. `toDatabase`, `toPush` and

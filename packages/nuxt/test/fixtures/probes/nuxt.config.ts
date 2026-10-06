@@ -22,6 +22,7 @@ export default defineNuxtConfig({
   modules: [devtoolsTabs],
   nuxvel: {
     form: { inputs: { money: "ProbeMoneyInput" } },
+    pages: { groups: { admin: { middleware: "auth", layout: "default" } } },
     rendering: {
       "/_rendering/cached": "cached",
       "/zh/_rendering/cached": "cached",

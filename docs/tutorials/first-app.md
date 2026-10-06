@@ -85,8 +85,8 @@ A resource is one table with its API and its pages. Generate the events:
 ✔ Created server/actions/event/delete-event.action.ts
 ✔ Created server/trpc/routers/event.router.ts
 ✔ Created server/trpc/routers/event.router.test.ts
-✔ Created app/pages/event/index.vue
-✔ Created app/pages/event/new.vue
+✔ Created app/pages/(app)/event/index.vue
+✔ Created app/pages/(app)/event/new.vue
 ✔ Created app/components/EventForm.vue
 ```
 
@@ -164,7 +164,7 @@ Open https://gather.localhost/event. Select **New event**, and create an event. 
 
 The starter has sign-up and sign-in pages. The generated code already uses them:
 
-- `definePageMeta({ middleware: "auth" })` in each page sends a signed-out visitor to `/sign-in`.
+- A page in `app/pages/(app)/` gets the `auth` middleware, which sends a signed-out visitor to `/sign-in`.
 - `authedProcedure` refuses a call without a session with `UNAUTHORIZED`. In the procedure, `ctx.user` is the signed-in user, and `ctx.actor` is the same user for actions and policies.
 - `event.list` and `event.byId` read only the rows where `ownerId` is `ctx.user.id`. A host sees only their own events.
 
@@ -255,10 +255,8 @@ Write the page. The file name `[id].vue` gives the route `event-id`, with the pa
 ```
 
 ```vue
-<!-- app/pages/event/[id].vue -->
+<!-- app/pages/(app)/event/[id].vue -->
 <script setup lang="ts">
-definePageMeta({ middleware: "auth" });
-
 const route = useRoute("event-id");
 const event = $api.event.show.useQuery(() => ({ id: Number(route.params.id) }));
 
@@ -282,10 +280,10 @@ useSeo({ title: "Event" });
 
 `$api` gives the typed procedures in the browser. `data` has the type of the `.output()` schema, so `data.isHost` is a `boolean`, and a typo does not compile. `<QueryState>` shows a loading state, an error state, or the `default` slot with the data.
 
-Link the title of each event in the list to this page. In `app/pages/event/index.vue`, add a slot for the `title` column in the `<DataTable>`, before the `actions-cell` slot:
+Link the title of each event in the list to this page. In `app/pages/(app)/event/index.vue`, add a slot for the `title` column in the `<DataTable>`, before the `actions-cell` slot:
 
 ```vue
-<!-- app/pages/event/index.vue -->
+<!-- app/pages/(app)/event/index.vue -->
       <template #title-cell="{ row }">
         <ULink :to="{ name: 'event-id', params: { id: row.original.id } }">{{ row.original.title }}</ULink>
       </template>
@@ -459,10 +457,10 @@ const guests = $api.event.guests.useQuery(() => ({ id: props.eventId, ...paginat
 
 ### The page
 
-On the event page, the host sees the list, and a guest sees the form. Replace the line "You host this event." in `app/pages/event/[id].vue`:
+On the event page, the host sees the list, and a guest sees the form. Replace the line "You host this event." in `app/pages/(app)/event/[id].vue`:
 
 ```vue
-<!-- app/pages/event/[id].vue -->
+<!-- app/pages/(app)/event/[id].vue -->
         <section v-if="data.isHost" class="space-y-3">
           <h2 class="text-lg font-semibold">Guests</h2>
           <GuestList :event-id="data.id" />
@@ -631,10 +629,10 @@ const form = useActionForm($api.event.invite, {
 </template>
 ```
 
-Show it to the host, under the guest list in `app/pages/event/[id].vue`:
+Show it to the host, under the guest list in `app/pages/(app)/event/[id].vue`:
 
 ```vue
-<!-- app/pages/event/[id].vue -->
+<!-- app/pages/(app)/event/[id].vue -->
           <GuestList :event-id="data.id" />
           <InviteForm :event-id="data.id" />
 ```

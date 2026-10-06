@@ -105,7 +105,7 @@ describe("create-nuxvel, installed and run", () => {
         appDir,
       );
       expect(resource.exitCode, resource.output).toBe(0);
-      for (const file of ["app/pages/project/index.vue", "app/pages/project/new.vue", "app/components/ProjectForm.vue"]) {
+      for (const file of ["app/pages/(app)/project/index.vue", "app/pages/(app)/project/new.vue", "app/components/ProjectForm.vue"]) {
         expect(existsSync(join(appDir, file)), file).toBe(true);
       }
       const migration = await run(nuxvel, ["db:generate"], appDir);

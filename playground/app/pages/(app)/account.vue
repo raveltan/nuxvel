@@ -1,6 +1,4 @@
 <script setup lang="ts">
-definePageMeta({ middleware: "auth", layout: "app" });
-
 const posts = $api.account.posts.useQuery();
 
 const columns = [

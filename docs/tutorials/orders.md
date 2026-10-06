@@ -1187,10 +1187,8 @@ defineProps<{ orders: OrderSummary[] }>();
 ```
 
 ```vue
-<!-- app/pages/shop.vue -->
+<!-- app/pages/(app)/shop.vue -->
 <script setup lang="ts">
-definePageMeta({ middleware: "auth" });
-
 const products = $api.product.list.useQuery();
 const orders = $api.order.mine.useQuery();
 

@@ -113,6 +113,14 @@ describe("nuxvel.seo", async () => {
     expect(response.headers.get("x-robots-tag")).toContain("noindex");
   });
 
+  it("keeps a page of the (app) route group out of the sitemap and marks it noindex", async () => {
+    const sitemap = await guest().$fetch<string>("/__sitemap__/en-US.xml", { responseType: "text" });
+    const response = await guest().fetch("/account", { redirect: "manual" });
+
+    expect(sitemap).not.toContain("/account</loc>");
+    expect(response.headers.get("x-robots-tag")).toContain("noindex");
+  });
+
   it("reads the head tags of a page with getMeta()", async () => {
     const post = await postFactory({ title: "Tom & Jerry", body: "A body that runs on." });
 

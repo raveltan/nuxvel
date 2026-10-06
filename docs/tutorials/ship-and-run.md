@@ -136,10 +136,8 @@ The module reads `linkTable` from `#nuxvel/schema`, which holds the tables of th
 The page of the module goes in `layers/reports/app/pages/`:
 
 ```vue
-<!-- layers/reports/app/pages/reports.vue -->
+<!-- layers/reports/app/pages/(app)/reports.vue -->
 <script setup lang="ts">
-definePageMeta({ middleware: "auth" });
-
 const summary = $api.report.summary.useQuery();
 </script>
 

@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import type { AppPaths } from "../app-layout/app-paths.ts";
 import type { GeneratedFile } from "../generated/write-generated.ts";
@@ -235,8 +236,11 @@ function uiFiles(name: string, paths: AppPaths, options: CrudOptions, values: Re
   const columns = options.searchable ?? [];
   const shown = [...fields.filter((field) => field.type !== "json").map((field) => field.column), ...columns];
   const title = toSentenceCase(name);
+  const appGroupDir = join(paths.pagesDir, "(app)");
+  const inAppGroup = existsSync(appGroupDir);
   const uiValues = {
     ...values,
+    pageMeta: inAppGroup ? "" : 'definePageMeta({ middleware: "auth" });\n\n',
     listTitle: `${title} list`,
     titleLower: title.toLowerCase(),
     tableColumns: ["id", ...shown]
@@ -256,7 +260,7 @@ function uiFiles(name: string, paths: AppPaths, options: CrudOptions, values: Re
       .join(""),
     updateDefaults: objectLiteral(["id: props.row.id", ...shown.map((column) => `${toCamelCase(column)}: props.row.${toCamelCase(column)}`)]),
   };
-  const pagesDir = join(paths.pagesDir, name);
+  const pagesDir = join(inAppGroup ? appGroupDir : paths.pagesDir, name);
 
   return [
     { path: join(pagesDir, "index.vue"), template: "page-resource-index.vue.txt", values: uiValues },

@@ -145,8 +145,8 @@ Generate the team and the invoice with `make:resource`, and the membership table
 ✔ Created server/actions/team/delete-team.action.ts
 ✔ Created server/trpc/routers/team.router.ts
 ✔ Created server/trpc/routers/team.router.test.ts
-✔ Created app/pages/team/index.vue
-✔ Created app/pages/team/new.vue
+✔ Created app/pages/(app)/team/index.vue
+✔ Created app/pages/(app)/team/new.vue
 ✔ Created app/components/TeamForm.vue
 ◇ Updated types (nuxt prepare) (7.5s)
 ✔ Created server/database/schema/membership.schema.ts
@@ -160,8 +160,8 @@ Generate the team and the invoice with `make:resource`, and the membership table
 ✔ Created server/actions/invoice/delete-invoice.action.ts
 ✔ Created server/trpc/routers/invoice.router.ts
 ✔ Created server/trpc/routers/invoice.router.test.ts
-✔ Created app/pages/invoice/index.vue
-✔ Created app/pages/invoice/new.vue
+✔ Created app/pages/(app)/invoice/index.vue
+✔ Created app/pages/(app)/invoice/new.vue
 ✔ Created app/components/InvoiceForm.vue
 ◇ Updated types (nuxt prepare) (9.9s)
 ```
@@ -983,10 +983,10 @@ See [Testing: many cases in one test](../testing.md#many-cases-in-one-test).
 
 ## 6. The team page
 
-`--ui` wrote the team and invoice lists and their forms. The app needs a page for one team, with its members. In `app/pages/team/index.vue`, add a slot for the `name` column before the `#actions-cell` slot, so that each name links to the team page:
+`--ui` wrote the team and invoice lists and their forms. The app needs a page for one team, with its members. In `app/pages/(app)/team/index.vue`, add a slot for the `name` column before the `#actions-cell` slot, so that each name links to the team page:
 
 ```vue
-<!-- app/pages/team/index.vue -->
+<!-- app/pages/(app)/team/index.vue -->
       <template #name-cell="{ row }">
         <ULink :to="{ name: 'team-id', params: { id: row.original.id } }" class="font-medium">{{ row.original.name }}</ULink>
       </template>
@@ -995,10 +995,8 @@ See [Testing: many cases in one test](../testing.md#many-cases-in-one-test).
 No generator writes a page that shows two tables, so create the page by hand:
 
 ```vue
-<!-- app/pages/team/[id].vue -->
+<!-- app/pages/(app)/team/[id].vue -->
 <script setup lang="ts">
-definePageMeta({ middleware: "auth" });
-
 const id = Number(useRoute().params.id);
 const team = $api.team.byId.useQuery({ id });
 
@@ -1384,10 +1382,8 @@ A call of `authClient` that changes the session refreshes `useUser()`. So after 
 Put the component on a page. Chapter 13 adds the API keys to the same page:
 
 ```vue
-<!-- app/pages/settings/security.vue -->
+<!-- app/pages/(app)/settings/security.vue -->
 <script setup lang="ts">
-definePageMeta({ middleware: "auth" });
-
 useSeo({ title: "Security" });
 </script>
 
@@ -1599,10 +1595,8 @@ export const adminRouter = {
 The page shows the teams in a table:
 
 ```vue
-<!-- app/pages/admin.vue -->
+<!-- app/pages/(app)/admin.vue -->
 <script setup lang="ts">
-definePageMeta({ middleware: "auth" });
-
 const teams = useQuery({ ...$api.admin.teams.queryOptions(), ssrCatchError: true });
 
 useSeo({ title: "Admin" });
@@ -2031,7 +2025,7 @@ const { mutate: revoke } = $api.apiKeys.revoke.useMutation();
 </template>
 ```
 
-`apiKeys.create` returns the key once. nuxvel stores only a hash of it. `createApiKeyInput` from chapter 8 checks the name in the browser. Add `<ApiKeys />` to `app/pages/settings/security.vue` under `<TwoFactorSettings />`.
+`apiKeys.create` returns the key once. nuxvel stores only a hash of it. `createApiKeyInput` from chapter 8 checks the name in the browser. Add `<ApiKeys />` to `app/pages/(app)/settings/security.vue` under `<TwoFactorSettings />`.
 
 ### Call the API
 
@@ -2269,7 +2263,7 @@ describe("the team pages in a browser", () => {
 });
 ```
 
-The last test fails without `ssrCatchError: true` in `app/pages/admin.vue`: `visit` records the HTTP 500 of the error page. Run the browser tests:
+The last test fails without `ssrCatchError: true` in `app/pages/(app)/admin.vue`: `visit` records the HTTP 500 of the error page. Run the browser tests:
 
 ```bash
 npm run test:e2e

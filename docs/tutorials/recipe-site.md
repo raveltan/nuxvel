@@ -60,8 +60,8 @@ A recipe has a slug for its URL, a title, a summary and a body. An author writes
 ✔ Created server/actions/recipe/delete-recipe.action.ts
 ✔ Created server/trpc/routers/recipe.router.ts
 ✔ Created server/trpc/routers/recipe.router.test.ts
-✔ Created app/pages/recipe/index.vue
-✔ Created app/pages/recipe/new.vue
+✔ Created app/pages/(app)/recipe/index.vue
+✔ Created app/pages/(app)/recipe/new.vue
 ✔ Created app/components/RecipeForm.vue
 ◇ Updated types (nuxt prepare) (2.7s)
 ```
@@ -893,17 +893,17 @@ Add the procedure to the router, next to the generated ones:
 
 ### The publish button
 
-The generated list at `/recipe` shows the recipes of the author. Show the publication date in place of the body, and a **Publish** button for a draft. In `app/pages/recipe/index.vue`, add the mutation below the `remove` mutation:
+The generated list at `/recipe` shows the recipes of the author. Show the publication date in place of the body, and a **Publish** button for a draft. In `app/pages/(app)/recipe/index.vue`, add the mutation below the `remove` mutation:
 
 ```ts
-// app/pages/recipe/index.vue
+// app/pages/(app)/recipe/index.vue
 const { mutate: publish } = $api.recipe.publish.useMutation({ toast: "Recipe published" });
 ```
 
 In the `columns` of the `<DataTable>`, replace `{ accessorKey: 'body', header: 'Body' }` with `{ accessorKey: 'publishedAt', header: 'Published' }`. Then add a cell for the column, above the `#actions-cell` template:
 
 ```vue
-<!-- app/pages/recipe/index.vue -->
+<!-- app/pages/(app)/recipe/index.vue -->
       <template #publishedAt-cell="{ row }">
         <DateTime v-if="row.original.publishedAt" :value="row.original.publishedAt" />
         <UButton
@@ -920,12 +920,11 @@ The `toast` option shows a success toast when the mutation succeeds. The page st
 
 ### The account page
 
-A reader turns on push notifications on their account page. The page uses the `auth` middleware, because the server stores a subscription for a signed-in user:
+A reader turns on push notifications on their account page. The page is in the `(app)` route group, which gives it the `auth` middleware, because the server stores a subscription for a signed-in user:
 
 ```vue
-<!-- app/pages/account.vue -->
+<!-- app/pages/(app)/account.vue -->
 <script setup lang="ts">
-definePageMeta({ middleware: "auth", layout: "app" });
 useSeo({ title: "Your account" });
 </script>
 

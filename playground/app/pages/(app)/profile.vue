@@ -1,6 +1,4 @@
 <script setup lang="ts">
-definePageMeta({ middleware: "auth", layout: "app" });
-
 const me = $api.profile.me.useQuery();
 
 const avatarForm = useActionForm($api.profile.setAvatar, {

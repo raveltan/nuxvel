@@ -966,10 +966,8 @@ The Interactions panel lists each step of the `play` function: each `fill`, `cli
 Each component now works in every state. The pages only place them. All three pages need a signed-in user, and they use the `app` layout of the starter:
 
 ```vue
-<!-- app/pages/products/index.vue -->
+<!-- app/pages/(app)/products/index.vue -->
 <script setup lang="ts">
-definePageMeta({ middleware: "auth", layout: "app" });
-
 useSeo({ title: "Products" });
 </script>
 
@@ -985,10 +983,8 @@ useSeo({ title: "Products" });
 ```
 
 ```vue
-<!-- app/pages/products/new.vue -->
+<!-- app/pages/(app)/products/new.vue -->
 <script setup lang="ts">
-definePageMeta({ middleware: "auth", layout: "app" });
-
 useSeo({ title: "New product" });
 </script>
 
@@ -1001,10 +997,8 @@ useSeo({ title: "New product" });
 ```
 
 ```vue
-<!-- app/pages/products/[id].vue -->
+<!-- app/pages/(app)/products/[id].vue -->
 <script setup lang="ts">
-definePageMeta({ middleware: "auth", layout: "app" });
-
 const route = useRoute("products-id");
 
 useSeo({ title: "Product" });

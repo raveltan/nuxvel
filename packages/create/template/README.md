@@ -60,7 +60,7 @@ Open `/sign-in` and sign in as `demo@example.com` with the password `demo-passwo
 
 The app creates the account, signs you in and opens `/`. The home page shows your email and a **Sign out** button. Use `/sign-in` to sign in again.
 
-The pages are `app/pages/sign-up.vue` and `app/pages/sign-in.vue`. Each page renders the `<AuthForm>` component of nuxvel. See the [auth guide](https://github.com/raveltan/nuxvel/blob/main/docs/auth.md).
+The pages are `app/pages/(guest)/sign-up.vue` and `app/pages/(guest)/sign-in.vue`. A page in `(guest)/` is for signed-out visitors and uses the `auth` layout. A page in `(app)/` is for signed-in users and uses the `app` layout. Each page renders the `<AuthForm>` component of nuxvel. See the [auth guide](https://github.com/raveltan/nuxvel/blob/main/docs/auth.md).
 
 ## Trying code in a REPL
 

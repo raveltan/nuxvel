@@ -15,13 +15,14 @@ Nuxt 4 + `@nuxvel/nuxt`. Data: Drizzle on Postgres. API: tRPC. Input: Zod. Auth:
 4. An action in a procedure runs as the caller: no `{ actor: ctx.actor }`. `can()` and `authorize()` read that actor: pass them no actor. Do not build an actor in a procedure.
 5. Do not import an auto-imported name. Import tables, actions, `drizzle-orm` operators and test fixtures.
 6. Links use route names in the current locale: `:to="$localeRoute({ name: 'post-id', params: { id } })"`. Never `"/post/1"`.
-7. No `v-html`. Use `<SafeHtml :html>`.
-8. A table with a column to the user table needs `defineUserData()` in `server/privacy/`.
-9. No `!` to remove `undefined`. Use `findOrFail`, `findAuthorized`, `insertOne`, `updateOne` or `firstOrFail`.
-10. Make a new file with `./nv make:*`. It writes the file, the export name and a test.
-11. `shared/` runs in the browser. It never imports `drizzle-orm`, `#nuxvel/*` or `server/`.
-12. The input schema of a mutation goes in `shared/schemas/` and the procedure names it: `<ActionForm :action="$api.post.create" />` and `useActionForm($api.post.create)` read it from there.
-13. Before you finish: run the changed tests, `./nv test:arch`, `npm run typecheck`.
+7. A page for signed-in users goes in `app/pages/(app)/`, a page for signed-out visitors in `app/pages/(guest)/`. The folder sets the middleware and the layout: no `definePageMeta` for them.
+8. No `v-html`. Use `<SafeHtml :html>`.
+9. A table with a column to the user table needs `defineUserData()` in `server/privacy/`.
+10. No `!` to remove `undefined`. Use `findOrFail`, `findAuthorized`, `insertOne`, `updateOne` or `firstOrFail`.
+11. Make a new file with `./nv make:*`. It writes the file, the export name and a test.
+12. `shared/` runs in the browser. It never imports `drizzle-orm`, `#nuxvel/*` or `server/`.
+13. The input schema of a mutation goes in `shared/schemas/` and the procedure names it: `<ActionForm :action="$api.post.create" />` and `useActionForm($api.post.create)` read it from there.
+14. Before you finish: run the changed tests, `./nv test:arch`, `npm run typecheck`.
 
 ## Resources
 

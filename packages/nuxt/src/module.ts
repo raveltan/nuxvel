@@ -16,6 +16,7 @@ import { moduleDefaults } from "./setup/resolved-options";
 import { applyRouteRules } from "./setup/route-rules";
 import { trackNitroScan } from "./setup/nitro-scan";
 import { setupPwa } from "./setup/pwa";
+import { type PageGroupMeta, setupPageGroups } from "./setup/page-groups";
 import { dropFontsPluginInStorybook, includeStorybookTypes, localizeStorybook, prebundleSanitizeHtmlInStorybook, isStorybookBuild, storybookI18nOverrides } from "./setup/storybook";
 import { addAutoImports, addSharedSchemaImports } from "./setup/auto-imports";
 import { addComponents } from "./setup/components";
@@ -39,7 +40,7 @@ import { setupDevtools } from "./setup/devtools";
 import { setupRequestSize } from "./setup/request-size";
 import { addAppPlugins } from "./setup/app-plugins";
 
-export type { NuxvelRuntimeConfig, PwaIcon, PwaOptions, RenderingPreset, SeoOptions, SocialProviderId };
+export type { NuxvelRuntimeConfig, PageGroupMeta, PwaIcon, PwaOptions, RenderingPreset, SeoOptions, SocialProviderId };
 
 const resolver = createResolver(import.meta.url);
 const nuxvelLocalesSource = resolver.resolve("./runtime/locales");
@@ -122,6 +123,25 @@ export interface ModuleOptions extends NuxvelRuntimeConfig {
      * ```
      */
     inputs?: Record<string, string>;
+  };
+  /** The options of the app's pages. */
+  pages?: {
+    /**
+     * The page meta of each route group, by the name of the group: a page
+     * under `pages/(<group>)/` gets the `middleware` and `layout` of
+     * `<group>`, and the folder adds nothing to its URL. A key the page
+     * sets with a static value in `definePageMeta` wins over its group.
+     * The map is merged with the default, so it can change one key of a
+     * default group or add a group.
+     *
+     * @defaultValue `{ app: { middleware: "auth", layout: "app" }, guest: { middleware: "guest", layout: "auth" } }`
+     *
+     * @example
+     * ```ts
+     * nuxvel: { pages: { groups: { admin: { middleware: ["auth", "admin"], layout: "app" } } } }
+     * ```
+     */
+    groups?: Record<string, PageGroupMeta>;
   };
   /** The performance budgets that the build checks. */
   perf?: {
@@ -496,7 +516,7 @@ function hasLocalizedSeo(nuxt: Nuxt) {
  * {@link useNuxvelConfig}.
  *
  * It registers the server auto-imports (database, errors, redis, rate limiting, jobs, events, backfills, flags,
- * tRPC, actions, policies, mail, notifications, storage, webhooks, realtime, utils), the `auth` and `guest` route middleware,
+ * tRPC, actions, policies, mail, notifications, storage, webhooks, realtime, utils), the `auth` and `guest` route middleware and the page meta of the route groups in `pages.groups`,
  * the app composables and `authClient`, `isMaintenanceError()`, the `<QueryState>`, `<DateTime>` and `<Maintenance>` components, Pinia Colada, the `$trpc` client plugin, the flags and flash plugins, the `/api/trpc`, the REST handler at `api.restPrefix`, `/api/flags`, `/api/flags/exposures`, `/api/notifications`, `/api/notifications/read` and
  * `/api/auth` handlers, the `/api/uploads/<name>` presigned-URL endpoint, the
  * `/api/webhooks/<name>` webhook endpoint, the `/api/channels` multiplexed and
@@ -590,6 +610,7 @@ export default defineNuxtModule<ModuleOptions>().with({
       if (localizedSeo) addServerPlugin(runtimeFile("./runtime/server/plugins/sitemap-locale-alternates"));
     }
     setupPwa(nuxt, options, runtimeFile);
+    setupPageGroups(nuxt, options.pages.groups, runtimeFile);
     includeStorybookTypes(nuxt);
     dropFontsPluginInStorybook(nuxt);
     prebundleSanitizeHtmlInStorybook(nuxt);

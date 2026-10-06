@@ -1,6 +1,4 @@
 <script setup lang="ts">
-definePageMeta({ middleware: "auth", layout: "app" });
-
 type AuthSession = typeof authClient.$Infer.Session.session;
 
 const queryCache = useQueryCache();

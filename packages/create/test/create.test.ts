@@ -344,6 +344,20 @@ describe("create-nuxvel", () => {
     }
   });
 
+  it("writes an empty (app) route group, where make:resource --ui puts its pages", async () => {
+    const scratchDir = mkdtempSync(join(tmpdir(), "nuxvel-create-"));
+    const appDir = join(scratchDir, "app");
+
+    try {
+      const created = await run("node", [createEntry, appDir, "--local"], scratchDir);
+      expect(created.exitCode, created.output).toBe(0);
+
+      expect(readdirSync(join(appDir, "app", "pages", "(app)"))).toEqual([".gitkeep"]);
+    } finally {
+      rmSync(scratchDir, { recursive: true, force: true });
+    }
+  });
+
   it("refuses to scaffold into a directory that is not empty", async () => {
     const scratchDir = mkdtempSync(join(tmpdir(), "nuxvel-create-"));
     const appDir = join(scratchDir, "taken");
@@ -477,7 +491,7 @@ describe("create-nuxvel", () => {
       );
     const pagesDir = join(templateDir, "app", "pages");
     const routeNames = files(pagesDir).map((file) =>
-      relative(pagesDir, file).replace(/\.vue$/, "").replace(/(^|\/)index$/, "$1").replace(/\/$/, "").replace(/[[\]]/g, "").replaceAll("/", "-") || "index",
+      relative(pagesDir, file).replace(/\([^)]*\)\//g, "").replace(/\.vue$/, "").replace(/(^|\/)index$/, "$1").replace(/\/$/, "").replace(/[[\]]/g, "").replaceAll("/", "-") || "index",
     );
     const sources = files(join(templateDir, "app")).filter((file) => file.endsWith(".vue")).map((file) => readFileSync(file, "utf8"));
     const linked = sources.flatMap((source) =>

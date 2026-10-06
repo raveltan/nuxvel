@@ -1744,9 +1744,8 @@ useSeo(() => ({ title: course.data?.title ?? "Course" }));
 `/teach` lists the courses of the instructor and creates a new one. The form uses `useActionForm($api.courses.course.create)`, which takes the same Zod schema as the action, so the browser and the server check the same rules:
 
 ```vue
-<!-- app/pages/teach/index.vue -->
+<!-- app/pages/(app)/teach/index.vue -->
 <script setup lang="ts">
-definePageMeta({ layout: "app", middleware: "auth" });
 useSeo({ title: "Teach" });
 
 const courses = $api.courses.course.list.useQuery({});
@@ -1835,10 +1834,8 @@ const form = useActionForm($api.courses.lesson.create, {
 The upload name `courses.lesson-file` is typed: a name that no upload has fails the typecheck. See [File uploads](../frontend.md#file-uploads).
 
 ```vue
-<!-- app/pages/teach/[id].vue -->
+<!-- app/pages/(app)/teach/[id].vue -->
 <script setup lang="ts">
-definePageMeta({ layout: "app", middleware: "auth" });
-
 const route = useRoute("teach-id");
 const courseId = computed(() => Number(route.params.id));
 const course = $api.courses.course.byId.useQuery(() => ({ id: courseId.value }));
@@ -1886,9 +1883,8 @@ useSeo(() => ({ title: course.data?.title ?? "Course" }));
 ### The student dashboard
 
 ```vue
-<!-- app/pages/learning.vue -->
+<!-- app/pages/(app)/learning.vue -->
 <script setup lang="ts">
-definePageMeta({ layout: "app", middleware: "auth" });
 useSeo({ title: "My learning" });
 
 const courses = $api.learning.dashboard.useQuery();
@@ -2157,14 +2153,14 @@ const week = 7 * 24 * 60 * 60 * 1000;
 `flag()` evaluates the flag for the signed-in user. On the page, `useFlag()` reads the same flag. The server evaluates it for the user, and the page gets only the result:
 
 ```vue
-<!-- app/pages/learning.vue, the script -->
+<!-- app/pages/(app)/learning.vue, the script -->
 const courses = $api.learning.dashboard.useQuery();
 const weeklyGoal = useFlag($flags.learning.weeklyGoal);
 const lessonsThisWeek = $api.learning.weeklyGoal.useQuery(undefined, { enabled: weeklyGoal });
 ```
 
 ```vue
-<!-- app/pages/learning.vue, under the heading -->
+<!-- app/pages/(app)/learning.vue, under the heading -->
     <UAlert
       v-if="weeklyGoal && lessonsThisWeek.data !== undefined"
       icon="i-lucide-target"

@@ -36,18 +36,14 @@ Sign out with `useUser().signOut()`, not with `authClient.signOut()`. `authClien
 ### The sign-in and sign-up forms
 
 ```vue
-<!-- app/pages/sign-in.vue -->
-<script setup lang="ts">
-definePageMeta({ layout: "auth", middleware: "guest" });
-</script>
-
+<!-- app/pages/(guest)/sign-in.vue -->
 <template>
   <h1>Sign in</h1>
   <AuthForm mode="sign-in" />
 </template>
 ```
 
-`<AuthForm>` renders the form of a sign-in, sign-up, forgot-password or reset-password page. The starter ships `app/pages/sign-in.vue`, `sign-up.vue`, `forgot-password.vue`, `reset-password.vue` and `verify-email.vue` with it.
+`<AuthForm>` renders the form of a sign-in, sign-up, forgot-password or reset-password page. The starter ships `app/pages/(guest)/sign-in.vue`, `sign-up.vue`, `forgot-password.vue`, `reset-password.vue` and `verify-email.vue` with it. The `(guest)` [route group](./frontend.md#route-groups) gives them the `guest` middleware and the `auth` layout.
 
 | `mode` | Fields | Calls | On success |
 |---|---|---|---|
@@ -87,7 +83,7 @@ export const resetPasswordSchema = z.object({
 });
 ```
 
-The starter's `app/pages/verify-email.vue` tells a new user to open the link in the mail. Its button sends the link again with `authClient.sendVerificationEmail()`.
+The starter's `app/pages/(guest)/verify-email.vue` tells a new user to open the link in the mail. Its button sends the link again with `authClient.sendVerificationEmail()`.
 
 To build a form of your own, use a `<UForm>` with the shared schema, call `authClient` in `submit`, and show the errors with [`useFormErrors()`](./frontend.md#form-errors-without-useactionform):
 
@@ -151,7 +147,7 @@ await authClient.requestPasswordReset({ email, redirectTo: "/reset-password" });
 ```
 
 ```ts
-// app/pages/reset-password.vue
+// app/pages/(guest)/reset-password.vue
 const token = String(useRoute().query.token ?? "");
 
 await authClient.resetPassword({ token, newPassword });
@@ -399,6 +395,16 @@ A browser counts as known when it holds the signed `known_device` cookie for the
 
 ## Protecting pages
 
+```text
+app/pages/
+  (app)/dashboard.vue     -> /dashboard, runs the auth middleware
+  (guest)/sign-in.vue     -> /sign-in, runs the guest middleware
+```
+
+Put a page for signed-in users in `app/pages/(app)/` and a page for signed-out visitors in `app/pages/(guest)/`. The folder is a route group: it adds nothing to the URL, and it gives each page in it the middleware and the layout of the group. See [Route groups](./frontend.md#route-groups). A page in `(app)/` that lists its own middleware runs it after `auth`, so it stays protected. A page that must be public goes outside the folder.
+
+A page outside these folders lists the middleware itself:
+
 ```ts
 // app/pages/dashboard.vue
 definePageMeta({
@@ -406,14 +412,7 @@ definePageMeta({
 });
 ```
 
-```ts
-// app/pages/sign-in.vue
-definePageMeta({
-  middleware: "guest",
-});
-```
-
-nuxvel registers two named route middleware. Each one runs only on the pages that list it:
+nuxvel registers two named route middleware. Each one runs only on the pages that list it, directly or through their group:
 
 | Middleware | Effect |
 |---|---|

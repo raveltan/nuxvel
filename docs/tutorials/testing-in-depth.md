@@ -1608,10 +1608,8 @@ Error: page.evaluate: Error
 The pages do not exist, so the router of the app cannot resolve the route names. The message does not say this yet: it is only `page.evaluate: Error`. Write the three pages:
 
 ```vue
-<!-- app/pages/bookings/index.vue -->
+<!-- app/pages/(app)/bookings/index.vue -->
 <script setup lang="ts">
-definePageMeta({ layout: "app", middleware: "auth" });
-
 const q = ref("");
 const bookings = $api.booking.list.useQuery(() => ({ q: q.value }));
 
@@ -1642,10 +1640,8 @@ useSeo({ title: "Bookings" });
 ```
 
 ```vue
-<!-- app/pages/bookings/new.vue -->
+<!-- app/pages/(app)/bookings/new.vue -->
 <script setup lang="ts">
-definePageMeta({ layout: "app", middleware: "auth" });
-
 const rooms = $api.room.list.useQuery();
 
 useSeo({ title: "Book a room" });
@@ -1664,10 +1660,8 @@ useSeo({ title: "Book a room" });
 ```
 
 ```vue
-<!-- app/pages/bookings/[id].vue -->
+<!-- app/pages/(app)/bookings/[id].vue -->
 <script setup lang="ts">
-definePageMeta({ layout: "app", middleware: "auth" });
-
 const route = useRoute("bookings-id");
 const booking = $api.booking.byId.useQuery({ id: Number(route.params.id) });
 

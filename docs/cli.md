@@ -1028,7 +1028,7 @@ Outside a terminal, the commands do not ask. Without fields, they write a table 
 nuxvel make:page blog/index
 ```
 
-`nuxvel make:page` writes a Nuxt page component to the pages directory of the app. In the starter, that is `app/pages/<path>.vue`. The file is the same page that `nuxt add page` writes. Pass `--force` to overwrite a page that exists.
+`nuxvel make:page` writes a Nuxt page component to the pages directory of the app. In the starter, that is `app/pages/<path>.vue`. The file is the same page that `nuxt add page` writes. Pass `--force` to overwrite a page that exists. The path is used as given, so `nuxvel make:page "(app)/billing"` writes a page into the `(app)` [route group](./frontend.md#route-groups).
 
 ### `nuxvel make:story <path>`
 
@@ -1285,9 +1285,11 @@ With `--ui`, the command also writes the pages of the resource. They use [Nuxt U
 
 | File | Page |
 | --- | --- |
-| `app/pages/<name>/index.vue` | The list at `/<name>`, in a [`<DataTable>`](./frontend.md#data-tables) that sorts and filters by `<name>ListColumns`. With `--searchable`, the table has a search input. Each row has an **Edit** link, which opens the edit form in a modal at `?edit=<id>`, and a **Delete** button. |
-| `app/pages/<name>/new.vue` | A form that creates a row, on [`useActionForm()`](./frontend.md#forms). The new row goes into the cached lists at once. |
+| `app/pages/(app)/<name>/index.vue` | The list at `/<name>`, in a [`<DataTable>`](./frontend.md#data-tables) that sorts and filters by `<name>ListColumns`. With `--searchable`, the table has a search input. Each row has an **Edit** link, which opens the edit form in a modal at `?edit=<id>`, and a **Delete** button. |
+| `app/pages/(app)/<name>/new.vue` | A form that creates a row, on [`useActionForm()`](./frontend.md#forms). The new row goes into the cached lists at once. |
 | `app/components/<Name>Form.vue` | The edit form, on `useActionForm()`. The saved row replaces the row in the cached lists at once. |
+
+The pages need a signed-in user. The starter has an empty `app/pages/(app)/` folder, so the command writes them into it, and the [route group](./frontend.md#route-groups) gives them the `auth` middleware and the `app` layout. In an app without that folder, they go to `app/pages/<name>/` with `definePageMeta({ middleware: "auth" })`.
 
 A reload of `/<name>?edit=<id>` opens the modal again. An ID that does not exist shows an alert and removes `?edit=` from the URL. Closing the modal or saving removes it too.
 

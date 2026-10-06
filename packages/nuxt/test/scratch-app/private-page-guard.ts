@@ -21,6 +21,7 @@ export const cachedPages = {
   "/guarded-tab/**": "cached",
   "/guarded-files/**": "cached",
   "/guarded-me": "cached",
+  "/guarded-group": "cached",
 } as const;
 
 export function addProtectedPage(appDir: string) {
@@ -29,6 +30,11 @@ export function addProtectedPage(appDir: string) {
   writeFileSync(
     join(appDir, "app", "pages", "protected.vue"),
     '<script setup lang="ts">\ndefinePageMeta({ middleware: "auth" });\n</script>\n\n<template><div>protected</div></template>\n',
+  );
+  mkdirSync(join(appDir, "app", "pages", "(app)"), { recursive: true });
+  writeFileSync(
+    join(appDir, "app", "pages", "(app)", "guarded-group.vue"),
+    '<script setup lang="ts">\ndefinePageMeta({ middleware: [] });\n</script>\n\n<template><div>guarded group</div></template>\n',
   );
   const shapes = {
     "guarded-tab/[[tab]].vue": ["", "guarded tab"],
@@ -58,7 +64,7 @@ describe("private-page cache guard", () => {
 
   it("warns about nothing else", () => {
     expect([...nuxvelWarnings].sort()).toEqual(
-      ["/protected", "/guarded-tab/**", "/guarded-files/**", "/guarded-me"]
+      ["/protected", "/guarded-tab/**", "/guarded-files/**", "/guarded-me", "/guarded-group"]
         .map((pattern) => `${pattern} uses the auth middleware but its route rules cache it; rendering it with the private preset instead.`)
         .sort(),
     );
@@ -92,5 +98,14 @@ describe("private-page cache guard", () => {
       expect(new URL(response.url).pathname, path).toBe(path);
       expect(response.headers.get("cache-control"), path).toBe("private, no-store");
     }
+  });
+
+  it("keeps a page under (app) that lists its own middleware behind auth and off a cached rule", async () => {
+    const signedIn = await actingAs(await userFactory({ email: "private-page-guard-group@example.com" })).fetch("/guarded-group");
+    const signedOut = await guest().fetch("/guarded-group");
+
+    expect(new URL(signedIn.url).pathname).toBe("/guarded-group");
+    expect(signedIn.headers.get("cache-control")).toBe("private, no-store");
+    expect(new URL(signedOut.url).pathname).toBe("/sign-in");
   });
 });

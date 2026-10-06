@@ -1,6 +1,4 @@
 <script setup lang="ts">
-definePageMeta({ middleware: "auth", layout: "app" });
-
 const { status, progress, result, error } = useJobChannel("demo.countdown");
 const countdown = $api.jobs.startCountdown.useMutation();
 

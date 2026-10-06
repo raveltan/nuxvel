@@ -1,7 +1,3 @@
-<script setup lang="ts">
-definePageMeta({ middleware: "auth", layout: "app" });
-</script>
-
 <template>
   <div class="max-w-xl space-y-6">
     <h1 class="text-2xl font-semibold">New post</h1>

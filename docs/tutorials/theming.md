@@ -55,8 +55,8 @@ The journal needs one table. Generate it with its pages, then make the migration
 ✔ Created server/actions/plant/delete-plant.action.ts
 ✔ Created server/trpc/routers/plant.router.ts
 ✔ Created server/trpc/routers/plant.router.test.ts
-✔ Created app/pages/plant/index.vue
-✔ Created app/pages/plant/new.vue
+✔ Created app/pages/(app)/plant/index.vue
+✔ Created app/pages/(app)/plant/new.vue
 ✔ Created app/components/PlantForm.vue
 ```
 
@@ -626,7 +626,7 @@ The component of the app replaces the whole nuxvel component. It cannot import t
 A page is a component, so a story can render it. The stories of the plant list check the restyled table, the replaced search input and the confirm dialog, in light and dark mode:
 
 ```ts
-// app/pages/plant/index.stories.ts
+// app/pages/(app)/plant/index.stories.ts
 import type { Meta, StoryObj } from "@storybook-vue/nuxt";
 import { mockTrpc, mockUser, trpcSpy } from "@nuxvel/nuxt/storybook/mocks";
 import { button, cell, dialog, expect, field, page, text } from "@nuxvel/nuxt/storybook/test";

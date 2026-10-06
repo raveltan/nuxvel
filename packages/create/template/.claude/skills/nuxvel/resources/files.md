@@ -26,6 +26,7 @@ nuxvel discovers each file. Never register one. The path gives the name: folders
 | `server/privacy/posts.user-data.ts` | `postsUserData` | |
 | `app/pages/post/[id].vue` | | route `post-id` |
 | `app/pages/post/index.vue` | | route `post` |
+| `app/pages/(app)/settings.vue` | | route `settings`, signed-in users only |
 
 - Kebab-case segment → camelCase key: `audit-log.router.ts` → `trpc.auditLog`, `admin/users.router.ts` → `trpc.admin.users`.
 - `$`-namespaces are server only. In `app/`, `$jobs`, `$channels`, `$flags`, `$experiments` hold only the name.

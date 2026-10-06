@@ -587,7 +587,7 @@ describe("nuxvel make:* output running in an app", () => {
     expectAppTestPassed("server/trpc/routers/ledger.router.test.ts");
     expect(source("app/components/LedgerForm.vue")).toContain('<USelect v-model="form.state.invoiceId" :items="invoiceList.data?.rows" value-key="id" label-key="id" class="w-full" />');
     expect(source("app/components/LedgerForm.vue")).toContain('<UInputNumber v-model="form.state.widgetId" class="w-full" />');
-    expect(source("app/pages/ledger/new.vue")).toContain("widgetId: undefined, invoiceId: undefined, keeperId: null");
+    expect(source("app/pages/(app)/ledger/new.vue")).toContain("widgetId: undefined, invoiceId: undefined, keeperId: null");
     expect(typecheck.exitCode, `${typecheck.stdout}${typecheck.stderr}`).toBe(0);
   });
 
@@ -618,9 +618,9 @@ describe("nuxvel make:* output running in an app", () => {
     expect(source("server/trpc/routers/article.router.ts")).toContain(
       '.where(and(eq(articleTable.ownerId, ctx.user.id), listWhere(articleTable, input.filters), search(articleTable, input.q ?? ""), notTrashed(articleTable)))',
     );
-    expect(source("app/pages/article/index.vue")).toContain("<DataTable");
-    expect(source("app/pages/article/index.vue")).toContain("const remove = $api.article.delete.useMutation({");
-    expect(source("app/pages/article/index.vue")).toContain("<UModal");
+    expect(source("app/pages/(app)/article/index.vue")).toContain("<DataTable");
+    expect(source("app/pages/(app)/article/index.vue")).toContain("const remove = $api.article.delete.useMutation({");
+    expect(source("app/pages/(app)/article/index.vue")).toContain("<UModal");
     expect(source("app/components/ArticleForm.vue")).toContain("useActionForm($api.article.update");
     expectAppTestPassed("server/trpc/routers/article.router.test.ts");
     expect(typecheck.exitCode, `${typecheck.stdout}${typecheck.stderr}`).toBe(0);

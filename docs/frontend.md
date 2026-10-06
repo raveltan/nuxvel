@@ -98,6 +98,54 @@ The route name of a page comes from its file path under `app/pages/`. The path s
 
 `definePageMeta({ name: "post" })` gives a page a fixed name. This name stays the same when you move the file. vue-router writes all route names and their params to `.nuxt/types/typed-router.d.ts`. `nuxt prepare` and the dev server write this file again when a page changes.
 
+### Route groups
+
+```text
+app/pages/
+  (app)/
+    dashboard.vue        -> /dashboard, signed-in users only, app layout
+    posts/index.vue      -> /posts
+  (guest)/
+    sign-in.vue          -> /sign-in, signed-out visitors only, auth layout
+  index.vue              -> /
+```
+
+A folder in parentheses is a route group. It adds nothing to the URL or to the route name: `(app)/posts/index.vue` answers `/posts`, and its route name is `posts`. nuxvel gives each page in a group the page meta of that group:
+
+| Group | Meta |
+| --- | --- |
+| `(app)` | `{ middleware: "auth", layout: "app" }` |
+| `(guest)` | `{ middleware: "guest", layout: "auth" }` |
+
+A page outside a group gets no meta from nuxvel. The `middleware` of a page in a group, a name or an inline function, runs after the middleware of the group, never in its place: a page in `(app)/` always runs `auth`. Move a page that must be public out of the group. Any other key that a page sets in `definePageMeta`, such as `layout`, wins over its group:
+
+```vue
+<!-- app/pages/(app)/settings.vue: signed-in users only, in the default layout -->
+<script setup lang="ts">
+definePageMeta({ layout: "default" });
+</script>
+```
+
+Give the key a static value, such as a string or an array of strings. A value that Nuxt cannot read at build time, such as a function, does not win over the group.
+
+Change a group or add one in `nuxvel.pages.groups`. The map is merged with the default, so you set only the keys that change:
+
+```ts
+// nuxt.config.ts
+export default defineNuxtConfig({
+  nuxvel: {
+    pages: {
+      groups: {
+        app: { layout: "dashboard" },
+        admin: { middleware: ["auth", "admin"], layout: "app" },
+      },
+    },
+  },
+});
+```
+
+A group name has letters, digits and `_` only: Nuxt drops a `-` from the folder name, so `(super-admin)` is the group `superadmin`.
+
 ### Links
 
 Use a route name in every link to a page:
@@ -118,6 +166,27 @@ await useRouter().push({ name: "index" });
 The typecheck checks a route name. It fails on a name that does not exist and on a `params` object without a param that the page needs. A path string such as `"/posts"` is autocompleted, but its type accepts any string, so `"/postz"` also compiles. A link with a path string breaks with no error when the page moves.
 
 A link with no `params` object compiles, also on a page that has params. vue-router then uses the params of the current route. For example, `{ name: 'posts-id-edit' }` on the page `posts-id` goes to the edit page of the same post.
+
+### Reading the query and the params
+
+```vue
+<!-- app/pages/(app)/posts/index.vue -->
+<script setup lang="ts">
+import { z } from "zod";
+
+const { query } = useRouteInput({
+  query: z.object({
+    page: z.coerce.number().int().min(1).default(1),
+    search: z.string().optional(),
+  }),
+});
+const posts = $api.post.list.useQuery(() => query.value);
+</script>
+```
+
+`useRouteInput({ query, params })` parses `route.query` and `route.params` with a Zod schema each. It returns `query` and `params` as computed refs, typed from the schemas, that change with the route. Pass the schema of the part you read.
+
+An invalid or missing value does not throw. Its key gets the default of its schema, and the other keys keep their value: `?page=abc&search=nuxt` gives `{ page: 1, search: "nuxt" }`. So each key needs `.default()` or `.optional()`, and the typecheck fails on a key without one. A query value is a string, so a number or a boolean needs `z.coerce`. A failed check on the whole object, such as `.refine()` or an unknown key under `.strict()`, gives the defaults of all keys. A schema whose defaults fail its own checks throws when `useRouteInput()` is called.
 
 ### Renaming or moving a page
 
@@ -995,11 +1064,11 @@ const deletePost = $api.post.delete.useMutation({
 
 ```vue
 <script setup lang="ts">
-definePageMeta({ middleware: "auth", layout: "app" });
+definePageMeta({ layout: "home" });
 </script>
 ```
 
-The starter has four layouts in `app/layouts/`, built with Nuxt UI. Each layout gives the page a skip link and a `<main>` landmark. Each layout except `auth` also has a labelled `<nav>`. The layouts are your files, so change them as you need. Select a layout for each page with `definePageMeta`.
+The starter has four layouts in `app/layouts/`, built with Nuxt UI. Each layout gives the page a skip link and a `<main>` landmark. Each layout except `auth` also has a labelled `<nav>`. The layouts are your files, so change them as you need. A page in `(app)/` gets the `app` layout and a page in `(guest)/` the `auth` layout, see [Route groups](#route-groups). Select the layout of any other page with `definePageMeta`.
 
 | Layout | For | What it adds |
 |---|---|---|

@@ -5,6 +5,7 @@ export const moduleDefaults = {
   ui: true,
   auth: { signInPath: "/", social: {}, blockDisposableEmails: false },
   rendering: {},
+  pages: { groups: { app: { middleware: "auth", layout: "app" }, guest: { middleware: "guest", layout: "auth" } } },
   api: { restPrefix: "/api/v1", docs: false, openapi: undefined, invalidateFallback: "namespace" },
 } satisfies Partial<ModuleOptions>;
 

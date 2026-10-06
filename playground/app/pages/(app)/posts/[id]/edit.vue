@@ -1,6 +1,4 @@
 <script setup lang="ts">
-definePageMeta({ middleware: "auth", layout: "app" });
-
 const route = useRoute();
 const id = Number(route.params.id);
 const post = $api.post.byId.useQuery({ id });

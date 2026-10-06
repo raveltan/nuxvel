@@ -1,6 +1,4 @@
 <script setup lang="ts">
-definePageMeta({ layout: "auth", middleware: "guest" });
-
 const route = useRoute();
 const email = typeof route.query.email === "string" ? route.query.email : "";
 
