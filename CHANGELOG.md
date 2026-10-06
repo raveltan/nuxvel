@@ -41,9 +41,11 @@ applies each step below that names a codemod.
   `useNuxtApp().$trpc`, so mock that. Codemod: `use-trpc`.
 - Optional cleanup: a mutation invalidates the queries of its own
   namespace, so a hand-written `queryCache.invalidateQueries({ key:
-  $api.post.key() })` in the `onSuccess` of `$api.post.update` only
-  fetches again. By hand: delete it, and the `useQueryCache()` it leaves
-  unused. Keep one for another namespace. Codemod: `invalidate`.
+  $api.post.key() })` in the `onSuccess` of `$api.post.update` is
+  redundant. It still works and fetches nothing twice. By hand: delete
+  it, and the `useQueryCache()` it leaves unused. Keep one for another
+  namespace, and keep them all when the app sets
+  `nuxvel.api.invalidateFallback: false`. Codemod: `invalidate`.
 
 ### Changes
 
