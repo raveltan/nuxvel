@@ -1,8 +1,6 @@
 <script setup lang="ts">
 const props = defineProps<{ post: RouterOutputs["post"]["byId"] }>();
 
-const queryCache = useQueryCache();
-
 const form = useActionForm(
   updatePostInput,
   toasted($api.post.update.mutationOptions(), "Post saved"),
@@ -10,7 +8,6 @@ const form = useActionForm(
     defaults: { id: props.post.id, title: props.post.title, body: props.post.body },
     failures: { "post.body-empty": "body" },
     onSuccess: async () => {
-      await queryCache.invalidateQueries({ key: $api.post.key() });
       await navigateTo({ name: "posts" });
     },
   },

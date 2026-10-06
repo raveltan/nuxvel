@@ -1,12 +1,9 @@
 <script setup lang="ts">
 definePageMeta({ middleware: "auth", layout: "app" });
 
-const queryCache = useQueryCache();
-
 const form = useActionForm(createPostInput, $api.post.create.mutationOptions(), {
   defaults: { title: "", body: "" },
   onSuccess: async () => {
-    await queryCache.invalidateQueries({ key: $api.post.key() });
     await navigateTo({ name: "posts" });
   },
 });

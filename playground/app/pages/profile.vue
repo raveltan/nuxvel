@@ -1,14 +1,12 @@
 <script setup lang="ts">
 definePageMeta({ middleware: "auth", layout: "app" });
 
-const queryCache = useQueryCache();
 const me = $api.profile.me.useQuery();
 
 const avatarForm = useActionForm(setAvatarInput, $api.profile.setAvatar.mutationOptions(), {
   defaults: { key: "" },
   onSuccess: () => {
     avatarForm.state.key = "";
-    return queryCache.invalidateQueries({ key: $api.profile.me.key() });
   },
 });
 
