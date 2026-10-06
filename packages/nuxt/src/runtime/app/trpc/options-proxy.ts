@@ -1,4 +1,4 @@
-import type { EntryKey, EntryKeyTagged } from "@pinia/colada";
+import { type EntryKey, type EntryKeyTagged, useQuery, type UseQueryOptions, type UseQueryReturn } from "@pinia/colada";
 import type { TRPCClientError } from "@trpc/client";
 import type {
   AnyTRPCMutationProcedure,
@@ -10,6 +10,7 @@ import type {
   inferTransformedProcedureOutput,
   TRPCRouterRecord,
 } from "@trpc/server";
+import { type MaybeRefOrGetter, type Reactive, reactive, toValue } from "vue";
 
 type Output<
   TRouter extends AnyTRPCRouter,
@@ -27,14 +28,39 @@ export type TRPCQueryKey<
   TProcedure extends AnyTRPCProcedure,
 > = EntryKeyTagged<Output<TRouter, TProcedure>, TRPCClientError<TRouter>>;
 
+type UseQueryArgs<TRouter extends AnyTRPCRouter, TProcedure extends AnyTRPCProcedure> =
+  undefined extends inferProcedureInput<TProcedure>
+    ? [input?: MaybeRefOrGetter<inferProcedureInput<TProcedure>>, options?: TRPCUseQueryOptions<TRouter, TProcedure>]
+    : [input: MaybeRefOrGetter<inferProcedureInput<TProcedure>>, options?: TRPCUseQueryOptions<TRouter, TProcedure>];
+
 /** What `queryOptions()` returns: a native `useQuery()` options object. */
 export interface TRPCQueryOptions<
   TRouter extends AnyTRPCRouter,
   TProcedure extends AnyTRPCProcedure,
 > {
   key: TRPCQueryKey<TRouter, TProcedure>;
-  query: () => Promise<Output<TRouter, TProcedure>>;
+  query: (context?: { signal?: AbortSignal }) => Promise<Output<TRouter, TProcedure>>;
 }
+
+/**
+ * The options `.useQuery()` takes: Pinia Colada's `useQuery()` options
+ * without `key` and `query`, which the procedure provides, such as
+ * `enabled`, `staleTime` or `placeholderData`.
+ */
+export type TRPCUseQueryOptions<
+  TRouter extends AnyTRPCRouter,
+  TProcedure extends AnyTRPCProcedure,
+> = Omit<UseQueryOptions<Output<TRouter, TProcedure>, TRPCClientError<TRouter>>, "key" | "query">;
+
+/**
+ * What `.useQuery()` returns: Pinia Colada's `useQuery()` result wrapped
+ * in `reactive()`, so `data`, `state`, `error` and `status` read without
+ * `.value`.
+ */
+export type TRPCUseQueryReturn<
+  TRouter extends AnyTRPCRouter,
+  TProcedure extends AnyTRPCProcedure,
+> = Reactive<UseQueryReturn<Output<TRouter, TProcedure>, TRPCClientError<TRouter>>>;
 
 /** What `mutationOptions()` returns: a native `useMutation()` options object. */
 export interface TRPCMutationOptions<
@@ -57,6 +83,26 @@ interface DecoratedQuery<
   queryOptions(
     ...args: InputArgs<TProcedure>
   ): TRPCQueryOptions<TRouter, TProcedure>;
+  /**
+   * Runs Pinia Colada's `useQuery()` for this procedure and returns its
+   * result wrapped in `reactive()`. Pass the input as a getter or a ref
+   * to fetch again when it changes. Call it in `setup`, like `useQuery()`;
+   * during SSR the query renders on the server and the page does not
+   * fetch it again when it hydrates. `options` pass through to
+   * `useQuery()`: set `enabled: false` to wait for an input.
+   *
+   * @param input The procedure's input, a getter or a ref of it.
+   * @param options Pinia Colada's `useQuery()` options, without `key` and `query`.
+   *
+   * @example
+   * ```ts
+   * const post = $api.post.byId.useQuery(() => ({ id: Number(route.params.id) }));
+   * const posts = $api.post.list.useQuery(undefined, { staleTime: 60_000 });
+   * ```
+   */
+  useQuery(
+    ...args: UseQueryArgs<TRouter, TProcedure>
+  ): TRPCUseQueryReturn<TRouter, TProcedure>;
   /**
    * The cache key for this procedure. Without input it matches every cached
    * call of the procedure, for invalidation.
@@ -95,8 +141,8 @@ type DecorateRecord<
         : never;
 };
 
-/** The names `useTRPC()` claims on every path, which no router or procedure may use. */
-export type ReservedTRPCName = "key" | "queryOptions" | "mutationOptions" | "then";
+/** The names `$api` claims on every path, which no router or procedure may use. */
+export type ReservedTRPCName = "key" | "queryOptions" | "useQuery" | "mutationOptions" | "then";
 
 type ReservedPaths<TRecord extends TRPCRouterRecord, Prefix extends string = ""> = {
   [K in keyof TRecord & string]: K extends ReservedTRPCName
@@ -112,12 +158,12 @@ type ReservedNameCheck<TRouter extends AnyTRPCRouter> = [
   ReservedPaths<TRouter["_def"]["record"]>,
 ] extends [never]
   ? []
-  : [error: `tRPC path "${ReservedPaths<TRouter["_def"]["record"]>}" uses a name useTRPC() reserves; rename it`];
+  : [error: `tRPC path "${ReservedPaths<TRouter["_def"]["record"]>}" uses a name $api reserves; rename it`];
 
 /**
- * The Pinia Colada helpers `useTRPC()` layers over every procedure:
- * `queryOptions()` and `key()` on queries, `mutationOptions()` on
- * mutations, `key()` on namespaces.
+ * The Pinia Colada helpers `$api` layers over every procedure:
+ * `useQuery()`, `queryOptions()` and `key()` on queries,
+ * `mutationOptions()` on mutations, `key()` on namespaces.
  */
 export type TRPCOptionsProxy<TRouter extends AnyTRPCRouter> = DecorateRecord<
   TRouter,
@@ -149,6 +195,20 @@ function call(client: object, path: string[], args: unknown[]): unknown {
   return target(...args);
 }
 
+function useProcedureQuery(client: object, procedurePath: string[], [input, options]: unknown[]) {
+  return reactive(
+    useQuery(() => {
+      const procedureInput = keyInput([toValue(input)]);
+
+      return {
+        ...(typeof options === "object" ? options : {}),
+        key: keyOf(procedurePath, procedureInput),
+        query: async ({ signal }) => call(client, [...procedurePath, "query"], [procedureInput, { signal }]),
+      };
+    }),
+  );
+}
+
 function pathProxy(client: object, path: string[]): unknown {
   return new Proxy(() => {}, {
     get: (_target, prop) =>
@@ -160,8 +220,10 @@ function pathProxy(client: object, path: string[]): unknown {
       if (method === "queryOptions")
         return {
           key: keyOf(procedurePath, keyInput(args)),
-          query: () => call(client, [...procedurePath, "query"], args.slice(0, 1)),
+          query: (context?: { signal?: AbortSignal }) =>
+            call(client, [...procedurePath, "query"], [args[0], { signal: context?.signal }]),
         };
+      if (method === "useQuery") return useProcedureQuery(client, procedurePath, args);
       if (method === "mutationOptions") {
         const context = { idempotencyKey: crypto.randomUUID() };
 

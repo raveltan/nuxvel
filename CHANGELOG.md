@@ -20,6 +20,8 @@ applies each step below that names a codemod.
   "#shared/*": "./shared/*"
   ```
   Codemod: `test-aliases`.
+- A router or procedure named `useQuery` fails `nuxt typecheck`, as
+  `$api` reserves the name. Rename it.
 
 ### Changes
 
@@ -44,3 +46,7 @@ applies each step below that names a codemod.
   in `reactive()`.
 - `$api` is the typed API of the app, the client that `useTRPC()` returns.
   It is auto-imported in the app and usable in templates.
+- Every query procedure of `$api` has `.useQuery(input, options?)`: it
+  runs `useQuery()` and returns its result wrapped in `reactive()`.
+- The `query` function of `queryOptions()` passes the abort signal of
+  Pinia Colada to tRPC, so a cancelled query cancels its request.

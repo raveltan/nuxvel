@@ -352,12 +352,28 @@ To name the type of a procedure, use the auto-imported `RouterInputs` and `Route
 
 ```vue
 <script setup lang="ts">
-const trpc = useTRPC();
 const route = useRoute();
+const post = $api.post.byId.useQuery(() => ({ id: Number(route.params.id) }));
+</script>
 
-const { data: post } = useQuery(() =>
-  trpc.post.byId.queryOptions({ id: Number(route.params.id) }),
-);
+<template>
+  <h1 v-if="post.data">{{ post.data.title }}</h1>
+</template>
+```
+
+`.useQuery(input, options?)` runs Pinia Colada's `useQuery()` for the procedure and returns its result wrapped in `reactive()`. Read `post.data`, `post.error`, `post.status` and `post.state` without `.value`, in the script and in the template, and call `post.refetch()` to fetch again. Pass the input as a getter or a ref, so that the query fetches again when it changes. A procedure without input takes no argument: `$api.post.list.useQuery()`.
+
+`options` are the options of Pinia Colada's `useQuery()`, without `key` and `query`: `enabled`, `staleTime`, `placeholderData` and the others. To wait until an input is ready, set `enabled`:
+
+```ts
+const results = $api.post.list.useQuery(() => ({ q: q.value }), { enabled: () => q.value !== "" });
+```
+
+Call `.useQuery()` in `setup`, as `useQuery()`. During SSR the query runs on the server, and the page does not fetch it again when it hydrates.
+
+```vue
+<script setup lang="ts">
+const trpc = useTRPC();
 
 const queryCache = useQueryCache();
 const { mutate: createPost } = useMutation({
@@ -367,14 +383,17 @@ const { mutate: createPost } = useMutation({
 </script>
 ```
 
-nuxvel installs Pinia Colada. `useQuery`, `useMutation` and `useQueryCache` are auto-imported. Each procedure on `useTRPC()` builds their options, so you do not write a key by hand.
+nuxvel installs Pinia Colada. `useQuery`, `useMutation` and `useQueryCache` are auto-imported. Each procedure on `$api` builds their options, so you do not write a key by hand.
 
 | Helper | Returns | Pass to |
 |---|---|---|
-| `trpc.post.byId.queryOptions(input)` | `{ key, query }` | `useQuery` |
-| `trpc.post.create.mutationOptions()` | `{ mutation }` | `useMutation` |
-| `trpc.post.byId.key(input?)` | `["trpc", "post", "byId", input]` | cache reads and writes |
-| `trpc.post.key()` | `["trpc", "post"]` | invalidating a whole namespace |
+| `$api.post.byId.useQuery(input, options?)` | the result of `useQuery`, in `reactive()` | |
+| `$api.post.byId.queryOptions(input)` | `{ key, query }` | `useQuery` |
+| `$api.post.create.mutationOptions()` | `{ mutation }` | `useMutation` |
+| `$api.post.byId.key(input?)` | `["trpc", "post", "byId", input]` | cache reads and writes |
+| `$api.post.key()` | `["trpc", "post"]` | invalidating a whole namespace |
+
+`queryOptions()` with Pinia Colada's own `useQuery()` is the step below `.useQuery()`: use it to build the options yourself, for example to pass them to `useLiveQuery()`. The `query` function passes the abort signal of Pinia Colada to tRPC, so a query that Pinia Colada cancels also cancels its request.
 
 A key is `"trpc"`, then the router path, then the input:
 
@@ -382,7 +401,7 @@ A key is `"trpc"`, then the router path, then the input:
 - A shorter key matches all keys under it.
 - No key collides with a key that you write by hand for a query that is not tRPC.
 
-These helpers use the names `key`, `queryOptions`, `mutationOptions` and `then`. A router or procedure with one of these names fails `nuxt typecheck`. Rename it.
+These helpers use the names `key`, `queryOptions`, `useQuery`, `mutationOptions` and `then`. A router or procedure with one of these names fails `nuxt typecheck`. Rename it.
 
 ## Optimistic updates
 

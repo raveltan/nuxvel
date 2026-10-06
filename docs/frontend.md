@@ -629,7 +629,7 @@ A new value removes `?page=` from the URL, so the results start on the first pag
 ```vue
 <!-- app/pages/posts/index.vue -->
 <script setup lang="ts">
-const posts = useQuery(useTRPC().post.list.queryOptions());
+const posts = $api.post.list.useQuery();
 </script>
 
 <template>
@@ -647,7 +647,7 @@ const posts = useQuery(useTRPC().post.list.queryOptions());
 </template>
 ```
 
-`<QueryState>` is auto-registered. It takes the value that `useQuery()` returns, as is or wrapped in `reactive()`, and renders one slot for each state of the query.
+`<QueryState>` is auto-registered. It takes the result of [`.useQuery()`](./api.md#caching-queries-pinia-colada), or the value that `useQuery()` returns, and renders one slot for each state of the query.
 
 | Slot | Renders when | Default with Nuxt UI | Default with `ui: false` |
 |---|---|---|---|
