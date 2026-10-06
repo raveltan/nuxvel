@@ -429,8 +429,7 @@ defineProps<{ incident: RouterOutputs["status"]["current"][number] }>();
 definePageMeta({ layout: "home" });
 useSeo({ title: "Status" });
 
-const trpc = useTRPC();
-const current = useQuery(trpc.status.current.queryOptions());
+const current = $api.status.current.useQuery();
 </script>
 
 <template>
@@ -460,11 +459,10 @@ const current = useQuery(trpc.status.current.queryOptions());
 <script setup lang="ts">
 definePageMeta({ layout: "home" });
 
-const trpc = useTRPC();
 const id = Number(useRoute().params.id);
-const incident = useQuery(trpc.status.incident.queryOptions({ id }));
+const incident = $api.status.incident.useQuery({ id });
 
-useSeo(() => ({ title: incident.data.value?.title ?? "Incident" }));
+useSeo(() => ({ title: incident.data?.title ?? "Incident" }));
 </script>
 
 <template>
@@ -486,10 +484,9 @@ useSeo(() => ({ title: incident.data.value?.title ?? "Incident" }));
 definePageMeta({ layout: "home" });
 useSeo({ title: "Past incidents" });
 
-const trpc = useTRPC();
 const route = useRoute();
 const input = computed(() => paginationSchema.catch({}).parse(route.query));
-const history = useQuery(() => trpc.status.history.queryOptions(input.value));
+const history = $api.status.history.useQuery(input);
 </script>
 
 <template>
@@ -792,13 +789,12 @@ A form opens an incident:
 ```vue
 <!-- app/components/OpenIncidentForm.vue -->
 <script setup lang="ts">
-const trpc = useTRPC();
 const queryCache = useQueryCache();
 
-const form = useActionForm(openIncidentInput, trpc.incident.open.mutationOptions(), {
+const form = useActionForm(openIncidentInput, $api.incident.open.mutationOptions(), {
   defaults: { title: "", body: "" },
   onSuccess: async () => {
-    await queryCache.invalidateQueries({ key: trpc.status.key() });
+    await queryCache.invalidateQueries({ key: $api.status.key() });
     await navigateTo({ name: "admin" });
   },
 });
@@ -825,13 +821,12 @@ const form = useActionForm(openIncidentInput, trpc.incident.open.mutationOptions
 <script setup lang="ts">
 const props = defineProps<{ incident: RouterOutputs["status"]["current"][number] }>();
 
-const trpc = useTRPC();
 const queryCache = useQueryCache();
 const statuses = Object.entries(statusLabels).map(([value, { label }]) => ({ value, label }));
 
-const form = useActionForm(postIncidentUpdateInput, toasted(trpc.incident.postUpdate.mutationOptions(), "Update posted"), {
+const form = useActionForm(postIncidentUpdateInput, toasted($api.incident.postUpdate.mutationOptions(), "Update posted"), {
   defaults: { incidentId: props.incident.id, status: props.incident.status, body: "" },
-  onSuccess: () => queryCache.invalidateQueries({ key: trpc.status.key() }),
+  onSuccess: () => queryCache.invalidateQueries({ key: $api.status.key() }),
 });
 </script>
 
@@ -857,8 +852,7 @@ const form = useActionForm(postIncidentUpdateInput, toasted(trpc.incident.postUp
 definePageMeta({ layout: "app", middleware: "auth" });
 useSeo({ title: "Incidents" });
 
-const trpc = useTRPC();
-const current = useQuery(trpc.status.current.queryOptions());
+const current = $api.status.current.useQuery();
 </script>
 
 <template>
@@ -1184,9 +1178,7 @@ The form goes on the status page:
 ```vue
 <!-- app/components/SubscribeForm.vue -->
 <script setup lang="ts">
-const trpc = useTRPC();
-
-const form = useActionForm(subscribeInput, toasted(trpc.subscriber.subscribe.mutationOptions(), "You will get a mail for each update"), {
+const form = useActionForm(subscribeInput, toasted($api.subscriber.subscribe.mutationOptions(), "You will get a mail for each update"), {
   defaults: { email: "" },
 });
 </script>

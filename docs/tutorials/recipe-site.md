@@ -409,7 +409,7 @@ Replace the starter's home page:
 <!-- app/pages/index.vue -->
 <script setup lang="ts">
 definePageMeta({ layout: "home" });
-const recipes = useQuery(useTRPC().recipe.latest.queryOptions());
+const recipes = $api.recipe.latest.useQuery();
 
 useSeo({ title: "Recipes for a weeknight" });
 </script>
@@ -438,7 +438,7 @@ Add the page of one recipe. Chapter 4 adds its head tags:
 <script setup lang="ts">
 definePageMeta({ layout: "home" });
 const route = useRoute("recipes-slug");
-const recipe = useQuery(useTRPC().recipe.bySlug.queryOptions({ slug: route.params.slug }));
+const recipe = $api.recipe.bySlug.useQuery({ slug: route.params.slug });
 </script>
 
 <template>
@@ -534,25 +534,25 @@ Give the recipe page its title, description and type. The data loads in a query,
 <script setup lang="ts">
 definePageMeta({ layout: "home" });
 const route = useRoute("recipes-slug");
-const recipe = useQuery(useTRPC().recipe.bySlug.queryOptions({ slug: route.params.slug }));
+const recipe = $api.recipe.bySlug.useQuery({ slug: route.params.slug });
 
 useSeo(() => ({
-  title: recipe.data.value?.title ?? "Recipe",
-  description: recipe.data.value?.summary,
+  title: recipe.data?.title ?? "Recipe",
+  description: recipe.data?.summary,
   type: "article",
 }));
 
 useHead(() => ({
-  script: recipe.data.value
+  script: recipe.data
     ? [
         {
           type: "application/ld+json",
           innerHTML: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "Recipe",
-            name: recipe.data.value.title,
-            description: recipe.data.value.summary,
-            datePublished: recipe.data.value.publishedAt?.toISOString(),
+            name: recipe.data.title,
+            description: recipe.data.summary,
+            datePublished: recipe.data.publishedAt?.toISOString(),
           }),
         },
       ]
@@ -1521,7 +1521,7 @@ The title of a page is in the locale of the page too. Give `useSeo()` a getter, 
 <!-- app/pages/index.vue -->
 <script setup lang="ts">
 definePageMeta({ layout: "home" });
-const recipes = useQuery(useTRPC().recipe.latest.queryOptions());
+const recipes = $api.recipe.latest.useQuery();
 const { ts } = useI18n();
 
 useSeo(() => ({ title: ts("recipes.title") }));
@@ -1591,7 +1591,7 @@ In `app/pages/recipes/[slug].vue`, add `const { ts } = useI18n();` below the que
 
 ```ts
 // app/pages/recipes/[slug].vue
-  title: recipe.data.value?.title ?? ts("recipes.recipe"),
+  title: recipe.data?.title ?? ts("recipes.recipe"),
 ```
 
 ```vue

@@ -830,13 +830,12 @@ import type { z } from "zod";
 const props = defineProps<{ roomId: number }>();
 const emit = defineEmits<{ typing: [typing: boolean] }>();
 
-const trpc = useTRPC();
 const { user } = useUser();
 const state = reactive({ roomId: props.roomId, body: "" });
 
 const { mutate, error } = useMutation(
-  optimistic(trpc.message.post.mutationOptions(), {
-    key: ({ roomId }) => trpc.message.forRoom.key({ roomId }),
+  optimistic($api.message.post.mutationOptions(), {
+    key: ({ roomId }) => $api.message.forRoom.key({ roomId }),
     apply: (messages, { roomId, body }) => [
       ...messages,
       { id: -Date.now(), roomId, body, authorId: user.value?.id ?? "", authorName: user.value?.name ?? "", createdAt: new Date() },
@@ -896,12 +895,11 @@ Replace the generated page:
 <script setup lang="ts">
 definePageMeta({ middleware: "auth" });
 
-const trpc = useTRPC();
 const id = Number(useRoute().params.id);
 const { user } = useUser();
-const room = useQuery(trpc.room.byId.queryOptions({ id }));
+const room = $api.room.byId.useQuery({ id });
 
-const messages = useLiveQuery(trpc.message.forRoom.queryOptions({ roomId: id }), {
+const messages = useLiveQuery($api.message.forRoom.queryOptions({ roomId: id }), {
   channel: "room",
   params: { roomId: id },
   refetch: { posted: true },
@@ -910,7 +908,7 @@ const { members, setState } = usePresence("room", { roomId: id });
 const others = computed(() => members.value.filter((member) => member.userId !== user.value?.id));
 const { status } = useChannel("room", { params: { roomId: id } });
 
-const memberForm = useActionForm(addMemberInput, toasted(trpc.room.addMember.mutationOptions(), "Member added"), {
+const memberForm = useActionForm(addMemberInput, toasted($api.room.addMember.mutationOptions(), "Member added"), {
   defaults: { roomId: id, email: "" },
   failures: { "room.member-unknown": "email" },
   onSuccess: () => {
@@ -918,13 +916,13 @@ const memberForm = useActionForm(addMemberInput, toasted(trpc.room.addMember.mut
   },
 });
 
-useSeo(() => ({ title: room.data.value?.name ?? "Room" }));
+useSeo(() => ({ title: room.data?.name ?? "Room" }));
 </script>
 
 <template>
   <div class="max-w-2xl space-y-6">
     <div class="flex items-center justify-between gap-4">
-      <h1 class="text-2xl font-semibold">{{ room.data.value?.name }}</h1>
+      <h1 class="text-2xl font-semibold">{{ room.data?.name }}</h1>
       <div class="flex items-center gap-4">
         <UBadge v-if="status === 'reconnecting'" color="warning" label="Reconnecting" />
         <PresenceAvatars :members="members" />
@@ -938,7 +936,7 @@ useSeo(() => ({ title: room.data.value?.name ?? "Room" }));
     <TypingIndicator :members="others" />
     <MessageComposer :room-id="id" @typing="(typing) => setState({ typing })" />
     <UForm
-      v-if="room.data.value?.ownerId === user?.id"
+      v-if="room.data?.ownerId === user?.id"
       :ref="memberForm.ref"
       :schema="memberForm.schema"
       :state="memberForm.state"

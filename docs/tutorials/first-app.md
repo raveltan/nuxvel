@@ -262,8 +262,7 @@ Write the page. The file name `[id].vue` gives the route `event-id`, with the pa
 definePageMeta({ middleware: "auth" });
 
 const route = useRoute("event-id");
-const trpc = useTRPC();
-const event = useQuery(() => trpc.event.show.queryOptions({ id: Number(route.params.id) }));
+const event = $api.event.show.useQuery(() => ({ id: Number(route.params.id) }));
 
 useSeo({ title: "Event" });
 </script>
@@ -283,7 +282,7 @@ useSeo({ title: "Event" });
 </template>
 ```
 
-`useTRPC()` gives the typed procedures in the browser. `data` has the type of the `.output()` schema, so `data.isHost` is a `boolean`, and a typo does not compile. `<QueryState>` shows a loading state, an error state, or the `default` slot with the data.
+`$api` gives the typed procedures in the browser. `data` has the type of the `.output()` schema, so `data.isHost` is a `boolean`, and a typo does not compile. `<QueryState>` shows a loading state, an error state, or the `default` slot with the data.
 
 Link the title of each event in the list to this page. In `app/pages/event/index.vue`, add a slot for the `title` column in the `<DataTable>`, before the `actions-cell` slot:
 
@@ -384,8 +383,7 @@ The file name gives the namespace, so the procedure is `rsvp.send`. `rsvpSchema`
 <script setup lang="ts">
 const props = defineProps<{ eventId: number }>();
 
-const trpc = useTRPC();
-const form = useActionForm(sendRsvpInput, toasted(trpc.rsvp.send.mutationOptions(), "RSVP sent"), {
+const form = useActionForm(sendRsvpInput, toasted($api.rsvp.send.mutationOptions(), "RSVP sent"), {
   defaults: { eventId: props.eventId, answer: undefined },
 });
 </script>
@@ -445,11 +443,8 @@ import { rsvpTable, userTable } from "#nuxvel/schema";
 <script setup lang="ts">
 const props = defineProps<{ eventId: number }>();
 
-const trpc = useTRPC();
 const route = useRoute();
-const guests = useQuery(() =>
-  trpc.event.guests.queryOptions({ id: props.eventId, ...paginationSchema.catch({}).parse(route.query) }),
-);
+const guests = $api.event.guests.useQuery(() => ({ id: props.eventId, ...paginationSchema.catch({}).parse(route.query) }));
 </script>
 
 <template>
@@ -626,8 +621,7 @@ import { inviteGuestAction } from "#server/actions/event/invite-guest.action";
 <script setup lang="ts">
 const props = defineProps<{ eventId: number }>();
 
-const trpc = useTRPC();
-const form = useActionForm(inviteGuestInput, toasted(trpc.event.invite.mutationOptions(), "Invitation sent"), {
+const form = useActionForm(inviteGuestInput, toasted($api.event.invite.mutationOptions(), "Invitation sent"), {
   defaults: { eventId: props.eventId, email: "" },
   onSuccess: () => {
     form.state.email = "";

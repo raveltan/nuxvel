@@ -144,13 +144,13 @@ The page of the module goes in `layers/reports/app/pages/`:
 <script setup lang="ts">
 definePageMeta({ middleware: "auth" });
 
-const { data } = useQuery(useTRPC().report.summary.queryOptions());
+const summary = $api.report.summary.useQuery();
 </script>
 
 <template>
   <UContainer class="py-8">
     <h1 class="text-2xl font-semibold">Reading report</h1>
-    <p v-if="data">You saved {{ data.saved }} links and read {{ data.read }} of them.</p>
+    <p v-if="summary.data">You saved {{ summary.data.saved }} links and read {{ summary.data.read }} of them.</p>
   </UContainer>
 </template>
 ```
