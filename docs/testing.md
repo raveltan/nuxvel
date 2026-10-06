@@ -1098,7 +1098,7 @@ await expectBroadcast("posts", "updated", { id: post.id });
 await expectCacheMiss("posts:list:[null,null,null]");
 ```
 
-`expectBroadcast(channel, event, match?, { times?, params? })` checks that the app broadcast the event on the channel, with a payload that has the `match` fields. `expectNotBroadcast(channel, event?, { params? })` checks that it did not. `params` limits both to one room of the channel. `expectCacheHit(key, { times? })` and `expectCacheMiss(key, { times? })` check that the app read the cache key and found it, or found nothing. `key` is the exact key that `remember()` or `cacheGet()` got. Each assertion returns the latest matching record. See [Realtime](./realtime.md#testing-broadcasts) and [Cache](./cache.md#testing).
+`expectBroadcast(channel, event, match?, { times?, params? })` checks that the app broadcast the event on the channel, with a payload that has the `match` fields. `expectNotBroadcast(channel, event?, { params? })` checks that it did not. `params` limits both to one room of the channel. `expectCacheHit(key, { times? })` and `expectCacheMiss(key, { times? })` check that the app read the cache key and found it, or found nothing. `key` is the exact key that `remember()` or `cacheGet()` got, a string or an array of parts. Each assertion returns the latest matching record. See [Realtime](./realtime.md#testing-broadcasts) and [Cache](./cache.md#testing).
 
 ### Faking outbound requests
 

@@ -118,7 +118,7 @@
     "audit/verify-audit-chain": ["AuditChainBreak"],
     "backfills/define-backfill": ["Backfill"],
     "backfills/registry": ["BackfillName"],
-    "cache/cache": ["CacheTtl", "CacheOptions"],
+    "cache/cache": ["CacheKey", "CacheTtl", "CacheOptions"],
     "database/client": ["NuxvelDb", "NuxvelTx"],
     "database/find-or-fail": ["TableId"],
     "errors/define-error-classifier": ["ErrorClassifier"],

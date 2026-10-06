@@ -67,3 +67,8 @@ applies each step below that names a codemod.
 - The `use-trpc` codemod also turns `useQuery($api.<path>.queryOptions(input))`
   into `$api.<path>.useQuery(input)`, and `useMutation($api.<path>.mutationOptions())`
   into `$api.<path>.useMutation()`, when every use of the result reads `.value`.
+- `remember()`, `cachePut()`, `cacheGet()`, `cacheForget()` and the cache
+  assertions of `@nuxvel/nuxt/testing` take a key array such as
+  `["posts", "list", input]`: the parts are joined with `:`, and an
+  object part is JSON with sorted keys. `cacheForget(["posts"])` also
+  forgets every key under `posts:`.

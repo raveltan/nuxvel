@@ -528,9 +528,10 @@ Guide: [Cache](./cache.md).
 | `remember` | function | Returns a cached value, or computes, stores and returns it. |
 | `cacheGet` | function | Reads a cached value. |
 | `cachePut` | function | Stores a value in the cache. |
-| `cacheForget` | function | Removes one cached value. |
+| `cacheForget` | function | Removes a cached value, every value under a key array, or every value that matches a glob. |
 | `cacheFlush` | function | Removes every cached value with a tag. |
 | `withLock` | function | Runs a function while it holds a Redis lock. Throws `ConflictError` when a different caller holds the lock. |
+| `CacheKey` | type | A cache key: a string, or an array of parts joined with `:`. |
 | `CacheTtl` | type | How long a cached value lives. |
 | `CacheOptions` | type | The options of `remember()` and `cachePut()`. |
 
