@@ -1,7 +1,7 @@
 <script setup lang="ts" generic="TRow extends TableData, TError">
 import type { TableColumn, TableData, TableProps, TableSlots } from "@nuxt/ui";
-import type { UseQueryReturn } from "@pinia/colada";
-import { computed, h, shallowRef, watch } from "vue";
+import type { AsyncStatus, DataState, UseQueryReturn } from "@pinia/colada";
+import { computed, h, shallowRef, toValue, watch } from "vue";
 import { useRoute, useRouter } from "#app";
 import { QueryState, SearchInput, UPagination, UTable } from "#components";
 import type { Paginated } from "../../shared/pagination/pagination";
@@ -52,8 +52,14 @@ import DataTableSortButton from "./DataTableSortButton.vue";
 defineOptions({ name: "DataTable" });
 
 const props = defineProps<{
-  /** The value `useQuery()` returned for a query that resolves to {@link Paginated} rows. */
-  query: Pick<UseQueryReturn<Paginated<TRow>, TError>, "state" | "asyncStatus" | "refetch">;
+  /** The value `useQuery()` returned for a query that resolves to {@link Paginated} rows, as is or wrapped in `reactive()`. */
+  query:
+    | Pick<UseQueryReturn<Paginated<TRow>, TError>, "state" | "asyncStatus" | "refetch">
+    | {
+        state: DataState<Paginated<TRow>, TError>;
+        asyncStatus: AsyncStatus;
+        refetch: UseQueryReturn<Paginated<TRow>, TError>["refetch"];
+      };
   /** The `UTable` columns. Without them, `UTable` makes one column per row key. */
   columns?: TableColumn<TRow>[];
   /** The label of the search input. The input shows only when it is set. */
@@ -84,7 +90,7 @@ const router = useRouter();
 
 const lastData = shallowRef<Paginated<TRow>>();
 watch(
-  () => props.query.state.value,
+  () => toValue(props.query.state),
   (state) => {
     if (state.status === "success") lastData.value = state.data;
   },
@@ -92,14 +98,14 @@ watch(
 );
 
 const shownState = computed(() => {
-  const state = props.query.state.value;
+  const state = toValue(props.query.state);
   return state.status === "pending" && lastData.value
     ? { status: "success" as const, data: lastData.value, error: null }
     : state;
 });
 
 const shownQuery = { state: shownState, refetch: () => props.query.refetch() };
-const loading = computed(() => props.query.asyncStatus.value === "loading");
+const loading = computed(() => toValue(props.query.asyncStatus) === "loading");
 
 function pageLink(page: number) {
   return { query: { ...route.query, page: page > 1 ? page : undefined } };

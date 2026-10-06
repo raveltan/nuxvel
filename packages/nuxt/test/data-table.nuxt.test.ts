@@ -1,4 +1,4 @@
-import { defineComponent, h, ref } from "vue";
+import { defineComponent, h, reactive, ref } from "vue";
 import { describe, expect, it, vi } from "vitest";
 import { mountSuspended } from "@nuxt/test-utils/runtime";
 import { DataTable } from "#components";
@@ -14,7 +14,7 @@ function fakeQuery() {
   };
 }
 
-function mountDataTable(query: ReturnType<typeof fakeQuery>, props: object = {}, slots: object = {}) {
+function mountDataTable(query: object, props: object = {}, slots: object = {}) {
   return mountSuspended(
     defineComponent({ setup: () => () => h(DataTable, { query, ...props }, slots) }),
   );
@@ -101,6 +101,20 @@ describe("<DataTable>", () => {
 
     await vi.waitFor(() => expect(busy(wrapper)).toBe("true"));
     expect(wrapper.find("td").text()).toBe("First");
+  });
+
+  it("shows the rows and the busy state of a reactive useQuery() result", async () => {
+    const query = fakeQuery();
+    const wrapper = await mountDataTable(reactive(query));
+
+    query.state.value = { status: "success", data: firstPage, error: null };
+    query.asyncStatus.value = "idle";
+    await vi.waitFor(() => expect(wrapper.find("td").text()).toBe("First"));
+    expect(busy(wrapper)).toBe("false");
+
+    query.asyncStatus.value = "loading";
+
+    await vi.waitFor(() => expect(busy(wrapper)).toBe("true"));
   });
 
   describe("with list columns", () => {

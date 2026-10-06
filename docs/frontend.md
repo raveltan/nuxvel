@@ -452,7 +452,7 @@ const posts = useQuery(() => trpc.post.list.queryOptions(input.value));
 
 `<DataTable>` shows one page of a query in a Nuxt UI `UTable`. The query must return a `Paginated` object, as a procedure that returns [`paginate()`](./database.md#pagination) does. `UPagination` shows under the table when there is more than one page.
 
-- `query` is the value that `useQuery()` or `useLiveQuery()` returns. `<QueryState>` renders the first load and the error state. When the page or the search changes, and on each refetch, the table keeps its rows, sets `aria-busy` and shows a loading bar until the new rows arrive.
+- `query` is the value that `useQuery()` or `useLiveQuery()` returns, as is or wrapped in `reactive()`. `<QueryState>` renders the first load and the error state. When the page or the search changes, and on each refetch, the table keeps its rows, sets `aria-busy` and shows a loading bar until the new rows arrive.
 - `columns` are the `UTable` columns. Without them, `UTable` makes one column for each field of a row.
 - `search` is the label of a [`<SearchInput>`](#search-input) above the table. The input shows only when you set it.
 - `list` is the options of the list's [`listQuery()`](./database.md#sorting-and-filtering), such as `postListColumns`. The header of each sortable column becomes a button: a click sorts by it ascending, then descending, then not at all, and a shift-click adds it as the next sort column. A filter bar shows a control for each filter: a text input (sent 300 ms after the user stops typing), a yes/no select, a multi-select, or two date inputs. Each active filter shows as a chip that removes it, next to **Clear all filters**.
@@ -647,7 +647,7 @@ const posts = useQuery(useTRPC().post.list.queryOptions());
 </template>
 ```
 
-`<QueryState>` is auto-registered. It takes the value that `useQuery()` returns and renders one slot for each state of the query.
+`<QueryState>` is auto-registered. It takes the value that `useQuery()` returns, as is or wrapped in `reactive()`, and renders one slot for each state of the query.
 
 | Slot | Renders when | Default with Nuxt UI | Default with `ui: false` |
 |---|---|---|---|

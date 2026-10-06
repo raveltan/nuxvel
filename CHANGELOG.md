@@ -36,3 +36,5 @@ applies each step below that names a codemod.
 - The codemod `imports` of `nuxvel upgrade` rewrites each `../` import
   into another kind folder to its alias, as `nuxvel/no-parent-imports`
   fixes it.
+- `<QueryState>` and `<DataTable>` accept a `useQuery()` result wrapped
+  in `reactive()`.

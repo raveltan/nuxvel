@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="TData, TError">
-import type { UseQueryReturn } from "@pinia/colada";
+import type { DataState, UseQueryReturn } from "@pinia/colada";
 import { UAlert, UEmpty, USkeleton } from "#components";
 import QueryState from "./QueryState.vue";
 
@@ -7,7 +7,8 @@ import QueryState from "./QueryState.vue";
  * Renders one slot per state of a `useQuery()` result: `loading` until the
  * first response, `error` with the error and a `retry` function, `empty`
  * when the data is an empty array or `null`, and `default` with the data
- * otherwise.
+ * otherwise. The query is what `useQuery()` returns or the same result
+ * wrapped in `reactive()`.
  *
  * Auto-registered as a component. A slot you leave out falls back to
  * Nuxt UI markup (`USkeleton`, a `UAlert` with a retry `UButton`,
@@ -29,8 +30,10 @@ import QueryState from "./QueryState.vue";
 defineOptions({ name: "QueryState" });
 
 defineProps<{
-  /** The value `useQuery()` returned. */
-  query: Pick<UseQueryReturn<TData, TError>, "state" | "refetch">;
+  /** The value `useQuery()` returned, as is or wrapped in `reactive()`. */
+  query:
+    | Pick<UseQueryReturn<TData, TError>, "state" | "refetch">
+    | { state: DataState<TData, TError>; refetch: UseQueryReturn<TData, TError>["refetch"] };
 }>();
 
 defineSlots<{
