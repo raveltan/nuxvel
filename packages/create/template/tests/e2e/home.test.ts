@@ -1,7 +1,7 @@
 import { button, expect, expectMailSent, expectNoSmoke, expectRow, fillForm, heading, link, text, visit } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userTable } from "../../server/database/schema/auth.schema";
-import { userFactory } from "../../server/factories/users.factory";
+import { userTable } from "#nuxvel/schema";
+import { userFactory } from "#nuxvel/factories";
 
 describe("the app in a browser", () => {
   it("signs a new user up and shows them as signed in on the home page", async () => {

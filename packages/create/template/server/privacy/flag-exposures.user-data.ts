@@ -1,3 +1,3 @@
-import { flagExposuresTable } from "../database/schema/flag-exposures.schema";
+import { flagExposuresTable } from "#nuxvel/schema";
 
 export const flagExposuresUserData = defineUserData(flagExposuresTable, flagExposuresTable.unitId);

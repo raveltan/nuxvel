@@ -1,6 +1,6 @@
 import { expectRow, runSeeder, signIn } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userTable } from "../../server/database/schema/auth.schema";
+import { userTable } from "#nuxvel/schema";
 
 describe("the database seeder", () => {
   it("creates a demo user who signs in with the printed password", async () => {

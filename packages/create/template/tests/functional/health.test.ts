@@ -1,7 +1,7 @@
 import { expect, expectMailSent, expectRow, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userTable } from "../../server/database/schema/auth.schema";
-import { userFactory } from "../../server/factories/users.factory";
+import { userTable } from "#nuxvel/schema";
+import { userFactory } from "#nuxvel/factories";
 
 describe("the app", () => {
   it("reaches its database and Redis", async () => {

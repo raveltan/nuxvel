@@ -1,4 +1,4 @@
-import { userFactory } from "../factories/users.factory";
+import { userFactory } from "#nuxvel/factories";
 
 const DEMO_EMAIL = "demo@example.com";
 const DEMO_PASSWORD = "demo-password";
