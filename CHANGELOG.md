@@ -92,3 +92,9 @@ applies each step below that names a codemod.
 - The tRPC client sends every mutation in a request of its own, not in
   a batch; queries are still batched. A test that mocks a mutation with
   `registerEndpoint()` answers with one result object, not an array.
+- After a mutation succeeds, the client of `$api` invalidates the
+  queries under each tag that its response names, and under the
+  mutation's router namespace (`post.delete` invalidates `$api.post`),
+  after the mutation's `onSuccess` and `onSettled`. An
+  `invalidateQueries()` written by hand still works and fetches no query
+  twice; it can go.

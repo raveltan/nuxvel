@@ -373,9 +373,8 @@ Call `.useQuery()` in `setup`, as `useQuery()`. During SSR the query runs on the
 
 ```vue
 <script setup lang="ts">
-const queryCache = useQueryCache();
 const createPost = $api.post.create.useMutation({
-  onSettled: () => queryCache.invalidateQueries({ key: $api.post.key() }),
+  onSuccess: (post) => navigateTo({ name: "posts-id", params: { id: post.id } }),
 });
 </script>
 
@@ -387,7 +386,7 @@ const createPost = $api.post.create.useMutation({
 </template>
 ```
 
-`.useMutation(options?)` runs Pinia Colada's `useMutation()` for the procedure and returns its result wrapped in `reactive()`: `createPost.mutate()`, `createPost.data`, `createPost.error` and `createPost.isLoading`, without `.value`. `options` are the options of Pinia Colada's `useMutation()`, without `mutation`: `onMutate`, `onSuccess`, `onError`, `onSettled` and the others. Call it in `setup`, as `useMutation()`.
+`.useMutation(options?)` runs Pinia Colada's `useMutation()` for the procedure and returns its result wrapped in `reactive()`: `createPost.mutate()`, `createPost.data`, `createPost.error` and `createPost.isLoading`, without `.value`. `options` are the options of Pinia Colada's `useMutation()`, without `mutation`: `onMutate`, `onSuccess`, `onError`, `onSettled` and the others. Call it in `setup`, as `useMutation()`. After it succeeds, the queries of its namespace and of the tags it names fetch again, see [Frontend: invalidation](./frontend.md#invalidation).
 
 nuxvel installs Pinia Colada. `useQuery`, `useMutation` and `useQueryCache` are auto-imported. Each procedure on `$api` builds their options, so you do not write a key by hand.
 
@@ -416,7 +415,7 @@ These helpers use the names `key`, `queryOptions`, `useQuery`, `mutationOptions`
 x-nuxvel-invalidates: %5B%5B%22post%22%2C%22list%22%5D%2C%5B%22posts%22%5D%5D
 ```
 
-A mutation response names the tags that its actions invalidated, in the header `x-nuxvel-invalidates`: the [`invalidates`](./actions.md#invalidating-cached-values) of each action that committed, nested actions included, as URL-encoded JSON. Each tag is an array: `"post:list"` is `["post", "list"]`, `["post", { id: 1 }]` stays as it is, and a glob such as `"posts:*"` is the prefix before it, `["posts"]`. The value above is `[["post","list"],["posts"]]`. The header is missing when no action of the mutation declared `invalidates`, when the mutation fails, and on a query.
+A mutation response names the tags that its actions invalidated, in the header `x-nuxvel-invalidates`: the [`invalidates`](./actions.md#invalidating-cached-values) of each action that committed, nested actions included, as URL-encoded JSON. Each tag is an array: `"post:list"` is `["post", "list"]`, `["post", { id: 1 }]` stays as it is, and a glob such as `"posts:*"` is the prefix before it, `["posts"]`. The value above is `[["post","list"],["posts"]]`. The header is missing when no action of the mutation declared `invalidates`, when the mutation fails, and on a query. The client of `$api` reads it and refetches the queries under each tag and under the mutation's namespace, see [Frontend: invalidation](./frontend.md#invalidation).
 
 ## Optimistic updates
 

@@ -771,6 +771,32 @@ const title = ref("");
 
 `<TypingIndicator>` needs a `state` schema with a `typing` boolean. Both components are registered only when Nuxt UI is on.
 
+## Invalidation
+
+```ts
+export const deletePostAction = defineAction({
+  input: postIdInput,
+  invalidates: ["post"],
+  handler: async (input, ctx) => {
+    // ...
+  },
+});
+```
+
+```vue
+<script setup lang="ts">
+const posts = $api.post.list.useQuery();
+const deletePost = $api.post.delete.useMutation();
+</script>
+```
+
+After a mutation succeeds, the client refetches the queries that it changed. You write no `onSuccess` for it. Two sources name these queries:
+
+- The tags in the [`invalidates`](./actions.md#invalidating-cached-values) of the actions that the mutation ran. The response names them, see [What a mutation invalidates](./api.md#what-a-mutation-invalidates). The tag `"post"` matches each query under `$api.post`, `["post", "byId"]` each query of `$api.post.byId`.
+- The router namespace of the mutation: `$api.post.delete` also invalidates every query under `$api.post`, so a mutation without `invalidates` refreshes its own namespace. A procedure at the root of the router has no namespace.
+
+The client invalidates them in Pinia Colada after the `onSuccess` and `onSettled` of the mutation: an active query fetches again, and an inactive one fetches when a component uses it next. A query that these callbacks already fetch again does not fetch twice, so an `invalidateQueries()` that you wrote by hand still works, but you can remove it. A failed mutation invalidates nothing, and neither does a mutation during SSR.
+
 ## Optimistic updates
 
 ```ts

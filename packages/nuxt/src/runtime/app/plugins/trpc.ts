@@ -1,8 +1,10 @@
+import { useQueryCache } from "@pinia/colada";
 import { createTRPCClient, TRPCClientError, type TRPCLink } from "@trpc/client";
 import { observable } from "@trpc/server/observable";
 import { defineNuxtPlugin, useRequestEvent, useRuntimeConfig } from "#app";
 import { createTrpcClientLink } from "../../shared/trpc/client-link";
 import type { AppTRPC } from "../trpc/app-trpc";
+import { createInvalidateLink } from "../trpc/invalidate-link";
 import { createTrpcOptionsProxy } from "../trpc/options-proxy";
 import type { AppRouter } from "../../server/trpc/router";
 import { trpcEndpoint } from "../../shared/trpc/trpc-path";
@@ -46,9 +48,10 @@ export default defineNuxtPlugin({
         }),
       );
 
+    const invalidate = createInvalidateLink<AppRouter>(() => useQueryCache(nuxtApp.$pinia));
     const { app } = useRuntimeConfig();
     const client = createTRPCClient<AppRouter>({
-      links: [watchOutdated, createTrpcClientLink<AppRouter>(trpcEndpoint(app.baseURL), useRequestEvent()?.fetch, app.buildId, () => nuxtApp.$getLocale?.())],
+      links: [watchOutdated, ...(import.meta.client ? [invalidate] : []), createTrpcClientLink<AppRouter>(trpcEndpoint(app.baseURL), useRequestEvent()?.fetch, app.buildId, () => nuxtApp.$getLocale?.())],
     });
 
     return {

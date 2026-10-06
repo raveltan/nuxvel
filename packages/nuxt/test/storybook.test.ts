@@ -183,7 +183,7 @@ export const FillsEveryControl = {
   },
 };
 `);
-for (const file of ["_PostSearch.vue", "_PostSearch.stories.ts", "_LiveForm.vue", "_LiveForm.stories.ts", "_FrameworkText.vue", "_FrameworkText.stories.ts"]) {
+for (const file of ["_PostSearch.vue", "_PostSearch.stories.ts", "_PostList.vue", "_PostList.stories.ts", "_LiveForm.vue", "_LiveForm.stories.ts", "_FrameworkText.vue", "_FrameworkText.stories.ts"]) {
   cpSync(join(repoRoot, "packages/nuxt/test/fixtures/probes/app/components", file), join(appDir, "app/components", file));
 }
 cpSync(join(repoRoot, "packages/create/template/vitest.config.ts"), join(appDir, "vitest.config.ts"));
@@ -277,7 +277,7 @@ describe("Storybook", () => {
     const output = stripVTControlCharacters(result.output);
 
     expect(result.exitCode, output).toBe(0);
-    for (const story of ["Every Method", "Fills Every Control", "Default", "Can Edit", "Read Only", "Body Empty", "Signed In", "Signed Out", "Debounces", "Validates And Hovers", "Light", "Dark"]) {
+    for (const story of ["Every Method", "Fills Every Control", "Default", "Can Edit", "Read Only", "Body Empty", "Signed In", "Signed Out", "Debounces", "Refetches After Delete", "Validates And Hovers", "Light", "Dark"]) {
       expect(output).toMatch(new RegExp(`✓ .*${story}`));
     }
     expect(output).toMatch(/✓ .*PostEditForm.*Saves/);
