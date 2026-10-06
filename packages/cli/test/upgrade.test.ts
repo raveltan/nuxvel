@@ -203,5 +203,31 @@ describe("nuxvel upgrade", () => {
       expect(stripAnsi(again.stderr)).toContain(`${manualStep}\n`);
       expect(stripAnsi(again.stderr)).toContain("✔ No codemod changed a file\n");
     }, 60000);
+
+    it("removes an import of shared/schemas/ from server code, and leaves a renamed one as a manual step", async () => {
+      const appDir = scratchPlayground("upgrade-imports-schemas");
+      const router = join(appDir, "server", "trpc", "routers", "report.router.ts");
+      writeFileSync(
+        router,
+        [
+          'import { createPostInput } from "../../../shared/schemas/post";',
+          'import { postSchema as reportSchema } from "#shared/schemas/post";',
+          "",
+          "export const reportRouter = { createPostInput, reportSchema };",
+          "",
+        ].join("\n"),
+      );
+
+      const { stdout, stderr, exitCode } = await runCliAt(appDir, "upgrade", "--only", "imports");
+
+      expect(exitCode, stderr).toBe(0);
+      expect(stdout).toContain("updated: server/trpc/routers/report.router.ts\n");
+      expect(readFileSync(router, "utf8")).toBe(
+        'import { postSchema as reportSchema } from "#shared/schemas/post";\n\nexport const reportRouter = { createPostInput, reportSchema };\n',
+      );
+      expect(stripAnsi(stderr)).toContain(
+        "▲ server/trpc/routers/report.router.ts:1: #shared/schemas/post is in shared/schemas/, whose exports server/ auto-imports: remove the import\n",
+      );
+    }, 60000);
   });
 });

@@ -13,10 +13,19 @@ interface Place {
 }
 
 type SourceNode = Parameters<NonNullable<Rule.RuleListener["ImportExpression"]>>[0]["source"];
+type ImportNode = Parameters<NonNullable<Rule.RuleListener["ImportDeclaration"]>>[0];
 
 const ROOTS = new Set(["server", "app", "shared", "tests"]);
 const NESTED_SERVER_FOLDERS = new Set(["database", "trpc"]);
 const PARENT = /^(\.\/)?\.\.(\/|$)/;
+const SHARED_SCHEMA = /^(layers\/[^/]+\/)?shared\/schemas\/[^/]+$/;
+const NOT_AUTO_IMPORTED = /\.(test|spec|stories)\.ts$/;
+const ROOT_ALIASES: [prefix: string, folder: string][] = [
+  ["#shared/", "shared/"],
+  ["~~/", ""],
+  ["@@/", ""],
+  ["#layers/", "layers/"],
+];
 const REGISTRIES = [
   { alias: "#nuxvel/schema", folder: "server/database/schema/", domainFile: /^server\/domains\/[^/]+\/schema\/.*\.schema(\.ts)?$/ },
   { alias: "#nuxvel/factories", folder: "server/factories/", domainFile: /^server\/domains\/[^/]+\/factories\/.*\.factory(\.ts)?$/ },
@@ -54,6 +63,15 @@ function registryOf(place: Place) {
   return REGISTRIES.find(({ folder, domainFile }) => path.startsWith(folder) || domainFile.test(path))?.alias;
 }
 
+function keepsNames(node: ImportNode) {
+  return (
+    node.specifiers.length > 0 &&
+    node.specifiers.every(
+      (specifier) => specifier.type === "ImportSpecifier" && specifier.imported.type === "Identifier" && specifier.imported.name === specifier.local.name,
+    )
+  );
+}
+
 function pathAlias(from: Place, to: Place) {
   if (from.root === "tests" && (to.layer || to.root === "app" || to.root === "tests")) return undefined;
   if (to.root === "tests") return undefined;
@@ -74,6 +92,12 @@ function pathAlias(from: Place, to: Place) {
  * code to `#server/<path>`, `shared/` to `#shared/<path>`, `app/` to
  * `~/<path>` and a module in `layers/<name>/` to `#layers/<name>/<path>`.
  * It reports server code imported from `app/` or `shared/` without a fix.
+ * In `app/` and `server/`, it reports an import of a file in
+ * `shared/schemas/` (relative, `#shared/`, `~~/`, `@@/` or
+ * `#layers/<name>/`), whose exports are auto-imported there, and removes
+ * it when it imports only names under their own name. It skips tests,
+ * stories, and the tables and factories that tests and drizzle-kit load
+ * without auto-imports.
  * A relative import inside one kind folder stays legal. It is part of the
  * `nuxvel` ESLint plugin.
  *
@@ -89,6 +113,7 @@ export const noParentImports: Rule.RuleModule = {
       alias: "{{source}} leaves {{from}}/ for {{to}}/: import it from {{alias}}",
       serverCode: "{{source}} leaves {{from}}/ for {{to}}/: {{root}}/ does not import server code",
       noAlias: "{{source}} leaves {{from}}/ for {{to}}/: no alias reaches it from here",
+      autoImported: "{{source}} is in shared/schemas/, whose exports {{root}}/ auto-imports: remove the import",
     },
     schema: [
       {
@@ -108,6 +133,35 @@ export const noParentImports: Rule.RuleModule = {
     if (!from) return {};
 
     const fromRegistry = registryOf(from);
+    const autoImports =
+      (from.root === "app" || from.root === "server") && fromRegistry === undefined && !NOT_AUTO_IMPORTED.test(fromPath);
+
+    const targetOf = (source: string) => {
+      if (source.startsWith(".")) return relativePath(resolve(dirname(context.filename), source));
+
+      const alias = ROOT_ALIASES.find(([prefix]) => source.startsWith(prefix));
+
+      return alias && `${alias[1]}${source.slice(alias[0].length)}`;
+    };
+
+    const checkAutoImported = (node: ImportNode) => {
+      const source = node.source.value;
+
+      if (!autoImports || typeof source !== "string" || node.specifiers.length === 0) return false;
+      if (!SHARED_SCHEMA.test(targetOf(source) ?? "")) return false;
+
+      const [start, end] = context.sourceCode.getRange(node);
+      const lineEnd = context.sourceCode.text[end] === "\n" ? end + 1 : end;
+
+      context.report({
+        node,
+        messageId: "autoImported",
+        data: { source, root: from.root },
+        fix: keepsNames(node) ? (fixer) => fixer.removeRange([start, lineEnd]) : null,
+      });
+
+      return true;
+    };
 
     const check = (node: Rule.Node, sourceNode: SourceNode | null | undefined, namedOnly: boolean) => {
       if (sourceNode?.type !== "Literal" || typeof sourceNode.value !== "string") return;
@@ -155,6 +209,8 @@ export const noParentImports: Rule.RuleModule = {
 
     return {
       ImportDeclaration(node) {
+        if (checkAutoImported(node)) return;
+
         const named = node.specifiers.length > 0 && node.specifiers.every((specifier) => specifier.type === "ImportSpecifier");
 
         check(node, node.source, named);

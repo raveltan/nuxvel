@@ -36,5 +36,9 @@ applies each step below that names a codemod.
 - The codemod `imports` of `nuxvel upgrade` rewrites each `../` import
   into another kind folder to its alias, as `nuxvel/no-parent-imports`
   fixes it.
+- `nuxvel/no-parent-imports` reports an import of `shared/schemas/` in
+  `app/` and `server/`, whose exports are auto-imported there, and removes
+  it; so does the codemod `imports`. Generated actions and routers no
+  longer import their schemas.
 - `<QueryState>` and `<DataTable>` accept a `useQuery()` result wrapped
   in `reactive()`.

@@ -70,8 +70,9 @@ const TEST_FILES = ["tests/**/*.ts", "server/**/*.test.ts", "app/**/*.stories.ts
  * `nuxvel/no-parent-imports` wants an alias (`#nuxvel/schema`,
  * `#nuxvel/factories`, `#server/*`, `#shared/*`, `~/*`, `#layers/<name>/*`)
  * for an import that climbs with `../` out of its kind folder into another
- * one, and fixes it; its `allow` option lists globs of targets a relative
- * import may reach. {@link architecture} leaves it out for now. Use the
+ * one, and fixes it, and removes an import of `shared/schemas/` from
+ * `app/` and `server/`, which auto-import it; its `allow` option lists
+ * globs of targets a relative import may reach. {@link architecture} leaves it out for now. Use the
  * plugin through {@link architecture}.
  */
 export const nuxvelPlugin: ESLint.Plugin = {

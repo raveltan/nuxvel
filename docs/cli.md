@@ -1503,7 +1503,7 @@ updated: package.json
 | Codemod | Since | What it changes |
 | --- | --- | --- |
 | `test-aliases` | 0.3.0 | Adds `#nuxvel/schema`, `#nuxvel/factories`, `#server/*` and `#shared/*` to the `imports` of `package.json`, so tests can import them |
-| `imports` | 0.3.0 | Rewrites a `../` import into another kind folder to its alias, as `eslint --fix` with `nuxvel/no-parent-imports` does, see [Imports](./auto-imports.md#imports). It leaves a namespace or default import of a table or a factory, and an import of server code from `app/`, as manual steps |
+| `imports` | 0.3.0 | Rewrites a `../` import into another kind folder to its alias, and removes an import of `shared/schemas/` from `app/` and `server/`, as `eslint --fix` with `nuxvel/no-parent-imports` does, see [Imports](./auto-imports.md#imports). It leaves a renamed import of `shared/schemas/`, a namespace or default import of a table or a factory, and an import of server code from `app/`, as manual steps |
 
 The command runs every codemod, oldest first. A codemod changes only the code that still needs it, so a second run changes nothing and prints `✔ No codemod changed a file`. `--only <codemod>` runs one codemod. An unknown name exits `2` and lists the codemods.
 

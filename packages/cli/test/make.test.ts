@@ -871,7 +871,8 @@ export default defineDeploy({
     );
     expect(createFile).toContain("export const createWidgetItemAction = defineAction({");
     expect(createFile).toContain('import { widgetItemTable } from "#nuxvel/schema";');
-    expect(createFile).toContain('import { createWidgetItemInput } from "#shared/schemas/widget-item";');
+    expect(createFile).toContain("  input: createWidgetItemInput,");
+    expect(createFile).not.toContain("shared/schemas");
     expect(createFile).toContain('await audit("widget-item.created", row);');
 
     const updateFile = readFileSync(
@@ -949,7 +950,7 @@ export default defineDeploy({
     expect(routerFile).toContain(
       '.orderBy(...listOrderBy(widgetItemTable, input.sort), desc(searchRank(widgetItemTable, input.q ?? "")), desc(widgetItemTable.id))',
     );
-    expect(routerFile).toContain("  updateWidgetItemInput,\n  widgetItemSchema,\n} from \"#shared/schemas/widget-item\";");
+    expect(routerFile).not.toContain("shared/schemas");
     expect(routerFile).toContain("    .input(widgetItemListInput)\n    .output(paginated(widgetItemSchema))\n");
     expect(routerFile).not.toContain('from "zod"');
     expect(routerFile).not.toContain(".extend(");

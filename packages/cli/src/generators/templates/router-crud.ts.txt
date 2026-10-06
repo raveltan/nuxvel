@@ -2,13 +2,6 @@ import { {{drizzleImports}} } from "drizzle-orm";
 import { {{createCamelName}} } from "{{actionsImport}}/{{createName}}.action";
 import { {{updateCamelName}} } from "{{actionsImport}}/{{updateName}}.action";
 {{deleteActionImports}}import { {{tableCamelName}}Table } from "{{tableSchemaImport}}";
-import {
-  {{tableCamelName}}IdInput,
-  {{tableCamelName}}ListInput,
-  create{{tablePascalName}}Input,
-  update{{tablePascalName}}Input,
-  {{tableCamelName}}Schema,
-} from "#shared/schemas/{{tableName}}";
 
 export const {{exportName}} = {
   list: authedProcedure{{listMeta}}
