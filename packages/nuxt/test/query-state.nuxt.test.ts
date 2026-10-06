@@ -4,7 +4,7 @@ import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { useQuery, useQueryCache } from "@pinia/colada";
 import { QueryState } from "#components";
 import PlainQueryState from "../src/runtime/app/query-state/QueryState.vue";
-import { useTRPC } from "#imports";
+import { $api } from "#imports";
 
 const customSlots = {
   loading: () => "loading",
@@ -18,7 +18,7 @@ function mountPostList({ wrap = (query: object) => query } = {}) {
   return mountSuspended(
     defineComponent({
       setup() {
-        const posts = wrap(useQuery(useTRPC().post.list.queryOptions()));
+        const posts = wrap(useQuery($api.post.list.queryOptions()));
 
         return () => h(QueryState, { query: posts }, customSlots);
       },

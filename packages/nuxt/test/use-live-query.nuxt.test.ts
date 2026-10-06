@@ -45,7 +45,7 @@ class FakeEventSource extends EventTarget {
 
 const list = defineComponent({
   setup() {
-    const { data } = useLiveQuery(useTRPC().post.list.queryOptions(), {
+    const { data } = useLiveQuery($api.post.list.queryOptions(), {
       channel: CHANNEL,
       on: {
         created: (posts, payload) => [
@@ -64,8 +64,7 @@ const selectedId = ref(1);
 
 const single = defineComponent({
   setup() {
-    const trpc = useTRPC();
-    const { data } = useLiveQuery(() => trpc.post.byId.queryOptions({ id: selectedId.value }), {
+    const { data } = useLiveQuery(() => $api.post.byId.queryOptions({ id: selectedId.value }), {
       channel: CHANNEL,
       on: {
         renamed: (post, { id }) => (post.id === id ? { ...post, title: `renamed ${id}` } : post),
@@ -78,7 +77,7 @@ const single = defineComponent({
 
 const refetched = defineComponent({
   setup() {
-    const { data } = useLiveQuery(() => ({ ...useTRPC().post.list.queryOptions(), enabled: true }), {
+    const { data } = useLiveQuery(() => ({ ...$api.post.list.queryOptions(), enabled: true }), {
       channel: CHANNEL,
       refetch: { renamed: ({ id }) => id === 1 },
     });
@@ -91,7 +90,7 @@ const BOARD_ROOM = "_probe-board?boardId=7";
 
 const board = defineComponent({
   setup() {
-    const { data } = useLiveQuery(useTRPC().post.list.queryOptions(), {
+    const { data } = useLiveQuery($api.post.list.queryOptions(), {
       channel: "_probe-board",
       params: { boardId: 7 },
       refetch: { moved: true },

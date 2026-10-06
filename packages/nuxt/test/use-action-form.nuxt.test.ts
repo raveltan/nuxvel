@@ -4,7 +4,7 @@ import { z } from "zod";
 import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { getRequestHeader } from "h3";
 import { createPostInput } from "../../../playground/shared/schemas/post";
-import { useActionForm, useTRPC } from "#imports";
+import { $api, useActionForm } from "#imports";
 
 async function mountCreatePostForm(onSuccess: (post: unknown) => void) {
   let form: ReturnType<typeof createForm> | undefined;
@@ -12,7 +12,7 @@ async function mountCreatePostForm(onSuccess: (post: unknown) => void) {
   function createForm() {
     return useActionForm(
       createPostInput,
-      useTRPC().post.create.mutationOptions(),
+      $api.post.create.mutationOptions(),
       { defaults: { title: "", body: "" }, onSuccess },
     );
   }

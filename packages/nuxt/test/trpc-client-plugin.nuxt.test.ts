@@ -4,7 +4,7 @@ import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { useQuery } from "@pinia/colada";
 import { setResponseHeader, setResponseStatus } from "h3";
 import { QueryState } from "#components";
-import { isNetworkError, useTRPC } from "#imports";
+import { $api, isNetworkError } from "#imports";
 
 describe("client tRPC plugin", () => {
   it("lets a mounted component query a procedure and render the result", async () => {
@@ -15,9 +15,8 @@ describe("client tRPC plugin", () => {
 
     const component = defineComponent({
       async setup() {
-        const trpc = useTRPC();
         const { data: pong, refresh } = useQuery(
-          trpc.health.ping.queryOptions(),
+          $api.health.ping.queryOptions(),
         );
         await refresh();
         return () => h("div", pong.value);
@@ -44,7 +43,7 @@ describe("client tRPC plugin", () => {
     const wrapper = await mountSuspended(
       defineComponent({
         setup() {
-          const ping = useQuery(useTRPC().health.requestId.queryOptions());
+          const ping = useQuery($api.health.requestId.queryOptions());
           return () =>
             h(QueryState, { query: ping }, {
               error: ({ error, retry }: { error: Error; retry: () => void }) =>

@@ -2,7 +2,7 @@ import { defineComponent, h } from "vue";
 import { describe, expect, it } from "vitest";
 import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { createPostInput } from "../../../playground/shared/schemas/post";
-import { useFormErrors, useTRPC } from "#imports";
+import { $api, useFormErrors } from "#imports";
 
 function answerCreatePost(error: { message: string; code: string; httpStatus: number; fields?: Record<string, string[]> }) {
   registerEndpoint("/api/trpc/post.create", {
@@ -23,7 +23,6 @@ function answerCreatePost(error: { message: string; code: string; httpStatus: nu
 
 const PlainPostForm = defineComponent({
   setup() {
-    const trpc = useTRPC();
     const errors = useFormErrors();
 
     async function save(title: string) {
@@ -34,7 +33,7 @@ const PlainPostForm = defineComponent({
       if (!parsed.success) return errors.set(parsed.error);
 
       try {
-        await trpc.post.create.mutate(parsed.data);
+        await $api.post.create.mutate(parsed.data);
       } catch (error) {
         errors.set(error);
       }

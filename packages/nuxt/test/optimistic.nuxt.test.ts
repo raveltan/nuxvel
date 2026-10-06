@@ -2,7 +2,7 @@ import { defineComponent, h } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { useMutation, useQuery, useQueryCache } from "@pinia/colada";
-import { optimistic, useTRPC } from "#imports";
+import { $api, optimistic } from "#imports";
 
 function deferred<T>() {
   let resolve: (value: T) => void = () => {};
@@ -20,13 +20,12 @@ async function mountPingWithOptimisticEcho(
 
   const component = defineComponent({
     setup() {
-      const trpc = useTRPC();
       const queryCache = useQueryCache();
-      cachedPing = () => queryCache.getQueryData(trpc.health.ping.key());
-      const { data } = useQuery(trpc.health.ping.queryOptions());
+      cachedPing = () => queryCache.getQueryData($api.health.ping.key());
+      const { data } = useQuery($api.health.ping.queryOptions());
       const mutation = useMutation(
-        optimistic({ ...trpc.health.echo.mutationOptions(), onError }, {
-          key: () => trpc.health.ping.key(),
+        optimistic({ ...$api.health.echo.mutationOptions(), onError }, {
+          key: () => $api.health.ping.key(),
           apply: (_current, text) => text,
         }),
       );
