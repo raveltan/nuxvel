@@ -27,6 +27,21 @@ import { postSlugLength } from "#shared/post";
 
 `#server` is not allowed in `app/`: server code must not reach the browser bundle. Use `#shared/*` for code that both sides share.
 
+The ESLint rule `nuxvel/no-parent-imports` of `@nuxvel/nuxt/eslint` reports an import that climbs with `../` out of its kind folder (`server/actions/`, `server/database/schema/`, `server/domains/<domain>/<kind>/`, `app/components/`, `shared/schemas/`, `tests/`) into another one. `eslint --fix` rewrites it to the alias: a table to `#nuxvel/schema` and a factory to `#nuxvel/factories` (named imports only), other server code to `#server/*`, `shared/` to `#shared/*`, `app/` to `~/*` and a module to `#layers/<name>/*`. A relative import inside one kind folder, such as `../tags/create-tag.action` in `server/actions/posts/`, stays legal. The `allow` option lists the targets, relative to the app root, that a relative import may still reach:
+
+```ts
+// eslint.config.ts
+import { nuxvelPlugin } from "@nuxvel/nuxt/eslint";
+
+export default [
+  {
+    files: ["server/**/*.ts", "app/**/*.{ts,vue}", "shared/**/*.ts", "tests/**/*.ts"],
+    plugins: { nuxvel: nuxvelPlugin },
+    rules: { "nuxvel/no-parent-imports": ["error", { allow: ["server/utils/**"] }] },
+  },
+];
+```
+
 ## Naming scheme
 
 The form of a name tells you what the name does:

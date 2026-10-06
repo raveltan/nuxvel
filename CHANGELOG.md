@@ -27,3 +27,6 @@ applies each step below that names a codemod.
   `#nuxvel/schema`.
 - `nuxvel upgrade` applies the codemods of the installed nuxvel;
   `--dry-run` prints them as a diff and `--only <codemod>` runs one.
+- The ESLint rule `nuxvel/no-parent-imports` reports a `../` import into
+  another kind folder and fixes it to `#nuxvel/schema`, `#nuxvel/factories`,
+  `#server/*`, `#shared/*`, `~/*` or `#layers/<name>/*`.
