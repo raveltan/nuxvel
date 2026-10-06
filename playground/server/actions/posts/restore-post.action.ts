@@ -3,7 +3,7 @@ import { postsTable } from "#nuxvel/schema";
 
 export const restorePostAction = defineAction({
   input: postIdInput,
-  invalidates: ["posts:*"],
+  invalidates: ["post"],
   handler: async (input, ctx) => {
     const post = await findOrFail(postsTable, input.id, { trashed: "only" });
     await authorize(ctx.actor, "restore", postsTable, post);

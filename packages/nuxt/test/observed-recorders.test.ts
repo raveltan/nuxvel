@@ -91,7 +91,7 @@ describe("the observed recorders", async () => {
   });
 
   it("records cache misses and hits by key", async () => {
-    const key = `posts:list:${JSON.stringify([undefined, undefined, undefined])}`;
+    const key = ["post", "list", null];
     const author = await userFactory();
 
     await guest().trpc.post.list();
@@ -104,6 +104,6 @@ describe("the observed recorders", async () => {
     await guest().trpc.post.list();
 
     await expectCacheMiss(key, { times: 2 });
-    await expect(expectCacheHit("posts:never-read")).rejects.toThrow("found 0");
+    await expect(expectCacheHit(["post", "never-read"])).rejects.toThrow("found 0");
   });
 });

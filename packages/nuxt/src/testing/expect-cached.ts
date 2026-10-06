@@ -12,7 +12,7 @@ import { callApp } from "./settled";
  * @example
  * ```ts
  * await guest().trpc.post.list();
- * const posts = await expectCached<{ rows: Post[] }>("posts:list:[null,null,null]");
+ * const posts = await expectCached<{ rows: Post[] }>(["post", "list", null]);
  * ```
  */
 export async function expectCached<T = unknown>(given: CacheKey): Promise<T> {

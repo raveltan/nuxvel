@@ -20,7 +20,7 @@ export const postRouter = {
     .query(({ input }) => {
       const q = input?.q ?? "";
 
-      return remember(`posts:list:${JSON.stringify([input?.page, input?.perPage, input?.q])}`, { minutes: 5 }, () =>
+      return remember(["post", "list", input ?? null], { minutes: 5 }, () =>
         paginate(
           useDb()
             .select(postColumns)

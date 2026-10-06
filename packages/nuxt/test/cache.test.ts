@@ -120,9 +120,9 @@ describe("the server cache", async () => {
   });
 
   it("asserts that the app cached a key and returns its value", async () => {
-    const key = "posts:list:[null,null,null]";
+    const key = ["post", "list", null];
 
-    await expect(expectCached(key)).rejects.toThrow(key);
+    await expect(expectCached(key)).rejects.toThrow("post:list");
 
     await guest().trpc.post.list();
 

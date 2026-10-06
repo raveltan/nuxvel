@@ -2,7 +2,7 @@ import { postsTable } from "#nuxvel/schema";
 
 export const createPostAction = defineAction({
   input: createPostInput,
-  invalidates: ["posts:*"],
+  invalidates: ["post"],
   handler: async (input, ctx) => {
     const post = await useDb()
       .insert(postsTable)
