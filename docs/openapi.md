@@ -161,18 +161,16 @@ An unknown, revoked or expired key gets HTTP 401. The request does not fall back
 
 ```vue
 <script setup lang="ts">
-const trpc = useTRPC();
 const queryCache = useQueryCache();
 
-const { data: keys } = useQuery(trpc.apiKeys.list.queryOptions());
-const { mutateAsync: createKey } = useMutation({
-  ...trpc.apiKeys.create.mutationOptions(),
-  onSettled: () => queryCache.invalidateQueries({ key: trpc.apiKeys.key() }),
+const keys = $api.apiKeys.list.useQuery();
+const createKey = $api.apiKeys.create.useMutation({
+  onSettled: () => queryCache.invalidateQueries({ key: $api.apiKeys.key() }),
 });
 const newKey = ref<string>();
 
 async function create() {
-  newKey.value = (await createKey({ name: "ci" })).key;
+  newKey.value = (await createKey.mutateAsync({ name: "ci" })).key;
 }
 </script>
 ```

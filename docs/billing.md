@@ -100,8 +100,7 @@ export const billingRouter = router({
 
 ```vue
 <script setup lang="ts">
-const { mutate: upgrade } = useMutation({
-  ...useTRPC().billing.upgrade.mutationOptions(),
+const upgrade = $api.billing.upgrade.useMutation({
   onSuccess: (url) => navigateTo(url, { external: true }),
 });
 </script>

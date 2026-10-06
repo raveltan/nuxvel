@@ -116,7 +116,7 @@ The component itself is a normal Nuxt component. Inside it, auto-imports, compos
 
 Storybook has no server. A component that calls the server gets no answer, so the story shows no data. [MSW](https://mswjs.io) (Mock Service Worker) answers these requests in the browser. `@nuxvel/nuxt/storybook/mocks` gives you the handlers for the nuxvel requests:
 
-- `mockTrpc(mocks)` answers the tRPC calls of `useTRPC()`. `mocks` has the shape of the app router. Each procedure is a function that takes the input and returns the output. TypeScript checks the input and the output against the router.
+- `mockTrpc(mocks)` answers the tRPC calls of `$api`. `mocks` has the shape of the app router. Each procedure is a function that takes the input and returns the output. TypeScript checks the input and the output against the router.
 - `mockUser(user)` answers the session request of `useUser()`. The story renders signed in as `user`. With `null`, the story renders signed out. A field that you do not give gets a fixed value, for example the id `user-1`.
 
 Install MSW and its Storybook addon:

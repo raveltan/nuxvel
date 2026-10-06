@@ -164,7 +164,7 @@ The parsed value is a `SanitizedHtml`. Your action stores HTML that is already c
 
 A factory file runs outside Nuxt. It imports `sanitizeHtml` from `@nuxvel/nuxt/factories`, and `nuxvel make:factory` writes this for a `$type<SanitizedHtml>()` column. See [Factories](./testing.md#factories).
 
-A `richText()` field works through `$trpc`, the REST endpoints and the test helpers. The XSS validator of `nuxt-security` is off on these routes, because the schema cleans the HTML. See [Security headers](./security.md#security-headers).
+A `richText()` field works through `$api`, the REST endpoints and the test helpers. The XSS validator of `nuxt-security` is off on these routes, because the schema cleans the HTML. See [Security headers](./security.md#security-headers).
 
 ## Error shape
 

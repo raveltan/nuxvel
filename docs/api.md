@@ -288,7 +288,7 @@ No error response has a stack, also in development. To find the real error in de
 
 ### When the server cannot be reached
 
-Sometimes a call gets no tRPC answer. For example, the network is down, or a proxy in front of the app answers with an HTML error page during a deploy. `useTRPC()` then gives a `TRPCClientError` with this message and code:
+Sometimes a call gets no tRPC answer. For example, the network is down, or a proxy in front of the app answers with an HTML error page during a deploy. `$api` then gives a `TRPCClientError` with this message and code:
 
 ```json
 { "message": "Can't reach the server. Check your connection and try again.", "data": { "code": "NETWORK_ERROR", "httpStatus": 0 } }
@@ -311,7 +311,7 @@ An error that the server sends as tRPC JSON keeps its own code and message, also
 { "message": "No procedure found on path \"post.publish\"", "data": { "code": "CLIENT_OUTDATED", "httpStatus": 404, "buildId": "b3c1…" } }
 ```
 
-A browser tab can stay open across a deploy. Its app then calls the API of the new build. `useTRPC()` sends the app's build ID with each call in the `x-nuxvel-build` header. When the tab calls a procedure that the new build does not have, and the build ID is not the current one, the error has the code `CLIENT_OUTDATED`, and `data.buildId` holds the live build. On the next navigation, the app reloads the page, so the tab gets the new build. This is the same reload that Nuxt does after its own check for a newer build, see [Open tabs after a deploy](./build.md#open-tabs-after-a-deploy).
+A browser tab can stay open across a deploy. Its app then calls the API of the new build. `$api` sends the app's build ID with each call in the `x-nuxvel-build` header. When the tab calls a procedure that the new build does not have, and the build ID is not the current one, the error has the code `CLIENT_OUTDATED`, and `data.buildId` holds the live build. On the next navigation, the app reloads the page, so the tab gets the new build. This is the same reload that Nuxt does after its own check for a newer build, see [Open tabs after a deploy](./build.md#open-tabs-after-a-deploy).
 
 The call itself still fails, so `form.formError` or the error state of the query shows the message until the user moves on. A call with no build ID, or with the current one, gets `NOT_FOUND` as usual.
 
@@ -332,13 +332,13 @@ const post = await useCaller().post.byId({ id: 1 });
 
 ```vue
 <script setup lang="ts">
-const { data: posts } = useQuery($api.post.list.queryOptions());
+const posts = $api.post.list.useQuery();
 </script>
 ```
 
-`$api` is the typed API of the app. It is auto-imported in components, pages, composables and plugins, and you can use it in templates. It finds the tRPC client of the current Nuxt app when you call a procedure, so call it where a composable can run: in `setup`, in a plugin or in route middleware. `useTRPC()` returns the same client. The client sends calls through an `httpBatchLink` with the same superjson transformer. One batch carries at most 10 calls. The client sends more calls in more requests. The server refuses a bigger batch from any other client with `BAD_REQUEST`. During SSR it calls procedures in the same process, with the visitor's request headers. Thus an `authedProcedure` query renders signed in on the first load. A query that fails with `NOT_FOUND`, `FORBIDDEN` or `UNAUTHORIZED` during SSR renders its error state with HTTP 404, 403 or 401, see [Errors during server rendering](./frontend.md#errors-during-server-rendering).
+`$api` is the typed API of the app. It is auto-imported in components, pages, composables and plugins, and you can use it in templates. It finds the tRPC client of the current Nuxt app when you call a procedure, so call it where a composable can run: in `setup`, in a plugin or in route middleware. The client sends calls through an `httpBatchLink` with the same superjson transformer. One batch carries at most 10 calls. The client sends more calls in more requests. The server refuses a bigger batch from any other client with `BAD_REQUEST`. During SSR it calls procedures in the same process, with the visitor's request headers. Thus an `authedProcedure` query renders signed in on the first load. A query that fails with `NOT_FOUND`, `FORBIDDEN` or `UNAUTHORIZED` during SSR renders its error state with HTTP 404, 403 or 401, see [Errors during server rendering](./frontend.md#errors-during-server-rendering).
 
-Read data through `useQuery()`, so that the result is cached. See [Caching queries](#caching-queries-pinia-colada). For a one-off call, `await $api.post.list.query()` also works.
+Read data through `.useQuery()`, so that the result is cached. See [Caching queries](#caching-queries-pinia-colada). For a one-off call, `await $api.post.list.query()` also works.
 
 ```vue
 <script setup lang="ts">
@@ -413,11 +413,9 @@ These helpers use the names `key`, `queryOptions`, `useQuery`, `mutationOptions`
 ## Optimistic updates
 
 ```ts
-const trpc = useTRPC();
-
 const { mutate: renamePost } = useMutation(
-  optimistic(trpc.post.update.mutationOptions(), {
-    key: (input) => trpc.post.byId.key({ id: input.id }),
+  optimistic($api.post.update.mutationOptions(), {
+    key: (input) => $api.post.byId.key({ id: input.id }),
     apply: (post, input) => ({ ...post, title: input.title }),
   }),
 );
@@ -434,8 +432,8 @@ If the query is not in the cache yet, `optimistic()` changes nothing.
 To react to a failure, spread the options and add your own `onError`. It runs after the rollback. An `onMutate` or `onSettled` of the options is replaced.
 
 ```ts
-optimistic({ ...trpc.post.update.mutationOptions(), onError: () => toast.add({ title: "Not saved" }) }, {
-  key: (input) => trpc.post.byId.key({ id: input.id }),
+optimistic({ ...$api.post.update.mutationOptions(), onError: () => toast.add({ title: "Not saved" }) }, {
+  key: (input) => $api.post.byId.key({ id: input.id }),
   apply: (post, input) => ({ ...post, title: input.title }),
 });
 ```

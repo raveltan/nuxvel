@@ -147,17 +147,16 @@ With `--ui`, `nuxvel make:resource` writes the pages of the resource: a list, a 
 <script setup lang="ts">
 definePageMeta({ middleware: "auth" });
 
-const trpc = useTRPC();
 const queryCache = useQueryCache();
 
-const form = useActionForm(createPostInput, trpc.post.create.mutationOptions(), {
+const form = useActionForm(createPostInput, $api.post.create.mutationOptions(), {
   defaults: { title: "", body: "" },
   onSuccess: async (created) => {
     queryCache.setQueriesData<RouterOutputs["post"]["list"] | undefined>(
-      { key: trpc.post.list.key() },
+      { key: $api.post.list.key() },
       (list) => list && { ...list, rows: [created, ...list.rows], total: list.total + 1 },
     );
-    queryCache.invalidateQueries({ key: trpc.post.key() });
+    queryCache.invalidateQueries({ key: $api.post.key() });
     await navigateTo({ name: "post" });
   },
 });
@@ -223,7 +222,7 @@ When the server cannot be reached, they show "Can't reach the server. Check your
 ### Unsaved changes
 
 ```ts
-const form = useActionForm(updatePostInput, trpc.post.update.mutationOptions(), {
+const form = useActionForm(updatePostInput, $api.post.update.mutationOptions(), {
   defaults: { id: post.id, title: post.title, body: post.body },
 });
 ```
@@ -235,7 +234,7 @@ A form whose `defaults` has an `id` counts as an edit form. Set `warnUnsaved: tr
 ### Typed failures on a field
 
 ```ts
-const form = useActionForm(updatePostInput, trpc.post.update.mutationOptions(), {
+const form = useActionForm(updatePostInput, $api.post.update.mutationOptions(), {
   defaults: { id: post.id, title: post.title, body: post.body },
   failures: { "post.body-empty": "body" },
 });
@@ -266,14 +265,13 @@ Without `<UForm>`, call `form.submit()` from a plain form and show `form.errors`
 
 ```vue
 <script setup lang="ts">
-const trpc = useTRPC();
 const errors = useFormErrors();
 const title = ref("");
 
 async function save() {
   errors.clear();
   try {
-    await trpc.post.create.mutate({ title: title.value, body: "" });
+    await $api.post.create.mutate({ title: title.value, body: "" });
   } catch (error) {
     errors.set(error);
   }
@@ -304,10 +302,9 @@ async function save() {
 ## Success toasts
 
 ```ts
-const trpc = useTRPC();
 const form = useActionForm(
   updatePostInput,
-  toasted(trpc.post.update.mutationOptions(), "Post saved"),
+  toasted($api.post.update.mutationOptions(), "Post saved"),
   {
     defaults: { id: post.id, title: post.title, body: post.body },
     onSuccess: () => navigateTo({ name: "posts" }),
@@ -342,7 +339,7 @@ export const postRouter = {
 
 ```ts
 // app/pages/posts/new.vue
-const form = useActionForm(createPostInput, trpc.post.create.mutationOptions(), {
+const form = useActionForm(createPostInput, $api.post.create.mutationOptions(), {
   defaults: { title: "", body: "" },
   onSuccess: () => navigateTo({ name: "posts" }),
 });
@@ -424,10 +421,9 @@ The dialog opens with focus on the cancel button. Escape, the cancel button and 
 ```vue
 <!-- app/pages/posts/index.vue -->
 <script setup lang="ts">
-const trpc = useTRPC();
 const route = useRoute();
 const input = computed(() => listQueryParams(postListInput.catch({ sort: [], filters: {} }).parse(route.query)));
-const posts = useQuery(() => trpc.post.list.queryOptions(input.value));
+const posts = $api.post.list.useQuery(input);
 </script>
 
 <template>
@@ -474,7 +470,7 @@ const posts = useQuery(() => trpc.post.list.queryOptions(input.value));
 
 The page number, the search text, the sort and the filters live in the URL query, as `?page=`, `?q=`, `?sort=title:asc,createdAt:desc` and one key per filter. The page links are real links, and a new search, sort or filter resets the page. So a reload and the back and forward buttons keep them. The page builds the query input from the URL with the same `listQuery()` schema. `.catch({ sort: [], filters: {} })` changes a URL that is not valid to the first page with no sort and no filter, and `listQueryParams()` turns the result back into the flat input of the procedure. Without sorting and filters, `paginationSchema.catch({}).parse(route.query)` is enough.
 
-To change a row from a cell, pass the same input to [`optimistic()`](#optimistic-updates) as its key: `key: () => trpc.post.list.key(input.value)`.
+To change a row from a cell, pass the same input to [`optimistic()`](#optimistic-updates) as its key: `key: () => $api.post.list.key(input.value)`.
 
 `<DataTable>` is registered only when Nuxt UI is on.
 
@@ -485,8 +481,7 @@ To change a row from a cell, pass the same input to [`optimistic()`](#optimistic
 ```vue
 <!-- app/pages/profile.vue -->
 <script setup lang="ts">
-const trpc = useTRPC();
-const form = useActionForm(setAvatarInput, trpc.profile.setAvatar.mutationOptions(), {
+const form = useActionForm(setAvatarInput, $api.profile.setAvatar.mutationOptions(), {
   defaults: { key: "" },
   onSuccess: () => navigateTo({ name: "index" }),
 });
@@ -587,7 +582,7 @@ Two limits:
 <!-- app/pages/posts/index.vue -->
 <script setup lang="ts">
 const q = ref("");
-const posts = useQuery(() => useTRPC().post.list.queryOptions({ q: q.value }));
+const posts = $api.post.list.useQuery(() => ({ q: q.value }));
 </script>
 
 <template>
@@ -667,7 +662,7 @@ When a tRPC query fails with `NOT_FOUND`, `FORBIDDEN` or `UNAUTHORIZED` while th
 When a query fails with a different error, the server answers with the error page and HTTP 500. To show the `error` slot in place of the error page, set `ssrCatchError: true` on the query:
 
 ```ts
-const invite = useQuery({ ...trpc.invite.show.queryOptions({ id }), ssrCatchError: true });
+const invite = useQuery({ ...$api.invite.show.queryOptions({ id }), ssrCatchError: true });
 ```
 
 The page then renders with HTTP 200. Use `ssrCatchError: true` for an error that the visitor can expect, such as an expired link.
@@ -679,8 +674,7 @@ In both cases, the payload carries the tRPC error to the browser, with its messa
 ```vue
 <!-- app/pages/posts/index.vue -->
 <script setup lang="ts">
-const trpc = useTRPC();
-const posts = useLiveQuery(trpc.post.list.queryOptions(), {
+const posts = useLiveQuery($api.post.list.queryOptions(), {
   channel: "posts",
   on: {
     created: (rows, payload) => {
@@ -712,7 +706,7 @@ const posts = useLiveQuery(trpc.post.list.queryOptions(), {
 - The payload arrives as JSON. Parse dates again with the [shared schema](./validation.md), as `postSchema.parse` does above.
 - The composable ignores an event with no patch. It patches nothing before the first response arrives.
 - A `created` event can name a row that the list already holds. The query can fetch the row after the broadcast, or `optimistic()` can add it first. So the `created` patch above skips an ID that is already in the list.
-- For a query whose input changes, pass a getter, as with `useQuery()`: `useLiveQuery(() => trpc.post.byId.queryOptions({ id: id.value }), { ... })`. A new input starts a new fetch. Later events patch the entry for the new input.
+- For a query whose input changes, pass a getter, as with `useQuery()`: `useLiveQuery(() => $api.post.byId.queryOptions({ id: id.value }), { ... })`. A new input starts a new fetch. Later events patch the entry for the new input.
 - The component joins the channel on mount and leaves it on unmount. It uses the connection that all `useChannel()` calls on the page share.
 - After a reconnect that missed more events than the replay buffer holds, the query fetches again. See [the resync event](./realtime.md#the-resync-event).
 
@@ -722,7 +716,7 @@ Some events do not hold the new data, or a patch cannot find the correct result.
 
 ```ts
 // app/pages/tickets/[id].vue
-const ticket = useLiveQuery(() => trpc.ticket.show.queryOptions({ id }), {
+const ticket = useLiveQuery(() => $api.ticket.show.queryOptions({ id }), {
   channel: "tickets",
   refetch: { updated: (payload) => payload.id === id },
 });
@@ -780,11 +774,10 @@ const title = ref("");
 ## Optimistic updates
 
 ```ts
-const trpc = useTRPC();
 
 const { mutate: deletePost, error: deleteError } = useMutation(
-  optimistic(trpc.post.delete.mutationOptions(), {
-    key: () => trpc.post.list.key(),
+  optimistic($api.post.delete.mutationOptions(), {
+    key: () => $api.post.list.key(),
     apply: (rows, input) => rows.filter((row) => row.id !== input.id),
   }),
 );
@@ -819,15 +812,12 @@ The starter's `nuxt.config.ts` sets `<html lang="en">` and a default `<title>`. 
 
 ```vue
 <script setup lang="ts">
-const trpc = useTRPC();
 const route = useRoute();
-const { data: post } = useQuery(
-  trpc.post.byId.queryOptions({ id: Number(route.params.id) }),
-);
+const post = $api.post.byId.useQuery({ id: Number(route.params.id) });
 </script>
 
 <template>
-  <SafeHtml v-if="post" :html="post.body" />
+  <SafeHtml v-if="post.data" :html="post.data.body" />
 </template>
 ```
 
