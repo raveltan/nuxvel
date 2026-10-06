@@ -281,6 +281,7 @@ describe("Storybook", () => {
       expect(output).toMatch(new RegExp(`✓ .*${story}`));
     }
     expect(output).toMatch(/✓ .*PostEditForm.*Saves/);
+    expect(output).toMatch(/✓ .*PostEditForm.*Requires Title/);
     expect(output).toMatch(/✓ .*UserMenu.*Signs Out/);
     expect(output).toMatch(/✓ .*Greeting.*Chinese(?! Global)/);
     expect(output).toMatch(/✓ .*Greeting.*Chinese Global/);

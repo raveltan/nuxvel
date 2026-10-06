@@ -2,13 +2,13 @@ import { z } from "zod";
 
 export const createPostInput = z.object({
   title: z.string().min(1),
-  body: z.string(),
+  body: z.string().meta({ input: "textarea" }),
 });
 
 export const updatePostInput = z.object({
   id: z.number().int().positive(),
   title: z.string().min(1),
-  body: z.string(),
+  body: z.string().meta({ input: "textarea" }),
 });
 
 export const postIdInput = z.object({

@@ -281,6 +281,22 @@ export const BodyEmpty: StoryObj<typeof meta> = {
 };
 ```
 
+`PostEditForm` is an [`<ActionForm>`](./frontend.md#the-form-from-the-schema) on `$api.post.update`. The form renders its fields from the shared input schema, so the story needs only `mockTrpc` for the mutation. A schema error shows with no call:
+
+```ts
+const update = trpcSpy("post.update", (input) => ({ ...post, ...input }));
+
+export const RequiresTitle: StoryObj<typeof meta> = {
+  parameters: { msw: [mockTrpc({ post: { update } })] },
+  play: async () => {
+    await field(page, "Title").clear();
+    await button(page, "Save post").click();
+    await expect(field(page, "Title")).toHaveAttribute("aria-invalid", "true");
+    await expect(update).not.toHaveBeenCalled();
+  },
+};
+```
+
 - `page` is the whole document of the story. It takes the place of the page that `visit()` returns. A dialog, a menu and a toast render outside the story's `canvasElement`, so find them in `page`. A helper also takes a locator or `canvasElement` as its scope.
 - `button`, `link`, `heading`, `field`, `text`, `cell`, `dialog`, `menu`, `menuitem`, `alert` and `toast` return a `Locator`. Its methods have the names and the arguments of the Playwright `Locator`: `click`, `fill`, `clear`, `pressSequentially`, `press`, `check`, `uncheck`, `setChecked`, `hover`, `unhover`, `focus`, `blur`, `waitFor`, `count`, `all`, `first`, `last`, `nth`, `filter`, `getByRole`, `getByLabel`, `getByText` and `locator`.
 - An action waits until exactly one element matches and is visible. `click`, `fill`, `check`, `hover` and `unhover` also wait until the element is enabled and takes pointer events. Reka UI sets `pointer-events: none` while a popover closes. The wait fails after 5 seconds. Give `{ timeout }` to change it for one call.

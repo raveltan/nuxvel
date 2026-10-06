@@ -22,11 +22,13 @@ type ProcedureInput<P extends FormProcedure> = Parameters<Mutation<P>>[0];
 
 type ProcedureOutput<P extends FormProcedure> = Awaited<ReturnType<Mutation<P>>>;
 
-type SharedSchemaOf<P extends FormProcedure> = P[typeof PROCEDURE_PATH] extends keyof ProcedureInputs
+/** The input schema of a procedure of `$api` in `shared/schemas/`, as {@link useActionForm} and `<ActionForm>` find it. */
+export type SharedSchemaOf<P extends FormProcedure> = P[typeof PROCEDURE_PATH] extends keyof ProcedureInputs
   ? ProcedureInputs[P[typeof PROCEDURE_PATH]]
   : never;
 
-type SchemaCheck<P extends FormProcedure, Schema extends z.ZodType> = [Schema] extends [never]
+/** `unknown` when `Schema` checks the input of `P`, and otherwise the message of the compile error. */
+export type SchemaCheck<P extends FormProcedure, Schema extends z.ZodType> = [Schema] extends [never]
   ? `$api.${P[typeof PROCEDURE_PATH]} has no input schema in shared/schemas/: move its schema there, or pass useActionForm($api.${P[typeof PROCEDURE_PATH]}, { schema })`
   : [z.input<Schema>] extends [ProcedureInput<P>]
     ? unknown

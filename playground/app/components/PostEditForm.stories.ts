@@ -42,3 +42,15 @@ export const Saves: StoryObj<typeof meta> = {
     await expect(update).toHaveBeenCalledTimes(1);
   },
 };
+
+const rejected = trpcSpy("post.update", (input) => ({ ...post, ...input }));
+
+export const RequiresTitle: StoryObj<typeof meta> = {
+  parameters: { msw: [mockTrpc({ post: { update: rejected } })] },
+  play: async () => {
+    await field(page, "Title").clear();
+    await button(page, "Save post").click();
+    await expect(field(page, "Title")).toHaveAttribute("aria-invalid", "true");
+    await expect(rejected).not.toHaveBeenCalled();
+  },
+};

@@ -21,6 +21,7 @@ export default defineNuxtConfig({
   buildDir: process.env.PLAYGROUND_BUILD_DIR,
   modules: [devtoolsTabs],
   nuxvel: {
+    form: { inputs: { money: "ProbeMoneyInput" } },
     rendering: {
       "/_rendering/cached": "cached",
       "/zh/_rendering/cached": "cached",

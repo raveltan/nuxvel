@@ -110,7 +110,7 @@ export const incidentIdInput = z.object({
 
 export const openIncidentInput = z.object({
   title: z.string().trim().min(1, "Name the problem").max(255),
-  body: z.string().trim().min(1, "Tell visitors what you know"),
+  body: z.string().trim().min(1, "Tell visitors what you know").meta({ input: "textarea" }),
 });
 
 export const incidentUpdateSchema = z.object({
@@ -786,28 +786,19 @@ A form opens an incident:
 
 ```vue
 <!-- app/components/OpenIncidentForm.vue -->
-<script setup lang="ts">
-const form = useActionForm($api.incident.open, {
-  defaults: { title: "", body: "" },
-  onSuccess: () => navigateTo({ name: "admin" }),
-});
-</script>
-
 <template>
-  <UForm :ref="form.ref" :schema="form.schema" :state="form.state" class="space-y-4" @submit="form.submit">
-    <UFormField name="title" label="Title">
-      <UInput v-model="form.state.title" class="w-full" />
-    </UFormField>
-    <UFormField name="body" label="First update">
-      <UTextarea v-model="form.state.body" class="w-full" />
-    </UFormField>
-    <UAlert v-if="form.formError" color="error" :title="form.formError" />
-    <UButton type="submit" :loading="form.pending" label="Open incident" />
-  </UForm>
+  <ActionForm
+    :action="$api.incident.open"
+    :defaults="{ title: '', body: '' }"
+    :fields="{ body: { label: 'First update' } }"
+    submit-label="Open incident"
+    :options="{ onSuccess: () => navigateTo({ name: 'admin' }) }"
+    class="space-y-4"
+  />
 </template>
 ```
 
-`useActionForm($api.incident.open)` checks the input in the browser with the same schema as the server, then calls the mutation. After a success, it goes to the list of open incidents, which shows the flash message. A second form posts an update:
+`<ActionForm>` renders the fields of `openIncidentInput`, checks the input in the browser with the same schema as the server, then calls the mutation. After a success, it goes to the list of open incidents, which shows the flash message. A second form posts an update:
 
 ```vue
 <!-- app/components/PostUpdateForm.vue -->

@@ -9,11 +9,6 @@ Auto-imported: composables, components, `shared/schemas/*`, `RouterInputs`, `Rou
 definePageMeta({ middleware: "auth" });
 const { ts, localeRoute } = useI18n();
 const posts = $api.post.list.useQuery({ page: 1 });
-const form = useActionForm($api.post.create, {
-  defaults: { body: "" },
-  toast: "Post created",
-  onSuccess: () => navigateTo(localeRoute({ name: "post" })),
-});
 useSeo(() => ({ title: ts("post.title") }));
 </script>
 
@@ -22,13 +17,24 @@ useSeo(() => ({ title: ts("post.title") }));
     <template #empty><UEmpty :title="$ts('post.empty')" /></template>
     <template #default="{ data }">…</template>
   </QueryState>
-  <UForm :ref="form.ref" :schema="form.schema" :state="form.state" @submit="form.submit">
-    <UFormField name="title" :label="$ts('post.fields.title')"><UInput v-model="form.state.title" /></UFormField>
-    <UAlert v-if="form.formError" color="error" :title="form.formError" />
-    <UButton type="submit" :loading="form.pending" :label="$ts('post.create')" />
-  </UForm>
+  <ActionForm
+    :action="$api.post.create"
+    :defaults="{ body: '' }"
+    :submit-label="$ts('post.create')"
+    :options="{ toast: 'Post created', onSuccess: () => navigateTo(localeRoute({ name: 'post' })) }"
+  />
 </template>
 ```
+
+`<ActionForm>` renders one field per key of the input schema: string `UInput` (typed for `z.email()`/`z.url()`), enum `USelect`, boolean `USwitch`, number `UInputNumber`, date `UInputDate`, `richText()` `UTextarea`, `.meta({ upload: "<name>" })` `<UploadField>`, `.meta({ input: "textarea" })` `UTextarea`. Label: i18n key `post.create.fields.<name>`, else the humanized name. Go down a step only when needed:
+
+| Step | Write |
+|---|---|
+| Props | `:fields="{ title: { label, placeholder, hint } }"`, `hidden="id"`, `submit-label`, `:options` (toast, onSuccess, failures, ...), `class`, `:ui="{ root, field, actions }"` |
+| One input | `<template #field-role="{ field }"><URadioGroup v-model="field.value" :items /></template>` (an array of objects or a union needs one) |
+| Layout | default slot with `<ActionField name="street" />` anywhere, `<template #actions="{ pending }">` |
+| App-wide | `app.config.ts` `ui: { actionForm: { slots: { root, field, actions } } }`. `nuxt.config.ts` `nuxvel: { form: { inputs: { date: "MyDatePicker", money: "MoneyInput" } } }` with `z.number().meta({ input: "money" })` |
+| Own markup | `useActionForm()` with your own `<UForm>`, below |
 
 A delete button asks, removes the row at once and puts it back on error:
 
@@ -81,6 +87,7 @@ SSR: `NOT_FOUND`/`FORBIDDEN`/`UNAUTHORIZED` render the `error` slot with 404/403
 | `<QueryState :query>` | slots `loading`, `error { error, retry }`, `empty`, `default { data }` |
 | `<DataTable :query :columns :list search>` | paginated `UTable`. Page, sort, filters in the URL. Cell slot `#<column>-cell="{ row }"` |
 | `<SearchInput v-model>` | search box for a list |
+| `<ActionForm :action :defaults>`, `<ActionField name>` | form from the input schema, see above |
 | `<UploadField v-model name field label accept>` | upload in a `UForm` |
 | `<SafeHtml :html>` | sanitized user HTML |
 | `<DateTime :value relative?>` | same text on server and browser |

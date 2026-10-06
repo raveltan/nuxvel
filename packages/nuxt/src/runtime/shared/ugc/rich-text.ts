@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { richTextMarker } from "./rich-text-schemas";
 import { type SanitizeProfile, sanitizeHtml } from "./sanitize-html";
 
 /**
@@ -26,8 +27,9 @@ import { type SanitizeProfile, sanitizeHtml } from "./sanitize-html";
  * ```
  */
 export function richText(options: { max?: number; profile?: SanitizeProfile } = {}) {
-  return z
+  const schema = z
     .string()
     .max(options.max ?? 10_000)
     .transform((html) => sanitizeHtml(html, { profile: options.profile }));
+  return Object.assign(schema, { [richTextMarker]: true });
 }

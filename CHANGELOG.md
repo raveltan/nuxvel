@@ -211,6 +211,20 @@ applies each step below that names a codemod.
   to `useActionForm($api.<path>, { ...options, ...formOptions })`.
 - The forms that `make:resource --ui` writes pass the `$api` mutation to
   `useActionForm()`.
+- `<ActionForm :action="$api.<path>" :defaults>` renders a field for
+  each key of the procedure's input schema, with the input of its type,
+  and keeps the behaviour of `useActionForm()`. It takes `fields`
+  (label, placeholder, hint), `submit-label`, `hidden`, `options` (the
+  options of `useActionForm()`), `class` and `ui`, a `#field-<name>`
+  slot, a default slot with `<ActionField name>` for the layout, and
+  `#actions="{ pending }"`. `app.config.ts` `ui.actionForm.slots` styles
+  every form. `.meta({ input: "textarea" })` and `.meta({ upload })` on
+  a shared schema field pick its input. A label comes from the
+  translation `<action path>.fields.<name>`, else from the field name.
+- `nuxvel.form.inputs: { date: "MyDatePicker", money: "MoneyInput" }`
+  names the component of the app that `<ActionForm>` renders for a kind
+  of input: a default kind, or a kind that a schema field names with
+  `.meta({ input })`.
 - `toHaveValidationErrors` passes for an action failure with a `field`.
 - `nuxvel test:arch` and the `architecture` preset report an import of
   server code under `shared/` (`server/`, `#server/*`, `#nuxvel/*`,

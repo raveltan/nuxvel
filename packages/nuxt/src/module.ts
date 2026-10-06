@@ -19,6 +19,7 @@ import { setupPwa } from "./setup/pwa";
 import { dropFontsPluginInStorybook, includeStorybookTypes, localizeStorybook, prebundleSanitizeHtmlInStorybook, isStorybookBuild, storybookI18nOverrides } from "./setup/storybook";
 import { addAutoImports, addSharedSchemaImports } from "./setup/auto-imports";
 import { addComponents } from "./setup/components";
+import { addFormInputs } from "./setup/form-inputs";
 import { setupMaintenance } from "./setup/maintenance";
 import { createDiscovery } from "./setup/discovery";
 import { applyRuntimeConfig } from "./setup/runtime-config";
@@ -105,6 +106,23 @@ export interface ModuleOptions extends NuxvelRuntimeConfig {
    * ```
    */
   ui?: boolean;
+  /** The options of `<ActionForm>`. */
+  form?: {
+    /**
+     * The component `<ActionForm>` renders for each kind of input, by the
+     * name of a component of the app. A kind is a default one (`"text"`,
+     * `"email"`, `"url"`, `"textarea"`, `"select"`, `"boolean"`,
+     * `"number"`, `"date"`, `"richText"`), which this replaces, or a new
+     * one that a schema field names with `.meta({ input })`. The
+     * component takes `v-model` and `placeholder`.
+     *
+     * @example
+     * ```ts
+     * nuxvel: { form: { inputs: { date: "MyDatePicker", money: "MoneyInput" } } }
+     * ```
+     */
+    inputs?: Record<string, string>;
+  };
   /** The performance budgets that the build checks. */
   perf?: {
     /** The budget of the JavaScript and CSS that each page loads. */
@@ -404,6 +422,34 @@ declare module "@nuxt/schema" {
   }
 }
 
+declare module "zod/v4/core" {
+  interface GlobalMeta {
+    /**
+     * The control `<ActionForm>` renders for this field, in place of the
+     * one its type gives: `"textarea"`, a default kind (`"text"`,
+     * `"email"`, `"url"`, `"select"`, `"boolean"`, `"number"`, `"date"`,
+     * `"richText"`), or a kind of `nuxvel.form.inputs`.
+     *
+     * @example
+     * ```ts
+     * body: z.string().meta({ input: "textarea" }),
+     * ```
+     */
+    input?: string;
+    /**
+     * The upload whose storage key this field holds, as in
+     * `server/uploads/<name>.upload.ts`. `<ActionForm>` renders an
+     * `<UploadField>` for it.
+     *
+     * @example
+     * ```ts
+     * avatarKey: z.string().meta({ upload: "profile-avatar" }),
+     * ```
+     */
+    upload?: string;
+  }
+}
+
 // @nuxt/devtools-kit loads nuxt/schema, whose bridged NuxtOptions ignores @nuxt/schema-only augments
 declare module "nuxt/schema" {
   interface RuntimeConfig {
@@ -456,7 +502,7 @@ function hasLocalizedSeo(nuxt: Nuxt) {
  * `/api/webhooks/<name>` webhook endpoint, the `/api/channels` multiplexed and
  * `/api/channels/<name>` single realtime endpoints (plus the built-in `flags` and `maintenance` channels and each user's `notifications:<userId>` channel) with their
  * `/api/channels/join`, `/api/channels/leave` and `/api/channels/presence` requests, and the `/api/health/live` and
- * `/api/health/ready` probes, installs Nuxt UI with its Tailwind CSS entry, the `useConfirm()` helper and the `toast` and `confirm` options of `$api` mutations, the flash toasts and the `<SocialSignIn>`, `<UploadField>`, `<AuthForm>`, `<DataTable>`, `<SearchInput>`, `<PresenceAvatars>`, `<TypingIndicator>`, `<MaintenanceBanner>` and `<NotificationBell>` components
+ * `/api/health/ready` probes, installs Nuxt UI with its Tailwind CSS entry, the `useConfirm()` helper and the `toast` and `confirm` options of `$api` mutations, the flash toasts and the `<SocialSignIn>`, `<UploadField>`, `<ActionForm>`, `<ActionField>`, `<AuthForm>`, `<DataTable>`, `<SearchInput>`, `<PresenceAvatars>`, `<TypingIndicator>`, `<MaintenanceBanner>` and `<NotificationBell>` components
  * unless `ui` is `false`, installs `@vite-pwa/nuxt` with an offline page and web push when `pwa` is set, and reports unexpected server and browser errors
  * to the error tracker named by `NUXT_PUBLIC_SENTRY_DSN`. It also generates the `#nuxvel/*` modules by
  * discovering the app's `server/database/schema`, `server/database/backfills`, `server/flags`, `server/jobs`,
@@ -562,6 +608,7 @@ export default defineNuxtModule<ModuleOptions>().with({
 
     addAutoImports(options, runtimeFile);
     addComponents(options, runtimeFile);
+    if (options.ui) addFormInputs(nuxt, options.form?.inputs ?? {});
     setupMaintenance(nuxt, options, runtimeFile);
     setupRequestSize(nuxt, runtimeFile);
 

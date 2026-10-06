@@ -180,6 +180,7 @@
     "@nuxt/icon": "^2.5.1",
     "@nuxt/kit": "^4.5.2",
     "@nuxt/schema": "^4.5.2",
+    "@internationalized/date": "^3.12.4",
     "@nuxt/ui": "^4.11.2",
     "@nuxtjs/robots": "^6.2.3",
     "@nuxtjs/sitemap": "^8.5.1",

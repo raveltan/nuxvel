@@ -182,6 +182,129 @@ useSeo({ title: "New post" });
 
 `onSuccess` puts the new row into the cached lists at once, then refetches them, and opens the list. For a form that no resource has, write the same code by hand.
 
+A form goes from a single tag to your own markup in steps. Each step keeps the validation, the server field errors, the focus on the first invalid field, the toast, the invalidation and the unsaved-changes prompt. Take the first step that fits.
+
+### The form from the schema
+
+```vue
+<ActionForm :action="$api.team.addMember" :defaults="{ teamId }" hidden="teamId" />
+```
+
+`<ActionForm>` renders one field for each key of the procedure's input schema in `shared/schemas/`, a form error and a submit button. It is `useActionForm()` with the markup, so the [options](#your-own-form-useactionform) work the same. A procedure whose input schema is not in `shared/schemas/` does not compile.
+
+Each field gets the input of its type:
+
+| Schema | Input |
+|---|---|
+| `z.string()` | `UInput` |
+| `z.email()`, `z.url()` | `UInput` with `type="email"` or `type="url"` |
+| `z.enum([...])` | `USelect` |
+| `z.boolean()` | `USwitch` |
+| `z.number()` | `UInputNumber` |
+| `z.date()`, `z.iso.date()` | `UInputDate`. A `Date` is midnight UTC of the chosen day. |
+| `richText()` | `UTextarea` |
+| `z.string().meta({ upload: "post-cover" })` | `<UploadField>` of that upload |
+
+`.optional()`, `.nullable()` and `.default()` keep the input of the type inside. An array of objects, a union or another type has no input: the form renders nothing for it and warns in development. Give it a [slot](#one-field).
+
+The label is the translation `<action path>.fields.<name>`, such as `team.addMember.fields.email`, and else the name with spaces: `contactEmail` shows "Contact email". The submit button says "Save" (`nuxvel.actionForm.submit`).
+
+### Props
+
+```vue
+<ActionForm
+  :action="$api.post.update"
+  :defaults="post"
+  hidden="id"
+  :fields="{ title: { label: 'Headline', placeholder: 'A short title', hint: 'Required' } }"
+  submit-label="Save post"
+  :options="{ toast: 'Post saved', onSuccess: () => navigateTo('/posts') }"
+  class="max-w-xl"
+  :ui="{ actions: 'justify-end' }"
+/>
+```
+
+| Prop | Description |
+|---|---|
+| `action` | A mutation of `$api`. |
+| `defaults` | The initial state, as the `defaults` of `useActionForm()`. |
+| `options` | The other options of `useActionForm()`: `toast`, `onSuccess`, `confirm`, `failures`, `warnUnsaved` and the mutation options. |
+| `fields` | The `label`, `placeholder` and `hint` of each field. The keys are type-checked against the schema. |
+| `submit-label` | The text of the submit button. |
+| `hidden` | A field name, or a list of them, that stays in the state but has no input, such as an `id`. An error on a field with no input shows above the button, with the form error. |
+| `class`, `ui` | Classes for the form (`root`), each field (`field`) and the button row (`actions`). |
+
+### One field
+
+```vue
+<ActionForm :action="$api.team.addMember" :defaults="{ teamId }" hidden="teamId">
+  <template #field-role="{ field }">
+    <URadioGroup v-model="field.value" :items="['member', 'admin']" />
+  </template>
+</ActionForm>
+```
+
+A `#field-<name>` slot replaces the input of one field. It stays inside the `<UFormField>`, so the label and the errors stay. `field` has the `name`, the `label`, the `placeholder`, the `hint` and the `value`: bind `v-model="field.value"`. `field.value` has the type of the schema field.
+
+### Layout
+
+```vue
+<ActionForm :action="$api.address.update" :defaults="address" hidden="id">
+  <div class="grid grid-cols-2 gap-4">
+    <ActionField name="street" />
+    <ActionField name="city" />
+  </div>
+  <template #actions="{ pending }">
+    <UButton type="submit" :loading="pending" label="Save address" />
+    <UButton to="/addresses" variant="ghost" label="Cancel" />
+  </template>
+</ActionForm>
+```
+
+The default slot replaces the list of fields. Put an `<ActionField name="...">` for each field where you want it. A field you leave out has no input. `#actions` replaces the submit button, and `pending` is `true` while the mutation runs.
+
+### App-wide
+
+```ts
+// app.config.ts
+export default defineAppConfig({
+  ui: { actionForm: { slots: { root: "space-y-6", actions: "flex justify-end gap-2" } } },
+});
+```
+
+`ui.actionForm.slots` in `app.config.ts` styles every `<ActionForm>`, as the `ui` config of a Nuxt UI component. The `ui` prop of one form goes over it.
+
+```ts
+// shared/schemas/post.ts
+export const createPostInput = z.object({
+  title: z.string().min(1),
+  body: z.string().meta({ input: "textarea" }),
+});
+```
+
+`.meta({ input })` on a field of the shared schema picks its input in every form: `"textarea"`, a type of the table above (`"text"`, `"email"`, `"url"`, `"select"`, `"boolean"`, `"number"`, `"date"`, `"richText"`), or a kind of `nuxvel.form.inputs`.
+
+```ts
+// nuxt.config.ts
+export default defineNuxtConfig({
+  nuxvel: { form: { inputs: { date: "MyDatePicker", money: "MoneyInput" } } },
+});
+```
+
+```ts
+// shared/schemas/invoice.ts
+export const createInvoiceInput = z.object({
+  dueOn: z.iso.date(),
+  amount: z.number().int().meta({ input: "money" }),
+});
+```
+
+`nuxvel.form.inputs` names a component of the app for a kind of input. A default kind, such as `date`, then renders your component in every form. A new kind, such as `money`, is for the fields whose schema names it with `.meta({ input })`. The component takes `v-model` and `placeholder`, and renders inside the `<UFormField>`, so a Nuxt UI input in it gets the label and the errors.
+
+### Your own form: useActionForm
+
+When the steps above are not enough, write the `<UForm>` yourself with `useActionForm()`. `<ActionForm>` is built on it.
+
 `useActionForm($api.<path>, options?)` is auto-imported. Call it inside `setup()`. Pass a mutation of [`$api`](./api.md#calling-from-the-client). Bind `ref`, `schema`, `state` and `submit` to `<UForm>`.
 
 The form checks its state with the input schema of the procedure. It finds the schema in `shared/schemas/`: the schema that the procedure names in `.input()`, or the `input` of the action that `.action()` or the action's `procedure` serves. A procedure whose input schema is not a named export of `shared/schemas/`, for example `.input(z.string())`, does not compile, and so does an auto-imported name that two files of `shared/schemas/` export. Move the schema to `shared/schemas/`, or pass it: `useActionForm($api.health.echo, { schema: echoInput })`. Every page with a form loads the input schemas of all mutations from `shared/schemas/`, so keep those files small and free of server code; `nuxvel test:arch` reports a server import there.

@@ -104,7 +104,7 @@ The prefix tells you who reads a variable. The app server reads a `NUXT_*` varia
 
 Settings follow one rule. The address and credentials of a service, such as `databaseUrl` or `mailUrl`, are top-level runtime config that a `NUXT_*` variable sets. How nuxvel behaves, such as the sender of a mail or the sign-in path, is a module option under the `nuxvel` key. One service can thus have settings in both places: `NUXT_MAIL_URL` sets the SMTP server, and `nuxvel.mail.from` sets the sender.
 
-Module options go under the `nuxvel` key. The options are `mail`, `audit`, `experiments`, `database`, `queue`, `realtime`, `security`, `health`, `billing`, `rendering`, `auth`, `api`, `ui`, `perf`, `seo` and `pwa`. Each guide describes its option:
+Module options go under the `nuxvel` key. The options are `mail`, `audit`, `experiments`, `database`, `queue`, `realtime`, `security`, `health`, `billing`, `rendering`, `auth`, `api`, `ui`, `form`, `perf`, `seo` and `pwa`. Each guide describes its option:
 
 ```ts
 export default defineNuxtConfig({
@@ -122,6 +122,7 @@ export default defineNuxtConfig({
     auth: { signInPath: "/sign-in", social: { github: true } },
     api: { restPrefix: "/api/v1", openapi: { title: "Blog API", version: "1.0.0" } },
     rendering: { "/blog/**": "cached", "/dashboard/**": "private" },
+    form: { inputs: { money: "MoneyInput" } },
     perf: { bundle: { maxInitialKb: 200 } },
     seo: { siteName: "My app", siteUrl: "https://example.com" },
   },
@@ -135,6 +136,8 @@ export default defineNuxtConfig({
 `rendering` gives a rendering preset to each route pattern: `cached`, `private` or `client`. See [Rendering](./rendering.md#rendering-presets).
 
 `ui` installs Nuxt UI. The default is `true`. Set it to `false` to use your own markup. See [Frontend: opting out](./frontend.md#opting-out).
+
+`form.inputs` names the component of the app that `<ActionForm>` renders for a kind of input. See [Frontend: app-wide](./frontend.md#app-wide).
 
 `perf.bundle.maxInitialKb` is the most gzipped JavaScript and CSS, in KB, that the first load of one page can need. A page over it fails the build. See [Building for production: bundle budget](./build.md#bundle-budget).
 

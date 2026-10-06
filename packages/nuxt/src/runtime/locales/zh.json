@@ -93,6 +93,6 @@
       "refused": "存储服务拒绝了上传（{status}）",
       "unreachable": "无法连接存储服务"
     },
-    "actionForm": { "unsavedChanges": "您有未保存的更改。确定要离开此页面吗？" }
+    "actionForm": { "unsavedChanges": "您有未保存的更改。确定要离开此页面吗？", "submit": "保存" }
   }
 }

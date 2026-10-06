@@ -93,6 +93,6 @@
       "refused": "Storage refused the upload ({status})",
       "unreachable": "Could not reach storage"
     },
-    "actionForm": { "unsavedChanges": "You have unsaved changes. Leave this page?" }
+    "actionForm": { "unsavedChanges": "You have unsaved changes. Leave this page?", "submit": "Save" }
   }
 }

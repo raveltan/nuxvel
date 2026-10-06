@@ -20,7 +20,7 @@ Nuxt 4 + `@nuxvel/nuxt`. Data: Drizzle on Postgres. API: tRPC. Input: Zod. Auth:
 9. No `!` to remove `undefined`. Use `firstOrFail`.
 10. Make a new file with `./nv make:*`. It writes the file, the export name and a test.
 11. `shared/` runs in the browser. It never imports `drizzle-orm`, `#nuxvel/*` or `server/`.
-12. The input schema of a mutation goes in `shared/schemas/` and the procedure names it: `useActionForm($api.post.create)` reads it from there.
+12. The input schema of a mutation goes in `shared/schemas/` and the procedure names it: `<ActionForm :action="$api.post.create" />` and `useActionForm($api.post.create)` read it from there.
 13. Before you finish: run the changed tests, `./nv test:arch`, `npm run typecheck`.
 
 ## Resources

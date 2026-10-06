@@ -1,3 +1,4 @@
 {
-  "_probes": { "englishOnly": "Only in English" }
+  "_probes": { "englishOnly": "Only in English" },
+  "_actionFormCheck": { "save": { "fields": { "contactEmail": "Contact address" } } }
 }
