@@ -4,6 +4,7 @@ import { awaitingName } from "../discovery/definition-name";
 import { currentLocale } from "../i18n/current-locale";
 import { type Translate, translator } from "../i18n/translator";
 import { renderEmail } from "./render-email";
+import type { SendMailOptions } from "./send-mail";
 
 /** The input every mail's schema must produce: at least who it goes to. */
 export type MailSchema = z.ZodType<{ to: string }>;
@@ -34,6 +35,28 @@ export interface Mail<Name extends string = string, Schema extends MailSchema = 
   subject(input: z.infer<Schema>, locale?: string): string;
   render(input: z.infer<Schema>, locale?: string): Promise<RenderedMail>;
   preview?: () => z.input<Schema>;
+  /**
+   * Sends this mail with `input`, once the surrounding transaction
+   * commits. Outside a transaction it is queued now.
+   *
+   * Validates `input` against the mail's schema, throwing a
+   * `ValidationFailedError`, and renders it now, then queues the
+   * rendered message as a `nuxvel.mail` job, so sending never blocks the
+   * request and a rollback sends nothing. A recipient recorded with
+   * `suppressMail()` is skipped with a log line. Throws when
+   * `nuxvel.mail.from` is not configured. `sendMailNow()` sends without
+   * the queue.
+   *
+   * @param options.locale The locale code the mail renders in. The
+   * locale of the request or the action when unset.
+   *
+   * @example
+   * ```ts
+   * await $mails.welcome.send({ to: user.email, name: user.name });
+   * await $mails.welcome.send({ to: user.email, name: user.name }, { locale: "zh" });
+   * ```
+   */
+  send(input: z.input<Schema>, options?: SendMailOptions): Promise<void>;
 }
 
 /**
@@ -42,9 +65,9 @@ export interface Mail<Name extends string = string, Schema extends MailSchema = 
  * `defineMail` is auto-imported. One mail per file, under `server/mail/`,
  * with its Vue templates alongside it; the file is discovered, so nothing
  * registers it, and its path is the mail's name
- * (`server/mail/order/shipped.mail.ts` is `"order.shipped"`). Send it by name
- * with {@link sendMail}; the name is part of {@link MailName}, so sending
- * a misspelled name fails to compile.
+ * (`server/mail/order/shipped.mail.ts` is `"order.shipped"`). Send it
+ * with {@link Mail.send} through the `$mails` namespace:
+ * `$mails.order.shipped.send(input)`.
  *
  * Templates use the MJML components (`<EButton>`, `<EText>`, ...) and
  * {@link MailLayout} without importing them; they are registered for
@@ -54,7 +77,7 @@ export interface Mail<Name extends string = string, Schema extends MailSchema = 
  * plain-text version made from it. It throws when the template renders
  * invalid MJML, with the tag and the line of each error.
  *
- * A mail renders in one locale: the `locale` option of {@link sendMail},
+ * A mail renders in one locale: the `locale` option of {@link Mail.send},
  * else {@link currentLocale}. The template translates with `$t(key,
  * params)` and `subject` with `t`, from the global `locales/<code>.json`
  * files of the app. A key that the locale does not have comes from the
@@ -92,14 +115,22 @@ export function defineMail<Schema extends MailSchema, const Preview extends z.in
   render: (props: Omit<z.infer<Schema>, "to">) => VNode;
   preview?: () => Preview;
 }): Mail<string, Schema> {
-  return awaitingName(
+  const mail: Mail<string, Schema> = awaitingName(
     {
       name: "",
       input: config.input,
       subject: (input: z.infer<Schema>, locale = currentLocale()) => config.subject(input, { t: translator(locale), locale }),
       render: ({ to: _to, ...props }: z.infer<Schema>, locale = currentLocale()) => renderEmail(config.render(props), translator(locale)),
       preview: config.preview,
+      async send(input: z.input<Schema>, options?: SendMailOptions) {
+        // a static import cycles through the #nuxvel/mails registry, which holds this mail
+        const { sendMail } = await import("./send-mail");
+
+        await sendMail(mail, input, options);
+      },
     },
     "mail",
   );
+
+  return mail;
 }

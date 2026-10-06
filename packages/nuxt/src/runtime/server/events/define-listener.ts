@@ -34,7 +34,7 @@ export interface Listener {
  * the action.
  *
  * The handler gets the event schema's parsed output: the payload is
- * parsed once, from the raw value {@link emit} was given, and a queued
+ * parsed once, from the raw value {@link DomainEvent.emit} was given, and a queued
  * payload written under an older event version is upcast first — see
  * {@link defineEvent}.
  *

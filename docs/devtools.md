@@ -235,7 +235,7 @@ You can move a definition with [`renamed()`](./index.md#renaming-a-definition). 
 ## Checking the tab by hand
 
 1. Run `nuxvel dev`. Open the app, then the **nuxvel** tab in DevTools.
-2. Dispatch a job: call an action that uses `dispatchAfterCommit()`.
+2. Dispatch a job: call an action that uses `$jobs.x.dispatch()`.
 3. The job shows as `waiting`. The worker inside `nuxvel dev` runs it, and it changes to `completed` without a reload. With `nuxvel dev --no-queue`, start `nuxvel queue:work` to run it.
 
 ## See also

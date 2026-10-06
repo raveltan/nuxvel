@@ -4,7 +4,7 @@ import type { Mail } from "./define-mail";
 
 type Discovered = (typeof mails)[number];
 
-/** The name of every mail defined under `server/mail/`: what {@link sendMail} takes. */
+/** The name of every mail defined under `server/mail/`: what {@link Mail.send} takes. */
 export type MailName = Discovered["name"];
 
 /**
@@ -27,7 +27,7 @@ function definitions(): readonly Mail[] {
  * The discovered mail with this name, or `undefined` when no file under
  * `server/mail/` defines one.
  *
- * {@link sendMail} uses it to find what to
+ * {@link Mail.send} uses it to find what to
  * render.
  */
 export function findMail(name: string): Mail | undefined {

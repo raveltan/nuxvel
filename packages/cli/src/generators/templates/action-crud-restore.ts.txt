@@ -1,13 +1,11 @@
-import { eq } from "drizzle-orm";
 import { {{tableCamelName}}Table } from "{{tableSchemaImport}}";
 
 export const {{exportName}} = defineAction({
   input: {{tableCamelName}}IdInput,
-  handler: async (input, ctx) => {
-    const row = await findOrFail({{tableCamelName}}Table, input.id, { trashed: "only" });
-    await authorize(ctx.actor, "restore", {{tableCamelName}}Table, row);
+  handler: async (input) => {
+    await findAuthorized({{tableCamelName}}Table, input.id, "restore", { trashed: "only" });
 
-    const restored = await restore({{tableCamelName}}Table, eq({{tableCamelName}}Table.id, input.id)).then(firstOrFail);
+    const restored = await restore({{tableCamelName}}Table, input.id);
     await audit("{{domain}}.restored", restored);
 
     return restored;

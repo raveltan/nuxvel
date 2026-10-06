@@ -77,7 +77,7 @@ function accepted<Payload>(
  * {@link ValidationError}, before its key is recorded. The rest is handed
  * to `handler`, typed as the schema's output (`unknown` without one), and
  * answered `200`. Keep `handler` quick: hand the work to a job with
- * {@link dispatchAfterCommit}. Read signing secrets with
+ * {@link Job.dispatch}. Read signing secrets with
  * {@link useSecrets} so they can be rotated.
  *
  * Providers retry, so the same event can arrive more than once. nuxvel
@@ -117,7 +117,7 @@ function accepted<Payload>(
  *   verify: "stripe",
  *   eventId: ({ payload }) => payload.id,
  *   handler: async ({ payload }) => {
- *     await dispatchAfterCommit("billing.process-event", payload);
+ *     await $jobs.billing.processEvent.dispatch(payload);
  *   },
  * });
  * ```

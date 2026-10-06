@@ -53,7 +53,7 @@ The form of a name tells you what the name does:
 | `use*` | returns a handle that you call methods on | `useDb()`, `useLogger()`, `useQueue()` |
 | `current*` | returns an ambient value of the running request or action | `currentRequestId()` |
 | `define*` | defines one discovered file, as a named export with the kind at the end (`postNotifySubscribersJob`) | `defineAction()`, `defineJob()`, `definePolicy()` |
-| a verb | does one thing now | `emit()`, `sendMail()`, `authorize()`, `broadcast()` |
+| a verb | does one thing now | `authorize()`, `audit()`, `sendMailNow()`, `flash()` |
 | a noun | reads a value and changes nothing | `flagTargeting()`, `experimentReport()`, `signedReadUrl()` |
 
 `useBucket()` does not follow the scheme. It returns the name of the bucket, not a handle.
@@ -107,15 +107,17 @@ Guide: [Database](./database.md).
 | `timestamps` | function | Adds `created_at` and `updated_at` columns to a table. |
 | `now` | function | Returns the current time, which the test clock can move. |
 | `findOrFail` | function | Loads one row by its `id`, or throws `NotFoundError`. |
+| `insertOne` | function | Inserts one row and returns it. |
+| `updateOne` | function | Updates the row with an `id` and returns it, or throws `NotFoundError`. |
 | `loader` | function | Batches `load(id)` calls made in the same tick into one query. |
 | `chunkById` | function | Walks a table in `id` order, a chunk of rows at a time. |
 | `firstOrFail` | function | Takes the first row of a result, or throws `NotFoundError`. |
 | `softDeletes` | function | Adds a nullable `deleted_at` column to a table. |
 | `notTrashed` | function | A `where` condition that keeps only the rows that are not soft-deleted. |
 | `onlyTrashed` | function | A `where` condition that keeps only the soft-deleted rows. |
-| `softDelete` | function | Sets `deletedAt` on the matching rows and returns them. |
-| `restore` | function | Clears `deletedAt` on the matching rows and returns them. |
-| `forceDelete` | function | Deletes the matching rows permanently and returns them. |
+| `softDelete` | function | Sets `deletedAt` on the row with an `id`, or on the matching rows, and returns them. |
+| `restore` | function | Clears `deletedAt` on the row with an `id`, or on the matching rows, and returns them. |
+| `forceDelete` | function | Deletes the row with an `id`, or the matching rows, permanently and returns them. |
 | `purgeTrashed` | function | Deletes the rows that were trashed longer ago than an interval, in every table with `softDeletes()`. |
 | `paginate` | function | Runs one page of a select and counts the rows on all pages. |
 | `paginateCursor` | function | Runs one page of a select by key and returns the cursor of the next page. |
@@ -206,9 +208,7 @@ Guide: [Actions](./actions.md).
 | `isActionError` | function | Narrows an unknown error to an `ActionError`. |
 | `systemActor` | function | Returns an actor for work with no user, such as a job or a script. |
 | `userActor` | function | Returns an actor for a user, with the `role` that policy rules check. |
-| `SYSTEM_ACTOR_TYPE` | constant | The `type` of every actor that `systemActor()` returns. |
 | `apiKeyActor` | function | Returns an actor for an API key, with the `userId` of the key's owner. |
-| `API_KEY_ACTOR_TYPE` | constant | The `type` of every actor that `apiKeyActor()` returns. |
 | `$actions` | namespace | Holds each action definition under its path: `$actions.posts.createPost`. Server only. |
 | `Action` | type | An action from `defineAction`. |
 | `ActionContext` | type | The second argument of an action: who performs it. |
@@ -222,7 +222,6 @@ Guide: [Auth](./auth.md).
 
 | Name | Kind | Description |
 |---|---|---|
-| `auth` | function | Returns the session of the current request, or `null` when signed out. |
 | `requireAuth` | function | Returns the session of the current request, or throws `UnauthenticatedError`. |
 | `useAuth` | function | Returns `{ user, actor }` of the running action, procedure or request, each `null` when nobody is signed in. |
 | `SessionUser` | type | The signed-in user: Better Auth's user fields plus `role`. |
@@ -247,6 +246,8 @@ Guide: [Authorization](./authorization.md).
 | `can` | function | Tells whether the actor may perform an action on a row. |
 | `canMany` | function | Checks several actions on every row of a list, with one preload for the list. |
 | `authorize` | function | Throws `ForbiddenError` when the actor may not perform an action on a row. |
+| `findAuthorized` | function | Loads one row by its `id` and authorizes an action on it, or throws `NotFoundError` or `ForbiddenError`. |
+| `withAbilities` | function | Extends a row schema for `.output()` with `can`, the answers of a list of ability refs for the caller. |
 | `$policies` | namespace | Holds each policy under the path of its file: `$policies.post.update`. Server only. |
 | `Policy` | type | A table's rules, as `definePolicy()` returns them. |
 | `PolicyRule` | type | One rule: a function of the actor, the row and the preloaded data. |
@@ -262,8 +263,7 @@ Guide: [Events](./events.md).
 |---|---|---|
 | `defineEvent` | function | Defines a domain event. |
 | `defineListener` | function | Defines a listener that reacts to an event. |
-| `emit` | function | Emits an event. It runs the `sync` listeners at once and queues the other listeners after the surrounding transaction commits. |
-| `$events` | namespace | Holds each event definition under its path: `$events.post.published`. Server only. |
+| `$events` | namespace | Holds each event definition under its path: `$events.post.published`. `$events.post.published.emit(payload)` emits it: it runs the `sync` listeners at once and queues the other listeners after the surrounding transaction commits. Server only. |
 | `$listeners` | namespace | Holds each listener definition under its path: `$listeners.post.notifySubscribers`. Server only. |
 | `DomainEvent` | type | An event definition. |
 | `Listener` | type | A listener definition. |
@@ -278,18 +278,17 @@ Guide: [Queues](./queues.md).
 |---|---|---|
 | `defineJob` | function | Defines a background job that `nuxvel queue:work` runs. |
 | `defineSchedule` | function | Defines a task that `nuxvel queue:work` runs on a clock. |
-| `dispatchAfterCommit` | function | Queues a job after the surrounding transaction commits. |
 | `relayOutbox` | function | Adds every waiting `outbox` row to the queue. |
 | `pruneOutbox` | function | Deletes the `outbox` rows that reached the queue longer ago than an interval. |
 | `useQueue` | function | Returns the BullMQ queue of a named queue, `default` when no name is given. |
-| `$jobs` | namespace | Holds each job definition under its path: `$jobs.post.notifyFollowers`. In the app, each key holds only the job name, for `useJobChannel()`. |
+| `$jobs` | namespace | Holds each job definition under its path: `$jobs.post.notifyFollowers`. `$jobs.post.notifyFollowers.dispatch(input)` queues it after the surrounding transaction commits. In the app, each key holds only the job name, for `useJobChannel()`. |
 | `Job` | type | A job definition. |
 | `JobContext` | type | What a job's handler gets besides its input. |
 | `JobChannel` | type | Who may follow a job on its channel. |
 | `Schedule` | type | A schedule definition. |
 | `JobName` | type | The name of every job under `server/jobs/`, `nuxvel.mail` and `nuxvel.notification` included. |
 | `JobInput` | type | The input a job is dispatched with. |
-| `DispatchOptions` | type | The `delay`, `priority` and `dispatcher` options of `dispatchAfterCommit`. |
+| `DispatchOptions` | type | The `delay`, `priority` and `dispatcher` options of `$jobs.<name>.dispatch()`. |
 | `JobChannelName` | type | The name of every job that has a `channel`. |
 | `JobMessage` | type | What a job broadcasts on its channel. |
 | `ScheduleName` | type | The name of every schedule under `server/schedules/`. |
@@ -301,17 +300,16 @@ Guide: [Mail](./mail.md).
 | Name | Kind | Description |
 |---|---|---|
 | `defineMail` | function | Defines a mail: a Vue template rendered to HTML. |
-| `sendMail` | function | Sends a mail after the surrounding transaction commits. |
 | `sendMailNow` | function | Sends a mail now, without the queue. |
 | `suppressMail` | function | Puts an address on the suppression list. |
 | `defineMailWebhook` | function | Defines the webhook that suppresses bounced and complaining addresses of Resend or Mailgun. |
 | `isMailSuppressed` | function | Tells whether an address is on the suppression list. |
-| `$mails` | namespace | Holds each mail definition under its path: `$mails.welcome`. Server only. |
+| `$mails` | namespace | Holds each mail definition under its path: `$mails.welcome`. `$mails.welcome.send(input)` sends it after the surrounding transaction commits. Server only. |
 | `Mail` | type | A mail definition. |
 | `MailSchema` | type | The input every mail schema must produce, `to` included. |
 | `RenderedMail` | type | A rendered mail body: the HTML part and its plain-text version. |
 | `MailI18n` | type | What the `subject` of a mail gets next to its input: `t` and `locale`. |
-| `SendMailOptions` | type | The options of `sendMail()` and `sendMailNow()`: `locale`. |
+| `SendMailOptions` | type | The options of `$mails.<name>.send()` and `sendMailNow()`: `locale`. |
 | `MailName` | type | The name of every mail under `server/mail/`. |
 | `MailInput` | type | The input a mail is sent with. |
 | `MailSuppressionReason` | type | Why an address stopped receiving mail. |
@@ -324,8 +322,7 @@ Guide: [Notifications](./notifications.md).
 | Name | Kind | Description |
 |---|---|---|
 | `defineNotification` | function | Defines a notification and the channels it goes through. |
-| `notify` | function | Sends a notification to one user or to several. |
-| `$notifications` | namespace | Holds each notification definition under its path: `$notifications.welcome`. Server only. |
+| `$notifications` | namespace | Holds each notification definition under its path: `$notifications.welcome`. `$notifications.welcome.notify(userIds, data)` sends it to one user or to several. Server only. |
 | `Notification` | type | A notification definition. |
 | `NotificationChannel` | type | A channel a notification goes through: `database`, `mail` or `push`. |
 | `NotificationMessage` | type | What `toDatabase` returns: the title, body, URL and icon of the row. |
@@ -412,9 +409,7 @@ Guide: [Realtime](./realtime.md).
 | Name | Kind | Description |
 |---|---|---|
 | `defineChannel` | function | Defines a channel of server-sent events. |
-| `broadcast` | function | Sends an event to every connection on a channel. |
-| `broadcastAfterCommit` | function | Sends a channel event after the surrounding transaction commits. |
-| `$channels` | namespace | Holds each channel definition under its path: `$channels.posts`. In the app, each key holds only the channel name, for `useChannel()` and `usePresence()`. |
+| `$channels` | namespace | Holds each channel definition under its path: `$channels.posts`. `$channels.posts.broadcast(event, payload)` sends an event to every connection on it after the surrounding transaction commits. In the app, each key holds only the channel name, for `useChannel()` and `usePresence()`. |
 | `Channel` | type | A channel definition. |
 | `ChannelConnection` | type | What a channel's `authorize` sees. |
 | `ChannelEvents` | type | The events a channel carries, one schema per event. |

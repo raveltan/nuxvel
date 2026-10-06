@@ -47,8 +47,8 @@ export function transaction<T>(
  *
  * Use it for side effects that must not fire on a rollback — a cache
  * purge, a call to another service. For queued work prefer
- * {@link dispatchAfterCommit}, and for a channel event
- * {@link broadcastAfterCommit}. Inside a transaction the
+ * {@link Job.dispatch}, and for a channel event
+ * {@link Channel.broadcast}, which both wait for the commit already. Inside a transaction the
  * returned promise settles at once and {@link transaction} awaits `fn`
  * after the commit, before it returns; outside one it settles when `fn`
  * has run, so `await onCommit(fn)` waits for it either way it matters.
@@ -77,7 +77,7 @@ export async function onCommit(fn: CommitHook): Promise<void> {
  *
  * Use it for a write that must be atomic with the transaction but can
  * only be composed once its body is done — the outbox row
- * {@link dispatchAfterCommit} writes is the one in the framework. A throw
+ * {@link Job.dispatch} writes is the one in the framework. A throw
  * rolls the transaction back. For side effects that must happen only
  * after the commit, use {@link onCommit}.
  */

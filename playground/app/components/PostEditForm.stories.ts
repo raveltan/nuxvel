@@ -4,7 +4,7 @@ import { button, expect, field, page, text } from "@nuxvel/nuxt/storybook/test";
 import PostEditForm from "./PostEditForm.vue";
 
 const now = new Date();
-const post = { id: 1, title: "Hello", body: " ", authorId: "user-1", createdAt: now, updatedAt: now, deletedAt: null };
+const post = { id: 1, title: "Hello", body: " ", authorId: "user-1", createdAt: now, updatedAt: now, deletedAt: null, can: { update: true, delete: true } };
 const meta = { component: PostEditForm, args: { post } } satisfies Meta<typeof PostEditForm>;
 export default meta;
 

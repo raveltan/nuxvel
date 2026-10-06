@@ -28,11 +28,7 @@ import { postTable } from "#nuxvel/schema";
 export const createPostAction = defineAction({
   input: createPostInput,
   handler: async (input, ctx) => {
-    return useDb()
-      .insert(postTable)
-      .values({ title: input.title, body: input.body, authorId: ctx.actor.id })
-      .returning()
-      .then(firstOrFail);
+    return insertOne(postTable, { title: input.title, body: input.body, authorId: ctx.actor.id });
   },
 });
 ```
@@ -174,27 +170,26 @@ export const publishPostAction = defineAction({
 });
 ```
 
-Inside an action, a procedure or a job, omit the second argument. The called action then runs as the actor of the running action, procedure or job. If no actor is in scope, the call throws `defineAction: actor is required`.
+Inside an action, a procedure or a job, omit the second argument. The called action then runs as the actor of the running action, procedure or job. If no actor is in scope, the call throws an error that names the action and the fix: `posts.create-post ran with no actor. Call it inside a procedure, job or seeder, or pass { actor: systemActor("name") }`. `audit()`, `can()` and `authorize()` throw the same kind of error.
 
 The second argument of the handler also has `locale`, the locale of the request. A caller can give another locale: `createPostAction(input, { actor, locale: "zh" })`. See [Internationalization: the locale on the server](./i18n.md#the-locale-on-the-server).
 
-An actor is `{ type, id, role?, userId? }`. An API-key actor has the type `"api-key"`, and `userId` is the owner of the key. In a procedure, the actor is the caller, and `ctx.actor` holds it for a policy check. Outside a procedure, use `userActor(user)`. It keeps the user's `role`, so policy rules that check `actor.role` see it. For work with no user, such as a job, a task or a seed script, use `systemActor(name)`. The name identifies the process in traces and audit rows.
+An actor is `{ type, id, role?, userId? }`. The type is `"user"`, `"system"`, `"api-key"` or `"guest"`. `userId` is the user behind the actor: the user of a user actor, and the owner of an API key. In a procedure, the actor is the caller, and `ctx.actor` holds it for a policy check. Outside a procedure, use `userActor(user)`. It keeps the user's `role`, so policy rules that check `actor.role` see it. For work with no user, such as a job, a task or a seed script, use `systemActor(name)`. The name identifies the process in traces and audit rows.
 
 ```ts
 const { actor } = await useAuth();
 
-if (actor?.type === SYSTEM_ACTOR_TYPE) {
+if (actor?.type === "system") {
   // the action runs from a job, a task, ...
 }
 ```
 
-`useAuth()` returns the actor of the running action and the user behind it. It works in the handler and in all code that the handler calls, at any depth. See [Auth](./auth.md#the-caller-anywhere-on-the-server). `useAuth` and `SYSTEM_ACTOR_TYPE` are auto-imported.
+`useAuth()` returns the actor of the running action and the user behind it. It works in the handler and in all code that the handler calls, at any depth. See [Auth](./auth.md#the-caller-anywhere-on-the-server). `useAuth` is auto-imported.
 
 ## Typed failures
 
 ```ts
 // server/actions/posts/update-post.action.ts
-import { eq } from "drizzle-orm";
 import { postTable } from "#nuxvel/schema";
 
 export const updatePostAction = defineAction({
@@ -202,18 +197,12 @@ export const updatePostAction = defineAction({
   errors: {
     "post.body-empty": "Body cannot be empty after trimming",
   },
-  handler: async (input, ctx, fail) => {
-    const post = await findOrFail(postTable, input.id);
-    await authorize(ctx.actor, "update", postTable, post);
+  handler: async (input, _ctx, fail) => {
+    await findAuthorized(postTable, input.id, "update");
 
     if (input.body !== undefined && !input.body.trim()) return fail("post.body-empty");
 
-    return useDb()
-      .update(postTable)
-      .set({ title: input.title, body: input.body })
-      .where(eq(postTable.id, input.id))
-      .returning()
-      .then(firstOrFail);
+    return updateOne(postTable, input.id, { title: input.title, body: input.body });
   },
 });
 ```
@@ -288,28 +277,24 @@ To count against a [shared limit](./security.md#shared-limits), use `rateLimit: 
 
 ```ts
 handler: async (input, ctx) => {
-  const post = await useDb()
-    .insert(postTable)
-    .values({ title: input.title, body: input.body, authorId: ctx.actor.id })
-    .returning()
-    .then(firstOrFail);
+  const post = await insertOne(postTable, { title: input.title, body: input.body, authorId: ctx.actor.id });
 
-  await dispatchAfterCommit("post.notify-followers", { postId: post.id });
+  await $jobs.post.notifyFollowers.dispatch({ postId: post.id });
 
   return post;
 },
 ```
 
-`dispatchAfterCommit(name, payload)` queues a job after the enclosing transaction commits. If the transaction rolls back, no job is queued.
+`$jobs.<name>.dispatch(payload)` queues a job after the enclosing transaction commits. If the transaction rolls back, no job is queued.
 
 The dispatch writes a row to the `outbox` table in the same transaction. `nuxvel queue:work` then moves the row to the queue. A crash between the commit and the enqueue loses nothing. A job can still run more than once, so make its handler safe to run twice. See [Queues](./queues.md#the-outbox).
 
 - Outside a transaction, it writes the outbox row at once. `await` returns when the row is written.
 - In a nested action, the job waits for the outermost transaction. If the savepoint of the nested action rolls back, the job is dropped.
-- `name` must be a job under `server/jobs/`. A wrong name or payload fails to compile. An unknown name also throws at runtime. In place of the name, you can give the job definition, for example `$jobs.post.notifyFollowers`.
-- A third argument sets `delay`, `priority` and `dispatcher`. See [Queues: delay and priority](./queues.md#delay-and-priority).
+- `$jobs` holds every job under `server/jobs/`. A wrong name or payload fails to compile.
+- A second argument sets `delay`, `priority` and `dispatcher`. See [Queues: delay and priority](./queues.md#delay-and-priority).
 
-For a channel event, use [`broadcastAfterCommit()`](./realtime.md#broadcasting-after-the-commit). For another side effect, use [`onCommit`](./database.md#after-the-commit).
+For a channel event, use [`$channels.<name>.broadcast()`](./realtime.md#broadcasting-after-the-commit). For another side effect, use [`onCommit`](./database.md#after-the-commit).
 
 ### Invalidating cached values
 
@@ -344,7 +329,7 @@ export const publishPostAction = defineAction({
   input: postIdInput,
   audit: "post.published",
   handler: async ({ id }) =>
-    useDb().update(postTable).set({ publishedAt: new Date() }).where(eq(postTable.id, id)).returning().then(firstOrFail),
+    updateOne(postTable, id, { publishedAt: new Date() }),
 });
 ```
 
@@ -352,7 +337,7 @@ export const publishPostAction = defineAction({
 
 ## Action rules
 
-- Actions do not import `h3` and do not call `auth()`. They do not depend on HTTP. The router, or another caller, passes the actor in.
+- Actions do not import `h3` and do not call `requireAuth()`. They do not depend on HTTP. The router, or another caller, passes the actor in.
 - Policies hold authorization. Load the row, then call `authorize()` in the handler. See [Authorization](./authorization.md).
 - Put one action in each file. Three small actions are better than one shared abstraction.
 - Do not write business logic in routers. Call an action.

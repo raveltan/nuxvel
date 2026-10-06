@@ -42,7 +42,7 @@ nuxvel reads its settings from environment variables. The app's `.env.example` l
 | `NUXT_REDIS_URL` | `redisUrl` | Redis connection for the queue, rate limits and `useRedis()`. Required in production. In other cases, the default is `redis://localhost:6379`. See [Redis](./redis.md#configuration) |
 | `NUXT_REDIS_CACHE_URL` | `redisCacheUrl` | Separate Redis for the `cache` connection: cached values only. When it is not set, the cache uses `NUXT_REDIS_URL`. See [Redis](./redis.md#a-separate-redis-for-the-cache) |
 | `NUXT_REDIS_PREFIX` | `redisPrefix` | Prefix of every Redis key and pub/sub channel of the app, so apps can share one Redis. Empty by default. See [Redis](./redis.md#key-prefix) |
-| `NUXT_MAIL_URL` | `mailUrl` | SMTP server that `sendMail()` and the [auth mails](./auth.md#email-verification) deliver through. Required in production. See [Mail](./mail.md#configuration) |
+| `NUXT_MAIL_URL` | `mailUrl` | SMTP server that `$mails.x.send()` and the [auth mails](./auth.md#email-verification) deliver through. Required in production. See [Mail](./mail.md#configuration) |
 | `NUXT_STORAGE_URL` | `storageUrl` | S3-compatible endpoint for `useS3()`, with the access key and secret as user and password. Required in production when the app defines an upload. See [Storage](./storage.md#configuration) |
 | `NUXT_STORAGE_PUBLIC_URL` | `storagePublicUrl` | Address that browsers reach the storage on, for upload and read URLs. Defaults to `NUXT_STORAGE_URL`. See [Storage](./storage.md#configuration) |
 | `NUXT_ERASURE_LOG_COMMAND` | `erasureLogCommand` | Command that `eraseUserData()` runs with the user's ID before it erases, to record the erasure outside the database. `nuxvel deploy` sets it on a VPS. See [Privacy](./privacy.md#the-erasure-log) |
@@ -129,7 +129,7 @@ export default defineNuxtConfig({
 });
 ```
 
-`mail.from` is the sender address of every mail. `sendMail()` throws while it is not set. See [Mail](./mail.md#configuration).
+`mail.from` is the sender address of every mail. `$mails.x.send()` throws while it is not set. See [Mail](./mail.md#configuration).
 
 `audit.retentionMonths` is the number of months of audit rows to keep. When it is not set, the log keeps every row. See [Audit log: partitions and retention](./audit.md#partitions-and-retention).
 
@@ -223,7 +223,7 @@ Every server helper is auto-imported. There are no barrel files. [Server auto-im
 
 [Tutorial: build a public recipe site](./tutorials/recipe-site.md) builds a public site with a few author pages. It covers `useSeo()`, canonical links, structured data, Open Graph images, the sitemap and `robots.txt`, cached and private pages, the cache helpers, an installable app that works offline, web push, and the site in English and Chinese.
 
-[Tutorial: build event-driven orders](./tutorials/orders.md) builds a shop where one order starts a stock change, a sale row, a mail and an invoice. It covers domain events, sync and queued listeners, `dispatchAfterCommit()` and the outbox, job retries and `unique`, listeners that are safe to run two times, and a backfill between an expand and a contract migration.
+[Tutorial: build event-driven orders](./tutorials/orders.md) builds a shop where one order starts a stock change, a sale row, a mail and an invoice. It covers domain events, sync and queued listeners, `$jobs.x.dispatch()` and the outbox, job retries and `unique`, listeners that are safe to run two times, and a backfill between an expand and a contract migration.
 
 [Tutorial: build a status page](./tutorials/status-page.md) builds a public status page that an uptime monitor and the team keep up to date. It covers an inbound webhook that runs one time for each event, a job that mails each subscriber after the commit, an MJML mail template, notifications to the team, a feature flag as a switch, the cache with `invalidates`, pagination and a schedule.
 
@@ -231,7 +231,7 @@ Every server helper is auto-imported. There are no barrel files. [Server auto-im
 
 ## The basics
 
-- [Database](./database.md): `useDb()`, `timestamps()`, `transaction()`, `onCommit()`, `findOrFail()`, `paginate()`, `paginated()`, `defineSeeder()`
+- [Database](./database.md): `useDb()`, `timestamps()`, `transaction()`, `onCommit()`, `findOrFail()`, `insertOne()`, `updateOne()`, `paginate()`, `paginated()`, `defineSeeder()`
 - [Full-text search](./search.md): `searchable()`, `search()`, `searchRank()`, `highlight()`
 - [Soft deletes](./soft-deletes.md): `softDeletes()`, `softDelete()`, `restore()`, `notTrashed()`, `purgeTrashed()`
 - [Validation](./validation.md): shared Zod schemas and the error shape
@@ -246,17 +246,17 @@ Every server helper is auto-imported. There are no barrel files. [Server auto-im
 ## Security
 
 - [Authentication](./auth.md): sign-up, sign-in, sessions, `useAuth()`, protected routes and procedures
-- [Authorization](./authorization.md): policies, `can()`, `authorize()`
+- [Authorization](./authorization.md): policies, `can()`, `authorize()`, `findAuthorized()`, `withAbilities()`
 - [Security](./security.md): strict headers, CSP, origin checks on mutations, signed URLs, rate limits
 
 ## Digging deeper
 
-- [Domain events](./events.md): `defineEvent()`, `defineListener()`, `emit()`
-- [Queues](./queues.md): `defineJob()`, `dispatchAfterCommit()`, `defineSchedule()`
-- [Mail](./mail.md): `defineMail()`, `sendMail()`, `suppressMail()`, Mailpit in development
-- [Notifications](./notifications.md): `defineNotification()`, `notify()`, the database, mail and push channels, `<NotificationBell>`
+- [Domain events](./events.md): `defineEvent()`, `defineListener()`, `$events.x.emit()`
+- [Queues](./queues.md): `defineJob()`, `$jobs.x.dispatch()`, `defineSchedule()`
+- [Mail](./mail.md): `defineMail()`, `$mails.x.send()`, `suppressMail()`, Mailpit in development
+- [Notifications](./notifications.md): `defineNotification()`, `$notifications.x.notify()`, the database, mail and push channels, `<NotificationBell>`
 - [Storage](./storage.md): `useS3()`, `defineUpload()`, presigned uploads, SeaweedFS in development
-- [Realtime](./realtime.md): `defineChannel()`, `broadcast()`, `broadcastAfterCommit()`, `useChannel()`, `useJobChannel()`, server-sent events
+- [Realtime](./realtime.md): `defineChannel()`, `$channels.x.broadcast()`, `useChannel()`, `useJobChannel()`, server-sent events
 - [Feature flags](./flags.md): `defineFlag()`, `defineExperiment()`, `flag()`, `useFlag()`, targeting, `track()`
 - [Webhooks](./webhooks.md): `defineWebhook()`, signature checks, repeated deliveries, `sendWebhook()`
 - [Billing](./billing.md): Stripe subscriptions and one-time payments, `useStripe()`

@@ -343,13 +343,13 @@ nuxvel test:arch
 
 `nuxvel test:arch` checks the architecture rules of the framework against the project:
 
-- A file under `server/actions/**` does not import `h3`, call `auth()` or `requireAuth()`, or call the auto-imported h3 request helpers (`useEvent`, `getHeader`, `getQuery`, `readBody`, `getCookie`, ...). An action takes an actor. It does not read the request.
+- A file under `server/actions/**` does not import `h3`, call `requireAuth()`, or call the auto-imported h3 request helpers (`useEvent`, `getHeader`, `getQuery`, `readBody`, `getCookie`, ...). An action takes an actor. It does not read the request.
 - Each action file holds one action, exported under the camelCase name of the file. `server/actions/posts/archive-post.action.ts` exports `archivePostAction`, and `archive-post.ts` exports `archivePost`.
-- A file under `server/trpc/routers/**` does not call `useDb().insert|update|delete`. A router calls an action.
+- A file under `server/trpc/routers/**` does not call `useDb().insert|update|delete`, `insertOne()` or `updateOne()`. A router calls an action.
 - Each `.query()` and `.mutation()` on a `*Procedure` (`publicProcedure`, `authedProcedure`, ...) has an `.output()` schema, so the browser gets only the fields that the schema lists. See [API: writing a router](./api.md#writing-a-router).
-- A file under `server/api/**` or `server/routes/**` does not call `useDb().insert|update|delete` and does not import an action. A write goes through a tRPC mutation that calls an action. The rule skips probes (`server/api/_*`) and routes in a `webhooks`, `uploads` or `auth` folder.
+- A file under `server/api/**` or `server/routes/**` does not call `useDb().insert|update|delete`, `insertOne()` or `updateOne()`, and does not import an action. A write goes through a tRPC mutation that calls an action. The rule skips probes (`server/api/_*`) and routes in a `webhooks`, `uploads` or `auth` folder.
 - A table under `server/database/schema/**` with a column that references the user table, such as `userId` or `ownerId`, has a `defineUserData()` declaration in `server/privacy/`. The rule skips the `session`, `account` and `two_factor` tables of Better Auth, and the `audit_subjects` table of the audit log.
-- A listener under `server/listeners/**` with `sync: true` does not call `fetch`, `$fetch`, `ofetch`, `sendMail`, `sendMailNow`, `useS3`, `useBucket`, `promoteUpload` or `checkUpload`. A sync listener runs inside the transaction of the action. Remove `sync: true` to queue the listener.
+- A listener under `server/listeners/**` with `sync: true` does not call `fetch`, `$fetch`, `ofetch`, `sendMailNow`, `useS3`, `useBucket`, `promoteUpload` or `checkUpload`. A sync listener runs inside the transaction of the action. Remove `sync: true` to queue the listener.
 - A listener does not `emit()` the event that it listens to. Such a listener runs again for its own event, in a loop.
 - A `.vue` file under `app/` does not use `v-html`. Render user HTML with `<SafeHtml :html>`, see [Frontend: rendering HTML](./frontend.md#rendering-html).
 - A `.vue` or `.ts` file under `app/` uses a route name, not an internal path string, in a link. The rule checks the `to` of `<NuxtLink>`, `<ULink>` and `<UButton>`, and the first argument of `navigateTo()`, `router.push()` and `router.replace()`. It flags a string or a template literal that starts with `/`, for example `to="/sign-in"`. Use `:to="{ name: 'sign-in' }"`: the typecheck then fails when the page moves. Paths under `/api`, `/webhooks` and `/_nuxvel`, and full URLs, are correct.
@@ -362,8 +362,8 @@ nuxvel test:arch
 The command prints one `✖` line for each violation on stderr, then a summary, and exits `1`. Add it to CI next to `nuxvel test`.
 
 ```
-✖ server/actions/posts/archive-post.action.ts: actions may not import h3, call auth() or requireAuth(), or read the request (useEvent, getHeader, readBody, ...)
-✖ server/trpc/routers/posts.router.ts: routers may not call useDb().insert/update/delete, call an action
+✖ server/actions/posts/archive-post.action.ts: actions may not import h3, call requireAuth(), or read the request (useEvent, getHeader, readBody, ...)
+✖ server/trpc/routers/posts.router.ts: routers may not call useDb().insert/update/delete, insertOne() or updateOne(), call an action
 ✖ 2 architecture violations
 ```
 
@@ -510,22 +510,22 @@ nuxvel tinker [env] [--force]
 `nuxvel tinker` opens a REPL inside the Nitro server of the app. With an environment, such as `nuxvel tinker production`, it opens it on the server instead, over SSH as the deploy user, in the live release with `shared/.env`, `shared/owner.env` and the environment of the pm2 processes (`NODE_ENV=production`, and the erasure log command, so `eraseUserData()` writes the erasure log). It asks first, because what you run there changes the live data. `--force` skips the question. Without a terminal, the command refuses unless you pass `--force`. See [Deploying to a VPS](./deploy.md#logs-status-and-a-shell). These are in scope with no imports:
 
 - The schema tables, one by one and as `schema`.
-- Every server auto-import that Nitro knows: the [nuxvel ones](./auto-imports.md) such as `useDb()`, `sendMail()`, `useS3()` and `broadcast()`, those of Nitro, h3 and other modules, and the `server/utils` and `shared/` of the app.
+- Every server auto-import that Nitro knows: the [nuxvel ones](./auto-imports.md) such as `useDb()`, `$mails`, `$channels` and `useS3()`, those of Nitro, h3 and other modules, and the `server/utils` and `shared/` of the app.
 - Every export of the files under `server/actions/`.
 - Every export of the files under `server/factories/`, such as `postFactory`.
 - `trpc`, the in-process caller of the app router that [`useCaller()`](./api.md) returns.
 
 ```
-nuxvel> const post = await createPostAction({ title: "Hi", body: "There" }, { actor: { type: "user", id, role: "user" } })
+nuxvel> const post = await createPostAction({ title: "Hi", body: "There" }, { actor: userActor({ id, role: "user" }) })
 nuxvel> await useDb().select().from(postTable)
 nuxvel> await postFactory({ title: "Seeded" })
 nuxvel> await trpc.post.list()
-nuxvel> await sendMail("welcome", { to: "ada@example.com", name: "Ada" })
+nuxvel> await $mails.welcome.send({ to: "ada@example.com", name: "Ada" })
 ```
 
 `trpc` has no session. A procedure behind `authedProcedure` throws `UNAUTHORIZED` there. Call the action with an actor instead.
 
-Outside a transaction, an awaited `sendMail()` or `dispatchAfterCommit()` has written its outbox row when it returns.
+Outside a transaction, an awaited `$mails.x.send()` or `$jobs.x.dispatch()` has written its outbox row when it returns.
 
 #### Completion
 
@@ -1279,7 +1279,7 @@ nuxvel make:resource blog-post --soft-deletes --searchable title,body --ui
 nuxvel make:resource task title due_on:date project:references
 ```
 
-`make:resource` takes fields, as `make:router --crud` does. Every field is in the input of the client. The test sends a sample value for each field to `create` and `update`, for example `"Sample text"` for a `string` and `"2026-01-31"` for a `date`. For a reference, it creates a row of the target table and sends its id. When the target table has an `ownerId`, that row belongs to the test user. The test has five cases: it creates a row, updates a row, refuses an update by another user, deletes a row for its owner only, and lists in a constant number of queries. The generated code finds the owner with `actor.userId ?? actor.id`, so a row that an API key creates belongs to the user of the key. The update case also sends an update with only `id`, and checks that the row stays the same.
+`make:resource` takes fields, as `make:router --crud` does. Every field is in the input of the client. The test sends a sample value for each field to `create` and `update`, for example `"Sample text"` for a `string` and `"2026-01-31"` for a `date`. For a reference, it creates a row of the target table and sends its id. When the target table has an `ownerId`, that row belongs to the test user. The test has five cases: it creates a row, updates a row, refuses an update by another user, deletes a row for its owner only, and lists in a constant number of queries. The generated code finds the owner with `actor.userId`, loads a row with `findAuthorized()`, writes with `insertOne()` and `updateOne()`, and calls `softDelete(table, id)` and `restore(table, id)`. A row that an API key creates belongs to the user of the key. The update case also sends an update with only `id`, and checks that the row stays the same.
 
 With `--ui`, the command also writes the pages of the resource. They use [Nuxt UI](./frontend.md#nuxt-ui):
 
@@ -1507,6 +1507,9 @@ updated: package.json
 | `mutation-options` | 0.3.0 | Replaces `toasted(options, title)` and `optimistic(options, { key, apply })` with the [`toast`](./frontend.md#success-toasts) and [`optimistic`](./frontend.md#optimistic-updates) options of `$api.<path>.mutationOptions()`, also when they wrap each other or `{ ...$api.<path>.mutationOptions(), onError }`. Then a `const` set to `useMutation($api.<path>.mutationOptions({ ... }))` becomes `$api.<path>.useMutation({ ... })`, as `use-trpc` does it. It leaves a wrapper around other options, such as a variable, and an import of `toasted` or `optimistic`, as manual steps |
 | `audit` | 0.3.0 | Moves `.use(audited(name, { target }))` of a procedure to the [`audit: { name, target }` option](./audit.md#auditing-an-action) of the action its `.mutation()` calls, imported or from `$actions`, with an import of the table in the action file, and removes the table import that the router no longer uses. A mutation that calls no action gets `audit(name, { type: getTableName(target), id: opts.input.id })` in its handler, which records no changed columns, and a manual step that says so. It leaves a name that is not a string, a target that is not a table name, a procedure without `.mutation()`, a mutation that calls more than one action, an action that two procedures audit, an action that other code or another procedure also calls, whose `audit` option would audit that call too, and an action that already has `audit`, as manual steps |
 | `action-form` | 0.3.0 | Rewrites `useActionForm(schema, $api.<path>.mutationOptions(options), formOptions)` to [`useActionForm($api.<path>, { ...options, ...formOptions })`](./frontend.md#forms), also from `trpc.<path>.mutationOptions()`. It drops `schema` when it is the input schema the procedure takes from `shared/schemas/`, and keeps it as the `schema` option otherwise. It leaves options that are not `.mutationOptions()` of a procedure, an `onSuccess` in `.mutationOptions()`, and a key in both objects, as manual steps |
+| `actor-arg` | 0.3.0 | Removes the actor argument of `can()`, `authorize()` and `canMany()` when it is `ctx.actor`, or an `actor` that the enclosing function takes as a parameter, because they now read the actor of the running procedure, action, job or seeder. Any other actor stays, with a manual step |
+| `removed-globals` | 0.3.0 | Replaces `SYSTEM_ACTOR_TYPE` with `"system"` and `API_KEY_ACTOR_TYPE` with `"api-key"`, and the server `auth()` with `useAuth()` where the code reads only its `.user`. Any other `auth()` stays, with a manual step |
+| `definition-methods` | 0.3.0 | Rewrites `dispatchAfterCommit(job, input, options?)`, `broadcast(channel, event, payload, params?)`, `broadcastAfterCommit(...)`, `sendMail(mail, input, options?)`, `emit(event, payload)` and `notify(userIds, notification, data)` to the method of the definition: `$jobs.<path>.dispatch(input, options?)`, `$channels.<path>.broadcast(event, payload, params?)`, `$mails.<path>.send(input, options?)`, `$events.<path>.emit(payload)` and `$notifications.<path>.notify(userIds, data)`. A string name becomes its `$` path in camelCase (`"post.notify-followers"` is `$jobs.post.notifyFollowers`). A definition reached through its `$<kind>` namespace, an import whose name ends with the kind (`postPublishedEvent`) or a `define*()` in the file gets the method. It leaves a call whose name it cannot map, such as a variable, an imported string constant, `event.name` or a template string, and a string name of a `renamed()` job, which has no `$jobs` key, as a manual step, and skips a function of the same name that the file declares or imports, such as the `emit` of `defineEmits()` |
 
 The command runs every codemod, oldest first. A codemod changes only the code that still needs it, so a second run changes nothing and prints `✔ No codemod changed a file`. `--only <codemod>` runs one codemod. An unknown name exits `2` and lists the codemods.
 

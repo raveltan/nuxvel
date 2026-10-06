@@ -11,8 +11,8 @@ The app is the capstone of the tutorials. [Tutorial: your first nuxvel app](./fi
 | 2. The structure | domain folders, a module as a Nuxt layer |
 | 3. Courses and lessons | generators with `--domain`, three roles, `roleProcedure()`, policies, full-text search, pagination, `defineUpload()` |
 | 4. Enrollment and progress | actions, typed failures, domain events, a policy with `preload`, the privacy declaration |
-| 5. Listeners and notifications | queued listeners, `notify()` |
-| 6. The certificates module | a module with its own domain, a sync listener, `dispatchAfterCommit()` and the outbox, a job, a mail |
+| 5. Listeners and notifications | queued listeners, `$notifications.x.notify()` |
+| 6. The certificates module | a module with its own domain, a sync listener, `$jobs.x.dispatch()` and the outbox, a job, a mail |
 | 7. The pages | `<DataTable>`, `<QueryState>`, `useActionForm()`, `<UploadField>`, a seeder |
 | 8. Component tests | stories with `play`, `fillForm` and `trpcSpy` |
 | 9. A beta feature | a feature flag |
@@ -217,12 +217,12 @@ The role decides who may use a procedure. The policy decides which rows. The gen
 import { courseTable } from "#nuxvel/schema";
 
 export const coursesCoursePolicy = definePolicy(courseTable, {
-  update: (actor, row) => row.ownerId === (actor.userId ?? actor.id) || actor.role === "admin",
-  delete: (actor, row) => row.ownerId === (actor.userId ?? actor.id) || actor.role === "admin",
+  update: (actor, row) => row.ownerId === actor.userId || actor.role === "admin",
+  delete: (actor, row) => row.ownerId === actor.userId || actor.role === "admin",
 });
 ```
 
-The update and delete actions load the row and call `authorize()` with this policy. The reads of the router add the owner to the query, `eq(courseTable.ownerId, ctx.user.id)`, so an instructor never sees the drafts of another instructor. A row of another instructor gives `NOT_FOUND`, the same as a row that does not exist. This is the tenant boundary of the app. See [Scoping reads](../authorization.md#scoping-reads).
+The update and delete actions load the row with `findAuthorized()`, which checks this policy. The reads of the router add the owner to the query, `eq(courseTable.ownerId, ctx.user.id)`, so an instructor never sees the drafts of another instructor. A row of another instructor gives `NOT_FOUND`, the same as a row that does not exist. This is the tenant boundary of the app. See [Scoping reads](../authorization.md#scoping-reads).
 
 ### The catalogue
 
@@ -368,21 +368,19 @@ import { lessonTable, courseTable } from "#nuxvel/schema";
 export const createLessonAction = defineAction({
   input: newLessonInput,
   handler: async ({ fileKey, ...input }, ctx) => {
+    if (!ctx.actor.userId) throw new ForbiddenError("This action needs a user");
+
     const course = await useDb()
       .select()
       .from(courseTable)
-      .where(and(eq(courseTable.id, input.courseId), eq(courseTable.ownerId, ctx.actor.userId ?? ctx.actor.id)))
+      .where(and(eq(courseTable.id, input.courseId), eq(courseTable.ownerId, ctx.actor.userId)))
       .then(firstOrFail);
 
     const storedKey = fileKey
       ? await promoteUpload({ upload: "courses.lesson-file", key: fileKey, to: `lessons/${course.id}/${randomUUID()}` })
       : null;
 
-    const row = await useDb()
-      .insert(lessonTable)
-      .values({ ...input, ownerId: course.ownerId, fileKey: storedKey })
-      .returning()
-      .then(firstOrFail);
+    const row = await insertOne(lessonTable, { ...input, ownerId: course.ownerId, fileKey: storedKey });
 
     await audit("lesson.created", row);
 
@@ -728,6 +726,8 @@ export const enrollAction = defineAction({
     "learning.already-enrolled": "You are already enrolled in this course",
   },
   handler: async ({ courseId }, ctx, fail) => {
+    if (!ctx.actor.userId) throw new ForbiddenError("This action needs a user");
+
     const course = await useDb()
       .select()
       .from(courseTable)
@@ -736,13 +736,13 @@ export const enrollAction = defineAction({
 
     const [enrollment] = await useDb()
       .insert(enrollmentTable)
-      .values({ courseId: course.id, studentId: ctx.actor.userId ?? ctx.actor.id })
+      .values({ courseId: course.id, studentId: ctx.actor.userId })
       .onConflictDoNothing()
       .returning();
 
     if (!enrollment) return fail("learning.already-enrolled");
 
-    await emit("learning.enrolled", { enrollmentId: enrollment.id });
+    await $events.learning.enrolled.emit({ enrollmentId: enrollment.id });
 
     return enrollment;
   },
@@ -751,7 +751,7 @@ export const enrollAction = defineAction({
 
 - A draft course gives `NOT_FOUND`, the same as a course that does not exist.
 - `onConflictDoNothing()` returns no row for a second enrollment. `fail()` then throws the typed failure `learning.already-enrolled`, which the client gets with HTTP 422 and its message. Write `return fail(...)`: then TypeScript knows that `enrollment` is set below. See [Typed failures](../actions.md#typed-failures).
-- `emit()` checks the payload against the schema of the event, then runs its listeners.
+- `$events.x.emit()` checks the payload against the schema of the event, then runs its listeners.
 
 The second action records a lesson. When the student has completed every lesson of the course, it sets `completedAt` and emits `learning.course-finished`, one time:
 
@@ -766,11 +766,13 @@ export const completeLessonAction = defineAction({
     lessonId: z.number().int(),
   }),
   handler: async ({ lessonId }, ctx) => {
+    if (!ctx.actor.userId) throw new ForbiddenError("This action needs a user");
+
     const lesson = await findOrFail(lessonTable, lessonId);
     const enrollment = await useDb()
       .select()
       .from(enrollmentTable)
-      .where(and(eq(enrollmentTable.courseId, lesson.courseId), eq(enrollmentTable.studentId, ctx.actor.userId ?? ctx.actor.id)))
+      .where(and(eq(enrollmentTable.courseId, lesson.courseId), eq(enrollmentTable.studentId, ctx.actor.userId)))
       .then(firstOrFail);
 
     await useDb().insert(lessonProgressTable).values({ enrollmentId: enrollment.id, lessonId }).onConflictDoNothing();
@@ -782,14 +784,9 @@ export const completeLessonAction = defineAction({
 
     if (done.total < lessons.total) return enrollment;
 
-    const finished = await useDb()
-      .update(enrollmentTable)
-      .set({ completedAt: now() })
-      .where(eq(enrollmentTable.id, enrollment.id))
-      .returning()
-      .then(firstOrFail);
+    const finished = await updateOne(enrollmentTable, enrollment.id, { completedAt: now() });
 
-    await emit("learning.course-finished", { enrollmentId: finished.id });
+    await $events.learning.courseFinished.emit({ enrollmentId: finished.id });
 
     return finished;
   },
@@ -809,23 +806,25 @@ import { enrollmentTable, courseTable } from "#nuxvel/schema";
 
 export const coursesCoursePolicy = definePolicy(courseTable, {
   preload: async (actor, rows) => {
+    if (!actor.userId) return { enrolledIds: new Set<number>() };
+
     const enrollments = await useDb()
       .select({ courseId: enrollmentTable.courseId })
       .from(enrollmentTable)
-      .where(and(eq(enrollmentTable.studentId, actor.userId ?? actor.id), inArray(enrollmentTable.courseId, rows.map((row) => row.id))));
+      .where(and(eq(enrollmentTable.studentId, actor.userId), inArray(enrollmentTable.courseId, rows.map((row) => row.id))));
 
     return { enrolledIds: new Set(enrollments.map((row) => row.courseId)) };
   },
   rules: {
-    update: (actor, row) => row.ownerId === (actor.userId ?? actor.id) || actor.role === "admin",
-    delete: (actor, row) => row.ownerId === (actor.userId ?? actor.id) || actor.role === "admin",
+    update: (actor, row) => row.ownerId === actor.userId || actor.role === "admin",
+    delete: (actor, row) => row.ownerId === actor.userId || actor.role === "admin",
     learn: (actor, row, { enrolledIds }) =>
-      row.ownerId === (actor.userId ?? actor.id) || actor.role === "admin" || enrolledIds.has(row.id),
+      row.ownerId === actor.userId || actor.role === "admin" || enrolledIds.has(row.id),
   },
 });
 ```
 
-See [Preloading data for rules](../authorization.md#preloading-data-for-rules). Add the query to the lesson router. It authorizes with the ability ref `$policies.courses.course.learn`, and it signs a read URL for each file. The bucket stays private, and a read URL expires after 10 minutes:
+See [Preloading data for rules](../authorization.md#preloading-data-for-rules). Add the query to the lesson router. It loads the course with `findAuthorized()` and the `learn` rule, and it signs a read URL for each file. The bucket stays private, and a read URL expires after 10 minutes:
 
 ```ts
 // server/domains/courses/routers/lesson.router.ts
@@ -841,8 +840,7 @@ export const coursesLessonRouter = {
     .input(z.object({ courseId: z.number().int().positive() }))
     .output(z.array(lessonWithFileSchema))
     .query(async ({ input, ctx }) => {
-      const course = await findOrFail(courseTable, input.courseId);
-      await authorize(ctx.actor, $policies.courses.course.learn, course);
+      const course = await findAuthorized(courseTable, input.courseId, "learn");
 
       const lessons = await useDb().select().from(lessonTable).where(eq(lessonTable.courseId, course.id)).orderBy(lessonTable.id);
 
@@ -1120,7 +1118,7 @@ export const learningNotifyInstructorListener = defineListener({
       .where(eq(enrollmentTable.id, enrollmentId))
       .then(firstOrFail);
 
-    await notify(row.instructorId, "learning.new-student", {
+    await $notifications.learning.newStudent.notify(row.instructorId, {
       courseId: row.courseId,
       courseTitle: row.courseTitle,
       studentName: row.studentName,
@@ -1152,7 +1150,7 @@ export const learningAnnounceFinishListener = defineListener({
       .where(eq(enrollmentTable.id, enrollmentId))
       .then(firstOrFail);
 
-    await notify(row.studentId, "learning.course-finished", { courseId: row.courseId, courseTitle: row.courseTitle });
+    await $notifications.learning.courseFinished.notify(row.studentId, { courseId: row.courseId, courseTitle: row.courseTitle });
   },
 });
 ```
@@ -1328,14 +1326,14 @@ export const certificateIssueListener = defineListener({
   handler: async ({ enrollmentId }) => {
     const [certificate] = await useDb().insert(certificateTable).values({ enrollmentId }).onConflictDoNothing().returning();
 
-    if (certificate) await dispatchAfterCommit("certificate.mail-certificate", { certificateId: certificate.id });
+    if (certificate) await $jobs.certificate.mailCertificate.dispatch({ certificateId: certificate.id });
   },
 });
 ```
 
 - `sync: true` runs the listener in the transaction of `complete-lesson`. The certificate and the `completedAt` of the enrollment commit together, or roll back together.
-- A sync listener must not make network calls, such as `sendMail()`. `nuxvel test:arch` reports them. The listener queues the mail with `dispatchAfterCommit()` instead.
-- `dispatchAfterCommit()` writes a row to the outbox table, in the same transaction. After the commit, the worker moves the row to the queue. When the transaction rolls back, no job runs. When the process stops after the commit, the next relay finds the row. See [The outbox](../queues.md#the-outbox).
+- A sync listener must not make network calls, such as `$mails.x.send()`. `nuxvel test:arch` reports them. The listener queues the mail with `$jobs.x.dispatch()` instead.
+- `$jobs.x.dispatch()` writes a row to the outbox table, in the same transaction. After the commit, the worker moves the row to the queue. When the transaction rolls back, no job runs. When the process stops after the commit, the next relay finds the row. See [The outbox](../queues.md#the-outbox).
 - The unique `enrollmentId` and `onConflictDoNothing()` make a second event for the same enrollment issue nothing.
 
 ### The job and the mail
@@ -1377,7 +1375,7 @@ export const certificateMailCertificateJob = defineJob({
       .where(eq(certificateTable.id, certificateId))
       .then(firstOrFail);
 
-    await sendMail("certificate.issued", {
+    await $mails.certificate.issued.send({
       to: row.email,
       name: row.name,
       courseTitle: row.courseTitle,
@@ -1952,7 +1950,7 @@ export const databaseSeeder = defineSeeder(async () => {
   });
   await userFactory.count(3)();
 
-  console.log(`Sign in as ${DEMO_EMAIL} (a student) or ${TEACHER_EMAIL} (an instructor) with the password ${DEMO_PASSWORD}`);
+  return [`Sign in as ${DEMO_EMAIL} (a student) or ${TEACHER_EMAIL} (an instructor) with the password ${DEMO_PASSWORD}`];
 });
 ```
 

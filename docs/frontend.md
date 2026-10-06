@@ -872,6 +872,7 @@ const posts = useLiveQuery(() => $api.post.list.queryOptions(input.value), {
 - `removeRow(match?)` removes the row with the same `id` as the payload, and lowers `total` and `lastPage`.
 - `prependRow({ when? })` adds the payload at the top, keeps the page at `perPage` rows, and raises `total` and `lastPage`. It skips a row whose `id` the page already holds. `when` gets the page and the row, and can skip the row.
 - `replaceRow(match?)` merges the payload into the row with the same `id`. `total` does not change.
+- A row with per-viewer fields such as `can` from [`withAbilities()`](./authorization.md#showing-what-a-user-may-do) must be refetched, not prepended: the payload has no `can`. Use `refetch: { created: true }`, see [Fetching again on an event](#fetching-again-on-an-event).
 - `match` replaces the `id` comparison: `removeRow((row: Post, slug: string) => row.slug === slug)`.
 
 ### Fetching again on an event

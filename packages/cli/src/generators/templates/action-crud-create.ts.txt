@@ -3,11 +3,9 @@
 export const {{exportName}} = defineAction({
   input: create{{tablePascalName}}Input,
   handler: async (input, ctx) => {
-{{parentChecks}}    const row = await useDb()
-      .insert({{tableCamelName}}Table)
-      .values({ ...input, ownerId: ctx.actor.userId ?? ctx.actor.id })
-      .returning()
-      .then(firstOrFail);
+    if (!ctx.actor.userId) throw new ForbiddenError("This action needs a user");
+
+{{parentChecks}}    const row = await insertOne({{tableCamelName}}Table, { ...input, ownerId: ctx.actor.userId });
 
     await audit("{{domain}}.created", row);
 

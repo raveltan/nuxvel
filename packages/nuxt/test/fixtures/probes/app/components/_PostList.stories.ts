@@ -5,7 +5,7 @@ import PostList from "./_PostList.vue";
 export default { title: "Probes/PostList", component: PostList };
 
 const now = new Date();
-const rows = [{ id: 1, title: "Hello", body: "Body", authorId: "user-1", createdAt: now, updatedAt: now, deletedAt: null }];
+const rows = [{ id: 1, title: "Hello", body: "Body", authorId: "user-1", createdAt: now, updatedAt: now, deletedAt: null, can: { update: true, delete: true } }];
 const list = trpcSpy("post.list", () => ({ rows, page: 1, perPage: 15, total: rows.length, lastPage: 1 }));
 const remove = trpcSpy("post.delete", (input) => input);
 

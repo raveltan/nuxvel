@@ -3,13 +3,13 @@ import { describe, it } from "vitest";
 import { userFactory } from "../../../playground/server/factories/users.factory";
 import { setupPlayground } from "./helpers/playground";
 
-describe("auth() / requireAuth() session helpers", async () => {
+describe("useAuth() / requireAuth() session helpers", async () => {
   await setupPlayground();
 
   it("returns null / throws for an unauthenticated request", async () => {
     const body = await guest().$fetch("/api/_auth-check");
 
-    expect(body).toEqual({ session: null, threwUnauthenticated: true });
+    expect(body).toEqual({ user: null, threwUnauthenticated: true });
   });
 
   it("returns the session for an authenticated request", async () => {
@@ -18,7 +18,7 @@ describe("auth() / requireAuth() session helpers", async () => {
 
     const body = await actingAs(user).$fetch("/api/_auth-check");
 
-    expect(body.session?.user?.email).toBe(email);
+    expect(body.user?.email).toBe(email);
     expect(body.requiredMatchesSession).toBe(true);
   });
 
@@ -45,7 +45,7 @@ describe("auth() / requireAuth() session helpers", async () => {
 
     const body = await guest().$fetch("/api/_auth-check", { headers: { cookie } });
 
-    expect(body.session?.user?.role).toBe("user");
+    expect(body.user?.role).toBe("user");
   });
 
   it("looks the session up once per request, however many authed procedures run in it", async () => {

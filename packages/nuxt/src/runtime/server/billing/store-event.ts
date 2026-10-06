@@ -1,5 +1,4 @@
 import { useDb } from "../database/client";
-import { dispatchAfterCommit } from "../utils/dispatch-after-commit";
 import processBillingEventJob from "./jobs/process-billing-event";
 import { billingEventsTable } from "./tables";
 
@@ -42,7 +41,7 @@ export async function storeBillingEvent(event: StripeEventHeader): Promise<boole
 
   if (stored.length === 0) return false;
 
-  await dispatchAfterCommit(processBillingEventJob, { eventId: event.id });
+  await processBillingEventJob.dispatch({ eventId: event.id });
 
   return true;
 }

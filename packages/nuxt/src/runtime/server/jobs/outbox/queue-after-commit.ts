@@ -4,7 +4,7 @@ import { schemaTable } from "../../database/schema-table";
 import { beforeCommit, onCommit } from "../../database/transaction";
 import { publishObserved } from "../../observe/channels";
 import type { Actor } from "../../actions/system-actor";
-import type { DispatchOptions } from "../../utils/dispatch-after-commit";
+import type { DispatchOptions } from "../dispatch-job";
 import { toJobPayload } from "../payload";
 
 export const OUTBOX_CHANNEL = "nuxvel_outbox";

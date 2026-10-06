@@ -10,7 +10,7 @@ type EventInput<Name extends EventName> = z.input<
 
 /**
  * Emits a {@link defineEvent} event, by its name or its definition, in
- * the app under test, inside a transaction, as an action's {@link emit}
+ * the app under test, inside a transaction, as an action's {@link DomainEvent.emit}
  * would.
  *
  * Sync listeners run before it resolves — assert on them with

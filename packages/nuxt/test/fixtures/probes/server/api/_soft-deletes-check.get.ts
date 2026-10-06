@@ -34,6 +34,13 @@ export default defineEventHandler(async () => {
   const restored = await restore(postsTable, eq(postsTable.id, trashed.id));
   const restoredAgain = await restore(postsTable, eq(postsTable.id, trashed.id));
   const forceDeleted = await forceDelete(postsTable, eq(postsTable.id, kept.id));
+  const byId = await insert("by id");
+  const softDeletedById = await softDelete(postsTable, byId.id);
+  const softDeletedByIdAgain = await notFound(() => softDelete(postsTable, byId.id));
+  const restoredById = await restore(postsTable, byId.id);
+  const restoredByIdAgain = await notFound(() => restore(postsTable, byId.id));
+  const forceDeletedById = await forceDelete(postsTable, byId.id);
+  const forceDeletedByIdAgain = await notFound(() => forceDelete(postsTable, byId.id));
 
   return {
     softDeleted: softDeleted.map((row) => ({ title: row.title, trashed: row.deletedAt instanceof Date })),
@@ -44,5 +51,13 @@ export default defineEventHandler(async () => {
     restoredAgain: restoredAgain.length,
     forceDeleted: forceDeleted.map((row) => row.title),
     forceDeletedGone: await notFound(() => findOrFail(postsTable, kept.id, { trashed: "include" })),
+    byId: {
+      softDeleted: softDeletedById.deletedAt instanceof Date,
+      softDeletedAgain: softDeletedByIdAgain,
+      restored: restoredById.deletedAt,
+      restoredAgain: restoredByIdAgain,
+      forceDeleted: forceDeletedById.title,
+      forceDeletedAgain: forceDeletedByIdAgain,
+    },
   };
 });

@@ -12,34 +12,36 @@ import { postTable } from "#nuxvel/schema";
 
 export const createPostAction = defineAction({
   input: createPostInput,
-  handler: async (input, ctx) => {
-    const post = await useDb()
-      .insert(postTable)
-      .values({ title: input.title, body: input.body, authorId: ctx.actor.id })
-      .returning()
-      .then(firstOrFail);
+  handler: async (input, { actor }) => {
+    const post = await insertOne(postTable, { title: input.title, body: input.body, authorId: actor.userId });
 
-    await audit("post.created", { type: "post", id: post.id });
+    await audit("post.created", post);
 
     return post;
   },
 });
 ```
 
-`audit(action, target, options?)` is auto-imported on the server.
+`audit(name, row, options?)` is auto-imported on the server.
 
-- `action` is a dotted name, for example `"post.created"`.
-- `target` is the row that the action changed. Its `id` becomes `targetId`, as a string. Its `type` becomes `targetType`.
-- Without a `type`, the first segment of the action becomes `targetType`: `"post.created"` gives `"post"`.
+- `name` is a dotted name, for example `"post.created"`.
+- `row` is the row that the action changed. Its `id` becomes `targetId`, as a string.
+- The first segment of the name becomes `targetType`: `"post.created"` gives `"post"`.
 
-Give the table name as `type` when the [`audit` option](#auditing-an-action) with a `target` also audits the same rows. It records the table name, so the two kinds of row then agree.
+To set `targetType` yourself, or when you do not have the row, pass `{ type, id }` in place of the row:
+
+```ts
+await audit("post.force-deleted", { type: "posts", id });
+```
+
+A row that has a `type` column also sets `targetType`, so pass `{ type, id }` for such a row. Give the table name as `type` when the [`audit` option](#auditing-an-action) with a `target` also audits the same rows. It records the table name, so the two kinds of row then agree.
 
 `audit()` reads the actor and the request ID from the current action and request. It throws when no actor is in scope, for example in a server route that does not call an action.
 
 ### Changes and metadata
 
 ```ts
-await audit("post.updated", { type: "post", id: post.id }, {
+await audit("post.updated", post, {
   changes: { title: { from: "Draft", to: "Published" } },
   metadata: { source: "admin-panel" },
 });
@@ -54,7 +56,7 @@ await audit("post.updated", { type: "post", id: post.id }, {
 | `id` | A serial number, in insertion order. |
 | `occurredAt` | The time of the write. |
 | `actorType`, `actorId` | The actor in scope. A user is stored as a subject ID. See [People in the log](#people-in-the-log). |
-| `action` | The first argument of `audit()`. |
+| `action` | The name, the first argument of `audit()`. |
 | `targetType`, `targetId` | From the target. A target of type `"user"` is stored as a subject ID. |
 | `changes`, `metadata` | From the options, after redaction. |
 | `requestId` | The ID of the current request, or `null`. |
@@ -71,7 +73,7 @@ export const updatePostAction = defineAction({
   input: updatePostInput,
   audit: { name: "post.updated", target: postTable },
   handler: async (input) =>
-    useDb().update(postTable).set({ title: input.title }).where(eq(postTable.id, input.id)).returning().then(firstOrFail),
+    updateOne(postTable, input.id, { title: input.title }),
 });
 ```
 
@@ -98,7 +100,7 @@ A column that you declare as `personal` with `defineUserData()` keeps its key in
 ## People in the log
 
 ```ts
-await audit("user.promoted", { type: "user", id: user.id });
+await audit("user.promoted", user);
 ```
 
 `audit()` never writes a user ID into `audit_log`. When the actor is a user, `actorId` holds a subject ID. When the target type is `"user"`, `targetId` holds a subject ID too. A subject ID is a random UUID. The first entry for a user creates it, and later entries use it again.

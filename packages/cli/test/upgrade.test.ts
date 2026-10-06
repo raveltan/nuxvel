@@ -777,4 +777,289 @@ describe("nuxvel upgrade", () => {
       expect(again.stdout).not.toContain("report-forms");
     }, 60000);
   });
+
+  describe("actor-arg", () => {
+    const manual = (name: string) =>
+      `${name}() no longer takes an actor: it reads the actor of the running procedure, action, job or seeder. Remove the first argument when it is that actor, or move the check into an action called with { actor }`;
+
+    it("removes ctx.actor and a destructured actor parameter from can(), authorize() and canMany(), and prints any other actor as a manual step", async () => {
+      const appDir = scratchPlayground("upgrade-actor-arg");
+      const file = join(appDir, "server", "actions", "posts", "check-post.action.ts");
+      const before = [
+        'import { postsTable } from "#nuxvel/schema";',
+        "",
+        "export const checkPostAction = defineAction({",
+        "  input: postIdInput,",
+        "  handler: async (input, ctx) => {",
+        "    const post = await findOrFail(postsTable, input.id);",
+        '    await authorize(ctx.actor, "update", postsTable, post);',
+        "    await authorize(ctx.actor, $policies.post.update, post);",
+        '    const answers = await canMany(ctx.actor, ["update", "delete"], postsTable, [post]);',
+        '    const system = await can(systemActor("cleanup"), "delete", postsTable, post);',
+        "    return { answers, system };",
+        "  },",
+        "});",
+        "",
+        "export const destructured = defineAction({",
+        "  input: postIdInput,",
+        "  handler: async (input, { actor }) => {",
+        "    const post = await findOrFail(postsTable, input.id);",
+        "    const allowed = await can(",
+        "      actor,",
+        '      "delete",',
+        "      postsTable,",
+        "      post,",
+        "    );",
+        "    const byRef = await canMany(actor, [$policies.post.update], [post]);",
+        "    return { allowed, byRef };",
+        "  },",
+        "});",
+        "",
+        "export async function localActor(post: typeof postsTable.$inferSelect) {",
+        '  const actor = systemActor("cleanup");',
+        '  return can(actor, "delete", postsTable, post);',
+        "}",
+        "",
+        "export async function fromJob(job: { actor: Actor }, post: typeof postsTable.$inferSelect) {",
+        "  return can(job.actor, $policies.post.delete, post);",
+        "}",
+        "",
+        "export async function fromEvent(event: H3Event, post: typeof postsTable.$inferSelect) {",
+        '  return authorize(event.context.actor, "delete", postsTable, post);',
+        "}",
+        "",
+      ];
+      const after = before
+        .map((line) => line.replace("(ctx.actor, ", "(").replace("canMany(actor, ", "canMany("))
+        .filter((line) => line !== "      actor,");
+      writeFileSync(file, before.join("\n"));
+
+      const applied = await runCliAt(appDir, "upgrade", "--only", "actor-arg");
+      const reported = (text: string, name: string) => `▲ server/actions/posts/check-post.action.ts:${after.findIndex((line) => line.includes(text)) + 1}: ${manual(name)}`;
+
+      expect(applied.exitCode, applied.stderr).toBe(0);
+      expect(applied.stdout).toContain("updated: server/actions/posts/check-post.action.ts\n");
+      expect(stripAnsi(applied.stderr)).toContain(reported('can(systemActor("cleanup")', "can"));
+      expect(stripAnsi(applied.stderr)).toContain(reported('can(actor, "delete"', "can"));
+      expect(stripAnsi(applied.stderr)).toContain(reported("can(job.actor", "can"));
+      expect(stripAnsi(applied.stderr)).toContain(reported("authorize(event.context.actor", "authorize"));
+      expect(stripAnsi(applied.stderr).match(/▲ /g)).toHaveLength(4);
+      expect(readFileSync(file, "utf8")).toBe(after.join("\n"));
+    }, 60000);
+
+    it("leaves already-migrated calls and the test fixture alone, and reports nothing for them, also on a second run", async () => {
+      const appDir = scratchPlayground("upgrade-actor-arg-migrated");
+      const file = join(appDir, "server", "actions", "posts", "migrated-post.action.ts");
+      const source = [
+        'import { postsTable } from "#nuxvel/schema";',
+        "",
+        "export const migratedPostAction = defineAction({",
+        "  input: postIdInput,",
+        "  handler: async (input) => {",
+        "    const post = await findOrFail(postsTable, input.id);",
+        '    const actions = ["update", "delete"] as const;',
+        '    const rule = "delete" as const;',
+        "    return {",
+        '      current: await can("delete", postsTable, post),',
+        "      byRule: await can(rule, postsTable, post),",
+        "      byRef: await canMany([$policies.post.update], [post]),",
+        "      byVariable: await canMany(actions, postsTable, [post]),",
+        "    };",
+        "  },",
+        "});",
+        "",
+      ].join("\n");
+      writeFileSync(file, source);
+      const testFile = join(appDir, "server", "actions", "posts", "migrated-post.action.test.ts");
+      const fixtureCall = 'expect(await can(author, "update", postsTable, post)).toBe(true);';
+      writeFileSync(testFile, ['import { can, expect } from "@nuxvel/nuxt/testing";', fixtureCall, ""].join("\n"));
+
+      for (let run = 0; run < 2; run += 1) {
+        const applied = await runCliAt(appDir, "upgrade", "--only", "actor-arg");
+
+        expect(applied.exitCode, applied.stderr).toBe(0);
+        expect(applied.stdout).not.toContain("migrated-post");
+        expect(stripAnsi(applied.stderr)).not.toContain("migrated-post");
+      }
+      expect(readFileSync(file, "utf8")).toBe(source);
+      expect(readFileSync(testFile, "utf8")).toContain(fixtureCall);
+    }, 60000);
+  });
+
+  describe("removed-globals", () => {
+    it("replaces the actor type constants with their strings and auth() with useAuth() where only .user is read, and leaves any other auth() as a manual step", async () => {
+      const appDir = scratchPlayground("upgrade-removed-globals");
+      const file = join(appDir, "server", "api", "whoami.get.ts");
+      writeFileSync(
+        file,
+        [
+          "type SystemType = typeof SYSTEM_ACTOR_TYPE;",
+          "",
+          "export default defineEventHandler(async () => {",
+          "  const { actor } = await useAuth();",
+          "  const name = (await auth())?.user?.name;",
+          "  const session = await auth();",
+          "  const signedIn = await auth();",
+          "  const role = (await auth())?.user.role;",
+          "  if (!signedIn) return null;",
+          "  return {",
+          "    name,",
+          "    role,",
+          "    email: session?.user?.email,",
+          "    system: actor?.type === SYSTEM_ACTOR_TYPE,",
+          "    key: actor?.type === API_KEY_ACTOR_TYPE,",
+          "    expires: signedIn.session.expiresAt,",
+          "  };",
+          "});",
+          "",
+        ].join("\n"),
+      );
+
+      const applied = await runCliAt(appDir, "upgrade", "--only", "removed-globals");
+
+      expect(applied.exitCode, applied.stderr).toBe(0);
+      expect(applied.stdout).toContain("updated: server/api/whoami.get.ts\n");
+      const manual = "auth() is no longer auto-imported: read the user with (await useAuth()).user, or require a session with requireAuth()";
+      expect(stripAnsi(applied.stderr)).toContain(`▲ server/api/whoami.get.ts:7: ${manual}`);
+      expect(stripAnsi(applied.stderr)).toContain(`▲ server/api/whoami.get.ts:8: ${manual}`);
+      expect(readFileSync(file, "utf8")).toBe(
+        [
+          'type SystemType = "system";',
+          "",
+          "export default defineEventHandler(async () => {",
+          "  const { actor } = await useAuth();",
+          "  const name = (await useAuth())?.user?.name;",
+          "  const session = await useAuth();",
+          "  const signedIn = await auth();",
+          "  const role = (await auth())?.user.role;",
+          "  if (!signedIn) return null;",
+          "  return {",
+          "    name,",
+          "    role,",
+          "    email: session?.user?.email,",
+          '    system: actor?.type === "system",',
+          '    key: actor?.type === "api-key",',
+          "    expires: signedIn.session.expiresAt,",
+          "  };",
+          "});",
+          "",
+        ].join("\n"),
+      );
+
+      const again = await runCliAt(appDir, "upgrade", "--only", "removed-globals");
+
+      expect(again.stdout).not.toContain("whoami");
+    }, 60000);
+  });
+
+  describe("definition-methods", () => {
+    it("rewrites each removed call to the method of its definition, also through a const name, leaves a name it cannot map as a manual step, and skips a function the file declares", async () => {
+      const appDir = scratchPlayground("upgrade-definition-methods");
+      const file = join(appDir, "server", "api", "effects.get.ts");
+      const local = join(appDir, "server", "utils", "local-emit.ts");
+      const localSource = 'function emit(name: string, payload: unknown) {\n  return { name, payload };\n}\n\nexport const sent = emit("post.published", {});\n';
+      const removed = (name: string, method: string, namespace: string, example: string) =>
+        `${name}() is removed: call ${method}() on the definition in ${namespace}, such as ${example}, with the other arguments in the same order`;
+
+      writeFileSync(
+        join(appDir, "server", "jobs", "_probe", "old-record.ts"),
+        'import record from "./record";\n\nexport default renamed(record);\n',
+      );
+      writeFileSync(
+        file,
+        [
+          'import { postPublishedEvent } from "#server/events/post/published.event";',
+          'import { probeHappened } from "#server/events/_probe/happened";',
+          'import { FLAGS_CHANNEL } from "#shared/flags";',
+          "",
+          'const jobName = "_probe.record";',
+          'let mailName = "welcome";',
+          "",
+          "export default defineEventHandler(async (event) => {",
+          "  const userId = String(getQuery(event).userId);",
+          "",
+          "  await transaction(async () => {",
+          '    await dispatchAfterCommit("post.notify-followers", { postId: 1 });',
+          '    await dispatchAfterCommit($jobs._probe.record, { name: "a" }, { delay: 1000 });',
+          '    await dispatchAfterCommit(jobName, { name: "b" });',
+          '    await dispatchAfterCommit("_probe.old-record", { name: "c" });',
+          '    await dispatchAfterCommit($jobs._probe.record.name, { name: "d" });',
+          '    await broadcastAfterCommit("posts", "created", { id: 1 });',
+          '    await broadcast("_probe-board", "moved", {',
+          "      card: 1,",
+          "    }, { boardId: 1 });",
+          '    await broadcast(FLAGS_CHANNEL, "changed", { name: "x" });',
+          '    await sendMail("welcome", { to: "ada@example.com", name: "Ada" }, { locale: "zh" });',
+          '    await sendMail(mailName, { to: "ada@example.com", name: "Ada" });',
+          "    await emit(postPublishedEvent, { postId: 1 });",
+          '    await emit(probeHappened, { name: "x", count: 1 });',
+          "    await emit(postPublishedEvent.name, { postId: 1 });",
+          '    await emit(`_probe.${"happened"}`, {});',
+          '    await notify(userId, "welcome", { name: "Ada" });',
+          "  });",
+          "});",
+          "",
+        ].join("\n"),
+      );
+      writeFileSync(local, localSource);
+
+      const applied = await runCliAt(appDir, "upgrade", "--only", "definition-methods");
+      const stderr = stripAnsi(applied.stderr);
+      const dispatch = removed("dispatchAfterCommit", "dispatch", "$jobs", "$jobs.post.notifyFollowers.dispatch(input)");
+      const emit = removed("emit", "emit", "$events", "$events.post.published.emit(payload)");
+
+      expect(applied.exitCode, applied.stderr).toBe(0);
+      expect(applied.stdout).toContain("updated: server/api/effects.get.ts\n");
+      expect(applied.stdout).not.toContain("local-emit");
+      expect(stderr).toContain(
+          '▲ server/api/effects.get.ts:15: dispatchAfterCommit() is removed, and "_probe.old-record" is a renamed() alias with no $jobs key: call dispatch() on the job it renames',
+      );
+      expect(stderr).toContain(`▲ server/api/effects.get.ts:16: ${dispatch}`);
+      expect(stderr).toContain(`▲ server/api/effects.get.ts:21: ${removed("broadcast", "broadcast", "$channels", '$channels.posts.broadcast("created", payload)')}`);
+      expect(stderr).toContain(`▲ server/api/effects.get.ts:23: ${removed("sendMail", "send", "$mails", "$mails.welcome.send(input)")}`);
+      expect(stderr).toContain(`▲ server/api/effects.get.ts:25: ${emit}`);
+      expect(stderr).toContain(`▲ server/api/effects.get.ts:26: ${emit}`);
+      expect(stderr).toContain(`▲ server/api/effects.get.ts:27: ${emit}`);
+      expect(readFileSync(file, "utf8")).toBe(
+        [
+          'import { postPublishedEvent } from "#server/events/post/published.event";',
+          'import { probeHappened } from "#server/events/_probe/happened";',
+          'import { FLAGS_CHANNEL } from "#shared/flags";',
+          "",
+          'const jobName = "_probe.record";',
+          'let mailName = "welcome";',
+          "",
+          "export default defineEventHandler(async (event) => {",
+          "  const userId = String(getQuery(event).userId);",
+          "",
+          "  await transaction(async () => {",
+          "    await $jobs.post.notifyFollowers.dispatch({ postId: 1 });",
+          '    await $jobs._probe.record.dispatch({ name: "a" }, { delay: 1000 });',
+          '    await $jobs._probe.record.dispatch({ name: "b" });',
+          '    await dispatchAfterCommit("_probe.old-record", { name: "c" });',
+          '    await dispatchAfterCommit($jobs._probe.record.name, { name: "d" });',
+          '    await $channels.posts.broadcast("created", { id: 1 });',
+          '    await $channels._probeBoard.broadcast("moved", {',
+          "      card: 1,",
+          "    }, { boardId: 1 });",
+          '    await broadcast(FLAGS_CHANNEL, "changed", { name: "x" });',
+          '    await $mails.welcome.send({ to: "ada@example.com", name: "Ada" }, { locale: "zh" });',
+          '    await sendMail(mailName, { to: "ada@example.com", name: "Ada" });',
+          "    await postPublishedEvent.emit({ postId: 1 });",
+          '    await emit(probeHappened, { name: "x", count: 1 });',
+          "    await emit(postPublishedEvent.name, { postId: 1 });",
+          '    await emit(`_probe.${"happened"}`, {});',
+          '    await $notifications.welcome.notify(userId, { name: "Ada" });',
+          "  });",
+          "});",
+          "",
+        ].join("\n"),
+      );
+      expect(readFileSync(local, "utf8")).toBe(localSource);
+
+      const again = await runCliAt(appDir, "upgrade", "--only", "definition-methods");
+
+      expect(again.stdout).not.toContain("effects.get.ts");
+    }, 60000);
+  });
 });

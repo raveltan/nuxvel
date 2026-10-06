@@ -1,5 +1,14 @@
 const NAME_KEY = Symbol.for("nuxvel.nameKey");
 const NAMED_BY = Symbol.for("nuxvel.namedBy");
+const UNNAMED = Symbol.for("nuxvel.unnamed");
+
+interface Unnamed {
+  pending: (() => void)[];
+  failures: { error: unknown }[];
+}
+
+const shared = globalThis as typeof globalThis & { [UNNAMED]?: Unnamed };
+const unnamed = (shared[UNNAMED] ??= { pending: [], failures: [] });
 
 /**
  * A definition named `Name`: what the generated `#nuxvel/*` registries
@@ -27,6 +36,12 @@ export function awaitingName<Definition extends object>(definition: Definition, 
     configurable: true,
     enumerable: false,
     get() {
+      nameDiscovered();
+      if (Reflect.get(definition, NAME_KEY) === undefined) return Reflect.get(definition, key);
+
+      const failure = unnamed.failures.at(-1);
+      if (failure) throw failure.error;
+
       throw new Error(
         `nuxvel: this ${kind} has no name yet. It is named after its file's path under its server/ folder once the app loads that folder, so define it there and read its name while the app runs, not while modules load.`,
       );
@@ -69,4 +84,53 @@ export function named<Definition, const Name extends string>(
 
   // the property was just set to name, which is what Named<> adds to the type
   return definition as Named<Definition, Name>;
+}
+
+/**
+ * Wraps the entries of a generated `#nuxvel/*` registry so that
+ * `build`, which calls {@link named} on each definition, runs on the
+ * first read of the registry, or at {@link nameDiscovered}, instead of
+ * while the registry module loads. A definition file whose imports
+ * reach its own registry has not finished loading at that point. A
+ * `build` that throws throws again at each read of the registry, and
+ * at each read of the name of a definition that is still unnamed.
+ */
+export function namedOnRead<Entry>(build: () => readonly Entry[]): Entry[] {
+  const entries: Entry[] = [];
+  let failure: { error: unknown } | undefined;
+
+  function fill() {
+    if (failure) throw failure.error;
+
+    const index = unnamed.pending.indexOf(fill);
+    if (index === -1) return;
+    unnamed.pending.splice(index, 1);
+
+    try {
+      entries.push(...build());
+    } catch (error) {
+      failure = { error };
+      unnamed.failures.push(failure);
+      throw error;
+    }
+  }
+
+  unnamed.pending.push(fill);
+
+  return new Proxy(entries, {
+    get: (target, key, receiver) => (fill(), Reflect.get(target, key, receiver)),
+    has: (target, key) => (fill(), Reflect.has(target, key)),
+    ownKeys: (target) => (fill(), Reflect.ownKeys(target)),
+    getOwnPropertyDescriptor: (target, key) => (fill(), Reflect.getOwnPropertyDescriptor(target, key)),
+  });
+}
+
+/**
+ * Names the definitions of each registry loaded so far and not read
+ * yet, across every copy of this module in the process. The `load-registries` server plugin calls it at boot, so a
+ * registry that refuses its files stops the server, and reading the
+ * name of a definition calls it first.
+ */
+export function nameDiscovered() {
+  for (let fill = unnamed.pending[0]; fill; fill = unnamed.pending[0]) fill();
 }

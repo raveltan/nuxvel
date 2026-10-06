@@ -1,4 +1,3 @@
-import { eq } from "drizzle-orm";
 import { postsTable } from "#nuxvel/schema";
 
 export const updatePostAction = defineAction({
@@ -8,19 +7,11 @@ export const updatePostAction = defineAction({
   errors: {
     "post.body-empty": { message: "Body cannot be empty after trimming", field: "body" },
   },
-  handler: async (input, ctx, fail) => {
-    const post = await findOrFail(postsTable, input.id);
-    await authorize(ctx.actor, "update", postsTable, post);
+  handler: async (input, _ctx, fail) => {
+    await findAuthorized(postsTable, input.id, "update");
 
     if (!input.body.trim()) fail("post.body-empty");
 
-    const updated = await useDb()
-      .update(postsTable)
-      .set({ title: input.title, body: input.body })
-      .where(eq(postsTable.id, input.id))
-      .returning()
-      .then(firstOrFail);
-
-    return updated;
+    return updateOne(postsTable, input.id, { title: input.title, body: input.body });
   },
 });

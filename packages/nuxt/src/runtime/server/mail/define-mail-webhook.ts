@@ -39,7 +39,7 @@ function mailgunReason({ event, severity }: z.output<typeof mailgunEvent>["event
 /**
  * Defines the webhook your mail provider posts bounce and complaint
  * events to. Each bounced or complaining address goes on the suppression
- * list with {@link suppressMail}, so {@link sendMail} skips it.
+ * list with {@link suppressMail}, so {@link Mail.send} skips it.
  *
  * Auto-imported on the server. Put it in a file under `server/webhooks/`,
  * like any {@link defineWebhook}, and give the provider its URL. It

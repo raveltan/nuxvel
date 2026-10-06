@@ -34,4 +34,15 @@ describe("soft deletes", async () => {
     expect(probe().forceDeleted).toEqual(["kept"]);
     expect(probe().forceDeletedGone).toBe(true);
   });
+
+  it("softDelete, restore and forceDelete take an id, return the row and throw NotFoundError when no row matches", () => {
+    expect(probe().byId).toEqual({
+      softDeleted: true,
+      softDeletedAgain: true,
+      restored: null,
+      restoredAgain: true,
+      forceDeleted: "by id",
+      forceDeletedAgain: true,
+    });
+  });
 });

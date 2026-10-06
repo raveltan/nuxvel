@@ -15,6 +15,24 @@ export interface DomainEvent<Schema extends z.ZodType = z.ZodType, Name extends 
   payload: Schema;
   parse: (payload: unknown) => Promise<z.output<Schema>>;
   parseQueued: (data: unknown) => Promise<z.output<Schema>>;
+  /**
+   * Emits this event with `payload`, running every listener defined for
+   * it.
+   *
+   * The payload is validated against the event's schema first, so a
+   * wrong payload throws a `ValidationFailedError` at the emit. A
+   * `sync: true` listener runs now, inside the surrounding transaction:
+   * its writes commit or roll back with it, and a throw fails it. Every
+   * other listener is queued once the transaction commits, so nothing
+   * runs for a rolled-back emit. Outside a transaction they are queued
+   * now.
+   *
+   * @example
+   * ```ts
+   * await $events.post.published.emit({ postId: post.id });
+   * ```
+   */
+  emit(payload: z.input<Schema>): Promise<void>;
 }
 
 /** Turns a payload written under one version into the next version's shape. */
@@ -22,18 +40,19 @@ export type EventUpcaster = Upcaster;
 
 /**
  * Defines a domain event: something that happened, named once and
- * emitted from an action with {@link emit}.
+ * emitted from an action with {@link DomainEvent.emit}.
  *
  * `defineEvent` is auto-imported. One event per file, under
  * `server/events/`, as a named export; the file is discovered, and you
- * import the event where you emit it and where you listen for it with
- * {@link defineListener}. The file's path is the event's name
+ * reach it through the `$events` namespace where you emit it
+ * (`$events.post.published.emit(payload)`) and where you listen for it
+ * with {@link defineListener}. The file's path is the event's name
  * (`server/events/post/published.event.ts` is `"post.published"`): what
  * `nuxvel events` prints, and part of {@link EventName}.
  *
  * `parse` validates a payload against the schema (async refinements and
  * transforms included), rejecting with the same
- * {@link ValidationFailedError} an action throws. {@link emit} calls it,
+ * {@link ValidationFailedError} an action throws. {@link DomainEvent.emit} calls it,
  * so an emitter with the wrong payload fails at the emit, not inside a
  * listener.
  *
@@ -92,6 +111,12 @@ export function defineEvent<Schema extends z.ZodType>(config: {
             `Event "${event.name}"`,
           ),
         );
+      },
+      async emit(payload: z.input<Schema>) {
+        // a static import cycles through the #nuxvel/events and #nuxvel/listeners registries, which hold this event
+        const { emit } = await import("./emit");
+
+        await emit(event, payload);
       },
     },
     "event",

@@ -21,9 +21,14 @@ describe("an action called without an actor", async () => {
     await expectRow(postsTable, { id: post.id, authorId: author.id });
   });
 
-  it("throws when no actor is in scope", async () => {
+  it("throws an error that names the action, or the audit, and the fix when no actor is in scope", async () => {
     const body = await guest().$fetch("/api/_implicit-actor-check");
 
-    expect(body.error).toBe("defineAction: actor is required");
+    expect(body.error).toBe(
+      '_probes.create-post-as-caller ran with no actor. Call it inside a procedure, job or seeder, or pass { actor: systemActor("name") }',
+    );
+    expect(body.auditError).toBe(
+      'audit("post.checked") ran with no actor. Call it inside a procedure, action, job or seeder, or inside an action called with { actor: systemActor("name") }',
+    );
   });
 });

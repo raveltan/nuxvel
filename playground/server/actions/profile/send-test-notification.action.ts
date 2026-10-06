@@ -9,6 +9,6 @@ export const sendTestNotificationAction = defineAction({
       .where(eq(userTable.id, ctx.actor.id))
       .then(firstOrFail);
 
-    await notify(recipient.id, "welcome", { name: recipient.name });
+    await $notifications.welcome.notify(recipient.id, { name: recipient.name });
   },
 });

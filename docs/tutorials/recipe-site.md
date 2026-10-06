@@ -207,7 +207,7 @@ export const databaseSeeder = defineSeeder(async () => {
   await publishedRecipeFactory.count(5)({ ownerId: demo.id });
   await recipeFactory({ ownerId: demo.id, slug: "lentil-stew", title: "Lentil stew" });
 
-  console.log(`Sign in as ${DEMO_EMAIL} with the password ${DEMO_PASSWORD}`);
+  return [`Sign in as ${DEMO_EMAIL} with the password ${DEMO_PASSWORD}`];
 });
 ```
 
@@ -856,24 +856,17 @@ Replace the action:
 
 ```ts
 // server/actions/recipe/publish-recipe.action.ts
-import { eq } from "drizzle-orm";
 import { pushSubscriptionsTable, recipeTable } from "#nuxvel/schema";
 
 export const publishRecipeAction = defineAction({
   input: recipeIdInput,
   invalidates: ["recipe"],
-  handler: async ({ id }, ctx) => {
-    const row = await findOrFail(recipeTable, id);
-    await authorize(ctx.actor, "update", recipeTable, row);
+  handler: async ({ id }) => {
+    const row = await findAuthorized(recipeTable, id, "update");
 
     if (row.publishedAt) return row;
 
-    const published = await useDb()
-      .update(recipeTable)
-      .set({ publishedAt: now() })
-      .where(eq(recipeTable.id, id))
-      .returning()
-      .then(firstOrFail);
+    const published = await updateOne(recipeTable, id, { publishedAt: now() });
 
     const readers = await useDb().selectDistinct({ userId: pushSubscriptionsTable.userId }).from(pushSubscriptionsTable);
     await sendPush(readers.map((reader) => reader.userId), {
@@ -1696,7 +1689,7 @@ Send the mail from the publish action, after the push. Import `userTable` from `
 ```ts
 // server/actions/recipe/publish-recipe.action.ts
     const owner = await findOrFail(userTable, published.ownerId);
-    await sendMail("recipe.published", { to: owner.email, title: published.title }, { locale: owner.locale ?? undefined });
+    await $mails.recipe.published.send({ to: owner.email, title: published.title }, { locale: owner.locale ?? undefined });
 
     return published;
 ```

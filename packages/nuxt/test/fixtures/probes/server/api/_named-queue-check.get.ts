@@ -6,8 +6,8 @@ export default defineEventHandler(async () => {
   await useDb().delete(outboxTable);
 
   await transaction(async () => {
-    await dispatchAfterCommit("_probe.record", { name: "default" });
-    await dispatchAfterCommit("_probe.record-report", { name: "report" });
+    await $jobs._probe.record.dispatch({ name: "default" });
+    await $jobs._probe.recordReport.dispatch({ name: "report" });
   });
   await relayOutbox();
 

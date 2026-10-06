@@ -247,6 +247,17 @@ const post = await findOrFail(postTable, id);
 
 `findOrFail` loads one row by its `id` column. When no row matches, it throws `NotFoundError` (HTTP 404). The type of `id` comes from the table's `id` column. It is a number for a `serial` key and a string for a `text` key, such as Better Auth's `user.id`. On a table with `softDeletes()`, a trashed row counts as not found. See [Soft deletes: finding a trashed row](./soft-deletes.md#finding-a-trashed-row).
 
+### Writing one row
+
+```ts
+const post = await insertOne(postTable, { title: "Hello", body: "First post", authorId: user.id });
+const renamed = await updateOne(postTable, post.id, { title: "Hello again" });
+```
+
+`insertOne(table, values)` inserts one row and returns it. `updateOne(table, id, values)` updates the row with that `id` and returns it. When no row has that `id`, `updateOne` throws `NotFoundError` (HTTP 404). On a table with `softDeletes()`, a trashed row counts as not found. Both are auto-imported on the server, and both join the transaction, like `useDb()`.
+
+`values` is what Drizzle's `.values()` and `.set()` take. For several rows, an upsert or a `WHERE` other than the `id`, write the Drizzle chain.
+
 ### Unique constraints
 
 ```ts
@@ -459,7 +470,7 @@ await transaction(async () => {
 - A hook that throws cannot undo the commit, so the transaction does not fail. nuxvel logs the error and sends it to [error tracking](./observability.md#error-tracking). The next hooks still run.
 - Outside a transaction, `fn` runs immediately. `await onCommit(fn)` waits for `fn` and throws what `fn` throws.
 
-For queued work, use [`dispatchAfterCommit()`](./queues.md#dispatching). It writes an outbox row in the same transaction. For a channel event, use [`broadcastAfterCommit()`](./realtime.md#broadcasting-after-the-commit).
+For queued work, use [`$jobs.<name>.dispatch()`](./queues.md#dispatching). It writes an outbox row in the same transaction. A channel event from [`$channels.<name>.broadcast()`](./realtime.md#broadcasting-after-the-commit) also waits for the commit.
 
 ### Before the commit
 
@@ -467,7 +478,7 @@ For queued work, use [`dispatchAfterCommit()`](./queues.md#dispatching). It writ
 await beforeCommit(() => useDb().update(postTable).set({ title: finalTitle }).where(eq(postTable.id, post.id)));
 ```
 
-`beforeCommit(fn)` runs `fn` inside the transaction, immediately before it commits. Use it for a write that must be part of the transaction but that you can only prepare after the transaction body finishes. When `fn` throws, the transaction rolls back. Outside a transaction, `fn` runs immediately. `dispatchAfterCommit()` writes its outbox row this way.
+`beforeCommit(fn)` runs `fn` inside the transaction, immediately before it commits. Use it for a write that must be part of the transaction but that you can only prepare after the transaction body finishes. When `fn` throws, the transaction rolls back. Outside a transaction, `fn` runs immediately. `dispatch()` writes its outbox row this way.
 
 ## Soft deletes
 
@@ -480,7 +491,12 @@ export const postTable = pgTable("post", {
 });
 ```
 
-`softDeletes()` adds a `deleted_at` column. A soft delete sets it and keeps the row. See [Soft deletes](./soft-deletes.md).
+```ts
+const post = await softDelete(postTable, input.id);
+await restore(postTable, input.id);
+```
+
+`softDeletes()` adds a `deleted_at` column. A soft delete sets it and keeps the row. `softDelete()`, `restore()` and `forceDelete()` take an `id` and return the row, or throw `NotFoundError`. They also take a `where` condition and return the rows that they changed. See [Soft deletes](./soft-deletes.md).
 
 ## Repeated queries (N+1)
 
@@ -614,6 +630,28 @@ After the seeders commit, both commands remove every value in the [cache](./cach
 
 A seeder inserts new rows each time that it runs. A second run can thus break a unique constraint, for example on an email. To start again from an empty database, run `nuxvel db:fresh --seed`.
 
+### Printing lines
+
+```ts
+// server/seeders/database.seeder.ts
+import { userFactory } from "#nuxvel/factories";
+
+export const databaseSeeder = defineSeeder(async () => {
+  await userFactory.withPassword("demo-password")({ email: "demo@example.com" });
+
+  return ["Sign in as demo@example.com with the password demo-password"];
+});
+```
+
+A seeder can return lines of text. `nuxvel db:seed` and `nuxvel db:fresh --seed` print them under the name of the seeder:
+
+```
+✔ Seeded database
+  Sign in as demo@example.com with the password demo-password
+```
+
+A seeder that returns nothing prints only its name.
+
 ### Volume data
 
 ```bash
@@ -627,9 +665,9 @@ nuxvel db:seed --volume
 
 ```ts
 export const welcomePostSeeder = defineSeeder(async () => {
-  const post = await useDb().insert(postTable).values(welcomePost).returning().then(firstOrFail);
+  const post = await insertOne(postTable, welcomePost);
 
-  await audit("post.imported", { type: "post", id: post.id });
+  await audit("post.imported", post);
 });
 ```
 

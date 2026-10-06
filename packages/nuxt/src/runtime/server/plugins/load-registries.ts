@@ -13,5 +13,8 @@ import "#nuxvel/products";
 import "#nuxvel/flags";
 import "#nuxvel/rate-limits";
 import { defineNitroPlugin } from "nitropack/runtime";
+import { nameDiscovered } from "../discovery/definition-name";
 
-export default defineNitroPlugin(() => {});
+export default defineNitroPlugin(() => {
+  nameDiscovered();
+});

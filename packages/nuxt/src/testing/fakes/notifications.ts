@@ -14,7 +14,7 @@ function notificationName(nameOrNotification: string | Notification) {
  * the `user` during the test, with a `database` message whose fields include
  * `match`.
  *
- * A {@link notify} call is recorded per user once its transaction
+ * A {@link Notification.notify} call is recorded per user once its transaction
  * commits, so a rolled-back one records nothing. The mail it sends goes
  * through the `nuxvel.notification` job, which no functional test runs;
  * {@link runJob} runs it.

@@ -38,7 +38,11 @@ function definitionFile(path: string) {
 }
 
 async function loadModule(path: string, code: string) {
-  return import(write(path, code));
+  const loaded = await import(write(path, code));
+
+  if (Array.isArray(loaded.default)) loaded.default.length;
+
+  return loaded;
 }
 
 describe("a definition's name", () => {
@@ -148,6 +152,12 @@ describe("a definition's name", () => {
     ).toThrow(`nuxvel: ${join(billingPolicies, "invoice.policy.ts")} and ${shopPolicyFile} both name the policy "invoice"; rename one of them`);
   });
 
+  it("cannot be read before the registry names it, while no registry failed", async () => {
+    const { default: channel } = await import(definitionFile("channels/unnamed.ts"));
+
+    expect(() => channel.name).toThrow("nuxvel: this channel has no name yet");
+  });
+
   it("is given to each definition as the generated registry loads", async () => {
     const comments = definitionFile("channels/post/comments.ts");
     const registry = await loadModule(
@@ -195,10 +205,19 @@ describe("a definition's name", () => {
     );
   });
 
-  it("cannot be read before the registry names it", async () => {
-    const { default: channel } = await import(definitionFile("channels/unnamed.ts"));
+  it("is given when the registry is read, so a definition whose file imports its own registry loads first", async () => {
+    const registryFile = join(appDir, "cyclic-registry.ts");
+    const cyclic = write(
+      "channels/cyclic.ts",
+      `import registry from ${JSON.stringify(registryFile)};\nimport { defineChannel } from ${JSON.stringify(defineChannel)};\n\nexport const registered = () => registry;\nexport default defineChannel({ events: {}, authorize: () => true });\n`,
+    );
 
-    expect(() => channel.name).toThrow("nuxvel: this channel has no name yet");
+    write("cyclic-registry.ts", buildDiscoveredModuleCode("channels", [{ file: cyclic, name: "cyclic" }]));
+
+    const { default: channel, registered } = await import(cyclic);
+
+    expect(channel.name).toBe("cyclic");
+    expect(registered()).toEqual([channel]);
   });
 
   it("refuses a file that does not export a definition", async () => {
@@ -244,6 +263,32 @@ describe("a definition's name", () => {
     expect(() => storedName([...registry.default, { name: "older", renamedTo: definition }], definition)).toThrow(
       '"billing.stripe" has more than one renamed() alias (stripe, older)',
     );
+  });
+
+  it("is given to a definition whose registry loaded another copy of the naming module", async () => {
+    const copied = definitionFile("channels/copied-module.ts");
+    const code = buildDiscoveredModuleCode("channels", [{ file: copied, name: "copied-module" }]).replace(
+      /from "([^"]*\/definition-name)"/,
+      'from "$1.ts?copy"',
+    );
+
+    expect(code).toContain("definition-name.ts?copy");
+    write("copied-module-registry.ts", code);
+    await import(join(appDir, "copied-module-registry.ts"));
+
+    const { default: channel } = await import(copied);
+
+    expect(channel.name).toBe("copied-module");
+  });
+
+  it("rethrows the error of a registry that failed, when an unnamed definition's name is read", async () => {
+    const plain = write("channels/plain-again.ts", "export default { events: {} };\n");
+    const { default: channel } = await import(definitionFile("channels/still-unnamed.ts"));
+
+    await expect(
+      loadModule("plain-again-registry.ts", buildDiscoveredModuleCode("channels", [{ file: plain, name: "plain-again" }])),
+    ).rejects.toThrow(`nuxvel: ${plain} does not export a nuxvel definition;`);
+    expect(() => channel.name).toThrow(`nuxvel: ${plain} does not export a nuxvel definition;`);
   });
 
   it("stops the server at a renamed() alias of a kind that stores nothing under its name", async () => {

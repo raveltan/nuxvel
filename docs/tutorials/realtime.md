@@ -212,7 +212,7 @@ export const databaseSeeder = defineSeeder(async () => {
     await messageFactory({ roomId: general.id, authorId: user.id });
   }
 
-  console.log(`Sign in as demo@example.com, ada@example.com or grace@example.com with the password ${PASSWORD}`);
+  return [`Sign in as demo@example.com, ada@example.com or grace@example.com with the password ${PASSWORD}`];
 });
 ```
 
@@ -293,11 +293,7 @@ import { roomMemberTable, roomTable } from "#nuxvel/schema";
 export const createRoomAction = defineAction({
   input: createRoomInput,
   handler: async (input, ctx) => {
-    const row = await useDb()
-      .insert(roomTable)
-      .values({ ...input, ownerId: ctx.actor.id })
-      .returning()
-      .then(firstOrFail);
+    const row = await insertOne(roomTable, { ...input, ownerId: ctx.actor.id });
 
     await useDb().insert(roomMemberTable).values({ roomId: row.id, userId: ctx.actor.id });
     await audit("room.created", row);
@@ -341,8 +337,7 @@ export const addMemberAction = defineAction({
     "room.member-unknown": { message: "Nobody with this email has signed up", field: "email" },
   },
   handler: async (input, ctx, fail) => {
-    const room = await findOrFail(roomTable, input.roomId);
-    await authorize(ctx.actor, "addMember", roomTable, room);
+    const room = await findAuthorized(roomTable, input.roomId, "addMember");
 
     const [user] = await useDb().select().from(userTable).where(eq(userTable.email, input.email));
     if (!user) return fail("room.member-unknown");
@@ -517,7 +512,7 @@ export const roomChannel = defineChannel({
 
     const [room] = await useDb().select().from(roomTable).where(eq(roomTable.id, Number(params.roomId)));
 
-    return room !== undefined && (await can(userActor(user), "view", roomTable, room));
+    return room !== undefined && (await can("view", roomTable, room));
   },
   presence: { state: z.object({ typing: z.boolean() }) },
 });
@@ -525,7 +520,7 @@ export const roomChannel = defineChannel({
 
 The channel has one room for each chat room. `params: ["roomId"]` names the param of a room. The room of chat room 7 is `room?roomId=7`. A broadcast to a room goes only to the listeners of that room.
 
-- `authorize` runs for each room, and gets the params as strings. It refuses a value that is not a short number, so `abc` or `99999999999` never reaches the database. Then it calls the `view` rule of the policy, so only a member of the chat room listens. `userActor(user)` turns the signed-in user of the connection into the actor that `can()` takes.
+- `authorize` runs for each room, and gets the params as strings. It refuses a value that is not a short number, so `abc` or `99999999999` never reaches the database. Then it calls the `view` rule of the policy, so only a member of the chat room listens. `can()` checks the signed-in user of the connection.
 - `authorize` also refuses `room` with no room ID, because its `params` is `{}`. A guest gets `403`.
 - The `posted` event holds only the ID of the new message. The page fetches the messages again, through a router that checks the membership, so the event needs no more data.
 
@@ -622,27 +617,22 @@ import { messageTable, roomTable } from "#nuxvel/schema";
 export const postMessageAction = defineAction({
   input: postMessageInput,
   handler: async (input, ctx) => {
-    const room = await findOrFail(roomTable, input.roomId);
-    await authorize(ctx.actor, "post", roomTable, room);
+    const room = await findAuthorized(roomTable, input.roomId, "post");
 
-    const row = await useDb()
-      .insert(messageTable)
-      .values({ ...input, authorId: ctx.actor.id })
-      .returning()
-      .then(firstOrFail);
+    const row = await insertOne(messageTable, { ...input, authorId: ctx.actor.id });
 
-    await broadcastAfterCommit("room", "posted", { id: row.id }, { roomId: room.id });
+    await $channels.room.broadcast("posted", { id: row.id }, { roomId: room.id });
 
     return row;
   },
 });
 ```
 
-`broadcastAfterCommit()` sends the event only after the transaction of the action commits. If the action throws after the insert, the database keeps no message, and no browser hears about it. A plain `broadcast()` in an action sends at once, before the commit.
+`$channels.room.broadcast()` waits for the transaction of the action. It sends the event only after the commit. If the action throws after the insert, the database keeps no message, and no browser hears about it.
 
-The last argument of `broadcastAfterCommit()` is the room. Only the listeners of `room?roomId=<id>` get the event. The param names come from the channel, so a wrong name fails `nuxt typecheck`. The payload holds only the ID, so the body of the message does not go out on the channel.
+The last argument of `broadcast()` is the room. Only the listeners of `room?roomId=<id>` get the event. The param names come from the channel, so a wrong name fails `nuxt typecheck`. The payload holds only the ID, so the body of the message does not go out on the channel.
 
-`broadcastAfterCommit()` publishes through Redis, so each server process that shares the Redis gets the event and writes it to its own connections. See [Realtime: broadcasting](../realtime.md#broadcasting).
+`broadcast()` publishes through Redis, so each server process that shares the Redis gets the event and writes it to its own connections. See [Realtime: broadcasting](../realtime.md#broadcasting).
 
 ### The router
 
@@ -664,8 +654,7 @@ export const messageRouter = {
     .input(z.object({ roomId: z.number().int().positive() }))
     .output(z.array(messageSchema))
     .query(async ({ input, ctx }) => {
-      const room = await findOrFail(roomTable, input.roomId);
-      await authorize(ctx.actor, "view", roomTable, room);
+      const room = await findAuthorized(roomTable, input.roomId, "view");
 
       return useDb()
         .select({
@@ -743,7 +732,7 @@ describe("message/post-message action", () => {
 });
 ```
 
-- `expectBroadcast()` checks that the app broadcast the event with these fields, to this room. A `broadcastAfterCommit()` counts only after its transaction commits. The event name, the fields and the room params are typed by the channel.
+- `expectBroadcast()` checks that the app broadcast the event with these fields, to this room. A `broadcast()` in a transaction counts only after its transaction commits. The event name, the fields and the room params are typed by the channel.
 - `expectNotBroadcast()` checks that the refused post sent nothing.
 - The third test checks the full path. Grace listens to her room. Ada posts in another room first, then in Grace's room, through the router. The first broadcast that Grace's stream gets is the post in her room. `toEqual` also proves that the payload holds only the ID of the message. The `id` of the stream message is the event ID.
 - A listener of a room is also a member of it, so the stream also gets presence events, such as `presence.sync` and `presence.join`. `next("posted")` skips every event with another name. `next()` with no name gives the next event of any name. It fails after 5 seconds when no event arrives.

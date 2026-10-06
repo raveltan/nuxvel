@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { actorContext } from "../../../../../src/runtime/server/actions/context";
 import { healthChecksTable } from "~~/server/database/schema/health-check.schema";
 import { userTable } from "~~/server/database/schema/auth.schema";
 import { tagsTable } from "~~/server/database/schema/tags.schema";
@@ -22,39 +23,23 @@ export default defineEventHandler(async () => {
     .then(firstOrFail);
 
   const guest = { type: "guest", id: "guest" };
+  const backfill = systemActor("backfill");
+  const as = <T>(actor: Actor, run: () => Promise<T>) => actorContext.run(actor, run);
   const endpoint = { id: 1, url: "https://example.com", secret: "secret", createdAt: new Date() };
   const tag = { id: 1, name: "probe", createdAt: new Date(), updatedAt: new Date() };
 
   return {
-    guestDeniedByDefault: await can(guest, "probe", healthChecksTable, row),
-    guestAllowed: await can(guest, "view", healthChecksTable, row),
+    guestDeniedByDefault: await as(guest, () => can("probe", healthChecksTable, row)),
+    guestAllowed: await as(guest, () => can("view", healthChecksTable, row)),
     deniedWithoutPreload: [
-      await can(guest, "rename", tagsTable, tag),
-      await canMany(systemActor("backfill"), ["rename"], tagsTable, [tag]),
+      await as(guest, () => can("rename", tagsTable, tag)),
+      await as(backfill, () => canMany(["rename"], tagsTable, [tag])),
     ],
     composed: await Promise.all(
-      (["watch", "follow"] as const).flatMap((rule) => [guest, systemActor("backfill")].map((actor) => can(actor, rule, webhookEndpointsTable, endpoint))),
+      (["watch", "follow"] as const).flatMap((rule) => [guest, backfill].map((actor) => as(actor, () => can(rule, webhookEndpointsTable, endpoint)))),
     ),
-    updateDenied: await can(
-      systemActor("backfill"),
-      "update",
-      healthChecksTable,
-      row,
-    ),
-    probeAllowed: await can(
-      systemActor("backfill"),
-      "probe",
-      healthChecksTable,
-      row,
-    ),
-    probeDeniedForOtherRow: await can(
-      systemActor("backfill"),
-      "probe",
-      healthChecksTable,
-      {
-        ...row,
-        name: "other",
-      },
-    ),
+    updateDenied: await as(backfill, () => can("update", healthChecksTable, row)),
+    probeAllowed: await as(backfill, () => can("probe", healthChecksTable, row)),
+    probeDeniedForOtherRow: await as(backfill, () => can("probe", healthChecksTable, { ...row, name: "other" })),
   };
 });

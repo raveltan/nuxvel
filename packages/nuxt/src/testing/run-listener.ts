@@ -11,7 +11,7 @@ export type ListenerName = Defined<(typeof listeners)[number]>["name"];
  * in the app under test, here and now, with `payload` as its event's
  * payload.
  *
- * Use it for a queued listener: {@link emit} only queues one, and
+ * Use it for a queued listener: {@link DomainEvent.emit} only queues one, and
  * no `nuxvel queue:work` process runs it in a test. The payload goes
  * through the same parse as a queued run, so an invalid one rejects
  * with a `BAD_REQUEST` validation error; a handler that throws rejects

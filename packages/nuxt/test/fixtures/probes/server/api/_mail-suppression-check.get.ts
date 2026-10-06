@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
 
   if (suppressed === "yes") await suppressMail(to.toUpperCase(), "bounce");
 
-  await sendMail("welcome", { to, name: "Ada" });
+  await $mails.welcome.send({ to, name: "Ada" });
 
   return { ok: true };
 });

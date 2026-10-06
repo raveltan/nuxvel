@@ -8,7 +8,7 @@ export interface NuxvelRuntimeConfig {
   siteName?: string;
   mail?: {
     /**
-     * The address every {@link sendMail} message is sent from.
+     * The address every {@link Mail.send} message is sent from.
      *
      * @example
      * ```ts

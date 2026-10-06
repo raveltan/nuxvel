@@ -13,7 +13,7 @@ function channelName(nameOrChannel: string | Channel) {
 /**
  * Asserts that the app broadcast `event` on a channel during the test, with a payload whose fields include `match`, and returns the latest such broadcast.
  *
- * Sees a broadcast once Redis has the event, so a {@link broadcastAfterCommit} counts after its transaction commits. The payload is the one that the event's schema parsed. Cleared after every test by `@nuxvel/nuxt/testing/setup`. Use {@link expectNotBroadcast} for the opposite.
+ * Sees a broadcast once Redis has the event, so a {@link Channel.broadcast} in a transaction counts after it commits. The payload is the one that the event's schema parsed. Cleared after every test by `@nuxvel/nuxt/testing/setup`. Use {@link expectNotBroadcast} for the opposite.
  *
  * @param channel A {@link ChannelName}, or the channel's definition or its stub from `#nuxvel/test-namespaces`.
  * @param event An event that the channel declares, so a misspelled event fails to compile.

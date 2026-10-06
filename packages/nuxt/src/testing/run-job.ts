@@ -12,7 +12,7 @@ import { callApp } from "./settled";
  * the handler's effect is there when the call resolves. `input` is
  * validated like a real dispatch, rejecting with the same
  * `BAD_REQUEST` validation error; a handler that throws rejects with its
- * error. A {@link dispatchAfterCommit} the handler makes runs with no
+ * error. A {@link Job.dispatch} the handler makes runs with no
  * transaction in scope, as under `queue:work`, so {@link expectQueued}
  * sees the follow-up job.
  *

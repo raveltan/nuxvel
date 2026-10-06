@@ -43,7 +43,7 @@ describe("post tRPC router", async () => {
     });
 
     expect(moderated).toMatchObject({ id: created.id, title: "Moderated" });
-    expect(await admin.post.abilities({ id: created.id })).toEqual({ update: true, delete: true });
+    expect((await admin.post.byId({ id: created.id })).can).toEqual({ update: true, delete: true });
   });
 
   it("soft-deletes and restores a post, audits both, and applies the policy to restore", async () => {

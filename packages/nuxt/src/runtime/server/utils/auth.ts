@@ -24,15 +24,6 @@ const sessionsByRequest = new WeakMap<H3Event, ReturnType<typeof findSession>>()
  */
 export type SessionUser = NonNullable<Awaited<ReturnType<typeof auth>>>["user"];
 
-/**
- * The session for the current request, or `null` when signed out.
- *
- * Auto-imported on the server. The session is looked up once per
- * request: every later call in the same request, {@link requireAuth} and
- * {@link authedProcedure} included, reuses that lookup. A session signed
- * with a previous secret is still accepted while that secret is inside
- * the grace period `nuxvel key:rotate` gave it.
- */
 export function auth() {
   const event = useEvent();
   let session = sessionsByRequest.get(event);
@@ -52,7 +43,12 @@ export function auth() {
  * The session for the current request, throwing
  * {@link UnauthenticatedError} when there is none.
  *
- * Auto-imported on the server. The error answers with HTTP 401 — tRPC
+ * Auto-imported on the server. The session is looked up once per
+ * request: every later call in the same request, {@link useAuth} and
+ * {@link authedProcedure} included, reuses that lookup. A session signed
+ * with a previous secret is still accepted while that secret is inside
+ * the grace period `nuxvel key:rotate` gave it. Use {@link useAuth} to
+ * read the user without requiring one. The error answers with HTTP 401 — tRPC
  * `UNAUTHORIZED` from a procedure, where {@link authedProcedure} is the
  * shorter way to require a session.
  */

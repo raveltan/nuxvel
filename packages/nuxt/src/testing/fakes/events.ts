@@ -12,7 +12,7 @@ function definitionName(nameOrDefinition: string | { name: string }) {
 }
 
 /**
- * Asserts that the app called {@link emit} for an event, by its name or
+ * Asserts that the app called {@link DomainEvent.emit} for an event, by its name or
  * its definition, during the test, with a payload whose fields include `match`. Cleared after
  * every test by `@nuxvel/nuxt/testing/setup`.
  *
@@ -54,7 +54,7 @@ export async function expectEmitted(nameOrEvent: string | DomainEvent, match?: o
 }
 
 /**
- * Asserts that the app did not call {@link emit} for an event, by its
+ * Asserts that the app did not call {@link DomainEvent.emit} for an event, by its
  * name or its definition, with a payload whose fields include `match`.
  * Without `match`, any emit of that event fails it. The opposite of
  * {@link expectEmitted}.

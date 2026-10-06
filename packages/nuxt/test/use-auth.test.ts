@@ -26,12 +26,12 @@ describe("useAuth", async () => {
     const body = probe();
 
     expect(body.systemAction).toEqual({ userId: null, actor: { type: "system", id: "_use-auth-check" } });
-    expect(body.userAction).toEqual({ userId: body.userId, actor: { type: "user", id: body.userId, role: "user" } });
+    expect(body.userAction).toEqual({ userId: body.userId, actor: { type: "user", id: body.userId, role: "user", userId: body.userId } });
   });
 
   it("gives public and authed procedures the caller, and passes it to an action called without ctx", () => {
     const body = probe();
-    const caller = { userId: body.userId, actor: { type: "user", id: body.userId, role: "user" } };
+    const caller = { userId: body.userId, actor: { type: "user", id: body.userId, role: "user", userId: body.userId } };
 
     expect(body.publicSignedOut).toEqual({ userId: null, actor: null });
     expect(body.publicSignedIn).toEqual(caller);

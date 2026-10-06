@@ -333,12 +333,7 @@ import { commentTable } from "#nuxvel/schema";
 export const createCommentAction = defineAction({
   input: z.object({ postId: z.number().int().positive(), body: z.string().min(1) }),
   rateLimit: { points: 3, window: { minutes: 1 }, by: ({ input }) => `post:${input.postId}` },
-  handler: (input, ctx) =>
-    useDb()
-      .insert(commentTable)
-      .values({ postId: input.postId, body: input.body, authorId: ctx.actor.id })
-      .returning()
-      .then(firstOrFail),
+  handler: (input, ctx) => insertOne(commentTable, { postId: input.postId, body: input.body, authorId: ctx.actor.id }),
 });
 ```
 
@@ -540,14 +535,11 @@ export const importPostAction = defineAction({
   input: z.object({ title: z.string().min(1), html: z.string() }),
   handler: (input, ctx) =>
     useDb()
-      .insert(postTable)
-      .values({
+      insertOne(postTable, {
         title: input.title,
         body: sanitizeHtml(input.html, { profile: "rich" }),
         authorId: ctx.actor.id,
-      })
-      .returning()
-      .then(firstOrFail),
+      }),
 });
 ```
 

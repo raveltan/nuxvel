@@ -5,15 +5,15 @@ export default defineEventHandler(async () => {
   await useDb().delete(outboxTable);
 
   await transaction(async () => {
-    await dispatchAfterCommit("_probe.record", { name: "later" }, { delay: 60_000 });
-    await dispatchAfterCommit("_probe.record", { name: "urgent" }, { priority: 3 });
+    await $jobs._probe.record.dispatch({ name: "later" }, { delay: 60_000 });
+    await $jobs._probe.record.dispatch({ name: "urgent" }, { priority: 3 });
   });
 
   const rows = await useDb().select({ delay: outboxTable.delay, priority: outboxTable.priority }).from(outboxTable).orderBy(outboxTable.id);
 
   await relayOutbox();
 
-  const refusal = await dispatchAfterCommit("_probe.record", { name: "never" }, { priority: 0 }).then(
+  const refusal = await $jobs._probe.record.dispatch({ name: "never" }, { priority: 0 }).then(
     () => null,
     (error: Error) => error.name,
   );

@@ -173,13 +173,11 @@ import type { Meta, StoryObj } from "@storybook-vue/nuxt";
 import { mockTrpc, mockUser } from "@nuxvel/nuxt/storybook/mocks";
 import PostActions from "./PostActions.vue";
 
-const meta = { component: PostActions, args: { post: { id: 1, title: "Hello" } } } satisfies Meta<typeof PostActions>;
+const meta = { component: PostActions, args: { post: { id: 1, title: "Hello", can: { update: true, delete: true } } } } satisfies Meta<typeof PostActions>;
 export default meta;
 
 export const CanEdit: StoryObj<typeof meta> = {
-  parameters: {
-    msw: [mockUser({ name: "Ada" }), mockTrpc({ post: { abilities: () => ({ update: true, delete: true }) } })],
-  },
+  parameters: { msw: [mockUser({ name: "Ada" })] },
 };
 ```
 
@@ -199,7 +197,7 @@ To show the error state of a component, throw an error from the mock, as a real 
 import { ActionError, mockTrpc, TRPCError } from "@nuxvel/nuxt/storybook/mocks";
 
 export const Forbidden: StoryObj<typeof meta> = {
-  parameters: { msw: [mockTrpc({ post: { abilities: () => { throw new TRPCError({ code: "FORBIDDEN" }); } } })] },
+  parameters: { msw: [mockTrpc({ post: { byId: () => { throw new TRPCError({ code: "FORBIDDEN" }); } } })] },
 };
 
 export const BodyEmpty: StoryObj<typeof meta> = {

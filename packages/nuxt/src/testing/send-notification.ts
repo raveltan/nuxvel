@@ -5,7 +5,7 @@ import { callApp } from "./settled";
 
 /**
  * Sends a {@link defineNotification} notification, by its name or its
- * definition, in the app under test, inside a transaction, as an action's {@link notify}
+ * definition, in the app under test, inside a transaction, as an action's {@link Notification.notify}
  * would.
  *
  * The `database` rows are written and the send is recorded once it

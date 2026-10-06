@@ -43,13 +43,12 @@ export type { TrpcMocks, TrpcPath, TrpcProcedure } from "./trpc-procedure";
  * ```ts
  * import { mockTrpc, TRPCError } from "@nuxvel/nuxt/storybook/mocks";
  *
- * export const CanEdit = {
- *   args: { post: { id: 1, title: "Hello" } },
- *   parameters: { msw: [mockTrpc({ post: { abilities: () => ({ update: true, delete: false }) } })] },
+ * export const Empty = {
+ *   parameters: { msw: [mockTrpc({ post: { list: () => ({ rows: [], page: 1, perPage: 15, total: 0, lastPage: 1 }) } })] },
  * };
  *
  * export const Forbidden = {
- *   parameters: { msw: [mockTrpc({ post: { abilities: () => { throw new TRPCError({ code: "FORBIDDEN" }); } } })] },
+ *   parameters: { msw: [mockTrpc({ post: { update: () => { throw new TRPCError({ code: "FORBIDDEN" }); } } })] },
  * };
  * ```
  */

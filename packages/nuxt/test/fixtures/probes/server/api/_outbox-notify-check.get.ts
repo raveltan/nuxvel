@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
   const { name } = query.parse(getQuery(event));
 
   await transaction(async () => {
-    await dispatchAfterCommit("_probe.record", { name });
+    await $jobs._probe.record.dispatch({ name });
   });
 
   return { committedAt: Date.now() };

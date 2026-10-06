@@ -12,7 +12,7 @@ This tutorial builds a small shop, one feature per chapter. A signed-in buyer or
 The action that places the order knows only about the order. Domain events, queued listeners and a job do the rest, after the commit. The chapters go deep on what happens between the commit and each piece of work:
 
 - an event, a sync listener and two queued listeners (`make:event`, `make:listener`)
-- `dispatchAfterCommit()` and the transactional outbox, and why a crash between the commit and the queue loses nothing
+- `$jobs.x.dispatch()` and the transactional outbox, and why a crash between the commit and the queue loses nothing
 - a job with retries, backoff, a timeout and `unique`, and how each kind of error fails or retries it
 - listeners and jobs that are safe to run two times
 - the logs of the flow, a failed job and its retry
@@ -249,7 +249,7 @@ export const databaseSeeder = defineSeeder(async () => {
   await productFactory({ name: "Desk lamp", priceCents: 1250, stock: 5 });
   await productFactory({ name: "Notebook", priceCents: 400, stock: 20 });
 
-  console.log(`Sign in as ${DEMO_EMAIL} with the password ${DEMO_PASSWORD}`);
+  return [`Sign in as ${DEMO_EMAIL} with the password ${DEMO_PASSWORD}`];
 });
 ```
 
@@ -354,14 +354,15 @@ export const placeOrderAction = defineAction({
   handler: async ({ productId, quantity }, ctx) => {
     const product = await findOrFail(productTable, productId);
 
-    const order = await useDb()
-      .insert(orderTable)
-      .values({ buyerId: ctx.actor.id, productId, quantity, total: ((product.priceCents * quantity) / 100).toFixed(2) })
-      .returning()
-      .then(firstOrFail);
+    const order = await insertOne(orderTable, {
+      buyerId: ctx.actor.id,
+      productId,
+      quantity,
+      total: ((product.priceCents * quantity) / 100).toFixed(2),
+    });
 
-    await emit(orderPlacedEvent, { orderId: order.id });
-    await dispatchAfterCommit("invoice.issue", { orderId: order.id });
+    await orderPlacedEvent.emit({ orderId: order.id });
+    await $jobs.invoice.issue.dispatch({ orderId: order.id });
 
     return order;
   },
@@ -370,10 +371,10 @@ export const placeOrderAction = defineAction({
 
 The action does two different things after the insert:
 
-- `emit()` tells the rest of the app what happened. The action does not know which listeners exist. A new listener next year needs no change here.
-- `dispatchAfterCommit()` starts one job that the action owns: an invoice is part of the contract of an order.
+- `$events.x.emit()` tells the rest of the app what happened. The action does not know which listeners exist. A new listener next year needs no change here.
+- `$jobs.x.dispatch()` starts one job that the action owns: an invoice is part of the contract of an order.
 
-The job name must exist, or `nuxt typecheck` refuses it and the dispatch throws. Generate the job now. Chapter 5 writes its handler:
+The job must exist, or `nuxt typecheck` refuses `$jobs.invoice.issue`. Generate the job now. Chapter 5 writes its handler:
 
 ```bash
 ./nv make:job invoice.issue order_id:integer
@@ -384,9 +385,9 @@ The job name must exist, or `nuxt typecheck` refuses it and the dispatch throws.
 Every action runs in a transaction. Follow one order through it:
 
 1. The action inserts the order.
-2. `emit()` parses the payload with the event schema. It runs `order.reserve-stock` at once, in the transaction.
+2. `emit()` of the event parses the payload with the event schema. It runs `order.reserve-stock` at once, in the transaction.
 3. For each queued listener, `emit()` writes a row to the `outbox` table, in the same transaction. The job name of the row is `listener:order.record-sale` or `listener:order.send-confirmation`.
-4. `dispatchAfterCommit()` writes one more row, `invoice.issue`, and sends a Postgres `NOTIFY` on the channel `nuxvel_outbox`.
+4. `dispatch()` writes one more row, `invoice.issue`, and sends a Postgres `NOTIFY` on the channel `nuxvel_outbox`.
 5. The transaction commits. The order, the stock and the three outbox rows commit together, or none of them does.
 6. Postgres delivers the `NOTIFY` only now, after the commit. The worker listens on the channel and relays the outbox. It locks the rows that have no `dispatched_at` with `for update skip locked`. It adds each row to the BullMQ queue, then sets `dispatched_at` and clears the payload.
 7. The worker runs each job.
@@ -458,7 +459,7 @@ A functional test never reaches the real queue. The test server relays the outbo
 
 - The first test checks both halves of the commit: the sync listener changed the stock, and the three outbox rows reached the queue.
 - The second test proves the rollback. The stock conflict leaves no order, no stock change and no outbox row.
-- The third test plays the crash. A factory writes an outbox row directly, as a process that committed and then stopped before its relay. The row has the envelope `{ version, payload }` that `dispatchAfterCommit()` writes. The next relay puts the job on the queue and marks the row.
+- The third test plays the crash. A factory writes an outbox row directly, as a process that committed and then stopped before its relay. The row has the envelope `{ version, payload }` that `dispatch()` writes. The next relay puts the job on the queue and marks the row.
 
 The generated test of the event emits `{ orderId: 1 }`, and no such order exists, so the stock listener throws. Replace it:
 
@@ -549,7 +550,7 @@ export const orderSendConfirmationListener = defineListener({
       const buyer = await findOrFail(userTable, order.buyerId);
       const product = await findOrFail(productTable, order.productId);
 
-      await sendMail("order.confirmation", {
+      await $mails.order.confirmation.send({
         to: buyer.email,
         orderId: order.id,
         productName: product.name,
@@ -563,7 +564,7 @@ export const orderSendConfirmationListener = defineListener({
 
 The `UPDATE` sets `confirmation_sent_at` only when it is still empty, and returns the row only to the run that set it. A second run gets no row and stops.
 
-`sendMail()` does not send the mail. It writes an outbox row for the built-in `nuxvel.mail` job, in the transaction. So the claim and the mail commit together. When the transaction fails, the claim rolls back too, and the next run tries again. `now()` is the server clock that the test fixtures move. See [Database: the current time](../database.md#the-current-time).
+`$mails.x.send()` does not send the mail. It writes an outbox row for the built-in `nuxvel.mail` job, in the transaction. So the claim and the mail commit together. When the transaction fails, the claim rolls back too, and the next run tries again. `now()` is the server clock that the test fixtures move. See [Database: the current time](../database.md#the-current-time).
 
 Write the mail:
 
@@ -847,7 +848,7 @@ export const requestInvoiceAction = defineAction({
     const order = await findOrFail(orderTable, orderId);
     if (order.buyerId !== ctx.actor.id) throw new NotFoundError();
 
-    await dispatchAfterCommit("invoice.issue", { orderId: order.id });
+    await $jobs.invoice.issue.dispatch({ orderId: order.id });
   },
 });
 ```
@@ -970,7 +971,7 @@ The terminal of the dev server shows each step of the chain:
 - Each `job` line is one attempt, with the job name, the BullMQ job ID, the attempt and the time it took. A queued listener shows as `listener:<name>`.
 - The `invoice` line comes from `useLogger("invoice")` in the job. Its `orderId` field ties it to the order.
 - The `actor` field of the `invoice` line is the buyer. A job runs as the actor that dispatched it, so the lines that its handler logs and its audit rows name the buyer. A queued listener has no dispatcher, so its handler runs with no actor.
-- The mail went out last. `sendMail()` in the listener wrote one more outbox row, and the worker relayed it to the `mail` queue.
+- The mail went out last. `$mails.x.send()` in the listener wrote one more outbox row, and the worker relayed it to the `mail` queue.
 
 To follow one order through the logs, search for its ID. Log the ID in each listener and job that you write. A job has no request ID, because it runs outside the request. See [Observability: request ID and actor](../observability.md#request-id-and-actor).
 
@@ -1373,11 +1374,13 @@ A nullable column with no default changes no row, so the migration is fast on an
 // server/actions/order/place-order.action.ts
     const totalCents = product.priceCents * quantity;
 
-    const order = await useDb()
-      .insert(orderTable)
-      .values({ buyerId: ctx.actor.id, productId, quantity, total: (totalCents / 100).toFixed(2), totalCents })
-      .returning()
-      .then(firstOrFail);
+    const order = await insertOne(orderTable, {
+      buyerId: ctx.actor.id,
+      productId,
+      quantity,
+      total: (totalCents / 100).toFixed(2),
+      totalCents,
+    });
 ```
 
 From now on, each new order has both values. The backfill only has to fill the orders from before. So the dual write ships before the backfill runs. A backfill that completed does not run again, and a row that old code writes after it stays empty.

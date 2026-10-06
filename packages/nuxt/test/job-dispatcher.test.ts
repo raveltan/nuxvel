@@ -13,7 +13,7 @@ describe("a job's dispatcher", async () => {
 
   it("records the dispatching procedure's or action's actor, and runs the job as it", () => {
     const { userId } = probe();
-    const actor = { type: "user", id: userId, role: "user" };
+    const actor = { type: "user", id: userId, role: "user", userId };
 
     expect(run("procedure")).toEqual({ name: "procedure", userId, actor, dispatcher: actor });
     expect(run("action")).toEqual({ name: "action", userId, actor, dispatcher: actor });
@@ -22,7 +22,7 @@ describe("a job's dispatcher", async () => {
   it("stores the dispatcher with the payload on the outbox row", () => {
     const { userId, stored } = probe();
 
-    expect(stored[0]).toEqual({ version: 1, payload: { name: "procedure" }, dispatcher: { type: "user", id: userId, role: "user" } });
+    expect(stored[0]).toEqual({ version: 1, payload: { name: "procedure" }, dispatcher: { type: "user", id: userId, role: "user", userId } });
   });
 
   it("runs as the dispatcher the dispatch names instead", () => {

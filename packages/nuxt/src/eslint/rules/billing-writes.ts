@@ -4,6 +4,7 @@ import { type ExpressionNode, staticText } from "./ast";
 const BILLING_TABLES = new Set(["billing_customers", "billing_events", "billing_subscriptions", "billing_payments"]);
 const BILLING_TABLE_NAMES = new Set(["billingCustomersTable", "billingEventsTable", "billingSubscriptionsTable", "billingPaymentsTable"]);
 const WRITES = new Set(["insert", "update", "delete"]);
+const ONE_ROW_WRITES = new Set(["insertOne", "updateOne"]);
 const BILLING_WRITE_SQL = /\b(?:insert\s+into|update|delete\s+from|truncate(?:\s+table)?)\s+(?:only\s+)?"?billing_(?:customers|events|subscriptions|payments)\b/i;
 
 function namesBillingTable(node: ExpressionNode | undefined): boolean {
@@ -30,6 +31,12 @@ export const billingWrites: Rule.RuleModule = {
     return {
       CallExpression(node) {
         const { callee } = node;
+        const [table] = node.arguments;
+
+        if (callee.type === "Identifier" && ONE_ROW_WRITES.has(callee.name) && table?.type !== "SpreadElement" && namesBillingTable(table)) {
+          context.report({ node, messageId: "write" });
+          return;
+        }
 
         if (callee.type !== "MemberExpression" || callee.property.type !== "Identifier") return;
 
@@ -38,8 +45,6 @@ export const billingWrites: Rule.RuleModule = {
           if (text !== undefined && BILLING_WRITE_SQL.test(text)) context.report({ node, messageId: "write" });
           return;
         }
-
-        const [table] = node.arguments;
 
         if (WRITES.has(callee.property.name) && table?.type !== "SpreadElement" && namesBillingTable(table)) {
           context.report({ node, messageId: "write" });

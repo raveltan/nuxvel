@@ -174,17 +174,15 @@ const actionFormIsTyped: IsAny<typeof createPostForm.state> extends true
       : never
     : never = true;
 
-const abilitiesOptions = trpc.post.abilities.queryOptions({ id: 1 });
-const abilitiesAreTyped: IsAny<
-  Awaited<ReturnType<typeof abilitiesOptions.query>>
-> extends true
+const abilitiesOptions = trpc.post.byId.queryOptions({ id: 1 });
+type PostAbilities = Awaited<ReturnType<typeof abilitiesOptions.query>>["can"];
+const abilitiesAreTyped: IsAny<PostAbilities> extends true
   ? never
-  : Awaited<ReturnType<typeof abilitiesOptions.query>> extends {
-        update: boolean;
-        delete: boolean;
-      }
+  : PostAbilities extends { update: boolean; delete: boolean }
     ? true
     : never = true;
+// @ts-expect-error withAbilities() lists update and delete, not restore
+const restoreIsNoAbility: PostAbilities["restore"] = true;
 
 const { mutate: deletePost } = useMutation(
   trpc.post.delete.mutationOptions({ optimistic: { key: () => trpc.post.list.key(), apply: removeRow() } }),

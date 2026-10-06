@@ -6,7 +6,7 @@ export default defineEventHandler(async () => {
   await useDb().delete(outboxTable);
 
   await transaction(async () => {
-    await dispatchAfterCommit("_probe.record", { name: "queued" });
+    await $jobs._probe.record.dispatch({ name: "queued" });
   });
 
   const pending = await useDb().select().from(outboxTable).where(isNull(outboxTable.dispatchedAt));

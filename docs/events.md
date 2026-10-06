@@ -112,7 +112,7 @@ export const postCountPublishedListener = defineListener({
 
 With `sync: true`, the listener runs immediately, inside the transaction of the emitting action. `emit` waits for it. The writes of the listener commit or roll back with the writes of the action. When the listener throws, the action fails.
 
-A sync listener does not make network calls, such as `$fetch` or `sendMail`. [`nuxvel test:arch`](./cli.md#nuxvel-testarch) reports them. Use a queued listener for that work.
+A sync listener does not make network calls, such as `$fetch` or `sendMailNow`. [`nuxvel test:arch`](./cli.md#nuxvel-testarch) reports them. Use a queued listener for that work.
 
 ## Emitting an event
 
@@ -125,38 +125,25 @@ import { postTable } from "#nuxvel/schema";
 export const publishPostAction = defineAction({
   input: z.object({ id: z.number() }),
   handler: async ({ id }) => {
-    const post = await useDb()
-      .update(postTable)
-      .set({ publishedAt: new Date() })
-      .where(eq(postTable.id, id))
-      .returning()
-      .then(firstOrFail);
+    const post = await updateOne(postTable, id, { publishedAt: new Date() });
 
-    await emit("post.published", { postId: post.id });
+    await $events.post.published.emit({ postId: post.id });
 
     return post;
   },
 });
 ```
 
-`emit` is auto-imported. Call it from the action that made the change. It checks the payload first, then runs each listener of the event:
+`$events` holds every event of `server/events/`, keyed by its path in camelCase, and is auto-imported on the server. Call `emit()` from the action that made the change. It checks the payload first, then runs each listener of the event:
 
-- A sync listener runs immediately, in the transaction.
-- A queued listener goes on the queue after the transaction commits.
+- A sync listener runs immediately, in the transaction. Its writes commit or roll back with the action.
+- A queued listener goes on the queue after the transaction commits. When the transaction rolls back, it never runs. Outside a transaction it goes on the queue immediately.
 
-`emit` takes the event name and a payload of the input type of the payload schema. Each listener gets the output type. An unknown event name or a wrong payload does not compile.
-
-```ts
-import { postPublishedEvent } from "#server/events/post/published.event";
-
-await emit(postPublishedEvent, { postId: post.id });
-```
-
-`emit` also takes the event object in place of its name.
+`emit()` takes a payload of the input type of the payload schema. Each listener gets the output type. A wrong payload does not compile. Go to definition on `published` opens the event file.
 
 ### Schemas that transform
 
-When the payload schema coerces or transforms values, each listener parses the payload from the value that you gave to `emit`. So the transform runs once for each listener:
+When the payload schema coerces or transforms values, each listener parses the payload from the value that you gave to `emit()`. So the transform runs once for each listener:
 
 - A sync listener parses the payload in the emitting transaction.
 - A queued listener's job carries the raw payload. The listener parses it when it runs.

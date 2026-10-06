@@ -1,8 +1,8 @@
 export default defineEventHandler(async () => {
-  await broadcast($channels._probePublic, "renamed", { id: 1 });
+  await $channels._probePublic.broadcast("renamed", { id: 1 });
 
   // @ts-expect-error the runtime check behind the compile-time one
-  const rejected = await broadcast("_probe-public", "renamed", { id: "1" }).then(
+  const rejected = await $channels._probePublic.broadcast("renamed", { id: "1" }).then(
     () => false,
     (error: unknown) => error instanceof ValidationFailedError,
   );

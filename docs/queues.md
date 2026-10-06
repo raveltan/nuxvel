@@ -100,50 +100,39 @@ import { postTable } from "#nuxvel/schema";
 export const publishPostAction = defineAction({
   input: z.object({ id: z.number() }),
   handler: async ({ id }) => {
-    const post = await useDb()
-      .update(postTable)
-      .set({ publishedAt: new Date() })
-      .where(eq(postTable.id, id))
-      .returning()
-      .then(firstOrFail);
+    const post = await updateOne(postTable, id, { publishedAt: new Date() });
 
-    await dispatchAfterCommit("post.notify-followers", { postId: post.id });
+    await $jobs.post.notifyFollowers.dispatch({ postId: post.id });
 
     return post;
   },
 });
 ```
 
-`dispatchAfterCommit(name, payload)` queues the job `name` after the surrounding transaction commits. When the transaction rolls back, the job is not queued. `dispatchAfterCommit` is auto-imported.
+`$jobs.<name>.dispatch(payload)` queues the job after the surrounding transaction commits. When the transaction rolls back, the job is not queued. `$jobs` holds every job of `server/jobs/`, keyed by its path in camelCase: `server/jobs/post/notify-followers.job.ts` is `$jobs.post.notifyFollowers`. It is auto-imported on the server.
 
 An action already runs in a transaction. In other server code, open one with `transaction()`:
 
 ```ts
 await transaction(async () => {
-  const post = await useDb().insert(postTable).values(input).returning().then(firstOrFail);
+  const post = await insertOne(postTable, input);
 
-  await dispatchAfterCommit("post.notify-followers", { postId: post.id });
+  await $jobs.post.notifyFollowers.dispatch({ postId: post.id });
 });
 ```
 
-Outside a transaction, `dispatchAfterCommit` writes the outbox row immediately. See [The outbox](#the-outbox).
+Outside a transaction, `dispatch()` writes the outbox row immediately. See [The outbox](#the-outbox).
 
-The job names come from `server/jobs/`. `name` has the type `JobName`, and `payload` has the type `JobInput<Name>`, the input type of the job's `input` schema. A misspelled name or a wrong payload fails `nuxt typecheck`. A name that no job defines also throws at runtime, and nuxvel writes nothing.
-
-In place of the name, you can give the job definition, from `$jobs` or from an import. Then `payload` has the input type of that definition's `input` schema. Go to definition on the first argument opens the job file.
-
-```ts
-await dispatchAfterCommit($jobs.post.notifyFollowers, { postId: post.id });
-```
+`payload` has the input type of the job's `input` schema, so a wrong payload fails `nuxt typecheck`. A job without `input` takes no payload: `$jobs.post.reindexAll.dispatch()`. Go to definition on `notifyFollowers` opens the job file.
 
 ### Delay and priority
 
 ```ts
-await dispatchAfterCommit("post.send-digest", { postId: post.id }, { delay: 60_000 });
-await dispatchAfterCommit("post.notify-followers", { postId: post.id }, { priority: 1 });
+await $jobs.post.sendDigest.dispatch({ postId: post.id }, { delay: 60_000 });
+await $jobs.post.notifyFollowers.dispatch({ postId: post.id }, { priority: 1 });
 ```
 
-The third argument takes BullMQ job options. Both are optional:
+The second argument takes BullMQ job options. Both are optional:
 
 | Option | Meaning |
 |---|---|
@@ -154,7 +143,7 @@ A value out of range throws, and nuxvel writes nothing. The options type is `Dis
 
 ### The dispatcher
 
-A job runs as the actor that dispatched it. `dispatchAfterCommit` stores the current actor with the payload: the actor of the running action or procedure, else the API key or session of the request. The handler runs as that actor, so `useAuth()` in the job returns it and its user. The handler also gets it as `dispatcher` in its second argument:
+A job runs as the actor that dispatched it. `dispatch()` stores the current actor with the payload: the actor of the running action or procedure, else the API key or session of the request. The handler runs as that actor, so `useAuth()` in the job returns it and its user. The handler also gets it as `dispatcher` in its second argument:
 
 ```ts
 export const postArchiveJob = defineJob({
@@ -170,8 +159,8 @@ export const postArchiveJob = defineJob({
 To run the job as a different actor, set the `dispatcher` option. `null` runs the job as nobody:
 
 ```ts
-await dispatchAfterCommit("post.reindex", { postId: post.id }, { dispatcher: systemActor("reindex") });
-await dispatchAfterCommit("post.reindex", { postId: post.id }, { dispatcher: null });
+await $jobs.post.reindex.dispatch({ postId: post.id }, { dispatcher: systemActor("reindex") });
+await $jobs.post.reindex.dispatch({ postId: post.id }, { dispatcher: null });
 ```
 
 A job dispatched with no actor present runs as nobody: `dispatcher` is `null` and `useAuth()` returns `{ user: null, actor: null }`. `runJob` in a test runs the job as nobody, or as a user with `{ actingAs: user }`. Queued listeners and schedule ticks have no dispatcher.
@@ -206,7 +195,7 @@ const waitingMail = await useQueue("mail").getWaiting();
 
 ## The outbox
 
-`dispatchAfterCommit` does not write to Redis. It writes a row to the `outbox` table, in your transaction. A new app has this table in `server/database/schema/outbox.schema.ts`.
+`dispatch()` does not write to Redis. It writes a row to the `outbox` table, in your transaction. A new app has this table in `server/database/schema/outbox.schema.ts`.
 
 | Column | Contents |
 |---|---|
@@ -219,7 +208,7 @@ const waitingMail = await useQueue("mail").getWaiting();
 
 The worker relays the outbox when a transaction that wrote a row commits, and also every second. Each relay takes up to 100 rows that have no `dispatched_at`, adds them in order to the queue of each job and sets `dispatched_at`.
 
-`dispatchAfterCommit` sends a Postgres `NOTIFY` on the channel `nuxvel_outbox` in the same transaction. Postgres delivers it at the commit, and not after a rollback. The worker listens on that channel, so a job usually reaches the queue a few milliseconds after the commit. The one-second relay stays as a fallback, for example while the worker reconnects to Postgres. When the worker cannot listen at startup, it logs a `warn` line with the tag `outbox` and relays every second only. The partial index `outbox_undispatched_idx` covers only the rows that have no `dispatched_at`. The lookup stays fast when many dispatched rows collect in the table.
+`dispatch()` sends a Postgres `NOTIFY` on the channel `nuxvel_outbox` in the same transaction. Postgres delivers it at the commit, and not after a rollback. The worker listens on that channel, so a job usually reaches the queue a few milliseconds after the commit. The one-second relay stays as a fallback, for example while the worker reconnects to Postgres. When the worker cannot listen at startup, it logs a `warn` line with the tag `outbox` and relays every second only. The partial index `outbox_undispatched_idx` covers only the rows that have no `dispatched_at`. The lookup stays fast when many dispatched rows collect in the table.
 
 So the queue always agrees with the database:
 
@@ -641,7 +630,7 @@ A functional test never reaches the real Redis queue. The relay records each job
 | `runSchedule(name)` | Runs one tick of a schedule in the app now, without the worker and the clock. |
 | `useRealQueue()` | Uses the real BullMQ queue for the whole test file. |
 
-Each fixture takes a job name or a job definition, as `dispatchAfterCommit` does.
+Each fixture takes a job name or a job definition from `$jobs`.
 
 The queue fake applies `unique` as the real queue does. While a job with the key `<job name>:<key>` is in the fake, a second dispatch with the same key is dropped, and `expectQueued` sees one job. `workQueue()` and `runJob` free the key when they take the job, so the next dispatch is queued again.
 

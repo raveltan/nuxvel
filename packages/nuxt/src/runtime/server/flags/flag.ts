@@ -24,7 +24,7 @@ export interface FlagSubject {
  *
  * The user is the actor of the running action when that actor is a
  * `"user"` ({@link useAuth}), else, inside a request, the
- * signed-in one from `auth()`. Pass `subject` to evaluate for someone
+ * signed-in one of the request. Pass `subject` to evaluate for someone
  * else, or outside both (a task). With no user, a partial rollout is off. Throws when no flag
  * has this name.
  *

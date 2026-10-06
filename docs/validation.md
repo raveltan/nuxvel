@@ -93,7 +93,7 @@ Usually you do not call the schema yourself. These helpers validate their input 
 - a tRPC procedure's `.input()`, see [API](./api.md)
 - `defineJob()`, see [Queues](./queues.md)
 - `defineEvent()`, see [Domain events](./events.md)
-- `sendMail()`, see [Mail](./mail.md)
+- `$mails.x.send()`, see [Mail](./mail.md)
 
 In a plain Nitro handler, pass the schema to h3's helpers:
 

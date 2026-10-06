@@ -79,6 +79,46 @@ applies each step below that names a codemod.
   `nuxvel/router-output`. By hand: add `.output(schema)` before
   `.action()`, and `output: schema` to the action, listing only the
   fields the browser may see.
+- `can()`, `authorize()` and `canMany()` take no actor: they read the
+  actor of the running procedure, action, job or seeder, and the guest
+  in a signed-out request. Outside a request with no actor they throw.
+  By hand: write `authorize("update", postTable, post)` in place of
+  `authorize(ctx.actor, "update", postTable, post)`, and the same for
+  `can()` and `canMany()`. A check as another actor, such as
+  `can(systemActor("cleanup"), ...)`, moves into an action called with
+  `{ actor }`. Codemod: `actor-arg` (it removes `ctx.actor` and `actor`,
+  and prints any other actor as a manual step).
+- `SYSTEM_ACTOR_TYPE`, `API_KEY_ACTOR_TYPE` and the server `auth()` are
+  no longer auto-imported. By hand: write `"system"` and `"api-key"` in
+  place of the constants, and `(await useAuth()).user` in place of
+  `(await auth())?.user`. Where the code reads more than `.user`, such
+  as `session.expiresAt`, call `requireAuth()`, which throws when signed
+  out. Codemod: `removed-globals` (it rewrites the
+  constants and each `auth()` whose result is only read for `.user`, and
+  prints any other `auth()` as a manual step).
+- An actor built by hand as `{ type: "user", id }` has no `userId`, so
+  a rule that compares `actor.userId`, such as the ownership rule that
+  `make:router --crud` writes, denies it. By hand: build the actor with
+  `userActor(user)`, which sets `userId`. No codemod.
+- `dispatchAfterCommit()`, `broadcast()`, `broadcastAfterCommit()`,
+  `sendMail()`, `emit()` and `notify()` are removed: call the method of
+  the definition, through its `$kind` namespace. By hand: write
+  `$jobs.post.notifyFollowers.dispatch(input, options)` in place of
+  `dispatchAfterCommit("post.notify-followers", input, options)`,
+  `$channels.posts.broadcast("created", payload, params)` in place of
+  `broadcast("posts", "created", payload, params)` and of
+  `broadcastAfterCommit(...)`, `$mails.welcome.send(input, options)` in
+  place of `sendMail("welcome", input, options)`,
+  `$events.post.published.emit(payload)` in place of
+  `emit("post.published", payload)`, and
+  `$notifications.welcome.notify(userId, data)` in place of
+  `notify(userId, "welcome", data)`. A call that passed a definition,
+  such as `emit(postPublishedEvent, payload)`, becomes
+  `postPublishedEvent.emit(payload)`. A `broadcast()` inside a
+  transaction now waits for the commit, as `broadcastAfterCommit()` did.
+  Outside one it still sends at once. `sendMailNow()` stays. Codemod:
+  `definition-methods` (it maps a string name to its `$` path, and
+  prints a name it cannot map, such as a variable, as a manual step).
 
 ### Changes
 
@@ -233,3 +273,55 @@ applies each step below that names a codemod.
 - `make:action` writes an action without `input` when you give no fields,
   and `make:router --crud` writes `.openapi()` for `GET` and `POST`
   procedures and mutations that do not pass the actor.
+- `findAuthorized(table, id, action)` loads a row and authorizes an
+  action on it for the current actor, throwing `NotFoundError` or
+  `ForbiddenError`. It replaces `findOrFail()` followed by
+  `authorize()`. The actions that `make:router --crud` writes call it.
+- `insertOne(table, values)` and `updateOne(table, id, values)` write one
+  row and return it. `updateOne` throws `NotFoundError` when no row has
+  that `id`. Both join the ambient transaction. The actions that
+  `make:router --crud` writes use them.
+- `nuxvel test:arch` reports `insertOne()` and `updateOne()` in a router
+  or a route, as it reports `useDb().insert()`, and in app code that
+  writes the billing tables.
+- `softDelete()`, `restore()` and `forceDelete()` also take an `id`: they
+  return the row, or throw `NotFoundError` when no row that they can
+  change has that `id`. The `where` form is unchanged.
+- `withAbilities(schema, refs)` extends a row schema for `.output()` with
+  `can`, such as `{ update: true, delete: false }`, for the caller. It
+  works for one row and inside `paginated()`, with one `canMany()` call
+  for the rows of a response. It replaces a separate `abilities`
+  procedure.
+- `userActor()` sets `userId` to the user's id, so `actor.userId` is the
+  user behind a user actor and an API key alike. Code that wrote
+  `actor.userId ?? actor.id` can write `actor.userId`. The code that
+  `make:router --crud` writes does, so build an actor for it with
+  `userActor(user)`, not by hand as `{ type: "user", id }`.
+- An action, `audit()`, `can()` and `authorize()` called with no actor
+  throw an error that names the action or the call, and the fix, in
+  place of `defineAction: actor is required` and `audit: no actor in
+  context`.
+- A request signed with an API key looks the key up once, however many
+  procedures of a batch, `can()` or `authorize()` calls read it. Each
+  procedure call still spends the key's `api-key` rate limit.
+- `userActor()` and `apiKeyActor()` return `Actor & { userId: string }`,
+  and so does `ctx.actor` of `authedProcedure`, `roleProcedure`,
+  `adminProcedure` and `freshProcedure`: `ctx.actor.userId` is a
+  `string` there. In an action it stays optional, as a job or a seeder
+  can call it with a system actor.
+- Each job, channel, mail, event and notification has a method, reached
+  through its `$kind` namespace: `$jobs.post.notifyFollowers.dispatch(input,
+  options?)`, `$channels.posts.broadcast(event, payload, params?)`,
+  `$mails.welcome.send(input, options?)`, `$events.post.published.emit(payload)`
+  and `$notifications.welcome.notify(userIds, data)`. Inside a transaction,
+  each one waits for the commit and does nothing after a rollback.
+  `nuxvel events` and `nuxvel test:arch` read `emit()` called as a method.
+- A definition is named on the first read of its registry or at boot,
+  so a definition file whose imports reach its own registry, such as a
+  job that dispatches another job through `$jobs`, no longer stops the
+  server with `Cannot access ... before initialization`.
+- `useLogger()` without a tag tags its lines with the name of the
+  running action or job.
+- A `defineSeeder()` handler may return lines (`string[]`), which
+  `nuxvel db:seed` and `nuxvel db:fresh --seed` print under its name.
+  `make:seeder` writes a seeder that returns `[]`.

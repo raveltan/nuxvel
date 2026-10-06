@@ -31,14 +31,16 @@ One table gets one policy. When two files define a policy for the same table, th
 ## Checking a rule
 
 ```ts
-const allowed = await can(ctx.actor, "update", postTable, post);
+const allowed = await can("update", postTable, post);
 ```
 
 `can()` returns a boolean. It is auto-imported on the server.
 
+`can()`, `authorize()` and `canMany()` take no actor. They read the actor of the code that is running: the procedure, the action, the job or the seeder. In a request with no actor, such as a signed-out call of a `publicProcedure`, the actor is the guest. Outside a request with no actor, the call throws. To check as another actor, call an action with `{ actor }` and check inside it.
+
 The types catch three mistakes at compile time:
 
-- The action must be a rule that the table's policy defines. `can(actor, "updat", postTable, post)` does not compile.
+- The action must be a rule that the table's policy defines. `can("updat", postTable, post)` does not compile.
 - The table must have a policy. A table that no policy covers does not compile.
 - The row must be a row of the table you pass. A comment row for `postTable` does not compile.
 
@@ -51,8 +53,8 @@ At runtime, `can()` returns `false` when no policy or no matching rule exists. E
 ```ts
 import { postPolicy } from "#server/policies/post.policy";
 
-const allowed = await can(ctx.actor, postPolicy.update, post);
-await authorize(ctx.actor, postPolicy.update, post);
+const allowed = await can(postPolicy.update, post);
+await authorize(postPolicy.update, post);
 ```
 
 `definePolicy()` gives the policy one ability ref for each rule, for example `postPolicy.update`. `can()`, `authorize()` and `canMany()` take a ref in place of the rule name and the table. The ref holds the table, so the call has no table argument.
@@ -64,7 +66,7 @@ The string form stays valid. A rule named `table`, `tableName`, `rules` or `prel
 The auto-imported `$policies` namespace holds each policy under the path of its file, so a ref needs no import:
 
 ```ts
-const allowed = await can(ctx.actor, $policies.post.update, post);
+const allowed = await can($policies.post.update, post);
 ```
 
 Each path segment is in camelCase and has no kind suffix. `$policies.post` is the policy in `server/policies/post.policy.ts`, and `$policies.healthCheck` is the policy in `health-check.policy.ts`. Go-to-definition on `$policies.post.update` also opens the `update` rule. `$policies` is available on the server only.
@@ -78,15 +80,25 @@ export const postPolicy = definePolicy(postTable, {
 });
 ```
 
-In a tRPC procedure, `ctx.actor` from `authedProcedure` is the signed-in user, `role` included. A rule that reads `actor.role` works there. See [User roles](./auth.md#user-roles).
+In a tRPC procedure, the actor of `authedProcedure` is the signed-in user, `role` included. A rule that reads `actor.role` works there. See [User roles](./auth.md#user-roles).
 
 ## Enforcing a rule
 
 ```ts
-await authorize(ctx.actor, "update", postTable, post);
+await authorize("update", postTable, post);
 ```
 
 `authorize()` throws `ForbiddenError` when `can()` returns `false`. The error answers with HTTP 403 (tRPC `FORBIDDEN`). Call `authorize()` in action handlers after you load the row.
+
+## Loading and enforcing in one call
+
+```ts
+const post = await findAuthorized(postTable, input.id, "update");
+```
+
+`findAuthorized(table, id, action)` loads the row by its `id` and authorizes `action` on it for the current actor. It throws `NotFoundError` (HTTP 404) when no row has that id, and `ForbiddenError` (HTTP 403) when the policy denies the action. It is auto-imported on the server.
+
+It takes the `trashed` option of `findOrFail()`, so a restore action finds a trashed row: `findAuthorized(postTable, input.id, "restore", { trashed: "only" })`.
 
 ## The `authorize` option
 
@@ -102,7 +114,7 @@ export const moderationChannel = defineChannel({
 
     const account = await findOrFail(userTable, user.id);
 
-    return can(userActor(user), "moderate", userTable, account);
+    return can("moderate", userTable, account);
   },
 });
 ```
@@ -112,29 +124,22 @@ export const moderationChannel = defineChannel({
 | Name | Gets | Returns |
 |---|---|---|
 | The `authorize` option | `{ user }`: the signed-in user, or `null` for a guest. A channel and the `channel` of a job also get `params`, the params of the room as strings | `true` to allow, `false` to refuse with HTTP 403 |
-| The `authorize()` function | an actor, an action, a table and a row | nothing. It throws `ForbiddenError` to deny |
+| The `authorize()` function | an action, a table and a row | nothing. It throws `ForbiddenError` to deny |
 
-The option is a predicate, so call `can()` in it, not `authorize()`. `can()` needs an actor. Build it from the user with `userActor(user)`, which keeps the user's `role`. In the sample, `moderate` is a rule of the policy for the `user` table.
+The option is a predicate, so call `can()` in it, not `authorize()`. `can()` checks the user of the request, `role` included. In the sample, `moderate` is a rule of the policy for the `user` table.
 
 ## Authorizing in actions
 
 ```ts
 // server/actions/posts/update-post.action.ts
-import { eq } from "drizzle-orm";
 import { postTable } from "#nuxvel/schema";
 
 export const updatePostAction = defineAction({
   input: updatePostInput,
-  handler: async (input, ctx) => {
-    const post = await findOrFail(postTable, input.id);
-    await authorize(ctx.actor, "update", postTable, post);
+  handler: async (input) => {
+    await findAuthorized(postTable, input.id, "update");
 
-    return useDb()
-      .update(postTable)
-      .set({ title: input.title, body: input.body })
-      .where(eq(postTable.id, input.id))
-      .returning()
-      .then(firstOrFail);
+    return updateOne(postTable, input.id, { title: input.title, body: input.body });
   },
 });
 ```
@@ -192,14 +197,14 @@ A rule that needs more data than the row gets it from `preload`. Pass `{ preload
 
 ```ts
 const rows = await useDb().select().from(postTable).where(inArray(postTable.id, input.ids));
-const abilities = await canMany(ctx.actor, [postPolicy.update, postPolicy.delete], rows);
+const abilities = await canMany([postPolicy.update, postPolicy.delete], rows);
 
 return rows.map((post, index) => ({ id: post.id, can: abilities[index] }));
 ```
 
-`canMany(actor, refs, rows)` and `canMany(actor, actions, table, rows)` return one object per row, in the order of `rows`. Each object maps an action to a boolean, for example `{ update: true, delete: false }`. It is auto-imported on the server.
+`canMany(refs, rows)` and `canMany(actions, table, rows)` return one object per row, in the order of `rows`. Each object maps an action to a boolean, for example `{ update: true, delete: false }`. It is auto-imported on the server.
 
-Each answer is the answer `can()` gives for that row. `canMany()` runs the policy's `preload` once, so the check runs the same number of queries for 1 row and for 100 rows. Use it when a page shows buttons for each row of a list.
+Each answer is the answer `can()` gives for that row. `canMany()` runs the policy's `preload` once, so the check runs the same number of queries for 1 row and for 100 rows. To send the answers with the rows of a procedure, use `withAbilities()`, see [Showing what a user may do](#showing-what-a-user-may-do).
 
 ## Scoping reads
 
@@ -241,41 +246,46 @@ A policy checks the row that the action writes. It does not check a row that a r
 export const createCommentAction = defineAction({
   input: createCommentInput,
   handler: async (input, ctx) => {
+    if (!ctx.actor.userId) throw new ForbiddenError("This action needs a user");
+
     await useDb()
       .select()
       .from(postTable)
-      .where(and(eq(postTable.id, input.postId), eq(postTable.ownerId, ctx.actor.userId ?? ctx.actor.id)))
+      .where(and(eq(postTable.id, input.postId), eq(postTable.ownerId, ctx.actor.userId)))
       .then(firstOrFail);
 
-    return useDb()
-      .insert(commentTable)
-      .values({ ...input, ownerId: ctx.actor.userId ?? ctx.actor.id })
-      .returning()
-      .then(firstOrFail);
+    return insertOne(commentTable, { ...input, ownerId: ctx.actor.userId });
   },
 });
 ```
 
-`make:router --crud` and `make:resource` write this check for each reference to a table with an `ownerId` column. The update action checks only a reference that changes. A parent row of another user gives `NOT_FOUND`, the same as a row that does not exist. A reference to `user`, or to a table without `ownerId`, gets no check. For an API-key actor, `actor.id` is the key, so the check, the create action and the generated policy use `actor.userId ?? actor.id`, the user of the key.
+`make:router --crud` and `make:resource` write this check for each reference to a table with an `ownerId` column. The update action checks only a reference that changes. A parent row of another user gives `NOT_FOUND`, the same as a row that does not exist. A reference to `user`, or to a table without `ownerId`, gets no check. For an API-key actor, `actor.id` is the key, so the check, the create action and the generated policy use `actor.userId`, the user of the key.
 
 ## Showing what a user may do
 
 ```ts
 // server/trpc/routers/post.router.ts
-abilities: authedProcedure
-  .input(postIdInput)
-  .output(z.object({ update: z.boolean(), delete: z.boolean() }))
-  .query(async ({ input, ctx }) => {
-    const post = await findOrFail(postTable, input.id);
+const postWithAbilities = withAbilities(postSchema, [$policies.post.update, $policies.post.delete]);
 
-    return {
-      update: await can(ctx.actor, "update", postTable, post),
-      delete: await can(ctx.actor, "delete", postTable, post),
-    };
-  }),
+export const postRouter = {
+  byId: publicProcedure
+    .input(postIdInput)
+    .output(postWithAbilities)
+    .query(({ input }) => findOrFail(postTable, input.id)),
+  list: publicProcedure
+    .input(paginationSchema)
+    .output(paginated(postWithAbilities))
+    .query(({ input }) => paginate(useDb().select().from(postTable).orderBy(desc(postTable.id)).$dynamic(), input)),
+};
 ```
 
-Return the result of `can()` from a query when the page must show or hide a button. For a list, return the result of `canMany()`. The action still calls `authorize()`.
+```vue
+<UButton v-if="post.can.update" label="Edit" />
+```
+
+`withAbilities(schema, refs)` extends a row schema for `.output()` with `can`: one boolean for each ability ref, such as `{ update: true, delete: false }`. The procedure returns plain rows. It is auto-imported on the server, and the keys of `can` are typed from the refs.
+
+It checks the rows of one response with one `canMany()` call, so the policy's `preload` runs once for a list, as for one row. The rules see the whole row that the procedure returns, also the columns that the schema leaves out. The actor is the caller: a signed-out caller is the guest. Pass refs of one policy. A row with per-viewer fields such as `can` must be refetched, not prepended: give `useLiveQuery()` `refetch: { created: true }` in place of a `created` patch. The action still calls `authorize()` or `findAuthorized()`.
 
 ## Testing
 
@@ -316,12 +326,12 @@ it("checks a list of posts with constant queries", async () => {
 
   await expectConstantQueries(async (size) => {
     const rows = await Promise.all(Array.from({ length: size }, () => postFactory()));
-    await trpc.post.abilitiesMany({ ids: rows.map((post) => post.id) });
+    await trpc.post.list({ perPage: size });
   }, [1, 10]);
 });
 ```
 
-`expectConstantQueries()` proves that `canMany()` does not run a query for each row. See [Testing](./testing.md).
+`expectConstantQueries()` proves that `withAbilities()` does not run a query for each row. See [Testing](./testing.md).
 
 ## See also
 

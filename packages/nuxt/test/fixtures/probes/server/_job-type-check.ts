@@ -14,25 +14,6 @@ export const jobInputIsTyped: IsAny<JobInput<"_probe.record">> extends true
     ? true
     : never = true;
 
-export async function dispatchesOnlyDefinedJobs() {
-  await dispatchAfterCommit("_probe.record", { name: "typed" });
-
-  // @ts-expect-error no job is named probe.missing
-  await dispatchAfterCommit("probe.missing", {});
-  // @ts-expect-error _probe.record takes a string name
-  await dispatchAfterCommit("_probe.record", { name: 1 });
-}
-
-export async function dispatchesADefinition() {
-  await dispatchAfterCommit($jobs._probe.record, { name: "typed" }, { delay: 0 });
-  await dispatchAfterCommit($jobs._probe.namedExport, { name: "typed" });
-
-  // @ts-expect-error the definition's input takes a string name
-  await dispatchAfterCommit($jobs._probe.record, { name: 1 });
-  // @ts-expect-error the definition's input needs its name
-  await dispatchAfterCommit($jobs._probe.namedExport, {});
-}
-
 type NamespacedJob = typeof $jobs._probe.namedExport;
 
 export const jobsNamespaceIsTyped: IsAny<NamespacedJob> extends true ? never : NamespacedJob extends Job ? true : never = true;
@@ -49,9 +30,30 @@ export const jobDispatcherIsTyped = defineJob({
 });
 
 export async function dispatchesAsADispatcher() {
-  await dispatchAfterCommit("_probe.record", { name: "typed" }, { dispatcher: systemActor("typed") });
-  await dispatchAfterCommit("_probe.record", { name: "typed" }, { dispatcher: null });
+  await $jobs._probe.record.dispatch({ name: "typed" }, { dispatcher: systemActor("typed") });
+  await $jobs._probe.record.dispatch({ name: "typed" }, { dispatcher: null });
 
   // @ts-expect-error a dispatcher is an actor
-  await dispatchAfterCommit("_probe.record", { name: "typed" }, { dispatcher: "system" });
+  await $jobs._probe.record.dispatch({ name: "typed" }, { dispatcher: "system" });
+}
+
+type DispatchInput = Parameters<typeof $jobs._probe.record.dispatch>[0];
+
+export const dispatchInputIsTyped: IsAny<DispatchInput> extends true
+  ? never
+  : DispatchInput extends { name: string }
+    ? true
+    : never = true;
+
+export async function dispatchesThroughTheDefinition() {
+  await $jobs._probe.record.dispatch({ name: "typed" });
+  await $jobs._probe.record.dispatch({ name: "typed" }, { delay: 0, priority: 1, dispatcher: null });
+  await $jobs._probe.alwaysFails.dispatch();
+
+  // @ts-expect-error the definition's input takes a string name
+  await $jobs._probe.record.dispatch({ name: 1 });
+  // @ts-expect-error the definition's input needs its name
+  await $jobs._probe.record.dispatch();
+  // @ts-expect-error no job is named probe.missing
+  await $jobs.probe.missing.dispatch({});
 }

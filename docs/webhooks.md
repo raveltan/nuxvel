@@ -17,7 +17,7 @@ export const newsletterWebhook = defineWebhook({
   verify: hmac({ header: "x-signature", secret: "NUXT_NEWSLETTER_WEBHOOK_SECRET" }),
   eventId: ({ payload }) => payload.id,
   handler: async ({ payload }) => {
-    await dispatchAfterCommit("subscriber.sync", payload);
+    await $jobs.subscriber.sync.dispatch(payload);
   },
 });
 ```
@@ -59,7 +59,7 @@ export const billingWebhook = defineWebhook({
   verify: "stripe",
   eventId: ({ payload }) => payload.id,
   handler: async ({ payload }) => {
-    await dispatchAfterCommit("billing.process-event", payload);
+    await $jobs.billing.processEvent.dispatch(payload);
   },
 });
 ```
@@ -139,7 +139,7 @@ After the handler returns, the delivery gets `200`:
 { "received": true }
 ```
 
-Keep the handler quick. Providers stop waiting for a slow endpoint and send the event again. Give the real work to a [job](./queues.md) with `dispatchAfterCommit()`, as in the example above.
+Keep the handler quick. Providers stop waiting for a slow endpoint and send the event again. Give the real work to a [job](./queues.md) with `$jobs.x.dispatch()`, as in the example above.
 
 ## Repeat deliveries
 

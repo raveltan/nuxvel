@@ -3,16 +3,14 @@ import { postsTable } from "#nuxvel/schema";
 export const createPostAction = defineAction({
   input: createPostInput,
   invalidates: ["post"],
-  handler: async (input, ctx) => {
-    const post = await useDb()
-      .insert(postsTable)
-      .values({ title: input.title, body: input.body, authorId: ctx.actor.userId ?? ctx.actor.id })
-      .returning()
-      .then(firstOrFail);
+  handler: async (input, { actor }) => {
+    if (!actor.userId) throw new ForbiddenError("This action needs a user");
+
+    const post = await insertOne(postsTable, { title: input.title, body: input.body, authorId: actor.userId });
 
     await audit("post.created", { type: "posts", id: post.id });
-    await dispatchAfterCommit("post.notify-followers", { postId: post.id });
-    await broadcastAfterCommit("posts", "created", post);
+    await $jobs.post.notifyFollowers.dispatch({ postId: post.id });
+    await $channels.posts.broadcast("created", post);
 
     return post;
   },

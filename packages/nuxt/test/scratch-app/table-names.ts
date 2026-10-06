@@ -154,9 +154,9 @@ export default defineEventHandler(async (event) => {
 
   await suppressMail(suppressed, "bounce");
   await transaction(async () => {
-    await dispatchAfterCommit("table-names.ping", {});
-    await sendMail("table-names", { to: suppressed });
-    await notify(userId, "table-names", {});
+    await $jobs.tableNames.ping.dispatch({});
+    await $mails.tableNames.send({ to: suppressed });
+    await $notifications.tableNames.notify(userId, {});
   });
 
   const queued = await outboxAfter(start);

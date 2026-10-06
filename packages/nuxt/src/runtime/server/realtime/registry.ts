@@ -19,7 +19,7 @@ export type ChannelName = Discovered["name"];
 /** The events the channel named `Name` declares in its `events`. */
 export type ChannelEvent<Name extends ChannelName> = keyof EventsOf<Name> & string;
 
-/** What {@link broadcast} takes for `Event` on the channel `Name`: its schema's input type. */
+/** What {@link Channel.broadcast} takes for `Event` on the channel `Name`: its schema's input type. */
 export type BroadcastPayload<
   Name extends ChannelName,
   Event extends ChannelEvent<Name>,
@@ -69,14 +69,17 @@ type ParamNamesOf<Definition> =
  */
 export type RoomParams<Params extends string> = [Params] extends [never] ? never : Record<Params, string | number>;
 
-/** What {@link broadcast}, `useChannel()` and `useLiveQuery()` take as `params` for the channel `Name`; see {@link RoomParams}. */
+/** What {@link Channel.broadcast}, `useChannel()` and `useLiveQuery()` take as `params` for the channel `Name`; see {@link RoomParams}. */
 export type ChannelParams<Name extends ChannelName> = RoomParams<ParamNamesOf<Extract<Discovered, Channel<Name>>>>;
+
+/** A channel a connection can listen to: a {@link defineChannel} channel, or the channel of a job or of a user's notifications, which has no `broadcast()`. */
+export type ListenableChannel = Omit<Channel, "broadcast">;
 
 function definitions(): readonly Channel[] {
   return channels;
 }
 
-function jobChannel(name: string): Channel | undefined {
+function jobChannel(name: string): ListenableChannel | undefined {
   const target = jobFromChannelName(name);
   const job = findJob(target?.job ?? "");
 
@@ -93,7 +96,7 @@ function jobChannel(name: string): Channel | undefined {
   };
 }
 
-function notificationChannel(name: string): Channel | undefined {
+function notificationChannel(name: string): ListenableChannel | undefined {
   const userId = userFromNotificationChannel(name);
 
   return userId ? { name, events: {}, authorize: ({ user }) => user?.id === userId } : undefined;
@@ -111,7 +114,7 @@ function notificationChannel(name: string): Channel | undefined {
  * The `GET /api/channels/<name>` endpoint
  * uses it to find the channel to authorize; see {@link defineChannel}.
  */
-export function findChannel(name: string): Channel | undefined {
+export function findChannel(name: string): ListenableChannel | undefined {
   const roomChannel = presenceRoomChannel(name);
 
   if (roomChannel !== undefined) {
@@ -123,7 +126,7 @@ export function findChannel(name: string): Channel | undefined {
   return definitions().find((channel) => channel.name === name) ?? jobChannel(name) ?? notificationChannel(name);
 }
 
-function hasRoom({ params, presence }: Channel, names: string[]) {
+function hasRoom({ params, presence }: ListenableChannel, names: string[]) {
   if (!params) return presence !== undefined;
 
   return names.length === params.length && params.every((param) => names.includes(param));
@@ -140,6 +143,6 @@ export function isPresenceRoom(key: string) {
  * `channel` option (the per-user `job:<name>:<userId>` channels are left out). What `nuxvel channels` lists. The per-user
  * `notifications:<userId>` channels are left out.
  */
-export function allChannels(): readonly Channel[] {
+export function allChannels(): readonly ListenableChannel[] {
   return [...definitions(), ...allJobs().flatMap((job) => jobChannel(jobChannelName(job.name)) ?? [])];
 }

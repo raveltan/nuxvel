@@ -1,4 +1,3 @@
-import { eq } from "drizzle-orm";
 import { healthChecksTable } from "#nuxvel/schema";
 
 export const updateHealthCheckAction = defineAction({
@@ -6,18 +5,12 @@ export const updateHealthCheckAction = defineAction({
   procedure: "authed",
   output: healthCheckSchema,
   audit: { name: "health-checks.update", target: healthChecksTable },
-  handler: async (input, ctx) => {
-    const row = await findOrFail(healthChecksTable, input.id);
-    await authorize(ctx.actor, "update", healthChecksTable, row);
+  handler: async (input) => {
+    await findAuthorized(healthChecksTable, input.id, "update");
 
-    const updated = await useDb()
-      .update(healthChecksTable)
-      .set({ name: input.name })
-      .where(eq(healthChecksTable.id, input.id))
-      .returning()
-      .then(firstOrFail);
+    const updated = await updateOne(healthChecksTable, input.id, { name: input.name });
 
-    await dispatchAfterCommit("health-check.notify-on-update", { id: updated.id });
+    await $jobs.healthCheck.notifyOnUpdate.dispatch({ id: updated.id });
 
     return updated;
   },

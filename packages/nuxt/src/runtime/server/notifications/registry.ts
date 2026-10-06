@@ -4,7 +4,7 @@ import type { Notification } from "./define-notification";
 
 type Discovered = (typeof notifications)[number];
 
-/** The name of every notification defined under `server/notifications/`: what {@link notify} takes. */
+/** The name of every notification defined under `server/notifications/`: what {@link Notification.notify} takes. */
 export type NotificationName = Discovered["name"];
 
 /** What the notification named `Name` is sent with: its `schema`'s input type. */

@@ -40,10 +40,10 @@ function isH3(source: { value?: unknown } | null | undefined) {
 export const actionImports: Rule.RuleModule = {
   meta: {
     type: "problem",
-    docs: { description: "Keep actions free of the request: no h3, no auth(), no request helpers." },
+    docs: { description: "Keep actions free of the request: no h3, no requireAuth(), no request helpers." },
     messages: {
       request:
-        "actions may not import h3, call auth() or requireAuth(), or read the request (useEvent, getHeader, readBody, ...)",
+        "actions may not import h3, call requireAuth(), or read the request (useEvent, getHeader, readBody, ...)",
     },
     schema: [],
   },

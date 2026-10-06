@@ -9,15 +9,15 @@ import whoami from "~~/server/jobs/_probe/whoami";
 
 const dispatchWhoami = probeNamed("_job-dispatcher-check.dispatch", defineAction({
   input: z.object({ name: z.string() }),
-  handler: ({ name }) => dispatchAfterCommit("_probe.whoami", { name }),
+  handler: ({ name }) => $jobs._probe.whoami.dispatch({ name }),
 }));
 
 const testRouter = t.router({
-  fromProcedure: authedProcedure.mutation(() => dispatchAfterCommit("_probe.whoami", { name: "procedure" })),
+  fromProcedure: authedProcedure.mutation(() => $jobs._probe.whoami.dispatch({ name: "procedure" })),
   overridden: authedProcedure.mutation(() =>
-    dispatchAfterCommit("_probe.whoami", { name: "overridden" }, { dispatcher: systemActor("_job-dispatcher-check") }),
+    $jobs._probe.whoami.dispatch({ name: "overridden" }, { dispatcher: systemActor("_job-dispatcher-check") }),
   ),
-  cleared: authedProcedure.mutation(() => dispatchAfterCommit("_probe.whoami", { name: "cleared" }, { dispatcher: null })),
+  cleared: authedProcedure.mutation(() => $jobs._probe.whoami.dispatch({ name: "cleared" }, { dispatcher: null })),
 });
 
 export default defineEventHandler(async () => {
@@ -34,7 +34,7 @@ export default defineEventHandler(async () => {
   await dispatchWhoami({ name: "action" }, { actor: userActor(user) });
   await signedIn.overridden();
   await signedIn.cleared();
-  await dispatchAfterCommit("_probe.whoami", { name: "signed-out" });
+  await $jobs._probe.whoami.dispatch({ name: "signed-out" });
 
   const rows = await useDb().select().from(outboxTable).where(eq(outboxTable.jobName, "_probe.whoami")).orderBy(outboxTable.id);
 

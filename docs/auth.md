@@ -438,9 +438,9 @@ export default defineNuxtConfig({
 ```ts
 // server/api/me.get.ts
 export default defineEventHandler(async () => {
-  const session = await auth();
+  const { user } = await useAuth();
 
-  return session?.user ?? null;
+  return user;
 });
 ```
 
@@ -460,7 +460,7 @@ Both helpers are auto-imported on the server:
 
 | Helper | Returns |
 |---|---|
-| `auth()` | the session, or `null` when signed out |
+| `useAuth()` | `{ user, actor }`, each `null` when signed out. See [The caller anywhere on the server](#the-caller-anywhere-on-the-server) |
 | `requireAuth()` | the session, or throws `UnauthenticatedError` |
 
 `UnauthenticatedError` answers with HTTP 401 (tRPC `UNAUTHORIZED`). This is the same from a procedure and from a plain route handler.
@@ -488,7 +488,7 @@ export async function stamp() {
 
 ### Coming from Better Auth
 
-The Better Auth docs name the server instance `auth` and call `auth.api.getSession({ headers })`. In nuxvel, `auth` is a function. `auth()` reads the session of the current request, and `requireAuth()` does the same but throws when signed out. The Better Auth instance is internal to nuxvel, so an app does not import it or call `auth.api`.
+The Better Auth docs name the server instance `auth` and call `auth.api.getSession({ headers })`. In nuxvel, `useAuth()` reads the user of the current request, and `requireAuth()` reads the session but throws when signed out. The Better Auth instance is internal to nuxvel, so an app does not import it or call `auth.api`.
 
 ## User roles
 

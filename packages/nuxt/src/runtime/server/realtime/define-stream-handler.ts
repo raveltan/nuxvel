@@ -33,7 +33,7 @@ export interface StreamWriter {
  * server shuts down or the session that opened it ends. The stream
  * closes when `handler` resolves. An error it throws is logged and
  * closes the stream. Reach for {@link defineChannel} and
- * {@link broadcast} when many clients follow the same events.
+ * {@link Channel.broadcast} when many clients follow the same events.
  *
  * @param config.authorize Whether this request may open the stream. Gets
  * the signed-in `user`, or `null` for a guest.

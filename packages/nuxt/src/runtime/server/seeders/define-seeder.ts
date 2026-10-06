@@ -15,7 +15,7 @@ export interface SeederContext {
 /** A seeder definition: the handler that fills the database. */
 export interface Seeder {
   name: string;
-  handler(context: SeederContext): Promise<void>;
+  handler(context: SeederContext): Promise<void | readonly string[]>;
 }
 
 /**
@@ -35,6 +35,9 @@ export interface Seeder {
  * commits a seeder, it forgets the whole app cache, as
  * `cacheForget("*")` does, so `remember()` values are not stale.
  *
+ * The handler may return lines, such as how to sign in as the demo
+ * user. `nuxvel db:seed` prints them under the seeder's name.
+ *
  * @example
  * ```ts
  * // server/seeders/posts.seeder.ts
@@ -46,9 +49,11 @@ export interface Seeder {
  *
  *   const author = await userFactory({ email: "author@example.com" });
  *   await postFactory.for("authorId", author)({ title: "Hello" });
+ *
+ *   return [`Sign in as ${author.email}`];
  * });
  * ```
  */
-export function defineSeeder(handler: (context: SeederContext) => Promise<void>): Seeder {
+export function defineSeeder(handler: (context: SeederContext) => Promise<void | readonly string[]>): Seeder {
   return awaitingName({ name: "", handler }, "seeder");
 }

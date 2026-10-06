@@ -1,12 +1,11 @@
 import { writeFile } from "node:fs/promises";
 import { useRedis } from "../redis/client";
-import type { Channel } from "../realtime/define-channel";
-import { allChannels } from "../realtime/registry";
+import { type ListenableChannel, allChannels } from "../realtime/registry";
 import { channelTopic } from "../realtime/streams/channel-topic";
 import { REPLAY_LENGTH, bufferedEvents } from "../realtime/streams/replay-buffer";
 import type { ChannelListing } from "./channel-listing";
 
-async function admitsGuests(channel: Channel) {
+async function admitsGuests(channel: ListenableChannel) {
   try {
     return await channel.authorize({ user: null, params: {} });
   } catch {

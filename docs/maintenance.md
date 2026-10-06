@@ -97,7 +97,7 @@ Open `https://blog.example.com/deploy-2026-09` in your browser to use the app wh
 `nuxvel down` pauses the queue of the app. `nuxvel up` resumes it. While the queue is paused:
 
 - No worker starts a new job, queued listener or schedule run. A job that already runs finishes.
-- `dispatchAfterCommit()`, `sendMail()` and the outbox relay continue to add jobs. The jobs wait in the queue and run after `nuxvel up`.
+- `$jobs.x.dispatch()`, `$mails.x.send()` and the outbox relay continue to add jobs. The jobs wait in the queue and run after `nuxvel up`.
 - Schedules stay registered. A schedule run that comes due waits in the queue. Each schedule keeps at most one waiting run, so after `nuxvel up` it runs one time, not one time for each missed tick.
 
 Pass `--keep-queue` when the jobs must continue, for example when the work does not touch the tables that the jobs use:

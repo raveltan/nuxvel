@@ -31,6 +31,21 @@ log.error("publish failed", error, { postId: post.id });
 
 `useLogger(tag?)` returns the server logger. It is auto-imported in `server/`. The tag names the part of the app that writes the line.
 
+Without a tag, the line gets the name of the running action or job as its tag, such as `posts.publish-post`. Outside an action or a job, it gets no tag. So call `useLogger()` inside the handler:
+
+```ts
+export const publishPostAction = defineAction({
+  input: z.object({ id: z.number() }),
+  handler: async ({ id }) => {
+    const post = await updateOne(postTable, id, { publishedAt: new Date() });
+
+    useLogger().info("post published", { postId: post.id });
+
+    return post;
+  },
+});
+```
+
 The logger is a [consola](https://github.com/unjs/consola) instance. Its levels are `fatal`, `error`, `warn`, `info`, `debug` and `trace`. The other consola methods (`log`, `success`, `fail`, `ready`, `start`, `box`) log at `info`.
 
 Pass the arguments in any order:
@@ -91,7 +106,7 @@ A `warn` line stays on one line. It shows the message of the error in `err=` and
 Each line that is logged during a request has these fields:
 
 - `requestId`. This is the ID that [`currentRequestId()`](#request-ids) returns.
-- `actor`, when the actor is known. It is `"user:<id>"` after `auth()`, `requireAuth()` or an `authedProcedure` resolves the session. In an action, it is the actor of the action, such as `"system:<name>"` for a `systemActor()`.
+- `actor`, when the actor is known. It is `"user:<id>"` after `useAuth()`, `requireAuth()` or an `authedProcedure` resolves the session. In an action, it is the actor of the action, such as `"system:<name>"` for a `systemActor()`.
 
 The logger never looks up a session itself. It never writes an email address or a role.
 

@@ -22,7 +22,7 @@ export default defineEventHandler(async () => {
     .where(inArray(healthChecksTable.name, NAMES));
 
   await transaction(async () => {
-    await dispatchAfterCommit("_probe.record-renamed", { name: "dispatched" });
+    await $jobs._probe.recordRenamed.dispatch({ name: "dispatched" });
   });
 
   const queued = await useDb().select().from(outboxTable);

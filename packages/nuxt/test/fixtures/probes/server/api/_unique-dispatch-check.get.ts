@@ -1,6 +1,6 @@
 export default defineEventHandler(async () => {
   await transaction(async () => {
-    await dispatchAfterCommit("_probe.tuned", { name: "a" });
+    await $jobs._probe.tuned.dispatch({ name: "a" });
   });
 
   return { ok: true };

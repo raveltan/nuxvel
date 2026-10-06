@@ -8,7 +8,7 @@ import { setupPlayground } from "./helpers/playground";
 describe("can()", async () => {
   await setupPlayground();
 
-  it("resolves the row's table policy by name or by ability ref, sees a userActor() role and denies when none is registered", async () => {
+  it("reads the ambient actor, resolves the row's table policy by name or by ability ref, sees a userActor() role and denies when none is registered", async () => {
     const body = await guest().$fetch("/api/_can-check");
 
     expect(body).toMatchObject({
@@ -22,6 +22,9 @@ describe("can()", async () => {
       inheritedToString: false,
       inheritedMany: [{ constructor: false }],
       unregisteredTable: false,
+      guestInRequest: false,
+      outsideRequest:
+        'can() ran with no actor. Call it inside a procedure, action, job or seeder, or inside an action called with { actor: systemActor("name") }',
     });
   });
 

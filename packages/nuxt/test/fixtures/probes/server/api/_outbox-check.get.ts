@@ -5,14 +5,14 @@ export default defineEventHandler(async () => {
   await useDb().delete(outboxTable);
 
   await transaction(async () => {
-    await dispatchAfterCommit("_probe.record", { name: "rolled-back" });
+    await $jobs._probe.record.dispatch({ name: "rolled-back" });
     throw new Error("probe rollback");
   }).catch(() => undefined);
 
   const afterRollback = await useDb().select().from(outboxTable);
 
   await transaction(async () => {
-    await dispatchAfterCommit("_probe.record", { name: "crashed" });
+    await $jobs._probe.record.dispatch({ name: "crashed" });
   });
 
   const beforeRelay = await useQueue().getWaiting();

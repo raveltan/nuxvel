@@ -35,10 +35,10 @@ function crossSiteRequest() {
   return site === "cross-site" || site === "same-site";
 }
 
-async function signedIn(ctx: TRPCContext): Promise<{ user: SessionUser; actor: Actor } | null> {
+async function signedIn(ctx: TRPCContext): Promise<{ user: SessionUser; actor: Actor & { userId: string } } | null> {
   if (ctx.user) return { user: ctx.user, actor: userActor(ctx.user) };
 
-  return requestCaller();
+  return requestCaller({ spendPerCall: true });
 }
 
 const baseProcedure = withProcedureMethods(t.procedure
@@ -127,8 +127,9 @@ export const publicProcedure = baseProcedure.use(async ({ ctx, next }) => {
  * otherwise. Everything {@link publicProcedure} does, plus:
  *
  * - `ctx.user` — the {@link SessionUser}, `role` included.
- * - `ctx.actor` — that user as an {@link Actor}, ready to hand to an
- *   action or to {@link can} / {@link authorize}.
+ * - `ctx.actor` — that user as an {@link Actor}, also the ambient actor
+ *   that {@link can} and {@link authorize} read. Its `userId` is a
+ *   `string`: the user, or the owner of the API key.
  *
  * A request with `Authorization: Bearer nxk_…` is signed in with that
  * API key instead of the session cookie: `ctx.user` is the key's owner

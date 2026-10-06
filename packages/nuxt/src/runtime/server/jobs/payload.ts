@@ -30,7 +30,7 @@ export function toJobPayload(version: number, payload: unknown, dispatcher: Acto
  * Reads a queued job's data back, throwing BullMQ's `UnrecoverableError`
  * — no retry could fix it — when it is not a
  * {@link JobPayload} — anything put on the queue by hand rather than by
- * {@link dispatchAfterCommit}.
+ * {@link Job.dispatch}.
  */
 export function fromJobPayload(data: unknown): JobPayload {
   if (

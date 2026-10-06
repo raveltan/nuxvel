@@ -28,8 +28,8 @@ async function fieldsOfRejection(run: () => Promise<unknown>) {
 export default defineEventHandler(async () => {
   seen.length = 0;
   await job.run({ version: 1, payload: { title: "free" } });
-  await emit(happened, { title: "free" });
-  await broadcast("_probe-public", "checked", { title: "accepted" });
+  await happened.emit({ title: "free" });
+  await $channels._probePublic.broadcast("checked", { title: "accepted" });
 
   return {
     job: {
@@ -38,14 +38,14 @@ export default defineEventHandler(async () => {
     },
     event: {
       parsed: await happened.parse({ title: "free" }),
-      rejected: await fieldsOfRejection(() => emit(happened, { title: "taken" })),
+      rejected: await fieldsOfRejection(() => happened.emit({ title: "taken" })),
     },
     mail: {
       subject: (await renderMail("_probe-checked", { to: "ada@example.com", name: "Ada" })).subject,
-      rejected: await fieldsOfRejection(() => sendMail("_probe-checked", { to: "ada@example.com", name: "taken" })),
+      rejected: await fieldsOfRejection(() => $mails._probeChecked.send({ to: "ada@example.com", name: "taken" })),
     },
     broadcast: {
-      rejected: await fieldsOfRejection(() => broadcast("_probe-public", "checked", { title: "rejected" })),
+      rejected: await fieldsOfRejection(() => $channels._probePublic.broadcast("checked", { title: "rejected" })),
     },
   };
 });

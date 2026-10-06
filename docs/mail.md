@@ -2,7 +2,7 @@
 
 ## Introduction
 
-nuxvel sends mail through SMTP. You write each mail as a Vue component. The server renders it to [MJML](https://mjml.io), and MJML changes it to HTML that email clients show correctly. `sendMail()` queues the mail after the surrounding transaction commits, and `nuxvel queue:work` delivers it. Use mail for messages to a person, such as a notice to subscribers when a new post goes live.
+nuxvel sends mail through SMTP. You write each mail as a Vue component. The server renders it to [MJML](https://mjml.io), and MJML changes it to HTML that email clients show correctly. `$mails.<name>.send()` queues the mail after the surrounding transaction commits, and `nuxvel queue:work` delivers it. Use mail for messages to a person, such as a notice to subscribers when a new post goes live.
 
 ## Configuration
 
@@ -21,7 +21,7 @@ NUXT_MAIL_URL=smtp://localhost:1025
 
 | Setting | Use |
 |---|---|
-| `nuxvel.mail.from` | The sender address of every mail. `sendMail()` throws when it is not set. |
+| `nuxvel.mail.from` | The sender address of every mail. `send()` throws when it is not set. |
 | `NUXT_MAIL_URL` | The SMTP server that delivers the mail. |
 | `NUXT_MAILPIT_URL` | The Mailpit web address that the [DevTools](./devtools.md#mail) mail panel reads. Dev server only. The default is `http://localhost:8025`. |
 
@@ -102,7 +102,7 @@ A mail template uses the MJML components. Many email clients do not show a norma
 
 You do not import these components. nuxvel registers them for the Vue files under `server/mail/` only. They are not components of your app, and your app pages cannot use them.
 
-MJML accepts a tag only in some parents. For example, `<EText>` must be in an `<EColumn>`, and `<EColumn>` must be in an `<ESection>`. When a template breaks a rule, `render()` and `sendMail()` throw. The error shows the MJML tag, the line of the rendered MJML and the rule, for example `line 3, <mj-text>: mj-text cannot be used inside mj-body, only inside: mj-attributes, mj-column, mj-hero`.
+MJML accepts a tag only in some parents. For example, `<EText>` must be in an `<EColumn>`, and `<EColumn>` must be in an `<ESection>`. When a template breaks a rule, `render()` and `send()` throw. The error shows the MJML tag, the line of the rendered MJML and the rule, for example `line 3, <mj-text>: mj-text cannot be used inside mj-body, only inside: mj-attributes, mj-column, mj-hero`.
 
 `<MailLayout>` shows `nuxvel.seo.siteName` as the site name. When [SEO](./seo.md) is not configured, it shows the display name of `nuxvel.mail.from`. For `My Blog <hello@example.com>`, the name is `My Blog`. When the address has no display name, the layout shows its domain.
 
@@ -193,7 +193,7 @@ Import the mail from its file. `render(input)` renders the template on the serve
 await transaction(async () => {
   const post = await publishPostAction({ id: postId }, { actor });
 
-  await sendMail("post.published", {
+  await $mails.post.published.send({
     to: subscriber.email,
     title: post.title,
     url: `https://blog.example.com/posts/${post.id}`,
@@ -201,31 +201,25 @@ await transaction(async () => {
 });
 ```
 
-`sendMail(name, input)` does these steps:
+`$mails.<name>.send(input)` does these steps. `$mails` holds every mail of `server/mail/`, keyed by its path in camelCase, and is auto-imported on the server:
 
 1. It validates `input` against the schema of the mail. Async refinements and transforms also run.
 2. It renders the HTML and the text version of the mail.
-3. It dispatches the rendered message as a `nuxvel.mail` job with [`dispatchAfterCommit()`](./queues.md#dispatching).
+3. It dispatches the rendered message as a `nuxvel.mail` job, which waits for the commit like any [dispatch](./queues.md#dispatching).
 
 The request does not send the mail. The job goes through the outbox to the `mail` queue, and `nuxvel queue:work` delivers it through `NUXT_MAIL_URL`. When the transaction rolls back, nothing is sent. A worker started with `--queue` delivers mail only when the list has `mail`. See [Named queues](./queues.md#named-queues).
 
-`name` is a `MailName` and `input` is the `MailInput<Name>` of that mail. Both come from the files in `server/mail/`. A misspelled name or a wrong input fails `nuxt typecheck`.
-
-In place of the name, you can give the mail definition, from `$mails` or from an import. Then `input` has the input type of that definition's schema. Go to definition on the first argument opens the mail file. `sendMailNow()` also takes a definition.
-
-```ts
-await sendMail($mails.welcome, { to: user.email, name: user.name });
-```
+`input` has the input type of the mail's schema, so a wrong input fails `nuxt typecheck`. Go to definition on `published` opens the mail file.
 
 Invalid input throws `ValidationFailedError`, the same error a failed action throws. See [Validation](./validation.md).
 
 ### Sending a mail now
 
 ```ts
-await sendMailNow("welcome", { to: user.email, name: user.name });
+await sendMailNow($mails.welcome, { to: user.email, name: user.name });
 ```
 
-`sendMailNow(name, input)` sends the mail through `NUXT_MAIL_URL` before it returns. It does not use the queue or the outbox. It validates, renders and checks [suppressed addresses](#suppressed-addresses) like `sendMail()`.
+`sendMailNow(mail, input)` sends the mail through `NUXT_MAIL_URL` before it returns. It does not use the queue or the outbox. It validates, renders and checks [suppressed addresses](#suppressed-addresses) like `send()`.
 
 Use it only when the code must know that the mail went out before it continues. It is the exception:
 
@@ -237,10 +231,10 @@ A listener with `sync: true` cannot call `sendMailNow()`. `nuxvel test:arch` fla
 
 ## Mail in a locale
 
-A mail renders in one locale. Give the locale code to `sendMail()` or `sendMailNow()`:
+A mail renders in one locale. Give the locale code to `send()` or `sendMailNow()`:
 
 ```ts
-await sendMail("welcome", { to: user.email, name: user.name }, { locale: "zh" });
+await $mails.welcome.send({ to: user.email, name: user.name }, { locale: "zh" });
 ```
 
 Without the `locale` option, the mail renders in the locale that [`currentLocale()`](./i18n.md#the-locale-on-the-server) returns: the locale of the request or the action. A job and a schedule have no request, so there the mail renders in the default locale. Give the locale of the recipient when you know it.
@@ -316,7 +310,7 @@ await suppressMail(recipient, "bounce");
 
 Do not send mail again to an address that bounced or complained. Call `suppressMail(address, reason)` from the code that receives bounce and complaint events from your mail provider. The reason is `"bounce"` or `"complaint"`. When you record an address two times, the first record stays. `suppressMail()` joins the active transaction.
 
-After that, `sendMail()` to the address does not render or queue anything. It logs a `mail` line with the name of the mail and the domain of the recipient. The log line never shows the full address.
+After that, `send()` to the address does not render or queue anything. It logs a `mail` line with the name of the mail and the domain of the recipient. The log line never shows the full address.
 
 ```ts
 if (await isMailSuppressed(subscriber.email)) {
@@ -404,7 +398,7 @@ A functional test never connects to the SMTP server. The `nuxvel.mail` job deliv
 
 A send is recorded after its transaction commits. A rolled-back send records nothing. A send to a suppressed address records nothing.
 
-`renderMail()` validates `input` first and rejects with a `BAD_REQUEST` validation error, as `sendMail()` does. All three fixtures come from `@nuxvel/nuxt/testing`. See [Testing](./testing.md).
+`renderMail()` validates `input` first and rejects with a `BAD_REQUEST` validation error, as `send()` does. All three fixtures come from `@nuxvel/nuxt/testing`. See [Testing](./testing.md).
 
 Each fixture also takes a mail definition or its name stub in place of the name. A test file imports the stubs from `#nuxvel/test-namespaces`.
 

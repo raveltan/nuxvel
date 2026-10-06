@@ -11,9 +11,9 @@ export default defineEventHandler(async (event) => {
   const params = boardId === undefined ? undefined : { boardId };
 
   if (afterCommit) {
-    await transaction(() => broadcastAfterCommit($channels._probeBoard, "moved", { card }, params));
+    await transaction(() => $channels._probeBoard.broadcast("moved", { card }, params));
   } else {
-    await broadcast("_probe-board", "moved", { card }, params);
+    await $channels._probeBoard.broadcast("moved", { card }, params);
   }
 
   return { broadcast: true };

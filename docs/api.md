@@ -165,11 +165,7 @@ To test a repeat while the first call still runs, see [Testing: idempotency](./t
 ## Errors
 
 ```ts
-import { eq } from "drizzle-orm";
-
-const [post] = await useDb().select().from(postTable).where(eq(postTable.id, input.id));
-
-if (!post) throw new NotFoundError("No such post");
+const post = await findOrFail(postTable, input.id);
 ```
 
 Throw a taxonomy error for a failure that you expect. The error classes are auto-imported. A taxonomy error:

@@ -10,7 +10,7 @@ export default defineWebhook({
   verify: hmac({ header: "x-probe-signature", secret: "NUXT_PROBE_WEBHOOK_SECRET" }),
   eventId: ({ payload }) => payload.id,
   handler: async ({ payload: event }) => {
-    await dispatchAfterCommit("_probe.webhook-received", event);
+    await $jobs._probe.webhookReceived.dispatch(event);
 
     if (event.type === "probe.slow-failing") {
       await new Promise((resolve) => setTimeout(resolve, 1000));

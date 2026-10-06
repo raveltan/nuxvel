@@ -68,7 +68,7 @@ The pages are `app/pages/sign-up.vue` and `app/pages/sign-in.vue`. Each page ren
 ./nv tinker
 ```
 
-`tinker` opens a REPL inside the app's server. The tables, the actions and every server helper, such as `useDb()` and `sendMail()`, are in scope with no imports:
+`tinker` opens a REPL inside the app's server. The tables, the actions and every server helper, such as `useDb()` and `$mails`, are in scope with no imports:
 
 ```
 nuxvel> await useDb().select().from(userTable)

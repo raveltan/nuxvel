@@ -115,3 +115,33 @@ export async function paginatedSchemaMatchesPaginate() {
 
   return { matches, page };
 }
+
+export async function writeOneIsTyped() {
+  const inserted = await insertOne(postsTable, { title: "Typed", body: "", authorId: "author" });
+  const updated = await updateOne(postsTable, inserted.id, { title: "Retyped" });
+  const insertedIsTyped: IsAny<typeof inserted> extends true ? never : typeof inserted extends typeof postsTable.$inferSelect ? true : never = true;
+  const updatedIsTyped: IsAny<typeof updated> extends true ? never : typeof updated extends typeof postsTable.$inferSelect ? true : never = true;
+
+  // @ts-expect-error posts have no name column
+  await updateOne(postsTable, inserted.id, { name: "Untyped" });
+
+  // @ts-expect-error a post needs a title
+  await insertOne(postsTable, { body: "", authorId: "author" });
+
+  // @ts-expect-error a posts id is a number
+  await updateOne(postsTable, "1", { title: "Retyped" });
+
+  return { insertedIsTyped, updatedIsTyped };
+}
+
+export async function softDeletesByIdAreTyped() {
+  const trashed = await softDelete(postsTable, 1);
+  const trashedIsOneRow: IsAny<typeof trashed> extends true ? never : typeof trashed extends typeof postsTable.$inferSelect ? true : never = true;
+  const many = await restore(postsTable, eq(postsTable.id, 1));
+  const manyIsRows: typeof many extends (typeof postsTable.$inferSelect)[] ? true : never = true;
+
+  // @ts-expect-error a posts id is a number
+  await forceDelete(postsTable, "1");
+
+  return { trashedIsOneRow, manyIsRows };
+}

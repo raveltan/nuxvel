@@ -19,7 +19,7 @@ describe("authedProcedure", async () => {
   it("gives an authed procedure the user as ctx.actor, role included", async () => {
     const body = probe();
 
-    expect(body.actor).toEqual({ type: "user", id: body.adminId, role: "admin" });
+    expect(body.actor).toEqual({ type: "user", id: body.adminId, role: "admin", userId: body.adminId });
   });
 
   it("gives a public procedure the signed-in user, and null when signed out", async () => {
@@ -27,7 +27,7 @@ describe("authedProcedure", async () => {
 
     expect(body.publicCallerWhenSignedIn).toEqual({
       userId: body.adminId,
-      actor: { type: "user", id: body.adminId, role: "admin" },
+      actor: { type: "user", id: body.adminId, role: "admin", userId: body.adminId },
     });
     expect(body.publicCallerWhenSignedOut).toEqual({ userId: null, actor: null });
   });

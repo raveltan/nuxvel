@@ -1,17 +1,12 @@
 /**
- * The `type` of every actor {@link systemActor} makes. Compare against it
- * rather than the bare string.
- */
-export const SYSTEM_ACTOR_TYPE = "system";
-
-/**
- * Who is performing an action: a `"user"`, a system process
- * ({@link SYSTEM_ACTOR_TYPE}), an API key (`"api-key"`, from
+ * Who is performing an action: a `"user"`, a `"system"` process
+ * ({@link systemActor}), an API key (`"api-key"`, from
  * {@link apiKeyActor}), or any other caller type the app introduces.
- * `userId` is the user an API key acts for.
+ * `userId` is the user behind the actor: the user of a {@link userActor}
+ * and the owner of an API key. A system actor has none.
  */
 export interface Actor {
-  type: "user" | typeof SYSTEM_ACTOR_TYPE | "api-key" | (string & {});
+  type: "user" | "system" | "api-key" | (string & {});
   id: string;
   role?: string;
   userId?: string;
@@ -32,5 +27,5 @@ export interface Actor {
  * ```
  */
 export function systemActor(name: string): Actor {
-  return { type: SYSTEM_ACTOR_TYPE, id: name };
+  return { type: "system", id: name };
 }

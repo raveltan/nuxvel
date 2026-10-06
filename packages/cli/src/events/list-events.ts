@@ -66,17 +66,23 @@ function referencedBinding(program: TSESTree.Program, node: TSESTree.Node | unde
   return importedNames(program).get(node.name)?.imported ?? node.name;
 }
 
+function isMethodCall(node: TSESTree.Node, method: string): node is TSESTree.CallExpression & { callee: TSESTree.MemberExpression } {
+  return (
+    node.type === "CallExpression" &&
+    node.callee.type === "MemberExpression" &&
+    !node.callee.computed &&
+    node.callee.property.type === "Identifier" &&
+    node.callee.property.name === method
+  );
+}
+
 function emittedEvents(program: TSESTree.Program, byBinding: Map<string, string>) {
   const names = new Set<string>();
 
   eachNode(program, (node) => {
-    if (!isCallTo(node, "emit")) return;
+    if (!isMethodCall(node, "emit")) return;
 
-    const [event] = node.arguments;
-    const name =
-      event?.type === "Literal" && typeof event.value === "string"
-        ? event.value
-        : byBinding.get(referencedBinding(program, event) ?? "");
+    const name = byBinding.get(referencedBinding(program, node.callee.object) ?? "");
 
     if (name) names.add(name);
   });

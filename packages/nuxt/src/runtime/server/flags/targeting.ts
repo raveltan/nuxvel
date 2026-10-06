@@ -2,7 +2,7 @@ import { z } from "zod";
 import { FLAGS_CHANNEL } from "../../shared/flags/flag-values";
 import { actorContext } from "../actions/context";
 import { systemActor } from "../actions/system-actor";
-import { broadcast } from "../realtime/broadcast";
+import { broadcastOnCommit } from "../realtime/broadcast";
 import { transaction } from "../database/transaction";
 import { useRedis } from "../redis/client";
 import { redisKey } from "../redis/key";
@@ -106,5 +106,5 @@ export async function setFlagTargeting(
     );
     await useRedis("durable").set(key, JSON.stringify(stored));
   });
-  await broadcast(FLAGS_CHANNEL, "changed", { name });
+  await broadcastOnCommit(FLAGS_CHANNEL, "changed", { name });
 }

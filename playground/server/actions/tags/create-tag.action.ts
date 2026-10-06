@@ -2,6 +2,5 @@ import { tagsTable } from "#nuxvel/schema";
 
 export const createTagAction = defineAction({
   input: createTagInput,
-  handler: async (input) =>
-    useDb().insert(tagsTable).values(input).returning().then(firstOrFail),
+  handler: async (input) => insertOne(tagsTable, input),
 });

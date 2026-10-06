@@ -259,7 +259,7 @@ function instanceFor(secrets: string[]): AuthInstance {
  * fails. The built-in `nuxvel.auth.reencrypt-two-factor` schedule encrypts them
  * again with the current secret. A rotation applies once the server
  * restarts with the new value. Server code should use the auto-imported
- * `auth()` and `requireAuth()` helpers rather than this instance.
+ * `useAuth()` and `requireAuth()` helpers rather than this instance.
  */
 export function authInstance(): AuthInstance {
   return instanceFor(useSecrets("NUXT_AUTH_SECRET"));

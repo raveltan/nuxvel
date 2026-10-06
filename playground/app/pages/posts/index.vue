@@ -4,13 +4,9 @@ definePageMeta({ middleware: "auth", layout: "app" });
 const route = useRoute();
 const input = computed(() => paginationSchema.catch({}).parse(route.query));
 
-const addPost = prependRow({ when: (list) => list.page === 1 && !input.value.q });
-
 const posts = useLiveQuery(() => $api.post.list.queryOptions(input.value), {
   channel: "posts",
-  on: {
-    created: (list, payload) => addPost(list, postSchema.parse(payload)),
-  },
+  refetch: { created: true },
 });
 
 const deletePost = $api.post.delete.useMutation({

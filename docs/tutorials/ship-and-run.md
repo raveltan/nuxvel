@@ -72,11 +72,7 @@ import { linkTable } from "#nuxvel/schema";
 export const createLinkAction = defineAction({
   input: createLinkInput,
   handler: async (input, ctx) => {
-    const row = await useDb()
-      .insert(linkTable)
-      .values({ ...input, ownerId: ctx.actor.id })
-      .returning()
-      .then(firstOrFail);
+    const row = await insertOne(linkTable, { ...input, ownerId: ctx.actor.id });
 
     await audit("link.created", row);
 
@@ -273,7 +269,7 @@ Now break a rule on purpose. The reader wants one button that marks every link r
 ```
 
 ```
-✖ server/domains/link/routers/link.router.ts: routers may not call useDb().insert/update/delete, call an action
+✖ server/domains/link/routers/link.router.ts: routers may not call useDb().insert/update/delete, insertOne() or updateOne(), call an action
 ✖ 1 architecture violation
 ```
 
@@ -1006,7 +1002,7 @@ In CI, the `check` job of chapter 5 runs `nuxvel test:compat` when a migration c
 Answer yes. Give the app a user and two links. An action takes an actor, so pass the user as the actor:
 
 ```
-nuxvel> const ada = await useDb().insert(userTable).values({ id: "u_ada", name: "Ada", email: "ada@example.com", emailVerified: true }).returning().then(firstOrFail)
+nuxvel> const ada = await insertOne(userTable, { id: "u_ada", name: "Ada", email: "ada@example.com", emailVerified: true })
 nuxvel> const actor = { type: "user", id: ada.id, role: "user" }
 nuxvel> await createLinkAction({ url: "https://nuxt.com/docs", title: "Nuxt docs" }, { actor })
 nuxvel> await createLinkAction({ url: "https://orm.drizzle.team", title: "Drizzle" }, { actor })

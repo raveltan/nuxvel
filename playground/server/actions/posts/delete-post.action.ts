@@ -1,15 +1,13 @@
-import { eq } from "drizzle-orm";
 import { postsTable } from "#nuxvel/schema";
 
 export const deletePostAction = defineAction({
   input: postIdInput,
   audit: { name: "post.deleted", target: postsTable },
   invalidates: ["post"],
-  handler: async (input, ctx) => {
-    const post = await findOrFail(postsTable, input.id);
-    await authorize(ctx.actor, "delete", postsTable, post);
+  handler: async (input) => {
+    const post = await findAuthorized(postsTable, input.id, "delete");
 
-    await softDelete(postsTable, eq(postsTable.id, input.id));
+    await softDelete(postsTable, input.id);
 
     return { id: post.id };
   },

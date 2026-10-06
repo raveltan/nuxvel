@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import type { H3Event } from "h3";
 import { actorContext } from "../actions/context";
 import type { Actor } from "../actions/system-actor";
@@ -11,6 +12,8 @@ export interface LogContext {
 function actorLabel(actor: Pick<Actor, "type" | "id">) {
   return `${actor.type}:${actor.id}`;
 }
+
+export const runningName = new AsyncLocalStorage<string>();
 
 export function rememberActor(event: H3Event, actor: Pick<Actor, "type" | "id">) {
   event.context.nuxvelActor = actorLabel(actor);

@@ -61,7 +61,7 @@ export interface DispatchedCall {
   payload: unknown;
 }
 
-/** One {@link emit} call: the event's name and its parsed payload. */
+/** One {@link DomainEvent.emit} call: the event's name and its parsed payload. */
 export interface EmittedEvent {
   name: string;
   payload: unknown;
@@ -73,20 +73,20 @@ export interface ListenerRun {
   event: string;
 }
 
-/** One {@link sendMail} call that was not suppressed: the mail's name and its validated input. */
+/** One {@link Mail.send} call that was not suppressed: the mail's name and its validated input. */
 export interface SentMail {
   name: string;
   input: Record<string, unknown>;
 }
 
-/** One user a {@link notify} call reached: the notification's name and its `database` message, if it has one. */
+/** One user a {@link Notification.notify} call reached: the notification's name and its `database` message, if it has one. */
 export interface SentNotification {
   userId: string;
   name: string;
   message?: NotificationMessage;
 }
 
-/** One {@link broadcast} that reached Redis. */
+/** One {@link Channel.broadcast} that reached Redis. */
 export interface ObservedBroadcast {
   channel: string;
   event: string;
@@ -157,13 +157,13 @@ export interface ObservedEffects {
   "policy:decision": ObservedPolicyDecision;
   /** A `flag()` or `experiment()` evaluation. */
   "flag:evaluation": ObservedFlagEvaluation;
-  /** A `dispatchAfterCommit()` call, or a queued listener dispatch, once its transaction committed. */
+  /** A job `dispatch()`, or a queued listener dispatch, once its transaction committed. */
   "job:dispatch": DispatchedCall;
   /** An `emit()` whose payload passed its schema. */
   "event:emit": EmittedEvent;
   /** A sync listener run. */
   "listener:run": ListenerRun;
-  /** A `sendMail()` that was not suppressed, once its transaction committed. */
+  /** A mail `send()` that was not suppressed, once its transaction committed. */
   "mail:send": SentMail;
   /** One user a `notify()` reached, once its transaction committed. */
   "notification:send": SentNotification;

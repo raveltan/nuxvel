@@ -18,7 +18,7 @@ export const channelNamesArePaths: Includes<ChannelName, "_probe-public"> = true
 
 export async function oldNamesNoLongerCompile() {
   // @ts-expect-error the job moved to server/jobs/_probe/record.ts, so it is _probe.record
-  await dispatchAfterCommit("probe.record", { name: "old" });
+  await $jobs.probe.record.dispatch({ name: "old" });
   // @ts-expect-error the flag in server/flags/probe-rollout.flag.ts is probe-rollout
   await flag("probeRollout");
   // @ts-expect-error the backfill in server/database/backfills/_probe-names.ts is _probe-names

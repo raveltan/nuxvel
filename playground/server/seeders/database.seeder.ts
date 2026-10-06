@@ -16,5 +16,5 @@ export const databaseSeeder = defineSeeder(async () => {
 
   for (const post of POSTS) await postFactory.for("authorId", demo)(post);
 
-  console.log(`Sign in as ${DEMO_EMAIL} with the password ${DEMO_PASSWORD}`);
+  return [`Sign in as ${DEMO_EMAIL} with the password ${DEMO_PASSWORD}`];
 });

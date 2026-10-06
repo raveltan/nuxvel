@@ -6,11 +6,11 @@ export default defineEventHandler(async (event) => {
   const { userId } = query.parse(getQuery(event));
 
   await transaction(async () => {
-    await notify(userId, "welcome", { name: "Ada" });
+    await $notifications.welcome.notify(userId, { name: "Ada" });
     throw new Error("probe rollback");
   }).catch(() => undefined);
 
-  const invalid = await notify(userId, $notifications.welcome, { name: "" }).then(
+  const invalid = await $notifications.welcome.notify(userId, { name: "" }).then(
     () => false,
     (error) => error instanceof ValidationFailedError,
   );

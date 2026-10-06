@@ -9,15 +9,15 @@ Nuxt 4 + `@nuxvel/nuxt`. Data: Drizzle on Postgres. API: tRPC. Input: Zod. Auth:
 
 ## Rules
 
-1. Write data only in an action. A router, route, job or page calls an action. It never calls `useDb().insert()`, `.update()` or `.delete()`.
+1. Write data only in an action. A router, route, job or page calls an action. It never calls `useDb().insert()`, `.update()`, `.delete()`, `insertOne()` or `updateOne()`.
 2. An action never reads the request. It gets the actor in `ctx.actor`.
 3. Each `.query()` and `.mutation()` has `.output(schema)`. No result: `.output(z.void())`.
-4. An action in a procedure runs as the caller: no `{ actor: ctx.actor }`. Pass `ctx.actor` to policies. Do not build an actor in a procedure.
+4. An action in a procedure runs as the caller: no `{ actor: ctx.actor }`. `can()` and `authorize()` read that actor: pass them no actor. Do not build an actor in a procedure.
 5. Do not import an auto-imported name. Import tables, actions, `drizzle-orm` operators and test fixtures.
 6. Links use route names in the current locale: `:to="$localeRoute({ name: 'post-id', params: { id } })"`. Never `"/post/1"`.
 7. No `v-html`. Use `<SafeHtml :html>`.
 8. A table with a column to the user table needs `defineUserData()` in `server/privacy/`.
-9. No `!` to remove `undefined`. Use `firstOrFail`.
+9. No `!` to remove `undefined`. Use `findOrFail`, `findAuthorized`, `insertOne`, `updateOne` or `firstOrFail`.
 10. Make a new file with `./nv make:*`. It writes the file, the export name and a test.
 11. `shared/` runs in the browser. It never imports `drizzle-orm`, `#nuxvel/*` or `server/`.
 12. The input schema of a mutation goes in `shared/schemas/` and the procedure names it: `<ActionForm :action="$api.post.create" />` and `useActionForm($api.post.create)` read it from there.

@@ -23,7 +23,7 @@ export default defineEventHandler(async () => {
 
   return {
     discovered: Boolean(policy),
-    allowed: await can({ type: "user", id: "actor" }, "update", gadgetTable, {}),
+    allowed: await can("update", gadgetTable, {}),
   };
 });
 `,

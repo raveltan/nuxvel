@@ -2,7 +2,7 @@
 
 ## Introduction
 
-A notification is a short message to one user, such as "Your post is live". You define each notification in a file, and send it with `notify()`. The notification goes through the channels that it lists: a row in the `notifications` table, a mail, a web push, or more than one. Use a notification when one event must reach a user in more than one way.
+A notification is a short message to one user, such as "Your post is live". You define each notification in a file, and send it with `$notifications.<name>.notify()`. The notification goes through the channels that it lists: a row in the `notifications` table, a mail, a web push, or more than one. Use a notification when one event must reach a user in more than one way.
 
 ## Defining a notification
 
@@ -61,31 +61,22 @@ import { postTable } from "#nuxvel/schema";
 export const publishPostAction = defineAction({
   input: z.object({ id: z.number() }),
   handler: async ({ id }) => {
-    const post = await useDb()
-      .update(postTable)
-      .set({ publishedAt: new Date() })
-      .where(eq(postTable.id, id))
-      .returning()
-      .then(firstOrFail);
+    const post = await updateOne(postTable, id, { publishedAt: new Date() });
 
-    await notify(post.authorId, "post.published", { postId: post.id, title: post.title });
+    await $notifications.post.published.notify(post.authorId, { postId: post.id, title: post.title });
 
     return post;
   },
 });
 ```
 
-`notify(userIds, name, data)` sends the notification `name` to one user or to several. Pass one user ID, or a list of user IDs. It is auto-imported on the server.
+`$notifications.<name>.notify(userIds, data)` sends the notification to one user or to several. Pass one user ID, or a list of user IDs. `$notifications` holds every notification of `server/notifications/`, keyed by its path in camelCase, and is auto-imported on the server.
 
 `notify()` validates `data` against the schema first. Async refinements and transforms also run. Invalid data throws `ValidationFailedError`, the same error a failed action throws.
 
-`name` is a `NotificationName` and `data` is the `NotificationData<Name>` of that notification. Both come from the files in `server/notifications/`. A misspelled name or wrong data fails `nuxt typecheck`.
+`data` has the input type of the notification's schema, so wrong data fails `nuxt typecheck`. Go to definition on `published` opens the notification file.
 
-In place of the name, you can give the notification definition, from `$notifications` or from an import. Then `data` has the input type of that definition's schema. Go to definition on the argument opens the notification file.
-
-```ts
-await notify(post.authorId, $notifications.post.published, { postId: post.id, title: post.title });
-```
+Inside a transaction, such as in an action, the rows of the database channel are written in the transaction, and everything else waits for the commit. When the transaction rolls back, nobody is notified. Outside a transaction, all of it happens immediately.
 
 ## Channels
 
@@ -150,7 +141,7 @@ toMail: ({ postId, title }) => ({
 
 `toMail` returns the name of a [mail](./mail.md) and the input of that mail without `to`. The mail goes to the email address of each user. `mail` is a `MailName`, and `data` is typed by that mail's schema.
 
-`notify()` calls `toMail` immediately. After the commit, it dispatches the built-in `nuxvel.notification` job on the `mail` queue. `nuxvel queue:work` runs the job. The job reads the email address and the [locale](./auth.md#the-locale-of-the-user) of each user from the `user` table, and calls `sendMail()` for each one in that locale. The rules of [`sendMail()`](./mail.md#sending-a-mail) then apply: the mail input is validated, and a suppressed address gets nothing. When the transaction rolls back, no job runs.
+`notify()` calls `toMail` immediately. After the commit, it dispatches the built-in `nuxvel.notification` job on the `mail` queue. `nuxvel queue:work` runs the job. The job reads the email address and the [locale](./auth.md#the-locale-of-the-user) of each user from the `user` table, and sends the mail to each one in that locale. The rules of [`send()`](./mail.md#sending-a-mail) then apply: the mail input is validated, and a suppressed address gets nothing. When the transaction rolls back, no job runs.
 
 ### The push channel
 

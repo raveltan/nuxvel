@@ -1,6 +1,6 @@
 import { seederDefinitions } from "../seeders/registry";
 import { runSeeders } from "../seeders/run-seeders";
-import { CommandError, commandSuccess } from "./command-error";
+import { CommandError, commandReport, commandSuccess } from "./command-error";
 
 const SEEDER_HINT = "A seeder is a file under server/seeders, e.g. server/seeders/database.seeder.ts";
 
@@ -15,7 +15,10 @@ export async function runDbSeed(names: string[]): Promise<number> {
     return 0;
   }
 
-  await runSeeders(names, (name) => commandSuccess(`Seeded ${name}`));
+  await runSeeders(names, (name, lines) => {
+    commandSuccess(`Seeded ${name}`);
+    for (const line of lines) commandReport(`  ${line}`);
+  });
 
   return 0;
 }

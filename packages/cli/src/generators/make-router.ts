@@ -109,7 +109,7 @@ function parentChecks(fields: Field[], update: boolean) {
         "await useDb()",
         "  .select()",
         `  .from(${reference.table})`,
-        `  .where(and(eq(${reference.table}.id, ${value}), eq(${reference.table}.ownerId, ctx.actor.userId ?? ctx.actor.id)))`,
+        `  .where(and(eq(${reference.table}.id, ${value}), eq(${reference.table}.ownerId, ctx.actor.userId)))`,
         "  .then(firstOrFail);",
       ];
       const condition = update ? `${value} && ${value} !== row.${key}` : nullable ? value : undefined;
@@ -286,7 +286,7 @@ export function crudRouterFiles(
     tableCamelName: toCamelCase(name),
     tablePascalName: toPascalCase(name),
   };
-  const ownerRule = '(actor, row) => row.ownerId === (actor.userId ?? actor.id) || actor.role === "admin"';
+  const ownerRule = '(actor, row) => row.ownerId === actor.userId || actor.role === "admin"';
 
   const { domain } = options;
   const router = routerFile(name, paths, domain);
@@ -351,9 +351,10 @@ export function crudRouterFiles(
       template: "action-crud-update.ts.txt",
       values: {
         ...actionValues,
-        drizzleImports: parents.length > 0 ? "and, eq" : "eq",
+        drizzleImport: parents.length > 0 ? 'import { and, eq } from "drizzle-orm";\n' : "",
         parentImports,
-        parentChecks: updateChecks && `\n${updateChecks}`,
+        ctxParam: parents.length > 0 ? ", ctx" : "",
+        parentChecks: updateChecks && `\n    if (!ctx.actor.userId) throw new ForbiddenError("This action needs a user");\n\n${updateChecks}`,
       },
     }),
     ...actionFiles(actionDomain, actions.delete, paths, {

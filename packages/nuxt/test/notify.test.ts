@@ -56,6 +56,13 @@ describe("notify()", async () => {
     await expectNotNotified(grace, $notifications.welcome);
   });
 
+  it("rejects a name no notification has", async () => {
+    const ada = await userFactory();
+
+    // @ts-expect-error the runtime check behind the compile-time one
+    await expect(sendNotification(ada, "goodbye", {})).rejects.toThrow('No notification is named "goodbye"');
+  });
+
   it("notifies nobody from a rolled-back transaction and rejects invalid data given the notification's definition", async () => {
     const ada = await userFactory();
 

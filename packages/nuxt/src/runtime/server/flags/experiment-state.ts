@@ -2,7 +2,7 @@ import { z } from "zod";
 import { FLAGS_CHANNEL } from "../../shared/flags/flag-values";
 import { actorContext } from "../actions/context";
 import { systemActor } from "../actions/system-actor";
-import { broadcast } from "../realtime/broadcast";
+import { broadcastOnCommit } from "../realtime/broadcast";
 import { useRedis } from "../redis/client";
 import { redisKey } from "../redis/key";
 import { audit } from "../utils/audit";
@@ -62,7 +62,7 @@ async function saveState(name: string, state: ExperimentState, action: string) {
   await actorContext.run(actorContext.getStore() ?? systemActor("flags"), () =>
     audit(action, { id: name }, { changes: { variants: state.variants } }),
   );
-  await broadcast(FLAGS_CHANNEL, "changed", { name });
+  await broadcastOnCommit(FLAGS_CHANNEL, "changed", { name });
 }
 
 /**

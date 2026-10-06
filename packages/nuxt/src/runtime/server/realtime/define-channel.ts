@@ -1,5 +1,6 @@
 import type { z } from "zod";
 import { awaitingName } from "../discovery/definition-name";
+import type { RoomParams } from "./registry";
 import type { auth } from "../utils/auth";
 
 /** The signed-in user a channel's `authorize` sees. */
@@ -41,7 +42,34 @@ export interface Channel<
   authorize: (connection: ChannelConnection) => boolean | Promise<boolean>;
   presence?: Presence;
   params?: readonly Params[];
+  /**
+   * Sends `event` with `payload` to every connection listening to this
+   * channel, once the surrounding transaction commits. Outside a
+   * transaction it sends now.
+   *
+   * The payload is validated against the event's schema at the call, so
+   * a wrong payload throws a `ValidationFailedError` and rolls the
+   * transaction back. Listeners receive the schema's output as JSON, so
+   * a `Date` arrives as a string. A send that fails after the commit is
+   * logged, not thrown. It reaches the connections of every server
+   * sharing the Redis, and the last 500 events per channel or room stay
+   * there for a client that reconnects with `Last-Event-ID`.
+   *
+   * @param params Sends only to this room of the channel, such as
+   * `{ boardId: 7 }`. Without it, the event goes to the channel itself.
+   *
+   * @example
+   * ```ts
+   * await $channels.posts.broadcast("created", post);
+   * await $channels.board.broadcast("moved", { cardId: card.id }, { boardId: card.boardId });
+   * ```
+   */
+  broadcast(...args: BroadcastArgs<Events, Params>): Promise<void>;
 }
+
+type BroadcastArgs<Events extends ChannelEvents, Params extends string> = {
+  [Event in keyof Events & string]: [event: Event, payload: z.input<Events[Event]>, params?: RoomParams<Params>];
+}[keyof Events & string];
 
 /**
  * Defines a channel: a named stream of server-sent events the browser
@@ -53,7 +81,7 @@ export interface Channel<
  * channel's name (`server/channels/post/comments.channel.ts` is
  * `"post.comments"`), part of {@link ChannelName}.
  *
- * `events` types the channel end to end: {@link broadcast} takes only
+ * `events` types the channel end to end: {@link Channel.broadcast} takes only
  * those event names, each with its schema's input and validated against
  * it, and `useChannel()` / `useLiveQuery()` receive each payload as the
  * schema's output. Payloads travel as JSON, so describe them as they
@@ -70,13 +98,13 @@ export interface Channel<
  * a `ping` event every 15 seconds so idle proxies keep it open. A
  * connection that sends a `Last-Event-ID` header, as the browser's
  * `EventSource` does when it reconnects, then receives the
- * {@link broadcast} events it missed, in order, before new ones. A
+ * events it missed, in order, before new ones. A
  * server that loses its Redis connection ends its open streams, so each
  * client reconnects and catches up that way.
  *
  * `params` names the params of the channel's rooms, such as
  * `["boardId"]`. A room is the channel with one value for each param:
- * {@link broadcast} with `params` sends only to that room, and
+ * {@link Channel.broadcast} with `params` sends only to that room, and
  * `useChannel()` and `useLiveQuery()` with `params` listen only to it.
  * They take exactly these params, so a wrong name fails to compile.
  * `authorize` runs for each room with that room's `params`, so it can
@@ -123,5 +151,19 @@ export function defineChannel<
 >(
   config: { events: Events; authorize: Channel["authorize"]; presence?: Presence; params?: readonly Params[] },
 ): Channel<string, Events, Presence, Params> {
-  return awaitingName({ name: "", ...config }, "channel");
+  const channel: Channel<string, Events, Presence, Params> = awaitingName(
+    {
+      name: "",
+      ...config,
+      async broadcast(event: string, payload?: unknown, params?: Record<string, string | number>) {
+        // a static import cycles through the #nuxvel/channels registry, which holds this channel
+        const { broadcastOnCommit } = await import("./broadcast");
+
+        await broadcastOnCommit(channel, event, payload, params);
+      },
+    },
+    "channel",
+  );
+
+  return channel;
 }

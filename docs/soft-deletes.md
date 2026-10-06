@@ -35,20 +35,22 @@ With `--soft-deletes`, the `delete` action that `nuxvel make:resource post title
 ## Deleting and restoring
 
 ```ts
-const [post] = await softDelete(postTable, eq(postTable.id, input.id));
+const post = await softDelete(postTable, input.id);
 
-await restore(postTable, eq(postTable.id, input.id));
+await restore(postTable, input.id);
 
-await forceDelete(postTable, eq(postTable.id, input.id));
+await forceDelete(postTable, input.id);
+
+const archived = await softDelete(postTable, eq(postTable.authorId, user.id));
 ```
 
-Each helper takes the table and a `where` condition. It returns the rows that it changed, as `.returning()` does. Each helper joins the active transaction.
+Each helper takes the table and an `id` or a `where` condition. Given an `id`, it returns the row, or throws `NotFoundError` (HTTP 404) when no row that it can change has that `id`. Given a `where`, it returns the rows that it changed, as `.returning()` does. Each helper joins the active transaction.
 
 | Helper | What it does |
 |---|---|
-| `softDelete(table, where)` | Sets `deletedAt` to the server's `now()`. It skips rows that are already trashed. |
-| `restore(table, where)` | Sets `deletedAt` back to `null`. It skips rows that are not trashed. |
-| `forceDelete(table, where)` | Deletes the rows permanently, trashed or not. Foreign keys cascade as usual. |
+| `softDelete(table, idOrWhere)` | Sets `deletedAt` to the server's `now()`. It skips rows that are already trashed. |
+| `restore(table, idOrWhere)` | Sets `deletedAt` back to `null`. It skips rows that are not trashed. |
+| `forceDelete(table, idOrWhere)` | Deletes the rows permanently, trashed or not. Foreign keys cascade as usual. |
 
 The helpers accept only a table with `softDeletes()`. Another table fails `nuxt typecheck`.
 
@@ -84,16 +86,14 @@ The option is only for tables with `softDeletes()`. `firstOrFail` takes rows, no
 
 ```ts
 // server/actions/posts/restore-post.action.ts
-import { eq } from "drizzle-orm";
 import { postTable } from "#nuxvel/schema";
 
 export const restorePostAction = defineAction({
   input: postIdInput,
-  handler: async (input, ctx) => {
-    const post = await findOrFail(postTable, input.id, { trashed: "only" });
-    await authorize(ctx.actor, "restore", postTable, post);
+  handler: async (input) => {
+    await findAuthorized(postTable, input.id, "restore", { trashed: "only" });
 
-    return restore(postTable, eq(postTable.id, input.id)).then(firstOrFail);
+    return restore(postTable, input.id);
   },
 });
 ```

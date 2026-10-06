@@ -67,6 +67,27 @@ describe("useLogger", async () => {
     expect(outside).not.toHaveProperty("actor");
   });
 
+  it("takes its tag from the running action or job when no tag is given, and has none outside one", async () => {
+    clearServerLogs();
+    await guest().$fetch("/api/_logger-tag-check");
+
+    const lines = await vi.waitFor(() => {
+      const found = getServerLogs()
+        .filter((line) => line.includes("logger-tag-check "))
+        .map((line) => JSON.parse(line) as Record<string, unknown>);
+
+      expect(found).toHaveLength(3);
+
+      return found;
+    });
+
+    expect(lines.map((line) => [line.msg, line.tag])).toEqual([
+      ["logger-tag-check in action", "_logger-tag-check.tagged"],
+      ["logger-tag-check in job", "_logger-tag-check.job"],
+      ["logger-tag-check outside", undefined],
+    ]);
+  });
+
   describe("the cause of a warning line", () => {
     function warnLine(error: Error) {
       const record = { time: new Date(), level: "warn", tag: "", msg: "retry", fields: {}, context: {}, err: serializedError(new Error("job failed", { cause: error })) };

@@ -91,13 +91,16 @@ function requestContext() {
  * concurrent audited transactions commit one at a time.
  *
  * @param action Dotted action name.
- * @param target The row acted on: its `id` becomes `targetId`, and
- * `type`, when given, `targetType` — otherwise the action's first
- * segment (`"post.publish"` → `"post"`) does.
+ * @param target The row acted on, or `{ type, id }`: its `id` becomes
+ * `targetId`, and `type`, when given, `targetType` — otherwise the
+ * action's first segment (`"post.publish"` → `"post"`) does.
+ * @param opts.changes What changed, such as `{ title: { from, to } }`.
+ * @param opts.metadata Anything else worth keeping with the row.
  *
  * @example
  * ```ts
- * await audit("post.publish", { id: post.id }, { metadata: { source: "editor" } });
+ * await audit("post.publish", post);
+ * await audit("post.publish", post, { metadata: { source: "editor" } });
  * await audit("moderation.hidden", { type: "posts", id: post.id });
  * ```
  */
@@ -111,7 +114,11 @@ export async function audit(
 ) {
   const actor = actorContext.getStore();
 
-  if (!actor) throw new Error("audit: no actor in context");
+  if (!actor) {
+    throw new Error(
+      `audit("${action}") ran with no actor. Call it inside a procedure, action, job or seeder, or inside an action called with { actor: systemActor("name") }`,
+    );
+  }
 
   const targetType = target.type ?? action.split(".")[0] ?? action;
   const context = requestContext();

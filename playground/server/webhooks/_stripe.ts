@@ -5,6 +5,6 @@ export default defineWebhook({
   verify: "stripe",
   eventId: ({ payload }) => payload.id,
   handler: async ({ payload }) => {
-    await dispatchAfterCommit("_probe.webhook-received", payload);
+    await $jobs._probe.webhookReceived.dispatch(payload);
   },
 });

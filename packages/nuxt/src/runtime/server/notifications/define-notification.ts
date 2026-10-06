@@ -33,6 +33,26 @@ export interface Notification<Name extends string = string, Schema extends z.Zod
   toDatabase?(data: z.output<Schema>): NotificationMessage;
   toMail?(data: z.output<Schema>): NotificationMail;
   toPush?(data: z.output<Schema>): PushNotification;
+  /**
+   * Sends this notification with `data` to one user or to several,
+   * through the channels its `via` lists.
+   *
+   * Validates `data` against the schema, throwing a
+   * `ValidationFailedError`. The `database` channel inserts one
+   * `notifications` row per user now, inside the surrounding transaction,
+   * so it commits or rolls back with it. The open bells refresh, the
+   * `mail` channel queues the mail and the `push` channel queues the
+   * push once the transaction commits, so a rollback notifies nobody.
+   * Outside a transaction all of it happens now.
+   *
+   * @param userIds The ID of the user to notify, or a list of IDs.
+   *
+   * @example
+   * ```ts
+   * await $notifications.post.published.notify(post.authorId, { postId: post.id, title: post.title });
+   * ```
+   */
+  notify(userIds: string | readonly string[], data: z.input<Schema>): Promise<void>;
 }
 
 /**
@@ -43,10 +63,11 @@ export interface Notification<Name extends string = string, Schema extends z.Zod
  * under `server/notifications/`; the file is discovered, so nothing
  * registers it, and its path is the notification's name
  * (`server/notifications/post/published.notification.ts` is `"post.published"`).
- * Send it with {@link notify}. Each channel in `via` needs its builder,
+ * Send it with {@link Notification.notify} through the `$notifications`
+ * namespace: `$notifications.post.published.notify(userId, data)`. Each channel in `via` needs its builder,
  * and a builder for a channel `via` leaves out fails to compile.
  *
- * @param config.schema Zod schema of the data {@link notify} takes.
+ * @param config.schema Zod schema of the data {@link Notification.notify} takes.
  * @param config.via The channels it goes through: `"database"`, `"mail"`,
  * `"push"`.
  * @param config.toDatabase Builds the `notifications` row's
@@ -71,8 +92,23 @@ export interface Notification<Name extends string = string, Schema extends z.Zod
 export function defineNotification<Schema extends z.ZodType, const Via extends readonly NotificationChannel[]>(
   config: { schema: Schema; via: Via } & Builders<z.output<Schema>, Via[number]>,
 ): Notification<string, Schema> {
-  return awaitingName(
-    { name: "", schema: config.schema, via: config.via, toDatabase: config.toDatabase, toMail: config.toMail, toPush: config.toPush },
+  const notification: Notification<string, Schema> = awaitingName(
+    {
+      name: "",
+      schema: config.schema,
+      via: config.via,
+      toDatabase: config.toDatabase,
+      toMail: config.toMail,
+      toPush: config.toPush,
+      async notify(userIds: string | readonly string[], data: z.input<Schema>) {
+        // a static import cycles through the #nuxvel/notifications registry, which holds this notification
+        const { notify } = await import("./notify");
+
+        await notify(userIds, notification, data);
+      },
+    },
     "notification",
   );
+
+  return notification;
 }

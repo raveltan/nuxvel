@@ -5,6 +5,7 @@ import { expect, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
 
 const runJobModule = fileURLToPath(new URL("../../src/runtime/server/testing/run-job", import.meta.url));
+const actorContextModule = fileURLToPath(new URL("../../src/runtime/server/actions/context", import.meta.url));
 
 function write(appDir: string, path: string, contents: string) {
   mkdirSync(dirname(join(appDir, path)), { recursive: true });
@@ -107,13 +108,16 @@ export const invoicePolicy = definePolicy(invoicesTable, {
     "server/api/_domain-kinds-check.get.ts",
     `import * as factories from "#nuxvel/factories";
 import * as schema from "#nuxvel/schema";
+import { actorContext } from "${relative(join(appDir, "server/api"), actorContextModule)}";
+
+const asUser = <T>(id: string, run: () => Promise<T>) => actorContext.run({ type: "user", id }, run);
 
 export default defineEventHandler(async () => ({
   tables: Object.keys(schema),
   factories: Object.keys(factories),
-  canView: await can({ type: "user", id: "domain-actor" }, $policies.order.shipment.view, { id: 1 }),
-  otherCanView: await can({ type: "user", id: "other" }, $policies.order.shipment.view, { id: 1 }),
-  canViewInvoice: await can({ type: "user", id: "domain-actor" }, $policies.invoice.view, { id: 1 }),
+  canView: await asUser("domain-actor", () => can($policies.order.shipment.view, { id: 1 })),
+  otherCanView: await asUser("other", () => can($policies.order.shipment.view, { id: 1 })),
+  canViewInvoice: await asUser("domain-actor", () => can($policies.invoice.view, { id: 1 })),
 }));
 `,
   );

@@ -2,7 +2,7 @@ import { type ConsolaInstance, type ConsolaReporter, LogLevels, createConsola } 
 import { LOG_FORMATS, LOG_LEVELS, type LogFormat, type LogLevelName } from "../../shared/env/log-settings";
 import { publishObserved } from "../observe/channels";
 import { writeJsonLine } from "./json-reporter";
-import { logContext } from "./log-context";
+import { logContext, runningName } from "./log-context";
 import { type LogRecord, logRecord } from "./log-record";
 import { writePrettyLine } from "./pretty-reporter";
 
@@ -60,22 +60,27 @@ const taggedLoggers = new Map<string, ConsolaInstance>();
  * to stderr. Pass a string for the message, plain
  * objects for fields and an `Error` for `err`, in any order. A line
  * logged during a request carries its {@link currentRequestId} as
- * `requestId`, and `actor` (`"user:<id>"`) once {@link auth} or the
+ * `requestId`, and `actor` (`"user:<id>"`) once {@link useAuth}, {@link requireAuth} or the
  * running action has named one; logging never looks a session up. The level
  * comes from `NUXT_LOG_LEVEL` (default `info`) and the format from
  * `NUXT_LOG_FORMAT` (`pretty` or `json`). Loggers are cached per tag.
  *
  * @param tag Names the part of the app a line comes from, e.g. `billing`.
+ * When unset, the name of the running action or job, such as
+ * `posts.create-post`, and no tag outside one. Call `useLogger()` inside
+ * the handler to get that tag.
  *
  * @example
  * ```ts
+ * useLogger().info("post created", { postId: post.id });
+ *
  * const log = useLogger("billing");
  *
  * log.info("invoice paid", { invoiceId: invoice.id, amount: invoice.total });
  * log.error("charge failed", error, { invoiceId: invoice.id });
  * ```
  */
-export function useLogger(tag?: string): ConsolaInstance {
+export function useLogger(tag = runningName.getStore()): ConsolaInstance {
   if (!tag) return rootLogger;
 
   let logger = taggedLoggers.get(tag);

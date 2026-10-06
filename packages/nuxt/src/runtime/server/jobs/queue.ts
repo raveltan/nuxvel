@@ -42,7 +42,7 @@ export function queueNames(): string[] {
 /**
  * One of the app's BullMQ queues, created once and reused.
  *
- * Auto-imported on the server. Prefer {@link dispatchAfterCommit} for
+ * Auto-imported on the server. Prefer {@link Job.dispatch} for
  * dispatching work — reach for this only to inspect or manage a queue
  * itself. Jobs added through it carry {@link JOB_OPTIONS}.
  *

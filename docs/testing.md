@@ -665,12 +665,12 @@ These fixtures run code inside the app that `@nuxvel/nuxt/testing/setup` started
 |---|---|---|
 | `runAction(name, input, { actingAs })` | an action as that user, and returns its result. `{ asSystem: name }` runs it as `systemActor(name)` | `server/actions/` |
 | `runJob(name, input)` | a job's handler now, without the queue | `server/jobs/` |
-| `emit(name, payload)` | the server `emit()` in a transaction, as an action would | `server/events/` |
+| `emit(name, payload)` | `$events.x.emit()` in a transaction, as an action would | `server/events/` |
 | `runListener(name, payload)` | a listener's handler now, without the queue | `server/listeners/` |
 | `workQueue()` | every queued job and queued listener, until the queue is empty | |
 | `deliverWebhook(name, body)` | a signed delivery to a webhook endpoint, and returns the response | `server/webhooks/` |
 | `renderMail(name, input)` | a mail's template, and returns its subject, HTML and text without sending it | `server/mail/` |
-| `sendNotification(users, name, data)` | `notify()` in a transaction, as an action would | `server/notifications/` |
+| `sendNotification(users, name, data)` | `$notifications.x.notify()` in a transaction, as an action would | `server/notifications/` |
 | `runBackfill(name)` | a backfill to completion | `server/database/backfills/` |
 | `runSeeder(name)` | a seeder, and the seeders that it calls | `server/seeders/` |
 | `runSchedule(name)` | one tick of a schedule now, without the worker and the clock | `server/schedules/` |
@@ -734,7 +734,7 @@ await expectRow(notificationsTable, { postId: post.id });
 
 The listener name is typed, but `payload` is not typed. The event's schema parses `payload` as it does for a queued run. An invalid payload rejects with a `BAD_REQUEST` validation error. A handler that throws rejects with its error.
 
-A `dispatchAfterCommit()` in the handler runs with no transaction, as under `nuxvel queue:work`. Assert the follow-up job with `expectQueued`.
+A `$jobs.x.dispatch()` in the handler runs with no transaction, as under `nuxvel queue:work`. Assert the follow-up job with `expectQueued`.
 
 ### Events, mail, notifications, backfills and seeders
 
@@ -1037,7 +1037,7 @@ Each assertion takes a name that is typed from `server/jobs/`, `server/mail/`, `
 | `expectListenerRan(name, { times? })` | the sync listener with that file name ran. Returns the latest run |
 | `expectNoListenerRan(name)` | the sync listener with that file name never ran |
 | `expectListenerQueued(name, { times? })` | the queued listener with that file name reached the queue. Returns the latest queued payload |
-| `expectMailSent(name, match?, { times? })` | `sendMail` sent the mail `name` with matching input fields, `to` included. Returns the input of the latest matching send |
+| `expectMailSent(name, match?, { times? })` | `$mails.x.send()` sent the mail `name` with matching input fields, `to` included. Returns the input of the latest matching send |
 | `expectNoMailSent(name, match?)` | the mail `name` was never sent, or never with an input that includes `match` |
 | `expectNotified(user, name, match?, { times? })` | `notify()` reached the user with the notification `name`, and its `toDatabase` message has the `match` fields. Returns the latest matching notification |
 | `expectPushSent(user, match?, { times? })` | `sendPush` notified the user with a notification that has the `match` fields. Returns the notification |
@@ -1046,7 +1046,7 @@ Each assertion takes a name that is typed from `server/jobs/`, `server/mail/`, `
 | `expectNoPushSent(user, match?)` | `sendPush` never notified the user with a notification that has the `match` fields |
 | `expectNotNotified(user, name)` | the notification `name` never reached the user |
 
-`expectQueued`, `expectNotQueued` and `expectListenerQueued` relay the outbox first. A job that `dispatchAfterCommit()` wrote is visible without `nuxvel queue:work`.
+`expectQueued`, `expectNotQueued` and `expectListenerQueued` relay the outbox first. A job that `$jobs.x.dispatch()` wrote is visible without `nuxvel queue:work`.
 
 The job assertions also take a job definition in place of the name. Then `match` has the input type of that definition's schema.
 

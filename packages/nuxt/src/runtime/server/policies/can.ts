@@ -1,10 +1,12 @@
 import { getTableName, type InferSelectModel, type Table } from "drizzle-orm";
 import discoveredPolicies from "#nuxvel/policies";
-import { type Actor, SYSTEM_ACTOR_TYPE } from "../actions/system-actor";
+import type { Actor } from "../actions/system-actor";
 import { publishObserved } from "../observe/channels";
 import type { AbilityRef, Policy, PolicyRule } from "./define-policy";
 import { ruleAllowsGuest, ruleAllowsSystem } from "./define-policy";
-import { GUEST_ACTOR_TYPE } from "../actions/guest-actor";
+import { GUEST_ACTOR_TYPE, guestActor } from "../actions/guest-actor";
+import { ambientActor } from "../utils/use-auth";
+import { currentEvent } from "../utils/current-event";
 import { policyRegistry } from "./registry";
 
 let registry: Map<string, Policy> | undefined;
@@ -35,7 +37,7 @@ function ruleFor(policy: Policy | undefined, action: string) {
 
 function reachable(actor: Actor, rule: PolicyRule | undefined): rule is PolicyRule {
   return rule !== undefined
-    && (actor.type !== SYSTEM_ACTOR_TYPE || ruleAllowsSystem(rule))
+    && (actor.type !== "system" || ruleAllowsSystem(rule))
     && (actor.type !== GUEST_ACTOR_TYPE || ruleAllowsGuest(rule));
 }
 
@@ -59,6 +61,17 @@ async function decide(
   return allowed;
 }
 
+export async function policyActor(call: string): Promise<Actor> {
+  const actor = await ambientActor();
+
+  if (actor) return actor;
+  if (currentEvent()) return guestActor;
+
+  throw new Error(
+    `${call}() ran with no actor. Call it inside a procedure, action, job or seeder, or inside an action called with { actor: systemActor("name") }`,
+  );
+}
+
 export type CanArgs = [ability: AbilityRef, row: Record<string, unknown>] | [action: string, table: Table, row: Record<string, unknown>];
 
 export function abilityCall(args: CanArgs): [action: string, table: Table, row: Record<string, unknown>] {
@@ -66,36 +79,35 @@ export function abilityCall(args: CanArgs): [action: string, table: Table, row: 
 }
 
 /**
- * Whether the actor may perform an action on `row`, according to the
- * policy discovered for the row's table. Pass an {@link AbilityRef} such
- * as `postPolicy.update`, or the rule name and the table. The name must
- * be one of the rules the table's policy defines ({@link PolicyAction}),
- * so a misspelled rule or a table with no policy fails to compile.
+ * Whether the current actor may perform an action on `row`, according
+ * to the policy discovered for the row's table. Pass an
+ * {@link AbilityRef} such as `postPolicy.update`, or the rule name and
+ * the table. The name must be one of the rules the table's policy
+ * defines ({@link PolicyAction}), so a misspelled rule or a table with
+ * no policy fails to compile.
  *
- * Auto-imported on the server. Returns `false` when no policy or no
- * matching rule exists at runtime, when a system actor hits a rule
- * that is not wrapped in {@link allowSystem}, and when the guest actor
- * hits a rule that is not wrapped in {@link allowGuest}. Throws when two files
- * under `server/policies/` define a policy for the same table. Runs the
- * policy's `preload` for this one row, unless the rule denies this
- * actor's type anyway. Use {@link authorize} to throw
+ * Auto-imported on the server. The actor is the ambient one: the actor
+ * of the running procedure, action, job or seeder, else the request's
+ * API key or session, else the guest actor inside a request. Throws
+ * outside a request when no actor is in scope. Returns `false` when no
+ * policy or no matching rule exists at runtime, when a system actor hits
+ * a rule that is not wrapped in {@link allowSystem}, and when the guest
+ * actor hits a rule that is not wrapped in {@link allowGuest}. Throws
+ * when two files under `server/policies/` define a policy for the same
+ * table. Runs the policy's `preload` for this one row, unless the rule
+ * denies this actor's type anyway. Use {@link authorize} to throw
  * instead, and {@link canMany} to check a list.
  *
  * @example
  * ```ts
- * if (await can(ctx.actor, postPolicy.delete, post)) { }
- * if (await can(ctx.actor, "delete", postsTable, post)) { }
+ * if (await can($policies.post.delete, post)) { }
+ * if (await can("delete", postsTable, post)) { }
  * ```
  */
-export function can<T extends Table>(actor: Actor, ability: AbilityRef<T>, row: InferSelectModel<T>): Promise<boolean>;
-export function can<T extends Table>(
-  actor: Actor,
-  action: PolicyAction<T>,
-  table: T,
-  row: InferSelectModel<T>,
-): Promise<boolean>;
-export async function can(actor: Actor, ...args: CanArgs): Promise<boolean> {
-  return canByName(actor, ...abilityCall(args));
+export function can<T extends Table>(ability: AbilityRef<T>, row: InferSelectModel<T>): Promise<boolean>;
+export function can<T extends Table>(action: PolicyAction<T>, table: T, row: InferSelectModel<T>): Promise<boolean>;
+export async function can(...args: CanArgs): Promise<boolean> {
+  return canByName(await policyActor("can"), ...abilityCall(args));
 }
 
 export async function canByName(actor: Actor, action: string, table: Table, row: Record<string, unknown>) {
@@ -108,35 +120,36 @@ export async function canByName(actor: Actor, action: string, table: Table, row:
 }
 
 /**
- * Checks several actions on every row of a list, and returns one
- * `{ [action]: boolean }` object per row, in the order of `rows`. Pass
- * {@link AbilityRef}s of one policy, or the rule names and the table.
+ * Checks several actions on every row of a list for the current actor,
+ * and returns one `{ [action]: boolean }` object per row, in the order
+ * of `rows`. Pass {@link AbilityRef}s of one policy, or the rule names
+ * and the table.
  *
- * Auto-imported on the server. Calls the policy's `preload` once for the
- * whole list, so the check runs the same queries for 1 row as for 100.
- * Each answer is the one {@link can} gives for that row.
+ * Auto-imported on the server. Reads the ambient actor, as {@link can}
+ * does. Calls the policy's `preload` once for the whole list, so the
+ * check runs the same queries for 1 row as for 100. Each answer is the
+ * one {@link can} gives for that row.
  *
  * @example
  * ```ts
- * const abilities = await canMany(ctx.actor, [postPolicy.update, postPolicy.delete], rows);
+ * const abilities = await canMany([$policies.post.update, $policies.post.delete], rows);
  * return rows.map((post, index) => ({ ...post, can: abilities[index] }));
  * ```
  */
 export function canMany<T extends Table, Action extends string>(
-  actor: Actor,
   abilities: readonly AbilityRef<T, Action>[],
   rows: InferSelectModel<T>[],
 ): Promise<Record<Action, boolean>[]>;
 export function canMany<T extends Table, Action extends PolicyAction<T>>(
-  actor: Actor,
   actions: readonly Action[],
   table: T,
   rows: InferSelectModel<T>[],
 ): Promise<Record<Action, boolean>[]>;
 export async function canMany(
-  actor: Actor,
   ...args: [abilities: readonly AbilityRef[], rows: Record<string, unknown>[]] | [actions: readonly string[], table: Table, rows: Record<string, unknown>[]]
 ): Promise<Record<string, boolean>[]> {
+  const actor = await policyActor("canMany");
+
   if (args.length === 3) return canManyByName(actor, ...args);
 
   const [abilities, rows] = args;

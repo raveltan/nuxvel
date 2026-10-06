@@ -97,13 +97,7 @@ export const createPostAction = defineAction({
   input: createPostInput,
   invalidates: ["posts"],
   handler: async (input, ctx) => {
-    const post = await useDb()
-      .insert(postTable)
-      .values({ title: input.title, body: input.body, authorId: ctx.actor.id })
-      .returning()
-      .then(firstOrFail);
-
-    return post;
+    return insertOne(postTable, { title: input.title, body: input.body, authorId: ctx.actor.id });
   },
 });
 ```

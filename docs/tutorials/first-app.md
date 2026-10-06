@@ -218,13 +218,13 @@ A policy says who may do what to a row. Add a rule `host` to the policy of the e
 import { eventTable } from "#nuxvel/schema";
 
 export const eventPolicy = definePolicy(eventTable, {
-  update: (actor, row) => row.ownerId === (actor.userId ?? actor.id) || actor.role === "admin",
-  delete: (actor, row) => row.ownerId === (actor.userId ?? actor.id) || actor.role === "admin",
-  host: (actor, row) => row.ownerId === (actor.userId ?? actor.id),
+  update: (actor, row) => row.ownerId === actor.userId || actor.role === "admin",
+  delete: (actor, row) => row.ownerId === actor.userId || actor.role === "admin",
+  host: (actor, row) => row.ownerId === actor.userId,
 });
 ```
 
-A rule gets the actor and the row, and returns a boolean. `actor.userId ?? actor.id` is the user also when the call uses an API key. The `host` rule has no admin case: an admin is not the host of every event.
+A rule gets the actor and the row, and returns a boolean. `actor.userId` is the user also when the call uses an API key. The `host` rule has no admin case: an admin is not the host of every event.
 
 ### The event page
 
@@ -240,7 +240,7 @@ import { z } from "zod";
     .query(async ({ input, ctx }) => {
       const event = await findOrFail(eventTable, input.id);
 
-      return { ...event, isHost: await can(ctx.actor, $policies.event.host, event) };
+      return { ...event, isHost: await can($policies.event.host, event) };
     }),
 ```
 
@@ -333,7 +333,7 @@ export const sendRsvpAction = defineAction({
   },
   handler: async (input, ctx, fail) => {
     const event = await findOrFail(eventTable, input.eventId);
-    const guestId = ctx.actor.userId ?? ctx.actor.id;
+    const guestId = ctx.actor.userId;
 
     if (event.ownerId === guestId) fail("rsvp.host");
     if (event.startsOn < now().toISOString().slice(0, 10)) fail("rsvp.past");
@@ -417,8 +417,7 @@ import { rsvpTable, userTable } from "#nuxvel/schema";
     .input(paginationSchema.extend({ id: eventIdInput.shape.id }))
     .output(paginated(z.object({ id: z.number(), name: z.string(), answer: z.enum(["yes", "no"]) })))
     .query(async ({ input, ctx }) => {
-      const event = await findOrFail(eventTable, input.id);
-      await authorize(ctx.actor, $policies.event.host, event);
+      const event = await findAuthorized(eventTable, input.id, "host");
 
       return paginate(
         useDb()
@@ -585,10 +584,9 @@ import { eventTable } from "#nuxvel/schema";
 export const inviteGuestAction = defineAction({
   input: inviteGuestInput,
   handler: async (input, ctx) => {
-    const event = await findOrFail(eventTable, input.eventId);
-    await authorize(ctx.actor, $policies.event.host, event);
+    const event = await findAuthorized(eventTable, input.eventId, "host");
 
-    await sendMail("event.invitation", {
+    await $mails.event.invitation.send({
       to: input.email,
       title: event.title,
       startsOn: event.startsOn,
@@ -599,7 +597,7 @@ export const inviteGuestAction = defineAction({
 });
 ```
 
-`sendMail()` does not send the mail during the request. It queues the mail after the transaction commits, and the worker sends it. If the action fails, no mail goes out. A misspelled mail name or wrong data does not compile. `useRuntimeConfig().siteUrl` is the public address of the app. `npm run dev` sets it to the address that it prints.
+`$mails.x.send()` does not send the mail during the request. It queues the mail after the transaction commits, and the worker sends it. If the action fails, no mail goes out. A misspelled mail name or wrong data does not compile. `useRuntimeConfig().siteUrl` is the public address of the app. `npm run dev` sets it to the address that it prints.
 
 Add the procedure to the event router, after `guests`:
 

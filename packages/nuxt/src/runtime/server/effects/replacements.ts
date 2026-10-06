@@ -1,4 +1,4 @@
-import type { DispatchOptions } from "../utils/dispatch-after-commit";
+import type { DispatchOptions } from "../jobs/dispatch-job";
 
 /** One enqueue: the job's queue and dispatch name, the payload envelope it carries and its dispatch options. */
 export interface QueuedJob {

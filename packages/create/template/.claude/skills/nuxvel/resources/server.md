@@ -25,17 +25,15 @@ export type NewPostRow = typeof postTable.$inferInsert;
 ## Action
 
 ```ts
-import { eq } from "drizzle-orm";
-import { postTable } from "../../database/schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 export const updatePostAction = defineAction({
   input: updatePostInput,
   errors: { "post.locked": "This post is locked" },
-  handler: async (input, ctx, fail) => {
-    const post = await findOrFail(postTable, input.id);
-    await authorize(ctx.actor, $policies.post.update, post);
+  handler: async (input, _ctx, fail) => {
+    const post = await findAuthorized(postTable, input.id, "update");
     if (post.locked) return fail("post.locked");
-    return useDb().update(postTable).set({ title: input.title }).where(eq(postTable.id, input.id)).returning().then(firstOrFail);
+    return updateOne(postTable, input.id, { title: input.title });
   },
 });
 ```
@@ -43,7 +41,7 @@ export const updatePostAction = defineAction({
 | Option | Meaning |
 |---|---|
 | `input` | Zod schema. Parsed on each call. Fail → `ValidationFailedError` |
-| `handler(input, ctx, fail)` | `ctx.actor`. `return fail(code, message?)` → `ActionError`, HTTP 422, `error.data.actionCode` |
+| `handler(input, ctx, fail)` | `ctx.actor`. `ctx.actor.userId` is the user behind a user or an API key, `undefined` for a system actor. `return fail(code, message?)` → `ActionError`, HTTP 422, `error.data.actionCode` |
 | `errors` | `{ code: defaultMessage }`, or `{ code: { message, field } }` for a failure on one input field (sent in `error.data.fields`, shown under that field by `useActionForm`). Only these codes compile in `fail` |
 | `transaction: false` | no transaction (reads) |
 | `rateLimit` | options of `rateLimit()` |
@@ -76,7 +74,7 @@ export const postRouter = {
 | Builder | Needs | Else |
 |---|---|---|
 | `publicProcedure` | nothing. `ctx.user`, `ctx.actor` can be `null` | |
-| `authedProcedure` | session or API key | `UNAUTHORIZED` |
+| `authedProcedure` | session or API key. `ctx.actor.userId` is a `string` | `UNAUTHORIZED` |
 | `roleProcedure(["admin", "agent"], { apiKeys? })` | role in list | `FORBIDDEN` |
 | `adminProcedure` | role `admin` + two-factor, no API key | `FORBIDDEN` |
 | `freshProcedure` | sign-in < 10 min | `FORBIDDEN` |
@@ -99,8 +97,10 @@ export const postPolicy = definePolicy(postTable, {
 });
 ```
 
-- `can(actor, $policies.post.update, post)` → boolean. `authorize(...)` → throws `ForbiddenError`. String form: `can(actor, "update", postTable, post)`.
-- `canMany(actor, [postPolicy.update, postPolicy.delete], rows)` → `[{ update, delete }]` per row, one `preload` for the list.
+- `can($policies.post.update, post)` → boolean. `authorize(...)` → throws `ForbiddenError`. String form: `can("update", postTable, post)`. No actor argument: they read the actor of the running procedure, action, job or seeder (the guest in a signed-out request).
+- `findAuthorized(postTable, input.id, "update")` → the row, or `NotFoundError`, or `ForbiddenError`. Use it in place of `findOrFail()` + `authorize()`. Takes `{ trashed: "only" }` for a restore.
+- `canMany([$policies.post.update, $policies.post.delete], rows)` → `[{ update, delete }]` per row, one `preload` for the list.
+- `.output(withAbilities(postSchema, [$policies.post.update, $policies.post.delete]))`, or `paginated(withAbilities(...))`: each row gets `can: { update, delete }` for the caller, one `canMany` per response. The client reads `post.can.update`. No separate `abilities` procedure.
 - `allowSystem(rule)`: system actors reach the rule. Without it, the rule refuses a system actor.
 - `allowGuest(rule)`: the guest actor (signed-out caller of a public action) reaches the rule. Without it, the rule refuses the guest.
 - One policy per table. No rule → `false`.
@@ -111,18 +111,19 @@ export const postPolicy = definePolicy(postTable, {
 |---|---|
 | `useDb()` | Drizzle client, or the active transaction |
 | `findOrFail(table, id)`, `firstOrFail(rows)` | row, or `NotFoundError` |
+| `insertOne(table, values)`, `updateOne(table, id, values)` | the written row. `updateOne` → `NotFoundError` when no row has `id`. Drizzle chain for anything else |
 | `transaction(fn)`, `onCommit(fn)`, `beforeCommit(fn)` | transaction hooks |
 | `paginate(query.$dynamic(), { page, perPage })` | `{ rows, page, perPage, total, lastPage }`. `.orderBy()` must end on a unique column |
 | `paginateCursor(...)` | keyset page + next cursor |
 | `paginationSchema`, `paginated(rowSchema)` | input, output schema |
 | `listQuery(columns)`, `listWhere(table, input.filters)`, `listOrderBy(table, input.sort)` | server sort + filter |
 | `search(table, q)`, `searchRank`, `highlight` | full-text search. Table needs `...searchable(["title"])` |
-| `notTrashed(table)`, `onlyTrashed`, `softDelete`, `restore`, `forceDelete` | soft deletes |
+| `notTrashed(table)`, `onlyTrashed`, `softDelete(table, id)`, `restore(table, id)`, `forceDelete(table, id)` | soft deletes. With an `id`: the row, or `NotFoundError`. With a `where`: the changed rows |
 | `loader(fn)`, `chunkById(...)`, `allowRepeatedQueries(fn)` | N+1 control |
 | `now()` | current time, test clock aware |
 
 ## Auth and errors
 
-- `auth()` → session or `null`. `requireAuth()` → session or `UnauthenticatedError`. `useAuth()` → `{ user, actor }` anywhere on the server.
+- `useAuth()` → `{ user, actor }` anywhere on the server, each `null` when signed out. `requireAuth()` → session or `UnauthenticatedError`. Actor types are the strings `"user"`, `"system"`, `"api-key"`, `"guest"`.
 - Errors: `NotFoundError`, `ConflictError`, `ForbiddenError`, `UnauthenticatedError`, `ValidationFailedError`, `RateLimitedError`, `TransientError`, `UnknownError`. `isTaxonomyError(error, code)`.
-- Other: `audit(action, { type, id }, { changes })`, `signedUrl(path, { expiresIn })`, `requireSignature(event)`, `sanitizeHtml`, `richText` (Zod), `flash(message)`, `useLogger()`, `clientIp()`, `csvSafe()`.
+- Other: `audit(name, row, { changes })`, `signedUrl(path, { expiresIn })`, `requireSignature(event)`, `sanitizeHtml`, `richText` (Zod), `flash(message)`, `useLogger(tag?)` (tag defaults to the running action or job), `clientIp()`, `csvSafe()`.

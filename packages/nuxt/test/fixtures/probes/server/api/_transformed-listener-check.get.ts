@@ -17,7 +17,7 @@ export default defineEventHandler(async () => {
   await useQueue().obliterate({ force: true });
   await useDb().delete(outboxTable);
 
-  await transaction(() => emit(probeTransformed, { names: "transformed-a,transformed-b" }));
+  await transaction(() => probeTransformed.emit({ names: "transformed-a,transformed-b" }));
 
   const afterEmit = await recorded();
 

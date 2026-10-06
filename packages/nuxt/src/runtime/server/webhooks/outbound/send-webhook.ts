@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { now } from "../../clock/now";
 import { useDb } from "../../database/client";
 import { schemaTable } from "../../database/schema-table";
-import { dispatchAfterCommit } from "../../utils/dispatch-after-commit";
+import { dispatchJob } from "../../jobs/dispatch-job";
 import { WEBHOOK_JOB_NAME } from "./jobs/webhook-job-name";
 
 /**
@@ -13,7 +13,7 @@ import { WEBHOOK_JOB_NAME } from "./jobs/webhook-job-name";
  * Auto-imported on the server. The body is the JSON
  * `{ "type": event, "timestamp": "<ISO date>", "data": data }`. Each
  * endpoint gets its own `nuxvel.webhook` job on the `webhooks` queue,
- * through {@link dispatchAfterCommit}, so a rolled-back transaction sends
+ * through {@link Job.dispatch}, so a rolled-back transaction sends
  * nothing. The job signs the delivery with the endpoint's secret in the
  * Standard Webhooks headers `webhook-id`, `webhook-timestamp` and
  * `webhook-signature`. It retries an answer that is not 2xx up to 8 times
@@ -39,6 +39,6 @@ export async function sendWebhook(event: string, data: unknown) {
   const body = JSON.stringify({ type: event, timestamp: now().toISOString(), data });
 
   for (const endpoint of endpoints) {
-    await dispatchAfterCommit(WEBHOOK_JOB_NAME, { endpointId: endpoint.id, messageId, body });
+    await dispatchJob(WEBHOOK_JOB_NAME, { endpointId: endpoint.id, messageId, body });
   }
 }

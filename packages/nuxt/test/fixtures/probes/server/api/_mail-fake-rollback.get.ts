@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
   const { to } = query.parse(getQuery(event));
 
   await transaction(async () => {
-    await sendMail("welcome", { to, name: "Ada" });
+    await $mails.welcome.send({ to, name: "Ada" });
     throw new Error("probe rollback");
   }).catch(() => undefined);
 

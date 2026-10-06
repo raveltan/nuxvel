@@ -1,10 +1,15 @@
 import { createPostAsCaller } from "~~/server/actions/_probes/create-post-as-caller";
 
-export default defineEventHandler(async () => {
+async function errorOf(run: () => Promise<unknown>) {
   try {
-    await createPostAsCaller({ title: "No actor", body: "Nobody" });
-    return { error: undefined };
+    await run();
+    return undefined;
   } catch (error) {
-    return { error: error instanceof Error ? error.message : String(error) };
+    return error instanceof Error ? error.message : String(error);
   }
-});
+}
+
+export default defineEventHandler(async () => ({
+  error: await errorOf(() => createPostAsCaller({ title: "No actor", body: "Nobody" })),
+  auditError: await errorOf(() => audit("post.checked", { id: 1 })),
+}));

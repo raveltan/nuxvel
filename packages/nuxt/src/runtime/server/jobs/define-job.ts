@@ -7,6 +7,7 @@ import { awaitingName } from "../discovery/definition-name";
 import { reportError } from "../error-tracking/sentry";
 import { genericErrorMessage } from "../errors/generic-message";
 import { ValidationFailedError, isKnownTaxonomyError } from "../errors/taxonomy";
+import { runningName } from "../logging/log-context";
 import { useLogger } from "../logging/logger";
 import type { ChannelConnection } from "../realtime/define-channel";
 import { publishChannelMessage } from "../realtime/streams/publish-message";
@@ -14,6 +15,7 @@ import { type Upcaster, fromJobPayload, upcastPayload } from "./payload";
 import { isRetryableJobError } from "./retryable";
 import { classifyError } from "../errors/classify";
 import { noInput } from "../actions/no-input";
+import type { DispatchOptions } from "./dispatch-job";
 
 /** Who may follow a job on its channel: the `channel` option of {@link defineJob}. */
 export interface JobChannel {
@@ -43,6 +45,29 @@ export interface Job<
   unique?(payload: unknown): string;
   limiter?: RateLimiterOptions;
   run: (data: unknown, attempt?: JobAttempt) => Promise<void>;
+  /**
+   * Queues this job with `input`, to run once the surrounding
+   * transaction commits. Outside a transaction it is queued now.
+   *
+   * The input is the job's `input` schema input, so a wrong input fails
+   * to compile. An `outbox` row is written in the same transaction and
+   * relayed to the queue after the commit, so a rollback queues nothing
+   * and a crash after the commit loses nothing. Throws when an option is
+   * out of range. Tests assert on it with `expectQueued`.
+   *
+   * @param options.delay Milliseconds the job waits on the queue before
+   * it can run. See {@link DispatchOptions}.
+   * @param options.priority BullMQ priority, 1 runs first.
+   * @param options.dispatcher The {@link Actor} the job runs as. The
+   * current actor when unset, `null` for nobody.
+   *
+   * @example
+   * ```ts
+   * await $jobs.post.notifyFollowers.dispatch({ postId: post.id });
+   * await $jobs.post.sendDigest.dispatch({ postId: post.id }, { delay: 60_000, priority: 10 });
+   * ```
+   */
+  dispatch(...args: DispatchArgs<Schema>): Promise<void>;
   /** Brands the job with its handler's resolved return type; no such property exists at runtime. */
   readonly [jobResult]?: Result;
 }
@@ -59,6 +84,10 @@ interface JobConfig<Schema extends z.ZodType, Result> {
   input?: Schema;
   handler: (input: z.infer<Schema>, context: JobContext) => Result;
 }
+
+type DispatchArgs<Schema extends z.ZodType> = undefined extends z.input<Schema>
+  ? [input?: z.input<Schema>, options?: DispatchOptions]
+  : [input: z.input<Schema>, options?: DispatchOptions];
 
 /** Which attempt at a queued job a run is, passed to {@link Job.run} by the worker. */
 export interface JobAttempt {
@@ -94,9 +123,9 @@ export interface JobContext {
  * `defineJob` is auto-imported. One job per file, under `server/jobs/`;
  * the file is discovered, so nothing registers it, and its path is the
  * job's name: `server/jobs/post/notify-subscribers.job.ts` is
- * `"post.notify-subscribers"`, what {@link dispatchAfterCommit} takes and
- * what the queue stores. It becomes part of {@link JobName}, so a
- * dispatch of a misspelled name fails to compile. Moving the file
+ * `"post.notify-subscribers"`, what the queue stores, and
+ * `$jobs.post.notifySubscribers` in the `$jobs` namespace, whose
+ * {@link Job.dispatch} queues it. Moving the file
  * renames the job; {@link renamed} keeps the old name running what was
  * already queued under it.
  *
@@ -168,7 +197,7 @@ export interface JobContext {
  *   input: z.object({ postId: z.number() }),
  *   async handler({ postId }) {
  *     const post = await findOrFail(postsTable, postId);
- *     await notify(post);
+ *     await $notifications.post.published.notify(post.authorId, { postId, title: post.title });
  *   },
  * });
  * ```
@@ -216,6 +245,12 @@ export function defineJob<Schema extends z.ZodType = typeof noInput, Result = un
       timeout: config.timeout,
       unique: config.unique,
       limiter: config.limiter,
+      async dispatch(payload?: unknown, options?: DispatchOptions) {
+        // a static import reaches the #nuxvel/jobs registry, which holds this job
+        const { dispatchJob } = await import("./dispatch-job");
+
+        await dispatchJob(job, payload, options);
+      },
       async run(data: unknown, attempt = { last: true }) {
         let result: unknown;
         let owner: string | undefined;
@@ -226,7 +261,7 @@ export function defineJob<Schema extends z.ZodType = typeof noInput, Result = un
           owner = dispatcher?.type === "user" ? dispatcher.id : dispatcher?.userId;
           const payload = upcastPayload(envelope, version, config.upcasters ?? {}, `Job "${job.name}"`);
 
-          result = await runAs(dispatcher, async () => {
+          result = await runAs(dispatcher, job.name, async () => {
             const parsed = await input.safeParseAsync(payload);
 
             if (!parsed.success) throw new ValidationFailedError(parsed.error);
@@ -262,8 +297,8 @@ function publicMessage(error: unknown) {
   return isKnownTaxonomyError(error) && error.code !== "INTERNAL_SERVER_ERROR" ? error.message : genericErrorMessage(undefined);
 }
 
-function runAs<T>(dispatcher: Actor | null, work: () => T): T {
-  return dispatcher ? actorContext.run(dispatcher, work) : actorContext.exit(work);
+function runAs<T>(dispatcher: Actor | null, name: string, work: () => T): T {
+  return runningName.run(name, () => (dispatcher ? actorContext.run(dispatcher, work) : actorContext.exit(work)));
 }
 
 async function withTimeout<T>(work: T, timeout: number | undefined, name: string): Promise<Awaited<T>> {

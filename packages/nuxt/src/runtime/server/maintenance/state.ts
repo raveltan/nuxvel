@@ -2,7 +2,7 @@ import { z } from "zod";
 import { parseStoredJson } from "../flags/stored-json";
 import { MAINTENANCE_CHANNEL } from "../../shared/maintenance/maintenance-channel";
 import { useQueue } from "../jobs/queue";
-import { broadcast } from "../realtime/broadcast";
+import { broadcastOnCommit } from "../realtime/broadcast";
 import { useRedis } from "../redis/client";
 import { redisKey } from "../redis/key";
 import { now } from "../clock/now";
@@ -47,7 +47,7 @@ export async function goDown(options: MaintenanceOptions): Promise<MaintenanceSt
   if (state.keepQueue) await useQueue().resume();
   else await useQueue().pause();
 
-  await broadcast(MAINTENANCE_CHANNEL, "down", { message: state.message, retryAfter: state.retryAfter });
+  await broadcastOnCommit(MAINTENANCE_CHANNEL, "down", { message: state.message, retryAfter: state.retryAfter });
 
   return state;
 }
@@ -56,7 +56,7 @@ export async function goUp(): Promise<boolean> {
   const removed = await useRedis("durable").del(maintenanceKey());
 
   await useQueue().resume();
-  await broadcast(MAINTENANCE_CHANNEL, "up", {});
+  await broadcastOnCommit(MAINTENANCE_CHANNEL, "up", {});
 
   return removed > 0;
 }

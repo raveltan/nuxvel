@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Channels send server events to the browser over [server-sent events](https://developer.mozilla.org/docs/Web/API/Server-sent_events). You define each channel in a file, send events with `broadcast()`, and listen from a component with `useChannel()`. Use a channel when a page must show a change without a reload, such as a new post or a new comment. Redis carries the events between server processes.
+Channels send server events to the browser over [server-sent events](https://developer.mozilla.org/docs/Web/API/Server-sent_events). You define each channel in a file, send events with `$channels.<name>.broadcast()`, and listen from a component with `useChannel()`. Use a channel when a page must show a change without a reload, such as a new post or a new comment. Redis carries the events between server processes.
 
 ## Defining a channel
 
@@ -26,7 +26,7 @@ Put one channel in each file under `server/channels/`. nuxvel finds the file. Yo
 | `authorize` | Decides if this connection may listen. It gets the signed-in `user`, or `null` for a guest, and `params`, the params of the room (see [Broadcasting to a room](#broadcasting-to-a-room)). |
 | `params` | The param names of the channel's rooms, such as `["boardId"]`. Leave it out for a channel without rooms. |
 
-`events` types the channel from end to end. `broadcast()` and `useChannel()` accept only a channel name that a file defines and an event that the channel declares. A payload with the wrong shape fails `nuxt typecheck`.
+`events` types the channel from end to end. `broadcast()` accepts only an event that the channel declares, and `useChannel()` only a channel name that a file defines. A payload with the wrong shape fails `nuxt typecheck`.
 
 ### Channel names
 
@@ -77,16 +77,12 @@ A proxy that buffers responses holds these events back. Turn buffering off for `
 ## Broadcasting
 
 ```ts
-await broadcast("posts", "created", { id: post.id, title: post.title });
+await $channels.posts.broadcast("created", { id: post.id, title: post.title });
 ```
 
-`broadcast(channel, event, payload)` sends an event to every connection that listens to the channel. It is auto-imported on the server, in `nuxvel queue:work` jobs and in `nuxvel tinker`.
+`$channels.<name>.broadcast(event, payload)` sends an event to every connection that listens to the channel. `$channels` holds every channel of `server/channels/`, keyed by its path in camelCase. It is auto-imported on the server, in `nuxvel queue:work` jobs and in `nuxvel tinker`. Go to definition on `posts` opens the channel file.
 
-In place of the name, you can give the channel definition, from `$channels` or from an import. Then `event` and `payload` come from that definition. Go to definition on the argument opens the channel file.
-
-```ts
-await broadcast($channels.posts, "created", { id: post.id, title: post.title });
-```
+Inside a transaction, such as in an action, the event goes out only after the commit. See [Broadcasting after the commit](#broadcasting-after-the-commit).
 
 `payload` has the input type of the event schema. `broadcast()` validates it against the schema first. Async refinements and transforms also run. An invalid payload throws `ValidationFailedError`, the same error a failed action throws. Listeners get the output of the schema.
 
@@ -114,8 +110,7 @@ export const boardChannel = defineChannel({
 Give the params as the last argument to send to one room:
 
 ```ts
-await broadcast("board", "moved", { cardId: card.id }, { boardId: card.boardId });
-await broadcastAfterCommit($channels.board, "moved", { cardId: card.id }, { boardId: card.boardId });
+await $channels.board.broadcast("moved", { cardId: card.id }, { boardId: card.boardId });
 ```
 
 - Only the listeners of that room get the event. The room `board` with `{ boardId: 7 }` has the key `board?boardId=7`.
@@ -149,22 +144,18 @@ The payload is plain JSON, not superjson as in tRPC responses. A `Date` arrives 
 export const postPublishJob = defineJob({
   input: z.object({ id: z.number(), title: z.string() }),
   handler: async ({ id, title }) => {
-    await broadcast("posts", "created", { id, title });
+    await $channels.posts.broadcast("created", { id, title });
   },
 });
 ```
 
 `broadcast()` publishes through Redis with `useRedis("pubsub")`. It reaches the connections of every server process that uses the same Redis. The caller can be a request handler, a job in `nuxvel queue:work`, or `nuxvel tinker`. See [Redis](./redis.md).
 
-`broadcast()` resolves when Redis has the event. Each server then writes the event to its own connections.
+Outside a transaction, `broadcast()` resolves when Redis has the event. Each server then writes the event to its own connections.
 
 ### Broadcasting after the commit
 
-```ts
-await broadcastAfterCommit("posts", "created", { id: post.id, title: post.title });
-```
-
-`broadcast()` does not wait for a transaction. In an action, it sends the event before the action commits. When the write then rolls back, listeners already know about a write that does not exist. Use `broadcastAfterCommit()` in an action. It takes the same arguments as `broadcast()`, and sends the event only after the write commits.
+`broadcast()` waits for the surrounding transaction. In an action, it sends the event only after the action commits. When the write rolls back, nothing is sent, so listeners never hear about a write that does not exist.
 
 - It validates the payload at the call. A wrong payload throws in the transaction, so the transaction rolls back.
 - Outside a transaction, it sends the event immediately.
@@ -547,7 +538,7 @@ await expectNotBroadcast("posts", "deleted");
 await expectBroadcast("board", "moved", { cardId: card.id }, { params: { boardId: board.id } });
 ```
 
-`expectBroadcast(channel, event, match?, { times?, params? })` checks that the app broadcast `event` on the channel with a payload that has the `match` fields, and returns it. The event name, `match` and `params` are typed by the channel. With `params`, only a broadcast to that room counts. Without it, a broadcast to any room counts. It also takes the channel definition or its stub from `$channels`. A `broadcastAfterCommit()` counts once its transaction commits. `expectNotBroadcast(channel, event?, { params? })` checks that the app did not broadcast, on the channel or, with `event`, that event, or, with `params`, to that room.
+`expectBroadcast(channel, event, match?, { times?, params? })` checks that the app broadcast `event` on the channel with a payload that has the `match` fields, and returns it. The event name, `match` and `params` are typed by the channel. With `params`, only a broadcast to that room counts. Without it, a broadcast to any room counts. It also takes the channel definition or its stub from `$channels`. A broadcast in a transaction counts once the transaction commits. `expectNotBroadcast(channel, event?, { params? })` checks that the app did not broadcast, on the channel or, with `event`, that event, or, with `params`, to that room.
 
 ### Testing presence
 

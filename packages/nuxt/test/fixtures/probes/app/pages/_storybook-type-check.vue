@@ -5,15 +5,15 @@ import type { ComponentExpect, Locator, LocatorAssertions, ToastLocator } from "
 type StorybookTest = typeof import("@nuxvel/nuxt/storybook/test");
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
-type AbilitiesMock = NonNullable<NonNullable<TrpcMocks["post"]>["abilities"]>;
-type AbilitiesInput = Parameters<AbilitiesMock>[0];
-type AbilitiesOutput = Awaited<ReturnType<AbilitiesMock>>;
+type ByIdMock = NonNullable<NonNullable<TrpcMocks["post"]>["byId"]>;
+type ByIdInput = Parameters<ByIdMock>[0];
+type ByIdOutput = Awaited<ReturnType<ByIdMock>>;
 type MockedUser = NonNullable<Parameters<typeof import("@nuxvel/nuxt/storybook/mocks").mockUser>[0]>;
 
-const inputIsTyped: IsAny<AbilitiesInput> extends true ? never : AbilitiesInput extends { id: number } ? true : never = true;
-const outputIsTyped: IsAny<AbilitiesOutput> extends true
+const inputIsTyped: IsAny<ByIdInput> extends true ? never : ByIdInput extends { id: number } ? true : never = true;
+const outputIsTyped: IsAny<ByIdOutput> extends true
   ? never
-  : AbilitiesOutput extends { update: boolean; delete: boolean }
+  : ByIdOutput extends { title: string; can: { update: boolean; delete: boolean } }
     ? true
     : never = true;
 const userIsTyped: IsAny<MockedUser> extends true ? never : MockedUser["email"] extends string | undefined ? true : never = true;
@@ -65,9 +65,11 @@ function trpcSpyTypeChecks() {
   return pathIsTyped && procedureIsTyped;
 }
 
-const mocks: TrpcMocks = { post: { abilities: ({ id }) => ({ update: id > 0, delete: false }) } };
-// @ts-expect-error abilities returns booleans
-const wrongOutput: TrpcMocks = { post: { abilities: () => ({ update: "yes", delete: false }) } };
+const now = new Date();
+const post = { title: "Hello", body: "Body", authorId: "user-1", createdAt: now, updatedAt: now, deletedAt: null };
+const mocks: TrpcMocks = { post: { byId: ({ id }) => ({ ...post, id, can: { update: id > 0, delete: false } }) } };
+// @ts-expect-error can holds booleans
+const wrongOutput: TrpcMocks = { post: { byId: ({ id }) => ({ ...post, id, can: { update: "yes", delete: false } }) } };
 // @ts-expect-error the post router has no procedure named nope
 const unknownProcedure: TrpcMocks = { post: { nope: () => 1 } };
 </script>

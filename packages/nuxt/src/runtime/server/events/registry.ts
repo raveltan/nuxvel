@@ -21,7 +21,7 @@ export type EventPayload<Name extends EventName> = z.output<
 >;
 
 /**
- * What {@link emit} takes for the event named `Name`: its payload
+ * What {@link DomainEvent.emit} takes for the event named `Name`: its payload
  * schema's input.
  */
 export type EventInput<Name extends EventName> = z.input<
@@ -49,7 +49,7 @@ export function allListeners(): readonly Listener[] {
 /**
  * The discovered listeners for this event name, in discovery order.
  *
- * {@link emit} uses it to decide what runs
+ * {@link DomainEvent.emit} uses it to decide what runs
  * inline and what goes on the queue.
  */
 export function listenersFor(event: string): readonly Listener[] {

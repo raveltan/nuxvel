@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { ValidationFailedError } from "../errors/taxonomy";
-import { dispatchAfterCommit } from "../utils/dispatch-after-commit";
+import { dispatchJob } from "../jobs/dispatch-job";
 import { PUSH_JOB_NAME } from "./jobs/push-job-name";
 import { type PushNotification, pushNotificationSchema } from "./push-notification";
 
@@ -11,7 +11,7 @@ import { type PushNotification, pushNotificationSchema } from "./push-notificati
  *
  * Auto-imported on the server when `nuxvel.pwa` is set. Validates
  * `notification`, throwing {@link ValidationFailedError}, then hands it to
- * {@link dispatchAfterCommit} as a `nuxvel.push` job, so a rolled-back
+ * {@link Job.dispatch} as a `nuxvel.push` job, so a rolled-back
  * transaction sends nothing. The job signs each delivery with the VAPID
  * keys from `NUXT_PUBLIC_PUSH_VAPID_PUBLIC_KEY`,
  * `NUXT_PUSH_VAPID_PRIVATE_KEY` and `NUXT_PUSH_VAPID_SUBJECT`, deletes a
@@ -43,7 +43,7 @@ export async function sendPush(userIds: string | string[], notification: PushNot
 
   if (recipients.length === 0) return;
 
-  await dispatchAfterCommit(PUSH_JOB_NAME, {
+  await dispatchJob(PUSH_JOB_NAME, {
     userIds: recipients,
     notification: { ...result.data, tag: randomUUID() },
   });

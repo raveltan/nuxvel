@@ -15,7 +15,7 @@ import { defineEvent } from "../../events/define-event";
  * export const billingWelcomeListener = defineListener({
  *   event: billingSubscriptionChangedEvent,
  *   async handler({ userId, product, status, previousStatus }) {
- *     if (status === "active" && previousStatus === null) await notify(userId, $notifications.welcomePro, { product });
+ *     if (status === "active" && previousStatus === null) await $notifications.welcomePro.notify(userId, { product });
  *   },
  * });
  * ```

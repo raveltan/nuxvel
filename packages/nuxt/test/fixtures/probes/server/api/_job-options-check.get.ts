@@ -5,10 +5,10 @@ export default defineEventHandler(async () => {
   await useDb().delete(outboxTable);
 
   await transaction(async () => {
-    await dispatchAfterCommit("_probe.tuned", { name: "a" });
-    await dispatchAfterCommit("_probe.tuned", { name: "a" });
-    await dispatchAfterCommit("_probe.tuned", { name: "b" });
-    await dispatchAfterCommit("_probe.record", { name: "plain" });
+    await $jobs._probe.tuned.dispatch({ name: "a" });
+    await $jobs._probe.tuned.dispatch({ name: "a" });
+    await $jobs._probe.tuned.dispatch({ name: "b" });
+    await $jobs._probe.record.dispatch({ name: "plain" });
   });
   await relayOutbox();
 

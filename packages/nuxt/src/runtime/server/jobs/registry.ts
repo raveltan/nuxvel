@@ -8,7 +8,7 @@ type Discovered = Defined<(typeof jobs)[number]>;
 
 /**
  * The name of every job defined under `server/jobs/`, the built-in
- * `nuxvel.mail` and `nuxvel.notification` included: what {@link dispatchAfterCommit} and
+ * `nuxvel.mail` and `nuxvel.notification` included: what {@link Job.dispatch} and
  * {@link runJob} take.
  */
 export type JobName = Discovered["name"];
@@ -68,7 +68,7 @@ export function jobAliases(): readonly Renamed<Job>[] {
  * The discovered job with this dispatch name, or with an old name a
  * {@link renamed} alias keeps, or `undefined` when no file defines one.
  *
- * {@link dispatchAfterCommit} uses it to
+ * {@link Job.dispatch} uses it to
  * tell a real job from a name with no handler behind it yet.
  */
 export function findJob(name: string): Job | undefined {

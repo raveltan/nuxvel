@@ -1,14 +1,12 @@
 <script setup lang="ts">
-const props = defineProps<{ post: Pick<RouterOutputs["post"]["byId"], "id" | "title"> }>();
+defineProps<{ post: Pick<RouterOutputs["post"]["byId"], "id" | "title" | "can"> }>();
 const emit = defineEmits<{ delete: [] }>();
-
-const abilities = $api.post.abilities.useQuery({ id: props.post.id });
 </script>
 
 <template>
   <div class="flex gap-2">
     <UButton
-      v-if="abilities.data?.update"
+      v-if="post.can.update"
       :to="{ name: 'posts-id-edit', params: { id: post.id } }"
       color="neutral"
       variant="outline"
@@ -17,7 +15,7 @@ const abilities = $api.post.abilities.useQuery({ id: props.post.id });
       :aria-label="`Edit ${post.title}`"
     />
     <UButton
-      v-if="abilities.data?.delete"
+      v-if="post.can.delete"
       color="error"
       variant="outline"
       icon="i-lucide-trash"

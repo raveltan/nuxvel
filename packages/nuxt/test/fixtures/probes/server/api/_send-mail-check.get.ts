@@ -11,12 +11,12 @@ export default defineEventHandler(async (event) => {
   await useDb().delete(outboxTable);
 
   await transaction(async () => {
-    await sendMail("welcome", { to: rolledBack, name: "Rolled Back" });
+    await $mails.welcome.send({ to: rolledBack, name: "Rolled Back" });
     throw new Error("probe rollback");
   }).catch(() => undefined);
 
   await transaction(async () => {
-    await sendMail("welcome", { to: committed, name: "Ada" });
+    await $mails.welcome.send({ to: committed, name: "Ada" });
   });
 
   await relayOutbox();

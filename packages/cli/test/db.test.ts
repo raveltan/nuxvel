@@ -768,7 +768,7 @@ describe("nuxvel db:*", () => {
     }
   }, 120000);
 
-  it("db:seed runs every seeder or the named ones, db:fresh drops and migrates and seeds only with --seed, and both refuse in production", async () => {
+  it("db:seed runs every seeder or the named ones and prints the lines a seeder returns, db:fresh drops and migrates and seeds only with --seed, and both refuse in production", async () => {
     const appDir = scratchPlayground("db-seed");
     const databaseUrl = await scratchDatabase("seed");
     const env = {
@@ -802,7 +802,7 @@ describe("nuxvel db:*", () => {
 
     const named = await runCliWithEnv(appDir, env, "db:seed", "_probe.posts");
     expect(named.exitCode, named.stderr).toBe(0);
-    expect(stripAnsi(named.stderr)).toMatch(/✔ Seeded _probe\.author\n✔ Seeded _probe\.posts\n/);
+    expect(stripAnsi(named.stderr)).toMatch(/✔ Seeded _probe\.author\n {2}Seeded Author is seeded-author@example\.com\n✔ Seeded _probe\.posts\n/);
     expect(await authors()).toBe(1);
 
     const again = await runCliWithEnv(appDir, env, "db:seed");
@@ -935,7 +935,7 @@ describe("nuxvel db:*", () => {
     expect(made.exitCode, made.stderr).toBe(0);
     expect(stripAnsi(made.stdout)).toContain("✔ Created server/seeders/blog/posts.seeder.ts");
     expect(readFileSync(join(fixtureCwd, "server", "seeders", "blog", "posts.seeder.ts"), "utf-8")).toBe(
-      'export const blogPostsSeeder = defineSeeder(async () => {\n  console.log("Seeding blog.posts");\n});\n',
+      'export const blogPostsSeeder = defineSeeder(async () => {\n  return [];\n});\n',
     );
 
     mkdirSync(join(fixtureCwd, ".nuxvel", "templates"), { recursive: true });

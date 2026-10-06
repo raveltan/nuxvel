@@ -69,7 +69,7 @@ To cache the result of a function, use [`remember()`](./cache.md). It adds a key
 | `queue` | BullMQ jobs. |
 | `cache` | Cached values ([`remember()`](./cache.md)). Reads `NUXT_REDIS_CACHE_URL` when it is set. |
 | `durable` | State that Redis must not evict: rate limits, sign-in delays, locks, webhook and idempotency keys, the [maintenance mode](./maintenance.md) state, and flag targeting and experiment state. Always uses `NUXT_REDIS_URL`. |
-| `pubsub` | Realtime events. `broadcast()` publishes on it and keeps the replay buffer of each channel there. |
+| `pubsub` | Realtime events. `$channels.x.broadcast()` publishes on it and keeps the replay buffer of each channel there. |
 
 Each purpose has its own connection. They cannot share one. A subscriber connection cannot run other commands. If `queue` and `cache` shared a connection, a blocking queue consumer would make cache reads wait.
 

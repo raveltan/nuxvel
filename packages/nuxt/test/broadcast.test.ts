@@ -59,7 +59,7 @@ describe("broadcast()", async () => {
     expect(await stream.next(300)).toBe("timeout");
   });
 
-  it("sends an event from broadcastAfterCommit() only once its transaction commits, and rejects a payload that fails the schema at the call", async () => {
+  it("sends an event from a broadcast() in a transaction only once it commits, and rejects a payload that fails the schema at the call", async () => {
     const stream = await listening("_probe-public");
 
     expect(await guest().$fetch("/api/_broadcast-after-commit-check")).toEqual({ rejected: true });

@@ -1,5 +1,5 @@
 export default defineJob({
   handler: async () => {
-    await dispatchAfterCommit("_probe.always-fails", {});
+    await $jobs._probe.alwaysFails.dispatch({});
   },
 });

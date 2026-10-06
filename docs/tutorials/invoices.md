@@ -368,7 +368,7 @@ export const databaseSeeder = defineSeeder(async () => {
   await membershipFactory({ teamId: globex.id, userId: grace.id, role: "admin" });
   await invoiceFactory.for("teamId", globex).for("ownerId", grace).count(3)();
 
-  console.log(`Sign in as ${DEMO_EMAIL} with the password ${DEMO_PASSWORD}`);
+  return [`Sign in as ${DEMO_EMAIL} with the password ${DEMO_PASSWORD}`];
 });
 ```
 
@@ -433,8 +433,6 @@ import { invoiceTable, type MembershipRow, membershipTable, teamTable } from "#n
 
 export type TeamRole = MembershipRow["role"];
 
-export const userIdOf = (actor: { id: string; userId?: string }) => actor.userId ?? actor.id;
-
 export const teamIdsOf = (userId: string) =>
   useDb().select({ id: membershipTable.teamId }).from(membershipTable).where(eq(membershipTable.userId, userId));
 
@@ -462,7 +460,6 @@ export const findInvoiceFor = (userId: string, id: number) =>
     .then(firstOrFail);
 ```
 
-- `userIdOf(actor)` returns the user behind an actor. For a user, it is `actor.id`. For an API key, `actor.id` is the key and `actor.userId` is its owner. Chapter 13 uses API keys, so every rule and action asks `userIdOf()` and not `actor.id`.
 - `teamIdsOf(userId)` is a subquery of the teams of a user.
 - `teamRoles(userId, teamIds)` loads the roles of a user in several teams with one query.
 - `findTeamFor()` and `findInvoiceFor()` load a row only from the teams of the user. Chapter 5 uses them.
@@ -474,7 +471,7 @@ Replace the two generated policies:
 import { teamTable } from "#nuxvel/schema";
 
 export const teamPolicy = definePolicy(teamTable, {
-  preload: async (actor, rows) => ({ roles: await teamRoles(userIdOf(actor), rows.map((row) => row.id)) }),
+  preload: async (actor, rows) => ({ roles: actor.userId ? await teamRoles(actor.userId, rows.map((row) => row.id)) : new Map<number, TeamRole>() }),
   rules: {
     createInvoice: (actor, row, { roles }) => ["admin", "member"].includes(roles.get(row.id) ?? ""),
     manage: (actor, row, { roles }) => roles.get(row.id) === "admin",
@@ -488,7 +485,7 @@ export const teamPolicy = definePolicy(teamTable, {
 import { invoiceTable } from "#nuxvel/schema";
 
 export const invoicePolicy = definePolicy(invoiceTable, {
-  preload: async (actor, rows) => ({ roles: await teamRoles(userIdOf(actor), rows.map((row) => row.teamId)) }),
+  preload: async (actor, rows) => ({ roles: actor.userId ? await teamRoles(actor.userId, rows.map((row) => row.teamId)) : new Map<number, TeamRole>() }),
   rules: {
     update: (actor, row, { roles }) => ["admin", "member"].includes(roles.get(row.teamId) ?? ""),
     delete: (actor, row, { roles }) => roles.get(row.teamId) === "admin",
@@ -511,12 +508,10 @@ import { membershipTable, teamTable } from "#nuxvel/schema";
 export const createTeamAction = defineAction({
   input: createTeamInput,
   handler: async (input, ctx) => {
-    const userId = userIdOf(ctx.actor);
-    const row = await useDb()
-      .insert(teamTable)
-      .values({ ...input, ownerId: userId })
-      .returning()
-      .then(firstOrFail);
+    if (!ctx.actor.userId) throw new ForbiddenError("This action needs a user");
+
+    const userId = ctx.actor.userId;
+    const row = await insertOne(teamTable, { ...input, ownerId: userId });
 
     await useDb().insert(membershipTable).values({ teamId: row.id, userId, role: "admin" });
     await audit("team.created", row);
@@ -530,14 +525,16 @@ The action runs in one transaction, so the team and its first membership commit 
 
 ```ts
 // server/actions/team/update-team.action.ts
-    const row = await findTeamFor(userIdOf(ctx.actor), id);
-    await authorize(ctx.actor, "manage", teamTable, row);
+    if (!ctx.actor.userId) throw new ForbiddenError("This action needs a user");
+    const row = await findTeamFor(ctx.actor.userId, id);
+    await authorize("manage", teamTable, row);
 ```
 
 ```ts
 // server/actions/team/delete-team.action.ts
-    const row = await findTeamFor(userIdOf(ctx.actor), input.id);
-    await authorize(ctx.actor, "delete", teamTable, row);
+    if (!ctx.actor.userId) throw new ForbiddenError("This action needs a user");
+    const row = await findTeamFor(ctx.actor.userId, input.id);
+    await authorize("delete", teamTable, row);
 ```
 
 An admin adds a user who already signed up, by email, and changes the role of a member. Generate the two actions:
@@ -578,17 +575,15 @@ export const addMemberAction = defineAction({
     "team.unknown-email": { message: "Nobody with this email has signed up", field: "email" },
   },
   handler: async (input, ctx, fail) => {
-    const team = await findTeamFor(userIdOf(ctx.actor), input.teamId);
-    await authorize(ctx.actor, "manage", teamTable, team);
+    if (!ctx.actor.userId) throw new ForbiddenError("This action needs a user");
+
+    const team = await findTeamFor(ctx.actor.userId, input.teamId);
+    await authorize("manage", teamTable, team);
 
     const [user] = await useDb().select().from(userTable).where(eq(userTable.email, input.email));
     if (!user) return fail("team.unknown-email");
 
-    const row = await useDb()
-      .insert(membershipTable)
-      .values({ teamId: team.id, userId: user.id, role: input.role })
-      .returning()
-      .then(firstOrFail);
+    const row = await insertOne(membershipTable, { teamId: team.id, userId: user.id, role: input.role });
 
     await audit("membership.added", row, { metadata: { teamId: team.id, role: row.role } });
 
@@ -608,9 +603,11 @@ export const changeRoleAction = defineAction({
     "team.last-admin": "A team needs at least one admin",
   },
   handler: async (input, ctx, fail) => {
+    if (!ctx.actor.userId) throw new ForbiddenError("This action needs a user");
+
     const membership = await findOrFail(membershipTable, input.membershipId);
-    const team = await findTeamFor(userIdOf(ctx.actor), membership.teamId);
-    await authorize(ctx.actor, "manage", teamTable, team);
+    const team = await findTeamFor(ctx.actor.userId, membership.teamId);
+    await authorize("manage", teamTable, team);
 
     if (membership.role === "admin" && input.role !== "admin") {
       const admins = await useDb()
@@ -620,12 +617,7 @@ export const changeRoleAction = defineAction({
       if (admins.length === 1) return fail("team.last-admin");
     }
 
-    const row = await useDb()
-      .update(membershipTable)
-      .set({ role: input.role })
-      .where(eq(membershipTable.id, membership.id))
-      .returning()
-      .then(firstOrFail);
+    const row = await updateOne(membershipTable, membership.id, { role: input.role });
 
     await audit("membership.role-changed", row, { changes: { role: { from: membership.role, to: row.role } } });
 
@@ -636,7 +628,7 @@ export const changeRoleAction = defineAction({
 
 `errors` declares the typed failures of an action. `fail()` accepts only a declared code. A team without an admin could never get one again, so `change-role` refuses to demote the last admin. The unique index refuses a second membership of the same user, and the procedure answers it with `CONFLICT`. Chapter 11 reads the `audit()` calls.
 
-The invoice actions follow the same steps. The create action loads the team of the input from the teams of the user and checks `createInvoice`. The owner of the new invoice is `userIdOf(ctx.actor)`:
+The invoice actions follow the same steps. The create action loads the team of the input from the teams of the user and checks `createInvoice`. The owner of the new invoice is `ctx.actor.userId`. In an action, `userId` is `undefined` for a system actor, so the first line refuses an actor without a user, as the generated create action does:
 
 ```ts
 // server/actions/invoice/create-invoice.action.ts
@@ -645,15 +637,13 @@ import { invoiceTable, teamTable } from "#nuxvel/schema";
 export const createInvoiceAction = defineAction({
   input: createInvoiceInput,
   handler: async (input, ctx) => {
-    const userId = userIdOf(ctx.actor);
-    const team = await findTeamFor(userId, input.teamId);
-    await authorize(ctx.actor, "createInvoice", teamTable, team);
+    if (!ctx.actor.userId) throw new ForbiddenError("This action needs a user");
 
-    const row = await useDb()
-      .insert(invoiceTable)
-      .values({ ...input, ownerId: userId })
-      .returning()
-      .then(firstOrFail);
+    const userId = ctx.actor.userId;
+    const team = await findTeamFor(userId, input.teamId);
+    await authorize("createInvoice", teamTable, team);
+
+    const row = await insertOne(invoiceTable, { ...input, ownerId: userId });
 
     await audit("invoice.created", row);
 
@@ -675,32 +665,29 @@ The update action no longer needs the check of a new team:
 
 ```ts
 // server/actions/invoice/update-invoice.action.ts
-import { eq } from "drizzle-orm";
 import { invoiceTable } from "#nuxvel/schema";
 
 export const updateInvoiceAction = defineAction({
   input: updateInvoiceInput,
   handler: async ({ id, ...fields }, ctx) => {
-    const row = await findInvoiceFor(userIdOf(ctx.actor), id);
-    await authorize(ctx.actor, "update", invoiceTable, row);
+    if (!ctx.actor.userId) throw new ForbiddenError("This action needs a user");
+
+    const row = await findInvoiceFor(ctx.actor.userId, id);
+    await authorize("update", invoiceTable, row);
 
     if (Object.keys(fields).length === 0) return row;
 
-    return useDb()
-      .update(invoiceTable)
-      .set(fields)
-      .where(eq(invoiceTable.id, id))
-      .returning()
-      .then(firstOrFail);
+    return updateOne(invoiceTable, id, fields);
   },
 });
 ```
 
-In the delete action, replace the first line of the handler in the same way:
+In the delete action, replace the first line of the handler with these two lines:
 
 ```ts
 // server/actions/invoice/delete-invoice.action.ts
-    const row = await findInvoiceFor(userIdOf(ctx.actor), input.id);
+    if (!ctx.actor.userId) throw new ForbiddenError("This action needs a user");
+    const row = await findInvoiceFor(ctx.actor.userId, input.id);
 ```
 
 The generated edit form of an invoice has a team field. Remove the `teamId` field, its default and the team query from `app/components/InvoiceForm.vue`.
@@ -770,7 +757,7 @@ describe("team/change-role action", () => {
 });
 ```
 
-`runAction()` runs an action in the server of the test file, as the user of `actingAs`. It has the same validation and transaction as a real call. `toBeActionError(code)` matches a declared failure. The third test goes through the router of chapter 5, because the router turns the unique violation into `CONFLICT`. The last test of the chapter checks that a new team has its creator as admin. It reads the members and the abilities through the router, so it passes after chapter 5:
+`runAction()` runs an action in the server of the test file, as the user of `actingAs`. It has the same validation and transaction as a real call. `toBeActionError(code)` matches a declared failure. The third test goes through the router of chapter 5, because the router turns the unique violation into `CONFLICT`. The last test of the chapter checks that a new team has its creator as admin. It reads the members and the `can` of the team through the router, so it passes after chapter 5:
 
 ```ts
 // server/actions/team/create-team.action.test.ts
@@ -788,7 +775,7 @@ describe("team/create-team action", () => {
     expect(await trpc.team.members({ id: created.id })).toEqual([
       expect.objectContaining({ userId: ada.id, role: "admin", email: ada.email }),
     ]);
-    expect(await trpc.team.abilities({ id: created.id })).toEqual({ manage: true, createInvoice: true });
+    expect((await trpc.team.byId({ id: created.id })).can).toEqual({ manage: true, createInvoice: true });
   });
 });
 ```
@@ -809,7 +796,7 @@ The database filters the rows, so a mistake in a page cannot show the rows of an
 
 ### The team router
 
-Replace the generated team router. `list` and `byId` read only the teams of the user. `members` returns the members of one team with their names, and `abilities` tells a page what the user may do. `delete` uses `freshProcedure`, and `addMember` has a rate limit: chapters 9 and 12 tell why.
+Replace the generated team router. `list` and `byId` read only the teams of the user. `members` returns the members of one team with their names, and `byId` sends `can`, what the user may do, with `withAbilities()`. `delete` uses `freshProcedure`, and `addMember` has a rate limit: chapters 9 and 12 tell why.
 
 ```ts
 // server/trpc/routers/team.router.ts
@@ -837,7 +824,7 @@ export const teamRouter = {
     ),
   byId: authedProcedure
     .input(teamIdInput)
-    .output(teamSchema)
+    .output(withAbilities(teamSchema, [$policies.team.manage, $policies.team.createInvoice]))
     .query(({ input, ctx }) => findTeamFor(ctx.user.id, input.id)),
   members: authedProcedure
     .input(teamIdInput)
@@ -851,15 +838,6 @@ export const teamRouter = {
         .innerJoin(userTable, eq(userTable.id, membershipTable.userId))
         .where(eq(membershipTable.teamId, team.id))
         .orderBy(asc(membershipTable.id));
-    }),
-  abilities: authedProcedure
-    .input(teamIdInput)
-    .output(z.object({ manage: z.boolean(), createInvoice: z.boolean() }))
-    .query(async ({ input, ctx }) => {
-      const team = await findTeamFor(ctx.user.id, input.id);
-      const [abilities] = await canMany(ctx.actor, ["manage", "createInvoice"], teamTable, [team]);
-
-      return abilities ?? { manage: false, createInvoice: false };
     }),
   create: authedProcedure
     .input(createTeamInput)
@@ -895,7 +873,7 @@ export const teamRouter = {
 };
 ```
 
-In a procedure, `ctx.user` is the signed-in user, or the owner of the API key. So the reads use `ctx.user.id`, and the actions use `userIdOf(ctx.actor)`. `canMany()` answers several rules of the policy with one `preload`. See [Authorization: checking a list](../authorization.md#checking-a-list).
+In a procedure, `ctx.user` is the signed-in user, or the owner of the API key. So the reads use `ctx.user.id`, and the actions use `ctx.actor.userId`. `withAbilities()` answers several rules of the policy with one `preload`. See [Authorization: showing what a user may do](../authorization.md#showing-what-a-user-may-do).
 
 ### The invoice router
 
@@ -1053,7 +1031,7 @@ When `team.byId` answers `NOT_FOUND` while the server renders the page, nuxvel a
 const props = defineProps<{ teamId: number }>();
 
 const members = $api.team.members.useQuery({ id: props.teamId });
-const abilities = $api.team.abilities.useQuery({ id: props.teamId });
+const team = $api.team.byId.useQuery({ id: props.teamId });
 const roles = addMemberInput.shape.role.options;
 
 const { mutate: changeRole, error: roleError } = $api.team.changeRole.useMutation();
@@ -1074,7 +1052,7 @@ const form = useActionForm($api.team.addMember, {
           <li v-for="member in data" :key="member.id" class="flex items-center justify-between gap-4 py-2">
             <span>{{ member.name }} <span class="text-muted">{{ member.email }}</span></span>
             <USelect
-              v-if="abilities.data?.manage"
+              v-if="team.data?.can.manage"
               :model-value="member.role"
               :items="roles"
               :aria-label="`Role of ${member.email}`"
@@ -1087,7 +1065,7 @@ const form = useActionForm($api.team.addMember, {
       </template>
     </QueryState>
     <UForm
-      v-if="abilities.data?.manage"
+      v-if="team.data?.can.manage"
       :ref="form.ref"
       :schema="form.schema"
       :state="form.state"
@@ -1145,8 +1123,9 @@ const members = [
   { id: 2, teamId: 1, userId: "user-2", role: "viewer" as const, name: "Grace Hopper", email: "grace@example.com", createdAt, updatedAt: createdAt },
 ];
 
-const asAdmin = () => ({ manage: true, createInvoice: true });
-const asViewer = () => ({ manage: false, createInvoice: false });
+const team = { id: 1, name: "Acme", ownerId: "user-1", createdAt, updatedAt: createdAt };
+const asAdmin = () => ({ ...team, can: { manage: true, createInvoice: true } });
+const asViewer = () => ({ ...team, can: { manage: false, createInvoice: false } });
 const changeRole = trpcSpy("team.changeRole", (input) => ({ ...members[1]!, role: input.role }));
 const addMember = trpcSpy("team.addMember", (input) => ({ ...members[1]!, id: 3, role: input.role, email: input.email }));
 
@@ -1154,7 +1133,7 @@ const meta = { component: MemberList, args: { teamId: 1 } } satisfies Meta<typeo
 export default meta;
 
 export const AdminChangesARole: StoryObj<typeof meta> = {
-  parameters: { msw: [mockTrpc({ team: { members: () => members, abilities: asAdmin, changeRole } })] },
+  parameters: { msw: [mockTrpc({ team: { members: () => members, byId: asAdmin, changeRole } })] },
   play: async () => {
     await fillForm(page, { "Role of grace@example.com": "member" });
 
@@ -1163,7 +1142,7 @@ export const AdminChangesARole: StoryObj<typeof meta> = {
 };
 
 export const AdminAddsAMember: StoryObj<typeof meta> = {
-  parameters: { msw: [mockTrpc({ team: { members: () => members, abilities: asAdmin, addMember } })] },
+  parameters: { msw: [mockTrpc({ team: { members: () => members, byId: asAdmin, addMember } })] },
   play: async () => {
     await fillForm(page, { Email: "linus@example.com", Role: "viewer" });
     await button(page, "Add member").click();
@@ -1173,7 +1152,7 @@ export const AdminAddsAMember: StoryObj<typeof meta> = {
 };
 
 export const ViewerSeesTheRoles: StoryObj<typeof meta> = {
-  parameters: { msw: [mockTrpc({ team: { members: () => members, abilities: asViewer } })] },
+  parameters: { msw: [mockTrpc({ team: { members: () => members, byId: asViewer } })] },
   play: async () => {
     await expect(text(page, "viewer")).toBeVisible();
     await expect(button(page, "Add member")).toBeHidden();
@@ -1186,7 +1165,7 @@ export const KeepsTheLastAdmin: StoryObj<typeof meta> = {
       mockTrpc({
         team: {
           members: () => members,
-          abilities: asAdmin,
+          byId: asAdmin,
           changeRole: () => {
             throw new ActionError("team.last-admin", "A team needs at least one admin");
           },
@@ -1207,7 +1186,7 @@ export const UnknownEmail: StoryObj<typeof meta> = {
       mockTrpc({
         team: {
           members: () => members,
-          abilities: asAdmin,
+          byId: asAdmin,
           addMember: () => {
             throw new ActionError("team.unknown-email", "Nobody with this email has signed up", "team.add-member", "email");
           },
@@ -1229,7 +1208,7 @@ export const TooManyMembers: StoryObj<typeof meta> = {
       mockTrpc({
         team: {
           members: () => members,
-          abilities: asAdmin,
+          byId: asAdmin,
           addMember: () => {
             throw new RateLimitedError("Too many requests, try again in 60 seconds", { retryAfter: 60 });
           },
@@ -1246,7 +1225,7 @@ export const TooManyMembers: StoryObj<typeof meta> = {
 };
 ```
 
-- `abilities` gives each story its role in the team. The admin stories get the forms, and the viewer story does not.
+- `byId` gives each story its role in the team, in `can`. The admin stories get the forms, and the viewer story does not.
 - `trpcSpy(path, implementation)` answers like the implementation and records each call. `expect(spy).toHaveBeenCalledWith()` checks the input that the component sent. Its arguments are typed by the router.
 - `ActionError(code, message)` is a typed failure of an action, and `RateLimitedError` is a 429. The component shows each one in the place that the real server's error would reach.
 - `fillForm` selects an option of a `USelect` by its label. The role selects of the list have the `aria-label` `Role of <email>`.
@@ -2005,7 +1984,7 @@ This output is from `./nv dev --no-https --port 3917`. With the default `npm run
 nuxvel adds the `apiKeys` router to the app. It creates, lists and revokes the keys of the signed-in user. A key acts as its owner: `ctx.user` is the owner and `ctx.actor` is the key. The app is already ready for keys:
 
 - The reads of chapter 5 use `ctx.user.id`, so a key reads the teams of its owner.
-- The actions and the policies use `userIdOf(ctx.actor)`, so a key has the team roles of its owner.
+- The actions and the policies use `ctx.actor.userId`, so a key has the team roles of its owner.
 - The audit log records the key as the actor.
 - `adminProcedure` and `freshProcedure` refuse a key. So a stolen key cannot use the admin tools or delete a team.
 

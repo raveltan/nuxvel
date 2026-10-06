@@ -125,7 +125,7 @@ function isPreloading(policy: Record<string, PolicyRule> | PreloadingPolicy): po
  * for it.
  *
  * The result also has an {@link AbilityRef} for each rule, so
- * `can(actor, postPolicy.update, post)` works beside the string form. A
+ * `can(postPolicy.update, post)` works beside the string form. A
  * rule named `table`, `tableName`, `rules` or `preload` gets no ref.
  *
  * Pass `{ preload, rules }` instead of the rules when a rule needs more

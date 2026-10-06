@@ -1,6 +1,6 @@
 import type { Rule } from "eslint";
 
-const NETWORK_CALLS = new Set(["fetch", "$fetch", "ofetch", "sendMail", "sendMailNow", "useS3", "useBucket", "promoteUpload", "checkUpload"]);
+const NETWORK_CALLS = new Set(["fetch", "$fetch", "ofetch", "sendMailNow", "useS3", "useBucket", "promoteUpload", "checkUpload"]);
 
 function isSyncListener(node: Rule.Node) {
   if (node.type !== "CallExpression") return false;

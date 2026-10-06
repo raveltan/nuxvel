@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-import { eq } from "drizzle-orm";
 import { userTable } from "#nuxvel/schema";
 
 export const setAvatarAction = defineAction({
@@ -11,12 +10,7 @@ export const setAvatarAction = defineAction({
       to: `avatars/${ctx.actor.id}/${randomUUID()}`,
     });
 
-    const updated = await useDb()
-      .update(userTable)
-      .set({ image: avatarKey })
-      .where(eq(userTable.id, ctx.actor.id))
-      .returning()
-      .then(firstOrFail);
+    const updated = await updateOne(userTable, ctx.actor.id, { image: avatarKey });
 
     await audit("user.avatar-changed", updated);
 

@@ -15,7 +15,7 @@ const RELAY_BATCH_SIZE = 100;
  * Auto-imported on the server. `nuxvel queue:work` calls it when a
  * dispatch's `NOTIFY` arrives and every second,
  * so an app never calls it itself — reach for it in a test that needs the
- * rows {@link dispatchAfterCommit} wrote to reach the queue now. A crash
+ * rows {@link Job.dispatch} wrote to reach the queue now. A crash
  * between the enqueue and the mark re-enqueues the row on the next run,
  * so job handlers must stay safe to run twice.
  *

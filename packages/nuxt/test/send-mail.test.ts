@@ -4,7 +4,7 @@ import { expect, guest, useRealQueue } from "@nuxvel/nuxt/testing";
 import { mailpitHtmlSupport, mailpitMessagesTo } from "./helpers/mailpit";
 import { setupPlayground } from "./helpers/playground";
 
-describe("sendMail()", async () => {
+describe("$mails.x.send()", async () => {
   await setupPlayground();
 
   useRealQueue();

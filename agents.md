@@ -121,7 +121,7 @@ search, soft deletes and seeders, validation (Zod), tRPC API with
 OpenAPI and API keys, actions, auth (email and password with email
 verification, password reset and two-factor sign-in, plus social login
 through `nuxvel.auth.social`), policies, the audit log, queues with the
-transactional outbox behind `dispatchAfterCommit`, schedules, cache,
+transactional outbox behind `$jobs.x.dispatch()`, schedules, cache,
 mail with Vue templates rendered through MJML, notifications, object storage, webhooks,
 billing with Stripe (opt-in `nuxvel.billing`: subscriptions and one-time
 payments through Checkout and the Customer Portal, an in-memory Stripe

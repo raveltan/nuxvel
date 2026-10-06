@@ -2,7 +2,7 @@ import { describe, it } from "vitest";
 import { expect, guest, useRealQueue } from "@nuxvel/nuxt/testing";
 import { setupPlayground } from "./helpers/playground";
 
-describe("dispatchAfterCommit() through the outbox", async () => {
+describe("$jobs.x.dispatch() through the outbox", async () => {
   await setupPlayground();
 
   useRealQueue();

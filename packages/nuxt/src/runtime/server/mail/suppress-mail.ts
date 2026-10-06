@@ -10,7 +10,7 @@ function normalizeAddress(address: string) {
 }
 
 /**
- * Records that `address` bounced or complained, so {@link sendMail} skips
+ * Records that `address` bounced or complained, so {@link Mail.send} skips
  * it from now on.
  *
  * Auto-imported on the server. Call it from the handler that receives
@@ -37,7 +37,7 @@ export async function suppressMail(
 /**
  * Whether `address` is on the suppression list.
  *
- * Auto-imported on the server. {@link sendMail} checks it before
+ * Auto-imported on the server. {@link Mail.send} checks it before
  * queueing anything.
  */
 export async function isMailSuppressed(address: string) {

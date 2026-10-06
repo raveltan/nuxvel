@@ -12,7 +12,7 @@ import { expectNotRecorded, expectRecorded, includes } from "./records";
  *
  * In a test build the app relays to a recorder instead of Redis. The
  * outbox is relayed before the assertion, so a job
- * {@link dispatchAfterCommit} wrote is visible without `nuxvel
+ * {@link Job.dispatch} wrote is visible without `nuxvel
  * queue:work` running. Use {@link expectMailSent} for mail and
  * {@link dispatch} to assert on the dispatch itself.
  *

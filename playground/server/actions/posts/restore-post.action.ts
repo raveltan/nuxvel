@@ -1,14 +1,12 @@
-import { eq } from "drizzle-orm";
 import { postsTable } from "#nuxvel/schema";
 
 export const restorePostAction = defineAction({
   input: postIdInput,
   audit: { name: "post.restored", target: postsTable },
   invalidates: ["post"],
-  handler: async (input, ctx) => {
-    const post = await findOrFail(postsTable, input.id, { trashed: "only" });
-    await authorize(ctx.actor, "restore", postsTable, post);
+  handler: async (input) => {
+    await findAuthorized(postsTable, input.id, "restore", { trashed: "only" });
 
-    return restore(postsTable, eq(postsTable.id, input.id)).then(firstOrFail);
+    return restore(postsTable, input.id);
   },
 });

@@ -23,7 +23,7 @@ function definedOptions(job: QueuedJob): JobsOptions {
  * {@link defineJob}.
  *
  * {@link relayOutbox} is the only caller —
- * an app dispatches with {@link dispatchAfterCommit} instead. Under the
+ * an app dispatches with {@link Job.dispatch} instead. Under the
  * test harness the `enqueue` replacement records the job instead of
  * reaching Redis.
  */

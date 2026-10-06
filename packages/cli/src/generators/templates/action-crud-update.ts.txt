@@ -1,19 +1,12 @@
-import { {{drizzleImports}} } from "drizzle-orm";
-import { {{tableCamelName}}Table } from "{{tableSchemaImport}}";
+{{drizzleImport}}import { {{tableCamelName}}Table } from "{{tableSchemaImport}}";
 {{parentImports}}
 export const {{exportName}} = defineAction({
   input: update{{tablePascalName}}Input,
-  handler: async ({ id, ...fields }, ctx) => {
-    const row = await findOrFail({{tableCamelName}}Table, id);
-    await authorize(ctx.actor, "update", {{tableCamelName}}Table, row);
+  handler: async ({ id, ...fields }{{ctxParam}}) => {
+    const row = await findAuthorized({{tableCamelName}}Table, id, "update");
 {{parentChecks}}
     if (Object.keys(fields).length === 0) return row;
 
-    return useDb()
-      .update({{tableCamelName}}Table)
-      .set(fields)
-      .where(eq({{tableCamelName}}Table.id, id))
-      .returning()
-      .then(firstOrFail);
+    return updateOne({{tableCamelName}}Table, id, fields);
   },
 });

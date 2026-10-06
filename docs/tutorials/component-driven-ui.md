@@ -202,11 +202,12 @@ export const createProductAction = defineAction({
       ? await promoteUpload({ upload: "product-image", key: imageKey, to: `products/${randomUUID()}` })
       : null;
 
-    const row = await useDb()
-      .insert(productTable)
-      .values({ ...input, description: sanitizeHtml(input.description), imageKey: storedKey, ownerId: ctx.actor.id })
-      .returning()
-      .then(firstOrFail);
+    const row = await insertOne(productTable, {
+      ...input,
+      description: sanitizeHtml(input.description),
+      imageKey: storedKey,
+      ownerId: ctx.actor.id,
+    });
 
     await audit("product.created", row);
 
@@ -221,23 +222,19 @@ The update action also writes the description, so it cleans it too:
 
 ```ts
 // server/actions/product/update-product.action.ts
-import { eq } from "drizzle-orm";
 import { productTable } from "#nuxvel/schema";
 
 export const updateProductAction = defineAction({
   input: updateProductInput,
-  handler: async ({ id, description, ...fields }, ctx) => {
-    const row = await findOrFail(productTable, id);
-    await authorize(ctx.actor, "update", productTable, row);
+  handler: async ({ id, description, ...fields }) => {
+    const row = await findAuthorized(productTable, id, "update");
 
     if (description === undefined && Object.keys(fields).length === 0) return row;
 
-    return useDb()
-      .update(productTable)
-      .set({ ...fields, description: description === undefined ? undefined : sanitizeHtml(description) })
-      .where(eq(productTable.id, id))
-      .returning()
-      .then(firstOrFail);
+    return updateOne(productTable, id, {
+      ...fields,
+      description: description === undefined ? undefined : sanitizeHtml(description),
+    });
   },
 });
 ```

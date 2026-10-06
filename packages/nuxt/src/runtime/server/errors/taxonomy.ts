@@ -53,7 +53,7 @@ export abstract class TaxonomyError extends TRPCError {
  * `data.fields`, where {@link useActionForm} reads it.
  *
  * {@link defineAction}, {@link defineJob}, {@link defineEvent} and
- * {@link sendMail} throw it for input that fails their schema. A
+ * {@link Mail.send} throw it for input that fails their schema. A
  * foreign key that points at a missing row throws it with
  * `"does not exist"` on that column. Throw it
  * yourself after a `safeParse`; {@link toValidationError} builds the

@@ -17,20 +17,18 @@ export const mailInputIsTyped: IsAny<MailInput<"welcome">> extends true
     : never = true;
 
 export async function sendsOnlyDefinedMails() {
-  await sendMail("welcome", { to: "ada@example.com", name: "Ada" });
+  await $mails.welcome.send({ to: "ada@example.com", name: "Ada" });
+  await $mails.welcome.send({ to: "ada@example.com", name: "Ada" }, { locale: "zh" });
 
   // @ts-expect-error no mail is named goodbye
-  await sendMail("goodbye", { to: "ada@example.com" });
+  await $mails.goodbye.send({ to: "ada@example.com" });
   // @ts-expect-error welcome needs a name
-  await sendMail("welcome", { to: "ada@example.com" });
+  await $mails.welcome.send({ to: "ada@example.com" });
 }
 
-export async function sendsADefinition() {
-  await sendMail($mails.welcome, { to: "ada@example.com", name: "Ada" });
+export async function sendsADefinitionNow() {
   await sendMailNow($mails.welcome, { to: "ada@example.com", name: "Ada" });
 
-  // @ts-expect-error the definition's input needs a name
-  await sendMail($mails.welcome, { to: "ada@example.com" });
   // @ts-expect-error the definition's name is a string
   await sendMailNow($mails.welcome, { to: "ada@example.com", name: 1 });
 }
@@ -60,3 +58,11 @@ export const numericFontSize: TextProps = { "font-size": 14 };
 type NamespacedMail = typeof $mails.welcome;
 
 export const mailsNamespaceIsTyped: IsAny<NamespacedMail> extends true ? never : NamespacedMail extends Mail ? true : never = true;
+
+type SendInput = Parameters<typeof $mails.welcome.send>[0];
+
+export const sendInputIsTyped: IsAny<SendInput> extends true
+  ? never
+  : SendInput extends { to: string; name: string }
+    ? true
+    : never = true;

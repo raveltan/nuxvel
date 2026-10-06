@@ -13,6 +13,7 @@ import { localeScope, currentLocale } from "../i18n/current-locale";
 import { zodLocaleError } from "../i18n/zod-locale-error";
 import type { Actor } from "./system-actor";
 import { logActionCall } from "./trace";
+import { runningName } from "../logging/log-context";
 import { noInput } from "./no-input";
 import { type ActionAudit, runAudited } from "./action-audit";
 
@@ -184,16 +185,10 @@ export interface Action<
  *   procedure: "authed",
  *   audit: "post.archived",
  *   invalidates: [["posts", "list"]],
- *   async handler({ id }, { actor }, fail) {
- *     const post = await findOrFail(postTable, id);
+ *   async handler({ id }, _ctx, fail) {
+ *     const post = await findAuthorized(postTable, id, "update");
  *     if (post.archivedAt) return fail("ALREADY_ARCHIVED");
- *     await authorize(actor, "update", postTable, post);
- *     return useDb()
- *       .update(postTable)
- *       .set({ archivedAt: new Date() })
- *       .where(eq(postTable.id, id))
- *       .returning()
- *       .then(firstOrFail);
+ *     return updateOne(postTable, id, { archivedAt: new Date() });
  *   },
  * });
  * ```
@@ -233,7 +228,11 @@ export function defineAction<
   ): Promise<Output> {
     const actor = given?.actor ?? actorContext.getStore();
 
-    if (!actor) throw new Error("defineAction: actor is required");
+    if (!actor) {
+      throw new Error(
+        `${defined.actionName} ran with no actor. Call it inside a procedure, job or seeder, or pass { actor: systemActor("name") }`,
+      );
+    }
 
     const ctx: Required<ActionContext> = { actor, locale: given?.locale ?? currentLocale() };
 
@@ -264,8 +263,10 @@ export function defineAction<
         return output;
       };
 
-      return await actorContext.run(ctx.actor, () =>
-        localeScope.run(ctx.locale, () => (config.transaction === false ? runHandler() : transaction(runHandler))),
+      return await runningName.run(defined.actionName, () =>
+        actorContext.run(ctx.actor, () =>
+          localeScope.run(ctx.locale, () => (config.transaction === false ? runHandler() : transaction(runHandler))),
+        ),
       );
     } catch (error) {
       const surfaced = classifyError(error) ?? error;

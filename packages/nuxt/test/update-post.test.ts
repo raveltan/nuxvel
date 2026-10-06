@@ -26,6 +26,12 @@ describe("update-post action (owner-only via policy)", async () => {
     ).rejects.toBeTrpcError("FORBIDDEN");
   });
 
+  it("answers NOT_FOUND for a post that does not exist, through findAuthorized()", async () => {
+    await expect(
+      runAction("posts.update-post", { id: 999_999, title: "Ghost", body: "Ghost" }, { actingAs: await userFactory() }),
+    ).rejects.toBeTrpcError("NOT_FOUND");
+  });
+
   it("rejects an empty-after-trim body, surfaced as an action error and as a tRPC error", async () => {
     const owner = await userFactory();
     const post = await postFactory({ authorId: owner.id });

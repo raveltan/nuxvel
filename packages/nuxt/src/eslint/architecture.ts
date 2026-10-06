@@ -26,14 +26,14 @@ const IMPORT_FILES = ["server", "app", "shared", "tests"].flatMap((root) => [`${
 /**
  * The `nuxvel` ESLint plugin: the architecture rules `nuxvel test:arch`
  * runs. `nuxvel/action-imports` keeps actions off the request (no `h3`,
- * no `auth()`, no request helpers), `nuxvel/action-naming` wants one
+ * no `requireAuth()`, no request helpers), `nuxvel/action-naming` wants one
  * action per file exported under the file's camelCase name,
  * `nuxvel/router-db-writes` keeps `useDb().insert/update/delete` out of
  * tRPC routers, `nuxvel/router-output` wants an `.output()` schema on
  * every query, mutation and `.action()` built from a `*Procedure`, and
  * an `output` on every action with a `procedure`, `nuxvel/route-writes` keeps those writes and action
  * calls out of Nitro routes, `nuxvel/sync-listener-network` keeps network calls
- * (`fetch`, `$fetch`, `sendMail`, `useS3`, ...) out of `sync: true`
+ * (`fetch`, `$fetch`, `sendMailNow`, `useS3`, ...) out of `sync: true`
  * listeners, `nuxvel/listener-emit-loop` stops a listener emitting the
  * event it listens to, and `nuxvel/user-data-declared` wants every table
  * with a `userId` column declared with `defineUserData()` in

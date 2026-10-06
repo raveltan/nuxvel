@@ -1,16 +1,20 @@
 import { eq } from "drizzle-orm";
+import type { H3Event } from "h3";
 import { actorContext } from "../actions/context";
 import type { Actor } from "../actions/system-actor";
 import { userActor } from "../actions/user-actor";
-import { authenticateApiKey, requestApiKey } from "../auth/api-keys";
+import { authenticateApiKey, requestApiKey, spendApiKey } from "../auth/api-keys";
 import { useDb } from "../database/client";
 import { schemaTable } from "../database/schema-table";
 import { auth, type SessionUser } from "./auth";
 import { currentEvent } from "./current-event";
 
-export async function requestCaller(): Promise<{ user: SessionUser; actor: Actor } | null> {
-  if (!currentEvent()) return null;
+type Caller = { user: SessionUser; actor: Actor & { userId: string } } | null;
 
+const callersByRequest = new WeakMap<H3Event, Promise<Caller>>();
+const spentByRequest = new WeakSet<H3Event>();
+
+async function findCaller(): Promise<Caller> {
   const apiKey = requestApiKey();
 
   if (apiKey) return authenticateApiKey(apiKey);
@@ -18,6 +22,32 @@ export async function requestCaller(): Promise<{ user: SessionUser; actor: Actor
   const session = await auth();
 
   return session && { user: session.user, actor: userActor(session.user) };
+}
+
+function lookupCaller(event: H3Event): Promise<Caller> {
+  let caller = callersByRequest.get(event);
+
+  if (!caller) {
+    caller = findCaller();
+    callersByRequest.set(event, caller);
+  }
+
+  return caller;
+}
+
+export async function requestCaller(options: { spendPerCall?: boolean } = {}): Promise<Caller> {
+  const event = currentEvent();
+
+  if (!event) return null;
+
+  const caller = await lookupCaller(event);
+
+  if (caller?.actor.type === "api-key" && (options.spendPerCall || !spentByRequest.has(event))) {
+    spentByRequest.add(event);
+    await spendApiKey(caller.actor);
+  }
+
+  return caller;
 }
 
 export async function ambientActor(): Promise<Actor | null> {

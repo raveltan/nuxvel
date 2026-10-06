@@ -863,7 +863,7 @@ export default defineDeploy({
 
     const policyFile = readFileSync(join(fixtureCwd, "server", "policies", "widget-item.policy.ts"), "utf-8");
     expect(policyFile).toContain("export const widgetItemPolicy = definePolicy(widgetItemTable, {");
-    expect(policyFile).toContain('row.ownerId === (actor.userId ?? actor.id) || actor.role === "admin"');
+    expect(policyFile).toContain('row.ownerId === actor.userId || actor.role === "admin"');
 
     const createFile = readFileSync(
       join(fixtureCwd, "server", "actions", "widget-item", "create-widget-item.action.ts"),
@@ -874,13 +874,15 @@ export default defineDeploy({
     expect(createFile).toContain("  input: createWidgetItemInput,");
     expect(createFile).not.toContain("shared/schemas");
     expect(createFile).toContain('await audit("widget-item.created", row);');
+    expect(createFile).toContain('if (!ctx.actor.userId) throw new ForbiddenError("This action needs a user");');
+    expect(createFile).toContain("const row = await insertOne(widgetItemTable, { ...input, ownerId: ctx.actor.userId });");
 
     const updateFile = readFileSync(
       join(fixtureCwd, "server", "actions", "widget-item", "update-widget-item.action.ts"),
       "utf-8",
     );
     expect(updateFile).toContain("export const updateWidgetItemAction = defineAction({");
-    expect(updateFile).toContain('await authorize(ctx.actor, "update", widgetItemTable, row);');
+    expect(updateFile).toContain('const row = await findAuthorized(widgetItemTable, id, "update");');
 
     const routerFile = readFileSync(join(fixtureCwd, "server", "trpc", "routers", "widget-item.router.ts"), "utf-8");
     expect(routerFile).toContain("export const widgetItemRouter = {");
@@ -902,7 +904,7 @@ export default defineDeploy({
     expect(policyFile).not.toContain("restore:");
 
     const deleteFile = readFileSync(join(fixtureCwd, "server", "actions", "widget-item", "delete-widget-item.action.ts"), "utf-8");
-    expect(deleteFile).toContain('await authorize(ctx.actor, "delete", widgetItemTable, row);');
+    expect(deleteFile).toContain('const row = await findAuthorized(widgetItemTable, input.id, "delete");');
     expect(deleteFile).toContain("await useDb().delete(widgetItemTable).where(eq(widgetItemTable.id, input.id));");
 
     const routerTest = readFileSync(join(fixtureCwd, "server", "trpc", "routers", "widget-item.router.test.ts"), "utf-8");
@@ -934,13 +936,13 @@ export default defineDeploy({
     expect(policyFile).toContain("  restore: (actor, row) =>");
 
     const deleteFile = readFileSync(join(fixtureCwd, "server", "actions", "widget-item", "delete-widget-item.action.ts"), "utf-8");
-    expect(deleteFile).toContain("await softDelete(widgetItemTable, eq(widgetItemTable.id, input.id));");
+    expect(deleteFile).toContain("await softDelete(widgetItemTable, input.id);");
 
     const restoreFile = readFileSync(join(fixtureCwd, "server", "actions", "widget-item", "restore-widget-item.action.ts"), "utf-8");
-    expect(restoreFile).toContain('await findOrFail(widgetItemTable, input.id, { trashed: "only" });');
+    expect(restoreFile).toContain('await findAuthorized(widgetItemTable, input.id, "restore", { trashed: "only" });');
 
     const updateFile = readFileSync(join(fixtureCwd, "server", "actions", "widget-item", "update-widget-item.action.ts"), "utf-8");
-    expect(updateFile).toContain(".set(fields)");
+    expect(updateFile).toContain("return updateOne(widgetItemTable, id, fields);");
 
     const routerFile = readFileSync(join(fixtureCwd, "server", "trpc", "routers", "widget-item.router.ts"), "utf-8");
     expect(routerFile).toContain(
@@ -1100,7 +1102,7 @@ export default defineDeploy({
     const createTask = readFileSync(join(fixtureCwd, "server", "actions", "task", "create-task.action.ts"), "utf-8");
     expect(createTask).toContain('import { projectTable } from "#nuxvel/schema";\n');
     expect(createTask).toContain(
-      "    await useDb()\n      .select()\n      .from(projectTable)\n      .where(and(eq(projectTable.id, input.projectId), eq(projectTable.ownerId, ctx.actor.userId ?? ctx.actor.id)))\n      .then(firstOrFail);\n\n    const row",
+      "    await useDb()\n      .select()\n      .from(projectTable)\n      .where(and(eq(projectTable.id, input.projectId), eq(projectTable.ownerId, ctx.actor.userId)))\n      .then(firstOrFail);\n\n    const row",
     );
     expect(createTask).not.toContain("userTable");
     expect(readFileSync(join(fixtureCwd, "server", "actions", "task", "update-task.action.ts"), "utf-8")).toContain(

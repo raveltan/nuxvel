@@ -35,11 +35,14 @@ describe("nuxvel tinker", () => {
       appDir,
       [
         'await useDb().insert(userTable).values({ id: "tinker-user", name: "Tinker", email: "tinker@example.com" });',
-        'const post = await createPostAction({ title: "Tinkered", body: "From the REPL" }, { actor: { type: "user", id: "tinker-user" } });',
+        'const post = await createPostAction({ title: "Tinkered", body: "From the REPL" }, { actor: userActor({ id: "tinker-user", role: "user" }) });',
         'console.log("created", post.title);',
         'console.log("factoried", (await postFactory({ title: "Factoried", authorId: "tinker-user" })).title);',
-        'console.log("realtime globals", typeof broadcast, typeof defineChannel, typeof holdStream);',
-        'console.log("system probe", await can(systemActor("tinker"), "probe", healthChecksTable, { id: 1, userId: null, name: "probe", createdAt: new Date(), updatedAt: new Date() }), await can(systemActor("tinker"), "update", healthChecksTable, { id: 1, userId: "tinker", name: "probe", createdAt: new Date(), updatedAt: new Date() }));',
+        'console.log("realtime globals", typeof $channels.posts.broadcast, typeof defineChannel, typeof holdStream);',
+        'const [check] = await useDb().insert(healthChecksTable).values({ name: "probe", userId: "tinker-user" }).returning();',
+        'const owned = await updateHealthCheckAction({ id: check.id, name: "owned" }, { actor: userActor({ id: "tinker-user", role: "user" }) });',
+        'const denied = await updateHealthCheckAction({ id: check.id, name: "denied" }, { actor: userActor({ id: "other", role: "user" }) }).catch((error) => error.code);',
+        'console.log("user probe", owned.name, denied);',
         "",
       ].join("\n"),
       env,
@@ -50,7 +53,7 @@ describe("nuxvel tinker", () => {
     expect(stdout).toContain("created Tinkered");
     expect(stdout).toContain("factoried Factoried");
     expect(stdout).toContain("realtime globals function function undefined");
-    expect(stdout).toContain("system probe true false");
+    expect(stdout).toContain("user probe owned FORBIDDEN");
 
     const sql = scratchSql(databaseUrl);
     const rows = await sql<{ title: string }[]>`select title from posts order by title`;

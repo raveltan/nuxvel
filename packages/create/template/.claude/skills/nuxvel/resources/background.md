@@ -1,10 +1,10 @@
 # Background, messages, realtime, flags
 
-All names are auto-imported in `server/`. Each call takes the string name or the `$` entry: `sendMail($mails.post.published, input)`. A wrong name fails the typecheck.
+All names are auto-imported in `server/`. Reach a job, mail, event, notification or channel through its `$` entry and call its method: `$mails.post.published.send(input)`. A wrong name or input fails the typecheck.
 
 ## After the commit
 
-Call these inside an action. They run only when the transaction commits: `dispatchAfterCommit`, `sendMail`, `notify`, `broadcastAfterCommit`, `sendWebhook`, `sendPush`, `deleteStoredFiles`, `onCommit`. Queued listeners also wait. `broadcast` and `sendMailNow` do not wait.
+Call these inside an action. They run only when the transaction commits, and never after a rollback: `$jobs.x.dispatch`, `$mails.x.send`, `$notifications.x.notify`, `$channels.x.broadcast`, `$events.x.emit` (queued listeners), `sendWebhook`, `sendPush`, `deleteStoredFiles`, `onCommit`. Outside a transaction they run at once. `sendMailNow` and sync listeners do not wait.
 
 ## Events
 
@@ -14,7 +14,7 @@ export const postNotifySubscribersListener = defineListener({
   event: postPublishedEvent,
   handler: async (payload) => { … },
 });
-await emit("post.published", { postId: post.id });
+await $events.post.published.emit({ postId: post.id });
 ```
 
 - Listener default: queued after commit. `sync: true`: runs inside the transaction, throw fails the action, no network calls.
@@ -29,7 +29,7 @@ export const postImportJob = defineJob({
   channel: { authorize: ({ user }) => user !== null },
   async handler({ postId }, { reportProgress }) { … },
 });
-await dispatchAfterCommit("post.import", { postId }, { delay: 60_000, priority: 1 });
+await $jobs.post.import.dispatch({ postId }, { delay: 60_000, priority: 1 });
 ```
 
 | Option | Meaning |
@@ -61,7 +61,7 @@ export const postPublishedMail = defineMail({
   subject: ({ title }) => `New post: ${title}`,
   render: (props) => h(PostPublished, props),
 });
-await sendMail("post.published", { to: user.email, title, url });
+await $mails.post.published.send({ to: user.email, title, url });
 ```
 
 Template: Vue + MJML. `preview` option feeds DevTools. Mailpit shows dev mail.
@@ -75,7 +75,7 @@ export const postPublishedNotification = defineNotification({
   toDatabase: ({ title }) => ({ title: "Your post is live", body: title, url: "/posts", icon: "i-lucide-newspaper" }),
   toMail: ({ postId, title }) => ({ mail: "post.published", data: { title, url: `/posts/${postId}` } }),
 });
-await notify(userId, "post.published", { postId, title });
+await $notifications.post.published.notify(userId, { postId, title });
 ```
 
 `via`: `"database"` (needs `toDatabase`), `"mail"` (`toMail`), `"push"` (`toPush`). `notify` takes one user id or a list.
@@ -87,12 +87,12 @@ export const postsChannel = defineChannel({
   events: { created: z.object({ id: z.number(), title: z.string() }) },
   authorize: ({ user }) => user !== null,
 });
-await broadcastAfterCommit("posts", "created", { id, title });
+await $channels.posts.broadcast("created", { id, title });
 ```
 
-- Rooms: `params: ["boardId"]`, then `broadcast("board", "moved", payload, { boardId })`.
+- Rooms: `params: ["boardId"]`, then `$channels.board.broadcast("moved", payload, { boardId })`.
 - `presence: true` or `presence: { state: z.object(...) }`. Server: `presenceOf(channel, params)`.
-- `authorize` is a predicate. Use `can(userActor(user), ...)` in it, not `authorize()`.
+- `authorize` is a predicate. Use `can(...)` in it (it checks the user of the request), not `authorize()`.
 
 ## Uploads
 
@@ -138,7 +138,7 @@ Targeting without a deploy: `setFlagTargeting(name, { percentage, roles })`, `./
 
 ## Other
 
-- Seeder: `export const blogSeeder = defineSeeder(async ({ call }) => { await postFactory.count(5)(); })`.
+- Seeder: `export const blogSeeder = defineSeeder(async ({ call }) => { await postFactory.count(5)(); })`. Return lines (`string[]`) to have `db:seed` print them, such as the demo sign-in.
 - Backfill: `defineBackfill({ table, batchSize, where, async handler(rows) { … } })`, run with `runBackfill(name)`.
 - User data: `export const postsUserData = defineUserData(postTable, postTable.authorId)`.
-- Audit: `audit("post.updated", { type: "post", id }, { changes })`.
+- Audit: `audit("post.updated", post, { changes })`. The row's `id` is the target, the name's first segment its type. `{ type, id }` in place of the row sets the type.

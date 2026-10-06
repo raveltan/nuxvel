@@ -15,10 +15,10 @@ function typed<T>(value: IsAny<T> extends true ? never : T) {
 }
 
 export async function emitsTheEventObject() {
-  await emit(probeTransformed, { names: "a,b" });
+  await probeTransformed.emit({ names: "a,b" });
 
   // @ts-expect-error emit takes the schema's input, not its parsed output
-  await emit(probeTransformed, { names: ["a", "b"] });
+  await probeTransformed.emit({ names: ["a", "b"] });
 }
 
 export const listenerGetsParsedOutput = defineListener({
@@ -43,13 +43,13 @@ export const eventPayloadIsParsedOutput: EventPayload<"_probe.transformed"> exte
   : never = true;
 
 export async function emitsByName() {
-  await emit("_probe.transformed", { names: "a,b" });
+  await $events._probe.transformed.emit({ names: "a,b" });
 
   // @ts-expect-error no event has this name
-  await emit("_probe.missing", { names: "a,b" });
+  await $events._probe.missing.emit({ names: "a,b" });
 
   // @ts-expect-error the payload type follows the event name
-  await emit("_probe.transformed", { names: ["a", "b"] });
+  await $events._probe.transformed.emit({ names: ["a", "b"] });
 }
 
 type NamespacedEvent = typeof $events._probe.happened;
@@ -72,3 +72,11 @@ export async function eventFixturesTakeADefinitionOrATestStub() {
   // @ts-expect-error expectEmitted matches the parsed payload
   await expectEmitted($events._probe.transformed, { names: "a,b" });
 }
+
+type EmitPayload = Parameters<typeof $events._probe.transformed.emit>[0];
+
+export const emitPayloadIsTyped: IsAny<EmitPayload> extends true
+  ? never
+  : EmitPayload extends { names: string }
+    ? true
+    : never = true;

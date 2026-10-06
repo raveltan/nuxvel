@@ -4,7 +4,7 @@ export default defineNuxtConfig({
   modules: ['@nuxvel/nuxt'],
   css: ['~/assets/css/main.css'],
   nuxvel: {
-    // The address of every mail. sendMail() throws while it is not set.
+    // The address of every mail. Sending a mail throws while it is not set.
     mail: { from: 'nuxvel <hello@example.com>' },
     auth: {
       signInPath: '/sign-in',

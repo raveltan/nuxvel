@@ -14,13 +14,13 @@ async function createUserWithData(name: string) {
     .values({ id: randomUUID(), name, email: `${randomUUID()}@example.com` })
     .returning()
     .then(firstOrFail);
-  const actor = { type: "user", id: owner.id };
+  const actor = userActor(owner);
 
   await createPostAction({ title: `${name} one`, body: "first" }, { actor });
   await createPostAction({ title: `${name} two`, body: "second" }, { actor });
   await useDb().insert(healthChecksTable).values({ name: `${name} check`, userId: owner.id });
   await useDb().insert(healthChecksTable).values({ name: owner.id });
-  await notify(owner.id, "welcome", { name });
+  await $notifications.welcome.notify(owner.id, { name });
 
   return owner;
 }

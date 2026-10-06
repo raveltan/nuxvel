@@ -214,7 +214,7 @@ import { postTable } from "#nuxvel/schema";
 
 export const postsPolicy = definePolicy(postTable, {
   update: (actor, post) =>
-    post.authorId === (actor.type === API_KEY_ACTOR_TYPE ? actor.userId : actor.id),
+    post.authorId === actor.userId,
 });
 ```
 

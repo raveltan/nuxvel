@@ -63,7 +63,7 @@ describe("nuxvel queue, schedule and task commands", () => {
       const { stdout, exitCode } = await runCliWithInput(
         appDir,
         [
-          `await transaction(() => sendMail("welcome", { to: ${JSON.stringify(recipient)}, name: "Ada" }));`,
+          `await transaction(() => $mails.welcome.send({ to: ${JSON.stringify(recipient)}, name: "Ada" }));`,
           'console.log("mail queued");',
           'console.log("upload", typeof defineUpload, typeof useS3);',
           "",

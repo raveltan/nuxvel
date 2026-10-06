@@ -23,7 +23,7 @@ import {
  * variant, with nothing stored. With no user it is the control.
  *
  * The user is resolved as in {@link flag}: the running action's
- * `"user"` actor, else the signed-in one from `auth()`. Pass `subject`
+ * `"user"` actor, else the signed-in one of the request. Pass `subject`
  * to evaluate for someone else, or outside both. Throws
  * when no experiment has this name.
  *

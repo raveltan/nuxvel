@@ -270,11 +270,7 @@ import { bookingTable } from "#nuxvel/schema";
 export const createBookingAction = defineAction({
   input: createBookingInput,
   handler: async (input, ctx) => {
-    return useDb()
-      .insert(bookingTable)
-      .values({ ...input, bookerId: ctx.actor.id })
-      .returning()
-      .then(firstOrFail);
+    return insertOne(bookingTable, { ...input, bookerId: ctx.actor.id });
   },
 });
 ```
@@ -456,11 +452,7 @@ export const createBookingAction = defineAction({
       .limit(1);
     if (overlap) fail("booking.overlap");
 
-    return useDb()
-      .insert(bookingTable)
-      .values({ ...input, bookerId: ctx.actor.id })
-      .returning()
-      .then(firstOrFail);
+    return insertOne(bookingTable, { ...input, bookerId: ctx.actor.id });
   },
 });
 ```
@@ -617,8 +609,7 @@ export const cancelBookingAction = defineAction({
     "booking.too-late-to-cancel": "A booking can be cancelled until 24 hours before it starts",
   },
   handler: async (input, ctx, fail) => {
-    const booking = await findOrFail(bookingTable, input.id);
-    await authorize(ctx.actor, $policies.booking.cancel, booking);
+    const booking = await findAuthorized(bookingTable, input.id, "cancel");
 
     if (booking.startsAt.getTime() - now().getTime() < day) fail("booking.too-late-to-cancel");
 
@@ -627,7 +618,7 @@ export const cancelBookingAction = defineAction({
 });
 ```
 
-`authorize()` throws `ForbiddenError` when the rule returns `false`, and the client gets `FORBIDDEN`. Add the procedure to the router:
+`findAuthorized()` throws `ForbiddenError` when the rule returns `false`, and the client gets `FORBIDDEN`. Add the procedure to the router:
 
 ```ts
 // server/trpc/routers/booking.router.ts
@@ -792,7 +783,7 @@ export const bookingSendConfirmationJob = defineJob({
     const room = await findOrFail(roomTable, booking.roomId);
     const booker = await findOrFail(userTable, booking.bookerId);
 
-    await sendMail("booking.confirmed", {
+    await $mails.booking.confirmed.send({
       to: booker.email,
       title: booking.title,
       room: room.name,
@@ -806,18 +797,14 @@ Dispatch the job from the create action, after the insert:
 
 ```ts
 // server/actions/booking/create-booking.action.ts
-    const booking = await useDb()
-      .insert(bookingTable)
-      .values({ ...input, bookerId: ctx.actor.id })
-      .returning()
-      .then(firstOrFail);
+    const booking = await insertOne(bookingTable, { ...input, bookerId: ctx.actor.id });
 
-    await dispatchAfterCommit("booking.send-confirmation", { bookingId: booking.id });
+    await $jobs.booking.sendConfirmation.dispatch({ bookingId: booking.id });
 
     return booking;
 ```
 
-`dispatchAfterCommit` writes an outbox row in the transaction of the action. A `fail()` rolls the transaction back, so a refused booking queues nothing.
+`dispatch()` writes an outbox row in the transaction of the action. A `fail()` rolls the transaction back, so a refused booking queues nothing.
 
 The two generated tests next to the job and the mail send the old input. Replace them. The job test runs the handler directly with `runJob`, without the queue:
 

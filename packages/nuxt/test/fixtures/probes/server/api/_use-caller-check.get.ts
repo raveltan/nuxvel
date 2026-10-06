@@ -4,10 +4,10 @@ async function runAsBackgroundJob() {
 }
 
 export default defineEventHandler(async () => {
-  const signedIn = await auth();
+  const { user } = await useAuth();
 
   return {
     ping: await runAsBackgroundJob(),
-    me: signedIn ? await useCaller().profile.me() : null,
+    me: user ? await useCaller().profile.me() : null,
   };
 });

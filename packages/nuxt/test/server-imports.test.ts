@@ -44,10 +44,8 @@ describe("server auto-imports", () => {
         "publicProcedure",
         "authedProcedure",
         "useCaller",
-        "dispatchAfterCommit",
         "defineJob",
-        "sendMail",
-        "broadcast",
+        "sendMailNow",
         "can",
         "JobName",
         "SessionUser",
@@ -82,6 +80,15 @@ describe("server auto-imports", () => {
       "queryCountLogger",
       "withUniqueViolationMapping",
       "transactionContext",
+      "auth",
+      "SYSTEM_ACTOR_TYPE",
+      "API_KEY_ACTOR_TYPE",
+      "dispatchAfterCommit",
+      "broadcast",
+      "broadcastAfterCommit",
+      "sendMail",
+      "emit",
+      "notify",
     ]) {
       expect(names, internal).not.toContain(internal);
     }

@@ -60,7 +60,7 @@ export function requestApiKey(): string | undefined {
   return scheme?.toLowerCase() === "bearer" && token?.startsWith(API_KEY_PREFIX) ? token : undefined;
 }
 
-export async function authenticateApiKey(key: string): Promise<{ user: SessionUser; actor: Actor }> {
+export async function authenticateApiKey(key: string): Promise<{ user: SessionUser; actor: Actor & { userId: string } }> {
   const apiKeys = schemaTable("api_keys");
   const user = schemaTable("user");
   const [found] = await useDb()
@@ -75,9 +75,12 @@ export async function authenticateApiKey(key: string): Promise<{ user: SessionUs
 
   const actor = apiKeyActor(found.key);
 
-  await rateLimiter(API_KEY_RATE_LIMIT).consume(`api-key:${found.key.id}`);
   await useDb().update(apiKeys).set({ lastUsedAt: now() }).where(eq(apiKeys.id, found.key.id));
   rememberActor(useEvent(), actor);
 
   return { user: found.user, actor };
+}
+
+export async function spendApiKey(actor: Actor) {
+  await rateLimiter(API_KEY_RATE_LIMIT).consume(`api-key:${actor.id}`);
 }

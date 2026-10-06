@@ -1,6 +1,6 @@
 export default defineEventHandler(async () => {
   await transaction(async () => {
-    await broadcastAfterCommit($channels._probePublic, "renamed", { id: 1 });
+    await $channels._probePublic.broadcast("renamed", { id: 1 });
     throw new Error("roll back");
   }).catch(() => {});
 
@@ -8,11 +8,11 @@ export default defineEventHandler(async () => {
 
   await transaction(async () => {
     // @ts-expect-error the runtime check behind the compile-time one
-    rejected = await broadcastAfterCommit("_probe-public", "renamed", { id: "3" }).then(
+    rejected = await $channels._probePublic.broadcast("renamed", { id: "3" }).then(
       () => false,
       (error: unknown) => error instanceof ValidationFailedError,
     );
-    await broadcastAfterCommit("_probe-public", "renamed", { id: 2 });
+    await $channels._probePublic.broadcast("renamed", { id: 2 });
   });
 
   return { rejected };

@@ -6,7 +6,7 @@ This tutorial builds the status page of a small software company. Visitors see t
 
 The app uses the parts of nuxvel that the [first app](./first-app.md) and [course platform](./course-platform.md) tutorials use little or not at all:
 
-- **Queues and the outbox**: an action dispatches a job with `dispatchAfterCommit()`, and the job sends one mail to each subscriber. The job is safe to run two times.
+- **Queues and the outbox**: an action dispatches a job with `$jobs.x.dispatch()`, and the job sends one mail to each subscriber. The job is safe to run two times.
 - **Mail**: a Vue template with MJML sections and columns, without `<MailLayout>`.
 - **Notifications**: the team gets a notification in the bell when an incident opens.
 - **Inbound webhooks**: a signed `defineWebhook()` that opens and resolves incidents, one time for each event.
@@ -225,7 +225,7 @@ export const databaseSeeder = defineSeeder(async () => {
     .count(12)();
   await subscriberFactory({ email: "reader@example.com" });
 
-  console.log(`Sign in as ${DEMO_EMAIL} with the password ${DEMO_PASSWORD}`);
+  return [`Sign in as ${DEMO_EMAIL} with the password ${DEMO_PASSWORD}`];
 });
 ```
 
@@ -607,7 +607,7 @@ import { incidentTable, incidentUpdateTable } from "#nuxvel/schema";
 export const openIncidentAction = defineAction({
   input: openIncidentInput.extend({ monitor: z.string().max(255).optional() }),
   handler: async ({ title, body, monitor }) => {
-    const incident = await useDb().insert(incidentTable).values({ title, monitor }).returning().then(firstOrFail);
+    const incident = await insertOne(incidentTable, { title, monitor });
     await useDb().insert(incidentUpdateTable).values({ incidentId: incident.id, status: "investigating", body });
 
     return incident;
@@ -634,11 +634,7 @@ export const postUpdateAction = defineAction({
       .set({ status, resolvedAt: status === "resolved" ? now() : null })
       .where(eq(incidentTable.id, incidentId));
 
-    return useDb()
-      .insert(incidentUpdateTable)
-      .values({ incidentId, status, body })
-      .returning()
-      .then(firstOrFail);
+    return insertOne(incidentUpdateTable, { incidentId, status, body });
   },
 });
 ```
@@ -1367,7 +1363,7 @@ export const incidentAnnounceJob = defineJob({
       const subscribers = await useDb().select().from(subscriberTable);
 
       for (const subscriber of subscribers) {
-        await sendMail("incident.update", { to: subscriber.email, title: incident.title, status: update.status, body: update.body, url });
+        await $mails.incident.update.send({ to: subscriber.email, title: incident.title, status: update.status, body: update.body, url });
       }
     }),
 });
@@ -1376,12 +1372,12 @@ export const incidentAnnounceJob = defineJob({
 The queue can run a job two times, for example after a worker stops in the middle of a job. This job is safe to run again:
 
 1. The `update` marks the update as announced, but only when `announcedAt` is `null`. A second run gets no row and returns.
-2. `sendMail()` does not connect to the mail server. It renders the mail and dispatches the built-in `nuxvel.mail` job with `dispatchAfterCommit()`.
+2. `$mails.x.send()` does not connect to the mail server. It renders the mail and dispatches the built-in `nuxvel.mail` job after the commit.
 3. The mark and the mail jobs commit in one transaction. When the job fails before the commit, it sends no mail and keeps no mark. The retry starts again from the beginning.
 
 The link in the mail must be a full URL. `useRuntimeConfig().siteUrl` is the public origin of the app. `npm run dev` sets `NUXT_SITE_URL` to the URL that it prints, for example `https://status-page.localhost`. A `NUXT_SITE_URL` in the shell or in `.env` wins.
 
-Dispatch the job from the two actions. `dispatchAfterCommit()` takes the job name and its typed input:
+Dispatch the job from the two actions. `$jobs.incident.announce.dispatch()` takes the typed input of the job:
 
 ```ts
 // server/actions/incidents/post-update.action.ts
@@ -1403,13 +1399,9 @@ export const postUpdateAction = defineAction({
       .set({ status, resolvedAt: status === "resolved" ? now() : null })
       .where(eq(incidentTable.id, incidentId));
 
-    const update = await useDb()
-      .insert(incidentUpdateTable)
-      .values({ incidentId, status, body })
-      .returning()
-      .then(firstOrFail);
+    const update = await insertOne(incidentUpdateTable, { incidentId, status, body });
 
-    await dispatchAfterCommit("incident.announce", { updateId: update.id });
+    await $jobs.incident.announce.dispatch({ updateId: update.id });
 
     return update;
   },
@@ -1418,16 +1410,12 @@ export const postUpdateAction = defineAction({
 
 ```ts
 // server/actions/incidents/open-incident.action.ts
-    const update = await useDb()
-      .insert(incidentUpdateTable)
-      .values({ incidentId: incident.id, status: "investigating", body })
-      .returning()
-      .then(firstOrFail);
+    const update = await insertOne(incidentUpdateTable, { incidentId: incident.id, status: "investigating", body });
 
-    await dispatchAfterCommit("incident.announce", { updateId: update.id });
+    await $jobs.incident.announce.dispatch({ updateId: update.id });
 ```
 
-`dispatchAfterCommit()` does not write to Redis. It writes a row to the `outbox` table, in the transaction of the action. The worker moves the row to the queue after the commit. So the queue always agrees with the database:
+`dispatch()` does not write to Redis. It writes a row to the `outbox` table, in the transaction of the action. The worker moves the row to the queue after the commit. So the queue always agrees with the database:
 
 - When the action rolls back, for example on `fail("incident.resolved")`, no row and no job remain.
 - When the process stops between the commit and the queue, the next relay finds the row.
@@ -1560,24 +1548,20 @@ export const openIncidentAction = defineAction({
   input: openIncidentInput.extend({ monitor: z.string().max(255).optional() }),
   invalidates: ["status"],
   handler: async ({ title, body, monitor }, ctx) => {
-    const incident = await useDb().insert(incidentTable).values({ title, monitor }).returning().then(firstOrFail);
-    const update = await useDb()
-      .insert(incidentUpdateTable)
-      .values({ incidentId: incident.id, status: "investigating", body })
-      .returning()
-      .then(firstOrFail);
+    const incident = await insertOne(incidentTable, { title, monitor });
+    const update = await insertOne(incidentUpdateTable, { incidentId: incident.id, status: "investigating", body });
 
-    await dispatchAfterCommit("incident.announce", { updateId: update.id });
+    await $jobs.incident.announce.dispatch({ updateId: update.id });
 
     const team = await useDb().select({ id: userTable.id }).from(userTable).where(ne(userTable.id, ctx.actor.id));
-    await notify(team.map((member) => member.id), "incident.opened", { title });
+    await $notifications.incident.opened.notify(team.map((member) => member.id), { title });
 
     return incident;
   },
 });
 ```
 
-The query leaves out the member who opened the incident. `notify()` writes the rows in the transaction of the action, so a rolled-back action notifies nobody. Test the notification and the action:
+The query leaves out the member who opened the incident. `$notifications.x.notify()` writes the rows in the transaction of the action, so a rolled-back action notifies nobody. Test the notification and the action:
 
 ```ts
 // server/notifications/incident/opened.notification.test.ts
@@ -1947,7 +1931,7 @@ export const incidentsRemindStaleSchedule = defineSchedule({
 
     await transaction(async () => {
       for (const { title } of stale) {
-        await notify(team.map((member) => member.id), "incident.stale", { title });
+        await $notifications.incident.stale.notify(team.map((member) => member.id), { title });
       }
     });
   },

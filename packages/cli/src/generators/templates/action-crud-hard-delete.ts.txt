@@ -3,9 +3,8 @@ import { {{tableCamelName}}Table } from "{{tableSchemaImport}}";
 
 export const {{exportName}} = defineAction({
   input: {{tableCamelName}}IdInput,
-  handler: async (input, ctx) => {
-    const row = await findOrFail({{tableCamelName}}Table, input.id);
-    await authorize(ctx.actor, "delete", {{tableCamelName}}Table, row);
+  handler: async (input) => {
+    const row = await findAuthorized({{tableCamelName}}Table, input.id, "delete");
 
     await useDb().delete({{tableCamelName}}Table).where(eq({{tableCamelName}}Table.id, input.id));
     await audit("{{domain}}.deleted", row);

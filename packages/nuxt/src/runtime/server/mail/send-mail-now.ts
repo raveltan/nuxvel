@@ -10,14 +10,14 @@ import { deliverMail } from "./transport";
  *
  * Auto-imported on the server. Reach for it only when the caller must
  * know the mail went out before it continues, such as a command that
- * checks the mail settings. Prefer {@link sendMail}: this one does not
+ * checks the mail settings. Prefer {@link Mail.send}: this one does not
  * wait for the surrounding transaction, so a rollback after it does not
  * take the mail back, and it holds the request until the SMTP server
  * answers. It throws what the SMTP server answers with, and nothing
  * retries it.
  *
  * Validation, rendering and the {@link suppressMail} check work as in
- * {@link sendMail}. `expectMailSent` sees the mail in a test.
+ * {@link Mail.send}. `expectMailSent` sees the mail in a test.
  *
  * @param options.locale The locale code that the mail renders in. The
  * default is {@link currentLocale}.

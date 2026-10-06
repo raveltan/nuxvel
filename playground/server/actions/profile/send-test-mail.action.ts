@@ -9,7 +9,7 @@ export const sendTestMailAction = defineAction({
       .where(eq(userTable.id, ctx.actor.id))
       .then(firstOrFail);
 
-    await sendMail("welcome", { to: recipient.email, name: recipient.name });
+    await $mails.welcome.send({ to: recipient.email, name: recipient.name });
 
     return { to: recipient.email };
   },

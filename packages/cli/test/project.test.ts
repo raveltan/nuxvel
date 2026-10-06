@@ -715,7 +715,7 @@ export default defineDeploy({
     expect(withProbes.exitCode).toBe(1);
     expect(withProbes.stdout).toBe("");
     expect(stripAnsi(withProbes.stderr)).toContain(
-      "✖ server/trpc/routers/_unique-violation-check.ts: routers may not call useDb().insert/update/delete, call an action",
+      "✖ server/trpc/routers/_unique-violation-check.ts: routers may not call useDb().insert/update/delete, insertOne() or updateOne(), call an action",
     );
     expect(stripAnsi(withProbes.stderr)).toMatch(/✖ \d+ architecture violations?\n$/);
   }, 60000);
@@ -812,9 +812,9 @@ export default defineDeploy({
     const fixtureCwd = scratchDir("arch-listeners");
     const listeners = {
       "notify-sync.ts": 'export default defineListener({ event: postPublished, sync: true, handler: async () => { await $fetch("https://example.com"); } });\n',
-      "mail-sync.ts": 'export default defineListener({ event: postPublished, sync: true, handler: async () => { await sendMail("welcome", {}); } });\n',
+      "mail-sync.ts": 'export default defineListener({ event: postPublished, sync: true, handler: async () => { await $mails.welcome.send({}); } });\n',
       "mail-now-sync.ts": 'export default defineListener({ event: postPublished, sync: true, handler: async () => { await sendMailNow("welcome", {}); } });\n',
-      "mail-queued.ts": 'export default defineListener({ event: postPublished, handler: async () => { await sendMail("welcome", {}); } });\n',
+      "mail-queued.ts": 'export default defineListener({ event: postPublished, handler: async () => { await sendMailNow($mails.welcome, {}); } });\n',
       "count-sync.ts": "export default defineListener({ event: postPublished, sync: true, handler: async () => { await useDb().execute(\"select 1\"); } });\n",
     };
 
@@ -831,9 +831,8 @@ export default defineDeploy({
     expect(stdout).toBe("");
     expect(violationLines(stderr)).toEqual([
       "✖ server/listeners/post/mail-now-sync.ts: sync listeners may not call sendMailNow(), it holds the emitting transaction open: remove sync: true to queue the listener",
-      "✖ server/listeners/post/mail-sync.ts: sync listeners may not call sendMail(), it holds the emitting transaction open: remove sync: true to queue the listener",
       "✖ server/listeners/post/notify-sync.ts: sync listeners may not call $fetch(), it holds the emitting transaction open: remove sync: true to queue the listener",
-      "✖ 3 architecture violations",
+      "✖ 2 architecture violations",
     ]);
   }, 60000);
 
@@ -841,9 +840,10 @@ export default defineDeploy({
     const fixtureCwd = scratchDir("arch-emit-loop");
     const imports = 'import { postPublished } from "#server/events/post/published";\nimport { postShared } from "#server/events/post/shared";\n\n';
     const listeners = {
-      "republish.ts": `${imports}export default defineListener({ event: postPublished, handler: async (payload) => { await emit(postPublished, payload); } });\n`,
-      "republish-by-name.ts": `${imports}export default defineListener({ event: postPublished, handler: async (payload) => { await emit("post.published", payload); } });\n`,
-      "share.ts": `${imports}export default defineListener({ event: postPublished, handler: async (payload) => { await emit(postShared, payload); } });\n`,
+      "share.ts": `${imports}export default defineListener({ event: postPublished, handler: async (payload) => { await postShared.emit(payload); } });\n`,
+      "republish.ts": `${imports}export default defineListener({ event: postPublished, handler: async (payload) => { await postPublished.emit(payload); } });\n`,
+      "republish-namespaced.ts": "export default defineListener({ event: $events.post.published, handler: async (payload) => { await $events.post.published.emit(payload); } });\n",
+      "share-namespaced.ts": "export default defineListener({ event: $events.post.published, handler: async (payload) => { await $events.post.shared.emit(payload); } });\n",
     };
 
     buildNuxtFixture(fixtureCwd);
@@ -859,7 +859,7 @@ export default defineDeploy({
     expect(stdout).toBe("");
     expect(violationLines(stderr).sort()).toEqual([
       "✖ 2 architecture violations",
-      "✖ server/listeners/post/republish-by-name.ts: listeners may not emit the event they listen to, it runs the listener again in a loop",
+      "✖ server/listeners/post/republish-namespaced.ts: listeners may not emit the event they listen to, it runs the listener again in a loop",
       "✖ server/listeners/post/republish.ts: listeners may not emit the event they listen to, it runs the listener again in a loop",
     ]);
   }, 60000);
@@ -869,6 +869,7 @@ export default defineDeploy({
     const insert = 'export default defineEventHandler(() => useDb().insert(posts).values({ title: "x" }));\n';
     const routes = {
       "api/posts.post.ts": insert,
+      "api/tags.post.ts": 'export default defineEventHandler(() => insertOne(tags, { name: "x" }));\n',
       "routes/publish.post.ts":
         'import { publishPost } from "#server/actions/posts/publish-post";\n\nexport default defineEventHandler(() => publishPost({ id: 1 }));\n',
       "api/posts.get.ts": "export default defineEventHandler(() => useDb().select().from(posts));\n",
@@ -890,8 +891,9 @@ export default defineDeploy({
     expect(exitCode).toBe(1);
     expect(stdout).toBe("");
     expect(violationLines(stderr).sort()).toEqual([
-      "✖ 2 architecture violations",
-      "✖ server/api/posts.post.ts: routes may not call useDb().insert/update/delete, write through a tRPC mutation that calls an action",
+      "✖ 3 architecture violations",
+      "✖ server/api/posts.post.ts: routes may not call useDb().insert/update/delete, insertOne() or updateOne(), write through a tRPC mutation that calls an action",
+      "✖ server/api/tags.post.ts: routes may not call useDb().insert/update/delete, insertOne() or updateOne(), write through a tRPC mutation that calls an action",
       "✖ server/routes/publish.post.ts: routes may not call an action, write through a tRPC mutation that calls it",
     ]);
   }, 60000);
@@ -933,7 +935,7 @@ export default defineDeploy({
     mkdirSync(join(fixtureCwd, "server", "privacy"), { recursive: true });
     writeFileSync(join(domain, "actions", "place.action.ts"), "export const placeOrderThing = defineAction({});\n");
     writeFileSync(join(domain, "actions", "cancel.action.ts"), "export const cancelAction = defineAction({});\n");
-    writeFileSync(join(domain, "routers", "order.router.ts"), 'useDb().insert(orders).values({ name: "x" });\n');
+    writeFileSync(join(domain, "routers", "order.router.ts"), 'updateOne(orders, 1, { name: "x" });\n');
     writeFileSync(join(domain, "schema", "orders.schema.ts"), table("orders"));
     writeFileSync(join(domain, "schema", "refunds.schema.ts"), table("refunds"));
     writeFileSync(
@@ -948,7 +950,7 @@ export default defineDeploy({
     expect(violationLines(stderr).sort()).toEqual([
       "✖ 3 architecture violations",
       "✖ server/domains/order/actions/place.action.ts: one action per file, exported under the filename's camelCase name",
-      expect.stringMatching(/^✖ server\/domains\/order\/routers\/order\.router\.ts: routers may not call useDb\(\)/),
+      "✖ server/domains/order/routers/order.router.ts: routers may not call useDb().insert/update/delete, insertOne() or updateOne(), call an action",
       "✖ server/domains/order/schema/orders.schema.ts: column userId of table ordersTable references the user table but no defineUserData() in server/privacy/, declare it so exportUserData() and eraseUserData() find its rows",
     ]);
   }, 60000);
@@ -1133,7 +1135,7 @@ export default defineDeploy({
     expect(exitCode).toBe(1);
     expect(stdout).toBe("");
     expect(lines).toEqual([
-      "✖ ..shared/layer/server/actions/widgets/archive-widget.ts: actions may not import h3, call auth() or requireAuth(), or read the request (useEvent, getHeader, readBody, ...)",
+      "✖ ..shared/layer/server/actions/widgets/archive-widget.ts: actions may not import h3, call requireAuth(), or read the request (useEvent, getHeader, readBody, ...)",
       "✖ 1 architecture violation",
     ]);
   }, 60000);
@@ -1260,6 +1262,8 @@ export default defineDeploy({
       "server/utils/refund.ts":
         'import * as schema from "#nuxvel/schema";\n\nexport const refund = () => useDb().update(schema.billingPaymentsTable).set({ status: "refunded" });\n',
       "server/utils/clear.ts": 'export const clear = () => useDb().delete(schemaTable("billing_events"));\n',
+      "server/utils/grant-one.ts":
+        'import { billingSubscriptionsTable } from "@nuxvel/nuxt/database";\n\nexport const grant = (userId: string) => insertOne(billingSubscriptionsTable, { userId });\n',
       "layers/shop/server/utils/raw.ts": "export const raw = () => useDb().execute(sql`update billing_customers set livemode = true`);\n",
       "layers/shop/nuxt.config.ts": "export default {};\n",
       "server/utils/raw-string.ts": 'export const raw = () => useDb().execute(sql.raw("delete from billing_payments"));\n',
@@ -1282,9 +1286,10 @@ export default defineDeploy({
     expect(exitCode).toBe(1);
     expect(stdout).toBe("");
     expect(violationLines(stderr).sort()).toEqual([
-      "✖ 5 architecture violations",
+      "✖ 6 architecture violations",
       `✖ layers/shop/server/utils/raw.ts: ${message}`,
       `✖ server/utils/clear.ts: ${message}`,
+      `✖ server/utils/grant-one.ts: ${message}`,
       `✖ server/utils/grant.ts: ${message}`,
       `✖ server/utils/raw-string.ts: ${message}`,
       `✖ server/utils/refund.ts: ${message}`,
@@ -1421,7 +1426,7 @@ export default defineDeploy({
     expect(stdout).toBe("");
 
     for (const file of ["require-auth.ts", "use-event.ts", "get-header.ts", "read-body.ts"]) {
-      expect(stderr).toContain(`${file}: actions may not import h3, call auth() or requireAuth()`);
+      expect(stderr).toContain(`${file}: actions may not import h3, call requireAuth()`);
     }
 
     expect(violationLines(stderr).join("\n")).not.toContain("clean.ts");
@@ -1586,7 +1591,7 @@ export default defineDeploy({
     );
     writeFileSync(
       join(fixtureCwd, "server", "actions", "widgets", "create-widget.ts"),
-      'import { widgetCreated } from "../../events/widget/created";\n\nexport const createWidget = defineAction({\n  handler: async () => emit(widgetCreated, { id: 1 }),\n});\n',
+      'export const createWidget = defineAction({\n  handler: async () => $events.widget.created.emit({ id: 1 }),\n});\n',
     );
     writeFileSync(
       join(fixtureCwd, "server", "listeners", "notify-widget-created.ts"),
@@ -1596,7 +1601,7 @@ export default defineDeploy({
     mkdirSync(join(fixtureCwd, "server", "jobs"), { recursive: true });
     writeFileSync(
       join(fixtureCwd, "server", "jobs", "rebuild-widgets.ts"),
-      'import { widgetCreated as created } from "../events/widget/created";\n\nexport default defineJob({\n  handler: async () => emit(created, { id: 2 }),\n});\n',
+      'import { widgetCreated as created } from "../events/widget/created";\n\nexport default defineJob({\n  handler: async () => created.emit({ id: 2 }),\n});\n',
     );
     mkdirSync(join(fixtureCwd, "modules"), { recursive: true });
     writeFileSync(
@@ -1609,7 +1614,7 @@ export default defineDeploy({
     );
     writeFileSync(
       join(fixtureCwd, "server", "actions", "widgets", "archive-widget.spec.ts"),
-      'import { widgetArchived } from "../../events/widget/archived";\n\nexport const archiveWidget = defineAction({\n  handler: async () => emit(widgetArchived, { id: 1 }),\n});\n',
+      'import { widgetArchived } from "../../events/widget/archived";\n\nexport const archiveWidget = defineAction({\n  handler: async () => widgetArchived.emit({ id: 1 }),\n});\n',
     );
 
     const { stdout, stderr, exitCode } = await runCliAt(fixtureCwd, "events");

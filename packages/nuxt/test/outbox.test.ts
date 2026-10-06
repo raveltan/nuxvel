@@ -37,7 +37,7 @@ describe("the transactional outbox", async () => {
     expect(body.relayedPayloads).toEqual([null]);
   });
 
-  it("has written the outbox row once an awaited dispatchAfterCommit outside a transaction returns", async () => {
+  it("has written the outbox row once an awaited dispatch() outside a transaction returns", async () => {
     const body = await guest().$fetch("/api/_outbox-outside-transaction-check");
 
     expect(body.jobNames).toEqual(["_probe.record"]);

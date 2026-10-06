@@ -6,12 +6,16 @@ import { useDb } from "../database/client";
 import { transaction } from "../database/transaction";
 import { seederDefinitions } from "./registry";
 
-export async function runSeeders(names: readonly string[], onSeeded: (name: string) => void = () => {}): Promise<string[]> {
+export async function runSeeders(
+  names: readonly string[],
+  onSeeded: (name: string, lines: readonly string[]) => void = () => {},
+): Promise<string[]> {
   configureFactories({ db: useDb });
 
   const seeders = new Map(seederDefinitions().map((seeder) => [seeder.name, seeder]));
   const started = new Set<string>();
   const finished: string[] = [];
+  const printed = new Map<string, readonly string[]>();
 
   async function run(name: string) {
     if (finished.includes(name)) return;
@@ -22,13 +26,14 @@ export async function runSeeders(names: readonly string[], onSeeded: (name: stri
     if (!seeder) throw new Error(`No seeder named "${name}"`);
 
     started.add(name);
-    await transaction(() =>
+    const lines = await transaction(() =>
       seeder.handler({
         call: async (...called) => {
           for (const seeder of called) await run(typeof seeder === "string" ? seeder : seeder.name);
         },
       }),
     );
+    if (lines) printed.set(name, lines);
     finished.push(name);
   }
 
@@ -38,7 +43,7 @@ export async function runSeeders(names: readonly string[], onSeeded: (name: stri
         const committed = finished.length;
 
         await run(name);
-        finished.slice(committed).forEach(onSeeded);
+        for (const seeded of finished.slice(committed)) onSeeded(seeded, printed.get(seeded) ?? []);
       }
     });
   } finally {

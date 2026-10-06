@@ -17,22 +17,15 @@ export const notificationDataIsTyped: IsAny<NotificationData<"welcome">> extends
     : never = true;
 
 export async function notifiesOnlyDefinedNotifications() {
-  await notify("user-1", "welcome", { name: "Ada" });
-  await notify(["user-1", "user-2"], "welcome", { name: "Ada" });
+  await $notifications.welcome.notify("user-1", { name: "Ada" });
+  await $notifications.welcome.notify(["user-1", "user-2"], { name: "Ada" });
 
   // @ts-expect-error no notification is named goodbye
-  await notify("user-1", "goodbye", { name: "Ada" });
+  await $notifications.goodbye.notify("user-1", { name: "Ada" });
   // @ts-expect-error welcome needs a name
-  await notify("user-1", "welcome", {});
-}
-
-export async function notifiesADefinition() {
-  await notify("user-1", $notifications.welcome, { name: "Ada" });
-
-  // @ts-expect-error the definition's data needs a name
-  await notify("user-1", $notifications.welcome, {});
-  // @ts-expect-error the definition's name is a string
-  await notify(["user-1"], $notifications.welcome, { name: 1 });
+  await $notifications.welcome.notify("user-1", {});
+  // @ts-expect-error welcome's name is a string
+  await $notifications.welcome.notify(["user-1"], { name: 1 });
 }
 
 export const databaseOnly = defineNotification({
@@ -83,5 +76,13 @@ type NamespacedNotification = typeof $notifications.welcome;
 export const notificationsNamespaceIsTyped: IsAny<NamespacedNotification> extends true
   ? never
   : NamespacedNotification extends { readonly name: string; via: readonly string[] }
+    ? true
+    : never = true;
+
+type NotifyData = Parameters<typeof $notifications.welcome.notify>[1];
+
+export const notifyDataIsTyped: IsAny<NotifyData> extends true
+  ? never
+  : NotifyData extends { name: string }
     ? true
     : never = true;

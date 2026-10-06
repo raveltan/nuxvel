@@ -13,7 +13,7 @@ type RenderedMail = z.infer<typeof renderedMail>;
  * plain-text version. Nothing is sent.
  *
  * `input` is parsed by the mail's schema first, rejecting with a
- * `BAD_REQUEST` validation error like {@link sendMail}. Use
+ * `BAD_REQUEST` validation error like {@link Mail.send}. Use
  * {@link expectMailSent} to assert that code sends it.
  *
  * @param name A {@link MailName}, or the mail's definition or its stub from

@@ -1,7 +1,7 @@
 export default defineEventHandler(async () => {
-  const session = await auth();
+  const { user } = await useAuth();
 
-  if (!session) {
+  if (!user) {
     let threwUnauthenticated = false;
 
     try {
@@ -10,13 +10,13 @@ export default defineEventHandler(async () => {
       threwUnauthenticated = e instanceof UnauthenticatedError;
     }
 
-    return { session: null, threwUnauthenticated };
+    return { user: null, threwUnauthenticated };
   }
 
   const required = await requireAuth();
 
   return {
-    session,
-    requiredMatchesSession: required.user.id === session.user.id,
+    user,
+    requiredMatchesSession: required.user.id === user.id,
   };
 });

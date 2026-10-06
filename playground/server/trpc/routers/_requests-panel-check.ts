@@ -4,7 +4,7 @@ export default {
   load: publicProcedure.query(async () => {
     await transaction(async () => {
       await useDb().select().from(postsTable).limit(1);
-      await dispatchAfterCommit("_probe.record", { name: "requests-panel" });
+      await $jobs._probe.record.dispatch({ name: "requests-panel" });
     });
 
     return "loaded";

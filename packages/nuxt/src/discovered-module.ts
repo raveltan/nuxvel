@@ -11,10 +11,10 @@ const aliasesModule = resolver.resolve("./runtime/server/discovery/aliases");
  * discovered files of `folder` export, each given its path's name as a
  * literal, so the registry's name union is exact. A file exports its
  * definition as the default export or as a named export with the kind
- * suffix of `folder` (`postNotifySubscribersJob`). With `refuseRenamedAs`,
- * the kind (e.g. `"mail"`) stores nothing under its names, and a
- * `renamed()` alias among the files stops the server as the module
- * loads.
+ * suffix of `folder` (`postNotifySubscribersJob`). The definitions are
+ * named on the first read of the array, or at boot. With
+ * `refuseRenamedAs`, the kind (e.g. `"mail"`) stores nothing under its
+ * names, and a `renamed()` alias among the files stops the server then.
  */
 export function buildDiscoveredModuleCode(folder: string, definitions: NamedFile[], refuseRenamedAs?: string) {
   if (definitions.length === 0) return "export default [];";
@@ -29,14 +29,14 @@ export function buildDiscoveredModuleCode(folder: string, definitions: NamedFile
         `named(definitionExport(definition${index}, ${suffixes}, isDefinition, ${JSON.stringify(file)}), ${JSON.stringify(name)}, ${JSON.stringify(file)})`,
     )
     .join(", ")}]`;
-  const header = `import { isDefinition, named } from ${JSON.stringify(definitionNameModule)};
+  const header = `import { isDefinition, named, namedOnRead } from ${JSON.stringify(definitionNameModule)};
 import { definitionExport } from ${JSON.stringify(definitionExportModule)};`;
 
   if (refuseRenamedAs === undefined) {
     return `${header}
 ${imports.join("\n")}
 
-export default ${entries};
+export default namedOnRead(() => ${entries});
 `;
   }
 
@@ -44,6 +44,6 @@ export default ${entries};
 import { refuseRenamed } from ${JSON.stringify(aliasesModule)};
 ${imports.join("\n")}
 
-export default refuseRenamed(${JSON.stringify(refuseRenamedAs)}, ${entries});
+export default namedOnRead(() => refuseRenamed(${JSON.stringify(refuseRenamedAs)}, ${entries}));
 `;
 }
