@@ -25,7 +25,7 @@ describe("nuxvel upgrade", () => {
 
     expect(unknown.exitCode).toBe(2);
     expect(unknown.stdout).toBe("");
-    expect(stripAnsi(unknown.stderr)).toContain("✖ No codemod named nope\n  → The codemods are test-aliases, imports");
+    expect(stripAnsi(unknown.stderr)).toContain("✖ No codemod named nope\n  → The codemods are test-aliases, imports, use-trpc");
 
     writeFileSync(join(appDir, "package.json"), "{ not json");
 
@@ -228,6 +228,118 @@ describe("nuxvel upgrade", () => {
       expect(stripAnsi(stderr)).toContain(
         "▲ server/trpc/routers/report.router.ts:1: #shared/schemas/post is in shared/schemas/, whose exports server/ auto-imports: remove the import\n",
       );
+    }, 60000);
+  });
+  describe("use-trpc", () => {
+    it("replaces useTRPC() and its binding with $api in scripts, templates and types, and leaves a mocked name as a manual step", async () => {
+      const appDir = scratchPlayground("upgrade-use-trpc");
+      const component = join(appDir, "app", "components", "report", "ReportPosts.vue");
+      const composable = join(appDir, "app", "composables", "use-report-api.ts");
+      const mocked = join(appDir, "tests", "report", "report-posts.nuxt.test.ts");
+      const oldComponent = [
+        '<script setup lang="ts">',
+        "const trpc = useTRPC();",
+        "",
+        "const posts = useQuery(trpc.post.list.queryOptions());",
+        "const keys = { trpc, list: trpc.post.list.key() };",
+        "</script>",
+        "",
+        "<template>",
+        '  <p v-for="trpc in [1, 2]" :key="trpc">{{ trpc }}</p>',
+        "  <p>{{ trpc.post.key().join() }} {{ posts.data.value?.total }} {{ keys.list }}</p>",
+        "</template>",
+        "",
+      ].join("\n");
+      const oldComposable = [
+        'import { useTRPC } from "#imports";',
+        "",
+        "export type ReportApi = ReturnType<typeof useTRPC>;",
+        "",
+        "export function useReportApi(): ReportApi {",
+        "  const trpc = useTRPC();",
+        "",
+        "  return trpc;",
+        "}",
+        "",
+        "export const reportKey = () => useTRPC().post.key();",
+        "",
+      ].join("\n");
+      const oldMocked = [
+        'import { mockNuxtImport } from "@nuxt/test-utils/runtime";',
+        "",
+        'mockNuxtImport("useTRPC", () => () => ({}));',
+        "",
+      ].join("\n");
+      mkdirSync(join(appDir, "app", "components", "report"), { recursive: true });
+      mkdirSync(join(appDir, "app", "composables"), { recursive: true });
+      mkdirSync(join(appDir, "tests", "report"), { recursive: true });
+      writeFileSync(component, oldComponent);
+      writeFileSync(composable, oldComposable);
+      writeFileSync(mocked, oldMocked);
+      const manualStep = '▲ tests/report/report-posts.nuxt.test.ts:3: "useTRPC" names useTRPC(), which $api replaces: mock "$api" instead\n';
+
+      const applied = await runCliAt(appDir, "upgrade", "--only", "use-trpc");
+
+      expect(applied.exitCode, applied.stderr).toBe(0);
+      expect(applied.stdout).toContain("updated: app/components/report/ReportPosts.vue\n");
+      expect(applied.stdout).toContain("updated: app/composables/use-report-api.ts\n");
+      expect(stripAnsi(applied.stderr)).toContain(manualStep);
+      expect(readFileSync(component, "utf8")).toBe(
+        [
+          '<script setup lang="ts">',
+          "const posts = useQuery($api.post.list.queryOptions());",
+          "const keys = { trpc: $api, list: $api.post.list.key() };",
+          "</script>",
+          "",
+          "<template>",
+          '  <p v-for="trpc in [1, 2]" :key="trpc">{{ trpc }}</p>',
+          "  <p>{{ $api.post.key().join() }} {{ posts.data.value?.total }} {{ keys.list }}</p>",
+          "</template>",
+          "",
+        ].join("\n"),
+      );
+      expect(readFileSync(composable, "utf8")).toBe(
+        [
+          'import { $api } from "#imports";',
+          "",
+          "export type ReportApi = typeof $api;",
+          "",
+          "export function useReportApi(): ReportApi {",
+          "  return $api;",
+          "}",
+          "",
+          "export const reportKey = () => $api.post.key();",
+          "",
+        ].join("\n"),
+      );
+      expect(readFileSync(mocked, "utf8")).toBe(oldMocked);
+
+      const again = await runCliAt(appDir, "upgrade", "--only", "use-trpc");
+
+      expect(again.exitCode).toBe(0);
+      expect(again.stdout).not.toContain("report");
+      expect(stripAnsi(again.stderr)).toContain(manualStep);
+    }, 60000);
+
+    it("leaves useTRPC() in a file that declares its own $api, and a renamed import, as manual steps", async () => {
+      const appDir = scratchPlayground("upgrade-use-trpc-manual");
+      const taken = join(appDir, "app", "utils", "report-api.ts");
+      const renamed = join(appDir, "app", "utils", "report-client.ts");
+      const oldTaken = "const $api = 1;\nexport const reportApi = [$api, useTRPC()];\n";
+      const oldRenamed = 'import { useTRPC as useClient } from "#imports";\n\nexport const reportClient = () => useClient();\n';
+      mkdirSync(join(appDir, "app", "utils"), { recursive: true });
+      writeFileSync(taken, oldTaken);
+      writeFileSync(renamed, oldRenamed);
+
+      const { stderr, exitCode } = await runCliAt(appDir, "upgrade", "--only", "use-trpc");
+
+      expect(exitCode, stderr).toBe(0);
+      expect(stripAnsi(stderr)).toContain(
+        "▲ app/utils/report-api.ts:2: $api is declared in this file: rename it, then run nuxvel upgrade again to replace useTRPC() with $api\n",
+      );
+      expect(stripAnsi(stderr)).toContain("▲ app/utils/report-client.ts:1: useTRPC is imported as useClient: use $api in place of useClient()\n");
+      expect(readFileSync(taken, "utf8")).toBe(oldTaken);
+      expect(readFileSync(renamed, "utf8")).toBe(oldRenamed);
     }, 60000);
   });
 });

@@ -1,14 +1,14 @@
 import { join, resolve } from "node:path";
 import { nuxvelPlugin } from "@nuxvel/nuxt/eslint/architecture";
-import { Linter } from "eslint";
+import { type ESLint, Linter } from "eslint";
 import { tsConfig, vueConfig } from "../arch/lint-architecture.ts";
 import type { Rewrite } from "./codemod.ts";
 
 const root = resolve("/");
 
-export function ruleRewrite(rule: string) {
+export function ruleRewrite(rule: string, plugin: ESLint.Plugin = nuxvelPlugin) {
   const ruleId = `nuxvel/${rule}`;
-  const ruleConfig: Linter.Config = { plugins: { nuxvel: nuxvelPlugin }, rules: { [ruleId]: "error" } };
+  const ruleConfig: Linter.Config = { plugins: { nuxvel: plugin }, rules: { [ruleId]: "error" } };
   const config = [tsConfig(ruleConfig), vueConfig(ruleConfig)];
   const linter = new Linter({ cwd: root });
 
