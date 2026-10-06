@@ -1,4 +1,4 @@
-import { tagsTable } from "../../database/schema/tags.schema";
+import { tagsTable } from "#nuxvel/schema";
 
 export const createTagAction = defineAction({
   input: createTagInput,

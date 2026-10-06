@@ -1,5 +1,5 @@
 import { eq, like } from "drizzle-orm";
-import { healthChecksTable } from "../schema/health-check.schema";
+import { healthChecksTable } from "#nuxvel/schema";
 
 export default defineBackfill({
   table: healthChecksTable,

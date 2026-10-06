@@ -1,7 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { userTable } from "../../database/schema/auth.schema";
-import { postsTable } from "../../database/schema/posts.schema";
+import { userTable } from "#nuxvel/schema";
+import { postsTable } from "#nuxvel/schema";
 
 export const accountRouter = {
   posts: authedProcedure

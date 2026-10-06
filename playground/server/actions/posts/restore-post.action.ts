@@ -1,6 +1,5 @@
 import { eq } from "drizzle-orm";
-import { postsTable } from "../../database/schema/posts.schema";
-import { postIdInput } from "../../../shared/schemas/post";
+import { postsTable } from "#nuxvel/schema";
 
 export const restorePostAction = defineAction({
   input: postIdInput,

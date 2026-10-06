@@ -1,6 +1,6 @@
 import { and, eq, inArray } from "drizzle-orm";
-import { userTable } from "../database/schema/auth.schema";
-import { postsTable } from "../database/schema/posts.schema";
+import { userTable } from "#nuxvel/schema";
+import { postsTable } from "#nuxvel/schema";
 
 async function adminAuthors(actor: { role?: string }, rows: { authorId: string }[]) {
   if (actor.role !== "admin") return new Set<string>();

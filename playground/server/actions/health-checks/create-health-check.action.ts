@@ -1,4 +1,4 @@
-import { healthChecksTable } from "../../database/schema/health-check.schema";
+import { healthChecksTable } from "#nuxvel/schema";
 
 export const createHealthCheckAction = defineAction({
   input: createHealthCheckInput,

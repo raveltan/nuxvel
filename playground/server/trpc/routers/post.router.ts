@@ -1,18 +1,12 @@
 import { and, desc, getTableColumns, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { createPostAction } from "../../actions/posts/create-post.action";
-import { deletePostAction } from "../../actions/posts/delete-post.action";
-import { restorePostAction } from "../../actions/posts/restore-post.action";
-import { updatePostAction } from "../../actions/posts/update-post.action";
-import { userTable } from "../../database/schema/auth.schema";
-import { postsTable } from "../../database/schema/posts.schema";
-import { postPolicy } from "../../policies/post.policy";
-import {
-  createPostInput,
-  postIdInput,
-  postSchema,
-  updatePostInput,
-} from "../../../shared/schemas/post";
+import { createPostAction } from "#server/actions/posts/create-post.action";
+import { deletePostAction } from "#server/actions/posts/delete-post.action";
+import { restorePostAction } from "#server/actions/posts/restore-post.action";
+import { updatePostAction } from "#server/actions/posts/update-post.action";
+import { userTable } from "#nuxvel/schema";
+import { postsTable } from "#nuxvel/schema";
+import { postPolicy } from "#server/policies/post.policy";
 
 const { searchVector: _searchVector, ...postColumns } = getTableColumns(postsTable);
 

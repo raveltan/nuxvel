@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { healthChecksTable } from "../../database/schema/health-check.schema";
+import { healthChecksTable } from "#nuxvel/schema";
 
 const v1 = z.object({ label: z.string().min(1) });
 

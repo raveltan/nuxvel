@@ -1,5 +1,5 @@
-import { healthCheckFactory } from "../../factories/health-checks.factory";
-import { userFactory } from "../../factories/users.factory";
+import { healthCheckFactory } from "#nuxvel/factories";
+import { userFactory } from "#nuxvel/factories";
 
 export default defineSeeder(async () => {
   await healthCheckFactory({ name: "seeded-before-author" });

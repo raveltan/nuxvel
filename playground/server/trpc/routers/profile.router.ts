@@ -1,10 +1,9 @@
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { sendTestMailAction } from "../../actions/profile/send-test-mail.action";
-import { sendTestNotificationAction } from "../../actions/profile/send-test-notification.action";
-import { setAvatarAction } from "../../actions/profile/set-avatar.action";
-import { userTable } from "../../database/schema/auth.schema";
-import { setAvatarInput } from "../../../shared/schemas/profile";
+import { sendTestMailAction } from "#server/actions/profile/send-test-mail.action";
+import { sendTestNotificationAction } from "#server/actions/profile/send-test-notification.action";
+import { setAvatarAction } from "#server/actions/profile/set-avatar.action";
+import { userTable } from "#nuxvel/schema";
 
 export const profileRouter = {
   me: authedProcedure

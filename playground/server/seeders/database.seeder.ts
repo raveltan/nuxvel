@@ -1,5 +1,5 @@
-import { postFactory } from "../factories/posts.factory";
-import { userFactory } from "../factories/users.factory";
+import { postFactory } from "#nuxvel/factories";
+import { userFactory } from "#nuxvel/factories";
 
 const DEMO_EMAIL = "demo@example.com";
 const DEMO_PASSWORD = "demo-password";

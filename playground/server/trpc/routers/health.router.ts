@@ -1,12 +1,7 @@
 import { z } from "zod";
-import { createHealthCheckAction } from "../../actions/health-checks/create-health-check.action";
-import { updateHealthCheckAction } from "../../actions/health-checks/update-health-check.action";
-import { healthChecksTable } from "../../database/schema/health-check.schema";
-import {
-  createHealthCheckInput,
-  healthCheckSchema,
-  updateHealthCheckInput,
-} from "../../../shared/schemas/health-check";
+import { createHealthCheckAction } from "#server/actions/health-checks/create-health-check.action";
+import { updateHealthCheckAction } from "#server/actions/health-checks/update-health-check.action";
+import { healthChecksTable } from "#nuxvel/schema";
 
 export const healthRouter = {
   ping: publicProcedure.output(z.string()).query(() => "pong"),

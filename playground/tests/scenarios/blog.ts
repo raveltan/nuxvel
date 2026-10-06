@@ -1,5 +1,5 @@
-import { postFactory } from "../../server/factories/posts.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { postFactory } from "#nuxvel/factories";
+import { userFactory } from "#nuxvel/factories";
 
 export async function blog({ posts = 1 }: { posts?: number } = {}) {
   const author = await userFactory();

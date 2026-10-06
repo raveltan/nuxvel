@@ -1,4 +1,3 @@
-import { countdownInput } from "../../../shared/schemas/countdown";
 
 export const startCountdownAction = defineAction({
   input: countdownInput,

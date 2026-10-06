@@ -1,4 +1,4 @@
-import { postsTable } from "../../database/schema/posts.schema";
+import { postsTable } from "#nuxvel/schema";
 
 export const createPostAction = defineAction({
   input: createPostInput,

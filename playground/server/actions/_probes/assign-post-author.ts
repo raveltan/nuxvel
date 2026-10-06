@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { postsTable } from "../../database/schema/posts.schema";
+import { postsTable } from "#nuxvel/schema";
 
 export const assignPostAuthor = defineAction({
   input: z.object({ postId: z.number(), authorId: z.string() }),

@@ -1,4 +1,4 @@
-import { healthChecksTable } from "../database/schema/health-check.schema";
+import { healthChecksTable } from "#nuxvel/schema";
 
 export const healthCheckPolicy = definePolicy(healthChecksTable, {
   update: (actor, row) => row.userId === actor.id,

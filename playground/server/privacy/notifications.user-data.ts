@@ -1,3 +1,3 @@
-import { notificationsTable } from "../database/schema/notifications.schema";
+import { notificationsTable } from "#nuxvel/schema";
 
 export const notificationsUserData = defineUserData(notificationsTable, notificationsTable.userId);

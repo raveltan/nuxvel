@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { userTable } from "../../database/schema/auth.schema";
+import { userTable } from "#nuxvel/schema";
 
 export const changeUserId = defineAction({
   input: z.object({ id: z.string(), newId: z.string() }),
