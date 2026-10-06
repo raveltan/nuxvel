@@ -974,7 +974,7 @@ The Zod row schema does not list `searchVector`, so the search column does not r
 
 A field name is camelCase or snake_case. The column is snake_case, and the key in the table and the Zod input is camelCase: `due_on` and `dueOn` both give the column `due_on` and the key `dueOn`.
 
-`project:references` adds the column `project_id` and the key `projectId`. It points at `projectTable.id` in `project.schema.ts`, with the same type as that id. Give the table after `=` when it has a different name: `reviewer:references=user` points at `userTable` in the auth schema. The foreign key deletes the row when the target row is deleted (`onDelete: "cascade"`). With `nullable`, it sets the column to `NULL` (`onDelete: "set null"`). Each reference gets an index, unless it has `unique`: the unique constraint already has an index. The target table must exist. The command looks for it in the same domain, in `server/database/schema/`, and then in every other domain folder and every module. It stops with an error when two tables have the name:
+`project:references` adds the column `projectId: belongsTo(projectTable)`, named `project_id`. It points at `projectTable.id` in `project.schema.ts`, with the same type as that id. See [`belongsTo()`](./database.md#foreign-keys-with-belongsto). Give the table after `=` when it has a different name: `reviewer:references=user` points at `userTable` in the auth schema. The foreign key deletes the row when the target row is deleted (`onDelete: "cascade"`). With `nullable`, it sets the column to `NULL` (`belongsTo(projectTable, { nullable: true, onDelete: "set null" })`). Each reference gets an index, unless it has `unique`: the unique constraint already has an index. The target table must exist. The command looks for it in the same domain, in `server/database/schema/`, and then in every other domain folder and every module. It stops with an error when two tables have the name:
 
 ```sh
 nuxvel make:schema comment post:references
@@ -1133,7 +1133,7 @@ nuxvel make:router blog-post --crud
 export const blogPostRouter = {};
 ```
 
-With `--crud`, it also writes what `make:schema` and `make:policy` write, and three actions: `create-<name>.action.ts`, `update-<name>.action.ts` and `delete-<name>.action.ts`. The table gets an `ownerId` column that references `userTable.id`, and an index on that column, `<table>_owner_id_idx`. Postgres does not index a foreign key column for you. These actions have no test file. The delete action removes the row from the table. The policy lets the owner or an admin update and delete a row. The router then connects `list` and `byId` queries and `create`, `update` and `delete` mutations to the actions and the policy. This sample leaves out the `.openapi()` of each procedure, as `--no-openapi` does:
+With `--crud`, it also writes what `make:schema` and `make:policy` write, and three actions: `create-<name>.action.ts`, `update-<name>.action.ts` and `delete-<name>.action.ts`. The table gets an `ownerId: belongsTo(userTable)` column, and an index on that column, `<table>_owner_id_idx`. Postgres does not index a foreign key column for you. These actions have no test file. The delete action removes the row from the table. The policy lets the owner or an admin update and delete a row. The router then connects `list` and `byId` queries and `create`, `update` and `delete` mutations to the actions and the policy. This sample leaves out the `.openapi()` of each procedure, as `--no-openapi` does:
 
 ```ts
 // server/trpc/routers/blog-post.router.ts

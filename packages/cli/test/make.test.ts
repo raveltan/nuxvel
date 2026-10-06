@@ -109,6 +109,7 @@ describe("nuxvel make:* generators", () => {
     expect(tableFile).toContain(
       'import { bigint, boolean, date, index, integer, jsonb, numeric, pgTable, serial, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";',
     );
+    expect(tableFile).toContain('import { belongsTo, timestamps } from "@nuxvel/nuxt/database";');
     expect(tableFile).toContain('import { projectTable } from "./project.schema";\nimport { userTable } from "./auth.schema";\n');
     for (const column of [
       'title: varchar("title", { length: 255 }).notNull(),',
@@ -123,8 +124,8 @@ describe("nuxvel make:* generators", () => {
       'remindAt: timestamp("remind_at"),',
       'meta: jsonb("meta").notNull(),',
       'status: text("status", { enum: ["draft", "done"] }).notNull().default("draft"),',
-      'projectId: integer("project_id").notNull().references(() => projectTable.id, { onDelete: "cascade" }),',
-      'reviewerId: text("reviewer_id").references(() => userTable.id, { onDelete: "set null" }),',
+      "projectId: belongsTo(projectTable),",
+      'reviewerId: belongsTo(userTable, { nullable: true, onDelete: "set null" }),',
     ]) {
       expect(tableFile).toContain(`  ${column}\n`);
     }
@@ -194,7 +195,7 @@ describe("nuxvel make:* generators", () => {
     expect(profile.exitCode, profile.stderr).toBe(0);
 
     const tableFile = readFileSync(join(fixtureCwd, "server", "database", "schema", "profile.schema.ts"), "utf-8");
-    expect(tableFile).toContain('projectId: integer("project_id").notNull().unique().references(');
+    expect(tableFile).toContain("projectId: belongsTo(projectTable).unique(),");
     expect(tableFile).not.toContain("profile_project_id_idx");
     expect(tableFile).not.toContain("profile_slug_idx");
   }, 60000);
@@ -857,8 +858,8 @@ export default defineDeploy({
     const tableFile = readFileSync(join(fixtureCwd, "server", "database", "schema", "widget-item.schema.ts"), "utf-8");
     expect(tableFile).toContain('export const widgetItemTable = pgTable("widget_item", {');
     expect(tableFile).toContain('import { userTable } from "./auth.schema";');
-    expect(tableFile).toContain(".references(() => userTable.id, { onDelete: \"cascade\" }),");
-    expect(tableFile).toContain('ownerId: text("owner_id")');
+    expect(tableFile).toContain('import { belongsTo, timestamps } from "@nuxvel/nuxt/database";');
+    expect(tableFile).toContain("  ownerId: belongsTo(userTable),\n");
     expect(tableFile).toContain('}, (table) => [index("widget_item_owner_id_idx").on(table.ownerId)]);');
 
     const policyFile = readFileSync(join(fixtureCwd, "server", "policies", "widget-item.policy.ts"), "utf-8");
@@ -1292,7 +1293,7 @@ export default defineDeploy({
 
     expect(inDomain.exitCode, inDomain.stderr).toBe(0);
     expect(readFileSync(join(fixtureCwd, "server", "domains", "learning", "schema", "enrollment.schema.ts"), "utf8")).toContain(
-      "courseTable.id",
+      "courseId: belongsTo(courseTable),",
     );
 
     expect((await runCliAt(fixtureCwd, "make:module", "billing")).exitCode).toBe(0);

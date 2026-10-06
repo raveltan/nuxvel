@@ -153,7 +153,7 @@ import { postFactory, userFactory } from "#nuxvel/factories";
 describe("post.delete", () => {
   it("trashes a post", async () => {
     const author = await userFactory();
-    const post = await postFactory.for("authorId", author)();
+    const post = await postFactory({ author });
 
     await actingAs(author).trpc.post.delete({ id: post.id });
 
@@ -164,7 +164,7 @@ describe("post.delete", () => {
 describe("post.restore", () => {
   it("restores a trashed post", async () => {
     const author = await userFactory();
-    const post = await postFactory.for("authorId", author).trashed()();
+    const post = await postFactory.trashed()({ author });
 
     const restored = await actingAs(author).trpc.post.restore({ id: post.id });
 

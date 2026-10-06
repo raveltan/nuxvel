@@ -140,5 +140,5 @@ Targeting without a deploy: `setFlagTargeting(name, { percentage, roles })`, `./
 
 - Seeder: `export const blogSeeder = defineSeeder(async ({ call }) => { await postFactory.count(5)(); })`. Return lines (`string[]`) to have `db:seed` print them, such as the demo sign-in.
 - Backfill: `defineBackfill({ table, batchSize, where, async handler(rows) { … } })`, run with `runBackfill(name)`.
-- User data: `export const postsUserData = defineUserData(postTable, postTable.authorId)`.
+- User data: `export const postsUserData = defineUserData(postTable)` (the owner is its one column to the user table, e.g. `belongsTo(userTable)`; name it otherwise: `defineUserData(postTable, postTable.editorId)`).
 - Audit: `audit("post.updated", post, { changes })`. The row's `id` is the target, the name's first segment its type. `{ type, id }` in place of the row sets the type.

@@ -1,5 +1,5 @@
 import { boolean, index, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
-import { now } from "@nuxvel/nuxt/database";
+import { belongsTo, now } from "@nuxvel/nuxt/database";
 
 export const userTable = pgTable("user", {
   id: text("id").primaryKey(),
@@ -29,18 +29,14 @@ export const sessionTable = pgTable("session", {
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
   twoFactorVerified: boolean("two_factor_verified").notNull().default(false),
-  userId: text("user_id")
-    .notNull()
-    .references(() => userTable.id, { onDelete: "cascade" }),
+  userId: belongsTo(userTable),
 }, (table) => [index("session_user_id_idx").on(table.userId)]);
 
 export const accountTable = pgTable("account", {
   id: text("id").primaryKey(),
   accountId: text("account_id").notNull(),
   providerId: text("provider_id").notNull(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => userTable.id, { onDelete: "cascade" }),
+  userId: belongsTo(userTable),
   accessToken: text("access_token"),
   refreshToken: text("refresh_token"),
   idToken: text("id_token"),
@@ -71,9 +67,7 @@ export const twoFactorTable = pgTable("two_factor", {
   id: text("id").primaryKey(),
   secret: text("secret").notNull(),
   backupCodes: text("backup_codes").notNull(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => userTable.id, { onDelete: "cascade" }),
+  userId: belongsTo(userTable),
   verified: boolean("verified").notNull().default(true),
   failedVerificationCount: integer("failed_verification_count").notNull().default(0),
   lockedUntil: timestamp("locked_until"),

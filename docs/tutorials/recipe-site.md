@@ -73,14 +73,12 @@ The form does not set the publication date. A separate action sets it, in chapte
 ```ts
 // server/database/schema/recipe.schema.ts
 import { index, pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
-import { timestamps } from "@nuxvel/nuxt/database";
+import { belongsTo, timestamps } from "@nuxvel/nuxt/database";
 import { userTable } from "./auth.schema";
 
 export const recipeTable = pgTable("recipe", {
   id: serial("id").primaryKey(),
-  ownerId: text("owner_id")
-    .notNull()
-    .references(() => userTable.id, { onDelete: "cascade" }),
+  ownerId: belongsTo(userTable),
   slug: varchar("slug", { length: 255 }).notNull().unique(),
   title: varchar("title", { length: 255 }).notNull(),
   summary: varchar("summary", { length: 255 }).notNull(),
@@ -159,12 +157,10 @@ Give the recipe factory realistic values, a slug that is valid in a URL, and a s
 ```ts
 // server/factories/recipe.factory.ts
 import { faker } from "@faker-js/faker";
-import { userFactory } from "./users.factory";
 import { defineFactory, sequence } from "@nuxvel/nuxt/factories";
 import { recipeTable } from "#nuxvel/schema";
 
 export const recipeFactory = defineFactory(recipeTable, {
-  ownerId: async () => (await userFactory()).id,
   slug: sequence((n) => `recipe-${n}`),
   title: () => faker.food.dish(),
   summary: () => faker.food.description(),

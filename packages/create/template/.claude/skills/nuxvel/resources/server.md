@@ -5,14 +5,14 @@ All names below are auto-imported in `server/`.
 ## Table
 
 ```ts
-import { index, pgTable, serial, text, varchar } from "drizzle-orm/pg-core";
-import { timestamps } from "@nuxvel/nuxt/database";
+import { index, pgTable, serial, varchar } from "drizzle-orm/pg-core";
+import { belongsTo, timestamps } from "@nuxvel/nuxt/database";
 import { userTable } from "./auth.schema";
 
 export const postTable = pgTable("post", {
   id: serial("id").primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),
-  authorId: text("author_id").notNull().references(() => userTable.id, { onDelete: "cascade" }),
+  authorId: belongsTo(userTable),
   ...timestamps(),
 }, (table) => [index("post_author_id_idx").on(table.authorId)]);
 export type PostRow = typeof postTable.$inferSelect;
@@ -20,6 +20,7 @@ export type NewPostRow = typeof postTable.$inferInsert;
 ```
 
 - `timestamps()`: `createdAt`, `updatedAt`. `softDeletes()`: `deletedAt`. User id is `text`.
+- `belongsTo(userTable)` (from `@nuxvel/nuxt/database`) = `text("<key in snake_case>").notNull().references(() => userTable.id, { onDelete: "cascade" })`. Options: `column`, `onDelete`, `nullable: true`. No index: keep the `index(...)` line. A self-reference keeps `.references()`.
 - `shared/schemas/post.ts`: `createPostInput`, `updatePostInput` (`.partial()` + `id`), `postIdInput`, `postSchema` (row, the output shape). Change `postSchema` when a column changes. Leave out columns a caller must not see.
 
 ## Action

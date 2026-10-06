@@ -81,14 +81,12 @@ Give the description the `SanitizedHtml` type, and make the name unique:
 ```ts
 // server/database/schema/product.schema.ts
 import { boolean, date, index, integer, pgTable, serial, text, varchar } from "drizzle-orm/pg-core";
-import { searchable, searchIndex, timestamps } from "@nuxvel/nuxt/database";
+import { belongsTo, searchable, searchIndex, timestamps } from "@nuxvel/nuxt/database";
 import { userTable } from "./auth.schema";
 
 export const productTable = pgTable("product", {
   id: serial("id").primaryKey(),
-  ownerId: text("owner_id")
-    .notNull()
-    .references(() => userTable.id, { onDelete: "cascade" }),
+  ownerId: belongsTo(userTable),
   description: text("description").$type<SanitizedHtml>().notNull(),
   price: integer("price").notNull(),
   category: text("category", { enum: ["books", "games", "music"] }).notNull(),
@@ -286,12 +284,10 @@ The generated factory gives the description a plain string, which is not a `Sani
 ```ts
 // server/factories/product.factory.ts
 import { faker } from "@faker-js/faker";
-import { userFactory } from "./users.factory";
 import { defineFactory } from "@nuxvel/nuxt/factories";
 import { productTable } from "#nuxvel/schema";
 
 export const productFactory = defineFactory(productTable, {
-  ownerId: async () => (await userFactory()).id,
   description: () => faker.lorem.sentence() as SanitizedHtml,
   price: () => faker.number.int({ min: 1, max: 1000 }),
   category: "books",

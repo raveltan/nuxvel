@@ -122,6 +122,25 @@ applies each step below that names a codemod.
 
 ### Changes
 
+- `belongsTo(table, { column, onDelete, nullable })` of `@nuxvel/nuxt/database`
+  writes a foreign key column to the `id` of `table`, with the same SQL as
+  the hand-written `.references()`.
+- A factory creates the missing parent row of a `NOT NULL` foreign key
+  column with the factory of the parent table, and takes a parent by its
+  relation name: `postFactory({ author })` sets `authorId`. A definition
+  line such as `authorId: async () => (await userFactory()).id` can go.
+  A `NOT NULL` foreign key with no value in a factory now creates a parent
+  row, so a test that expected a foreign key error, or that counts the rows
+  of the parent table, can change.
+- `defineUserData(table)` without a column uses the one column of `table`
+  that references the user table, such as `belongsTo(userTable)`.
+- New apps write their foreign keys to the user and session tables with
+  `belongsTo()`. An existing app keeps its `.references()` columns, or
+  changes them to `belongsTo()` with no migration.
+- `make:schema`, `make:router --crud` and `make:resource` write each
+  reference and the `ownerId` column with `belongsTo()`.
+- `nuxvel test:arch` reports a `belongsTo(userTable)` column with no
+  `defineUserData()`, as it does a hand-written reference to `userTable.id`.
 - Generated files import tables from `#nuxvel/schema`, factories from
   `#nuxvel/factories` and other server code from `#server/<path>`, in place
   of relative paths.

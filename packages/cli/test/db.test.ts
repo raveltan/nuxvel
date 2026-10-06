@@ -1,5 +1,5 @@
 import { cpSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import postgres from "postgres";
 import { scratchSql } from "@nuxvel/test-helpers/sql";
 import { describe, expect, it } from "vitest";
@@ -75,9 +75,9 @@ describe("nuxvel db:*", () => {
       writeFileSync(join(schemaDir, file), readFileSync(join(schemaDir, file), "utf8").replace(from, to));
 
     editSchema("health-check.schema.ts", 'name: text("name").notNull().default(""),', "");
-    editSchema("health-check.schema.ts", '.references(() => userTable.id, { onDelete: "cascade" })', '$&.notNull()');
+    editSchema("health-check.schema.ts", "belongsTo(userTable, { nullable: true })", "belongsTo(userTable)");
     editSchema("posts.schema.ts", 'title: text("title").notNull(),', '$&\n    summary: text("summary"),');
-    editSchema("posts.schema.ts", '.references(() => userTable.id, { onDelete: "cascade" })', '.references(() => userTable.id, { onDelete: "restrict" })');
+    editSchema("posts.schema.ts", "belongsTo(userTable)", 'belongsTo(userTable, { onDelete: "restrict" })');
 
     const { stderr, exitCode } = await runCliAt(fixtureCwd, "db:generate", "--name", "contract-split");
     const output = stripAnsi(stderr);
@@ -165,6 +165,56 @@ describe("nuxvel db:*", () => {
     expect(migrationSql).toContain('CREATE TABLE "gadgets"');
     expect(migrationSql).toContain('"created_at" timestamp DEFAULT now() NOT NULL');
     expect(migrationSql).toContain('"updated_at" timestamp DEFAULT now() NOT NULL');
+  });
+
+  it("db:generate finds no change when hand-written foreign keys become belongsTo() columns", async () => {
+    const fixtureCwd = scratchDir("belongs-to");
+    const schemaFile = join(fixtureCwd, "server", "database", "schema", "tasks.schema.ts");
+    const schema = (columns: string[]) =>
+      [
+        'import { index, integer, pgTable, serial, text, uuid } from "drizzle-orm/pg-core";',
+        'import { belongsTo } from "@nuxvel/nuxt/database";',
+        "",
+        'export const userTable = pgTable("user", { id: text("id").primaryKey() });',
+        'export const teamTable = pgTable("team", { id: uuid("id").primaryKey().defaultRandom() });',
+        'export const projectTable = pgTable("project", { id: serial("id").primaryKey() });',
+        "",
+        'export const taskTable = pgTable("task", {',
+        '  id: serial("id").primaryKey(),',
+        ...columns.map((column) => `  ${column},`),
+        '}, (table) => [index("task_owner_id_idx").on(table.ownerId), index("task_team_id_idx").on(table.teamId)]);',
+        "",
+      ].join("\n");
+
+    mkdirSync(dirname(schemaFile), { recursive: true });
+    cpSync(join(playgroundDir, "drizzle.config.ts"), join(fixtureCwd, "drizzle.config.ts"));
+    linkNodeModules(fixtureCwd);
+    writeFileSync(
+      schemaFile,
+      schema([
+        'ownerId: text("owner_id").notNull().references(() => userTable.id, { onDelete: "cascade" })',
+        'teamId: uuid("team_id").references(() => teamTable.id, { onDelete: "set null" })',
+        'projectId: integer("project_id").notNull().references(() => projectTable.id, { onDelete: "restrict" })',
+        'reviewerId: text("reviewer").notNull().references(() => userTable.id, { onDelete: "cascade" })',
+      ]),
+    );
+
+    const generated = await runCliAt(fixtureCwd, "db:generate");
+    expect(generated.exitCode, generated.stdout).toBe(0);
+
+    writeFileSync(
+      schemaFile,
+      schema([
+        "ownerId: belongsTo(userTable)",
+        'teamId: belongsTo(teamTable, { nullable: true, onDelete: "set null" })',
+        'projectId: belongsTo(projectTable, { onDelete: "restrict" })',
+        'reviewerId: belongsTo(userTable, { column: "reviewer" })',
+      ]),
+    );
+
+    const again = await runCliAt(fixtureCwd, "db:generate", "--name", "nothing");
+    expect(again.exitCode, again.stderr).toBe(0);
+    expect(again.stdout).toContain("No schema changes");
   });
 
   it("db:generate sees a table in server/domains/<domain>/schema/ through the schema glob of drizzle.config.ts", async () => {

@@ -51,7 +51,7 @@ export const userDataDeclared: Rule.RuleModule = {
           (property) =>
             property.type === "Property" &&
             property.key.type === "Identifier" &&
-            (property.key.name === "userId" || /\.references\(\s*\(\)\s*=>\s*userTable\.id\b/.test(sourceCode.getText(property.value))),
+            (property.key.name === "userId" || /\.references\(\s*\(\)\s*=>\s*userTable\.id\b|^belongsTo\(\s*userTable\b/.test(sourceCode.getText(property.value))),
         );
 
         if (userColumn?.type !== "Property" || userColumn.key.type !== "Identifier") return;

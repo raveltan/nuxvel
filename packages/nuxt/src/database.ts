@@ -1,5 +1,6 @@
 export { now } from "./runtime/server/clock/now";
 export { softDeletes, timestamps } from "./runtime/server/database/columns";
+export { belongsTo, type BelongsToBuilder, type ParentTable } from "./runtime/server/database/belongs-to";
 export { searchable, searchIndex } from "./runtime/server/database/searchable";
 export type { SearchableTable, SearchWeight } from "./runtime/server/database/searchable";
 export type { MailSuppressionReason } from "./runtime/server/mail/suppress-mail";

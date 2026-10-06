@@ -77,13 +77,13 @@ export type NewIncidentRow = typeof incidentTable.$inferInsert;
 
 ```ts
 // server/database/schema/incident-update.schema.ts
-import { index, integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
-import { timestamps } from "@nuxvel/nuxt/database";
+import { index, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { belongsTo, timestamps } from "@nuxvel/nuxt/database";
 import { incidentTable } from "./incident.schema";
 
 export const incidentUpdateTable = pgTable("incident_update", {
   id: serial("id").primaryKey(),
-  incidentId: integer("incident_id").notNull().references(() => incidentTable.id, { onDelete: "cascade" }),
+  incidentId: belongsTo(incidentTable),
   status: text("status", { enum: ["investigating", "identified", "monitoring", "resolved"] }).notNull(),
   body: text("body").notNull(),
   announcedAt: timestamp("announced_at"),
@@ -192,12 +192,10 @@ export const resolvedIncidentFactory = incidentFactory.state({
 ```ts
 // server/factories/incident-update.factory.ts
 import { faker } from "@faker-js/faker";
-import { incidentFactory } from "./incident.factory";
 import { defineFactory } from "@nuxvel/nuxt/factories";
 import { incidentUpdateTable } from "#nuxvel/schema";
 
 export const incidentUpdateFactory = defineFactory(incidentUpdateTable, {
-  incidentId: async () => (await incidentFactory()).id,
   status: "investigating",
   body: () => faker.lorem.sentence(),
 });
@@ -338,8 +336,8 @@ import { incidentFactory, resolvedIncidentFactory, incidentUpdateFactory } from 
 describe("status router", () => {
   it("lists the open incidents with their updates, newest update first", async () => {
     const incident = await incidentFactory({ title: "API is slow" });
-    const first = await incidentUpdateFactory.for("incidentId", incident)({ body: "Looking into it." });
-    const second = await incidentUpdateFactory.for("incidentId", incident)({ status: "identified", body: "A slow query." });
+    const first = await incidentUpdateFactory({ body: "Looking into it.", incident });
+    const second = await incidentUpdateFactory({ status: "identified", body: "A slow query.", incident });
     await resolvedIncidentFactory();
 
     const current = await guest().trpc.status.current();
@@ -1432,7 +1430,7 @@ import { incidentFactory, incidentUpdateFactory, subscriberFactory } from "#nuxv
 describe("incident.announce job", () => {
   it("mails the update to each subscriber and marks it announced", async () => {
     const incident = await incidentFactory({ title: "API is slow" });
-    const update = await incidentUpdateFactory.for("incidentId", incident)({ status: "identified", body: "A slow query." });
+    const update = await incidentUpdateFactory({ status: "identified", body: "A slow query.", incident });
     const [ada, grace] = await subscriberFactory.count(2)();
 
     await runJob("incident.announce", { updateId: update.id });
@@ -1963,7 +1961,7 @@ describe("incidents.remind-stale schedule", () => {
   it("reminds the team of an open incident with no update for an hour", async () => {
     await freezeTime(new Date("2026-10-01T09:00:00Z"));
     const ada = await userFactory();
-    await incidentUpdateFactory.for("incidentId", await incidentFactory({ title: "API is slow" }))();
+    await incidentUpdateFactory({ incident: await incidentFactory({ title: "API is slow" }) });
 
     await travelBy({ minutes: 61 });
     await runSchedule("incidents.remind-stale");
@@ -1974,7 +1972,7 @@ describe("incidents.remind-stale schedule", () => {
   it("stays quiet while the last update is recent", async () => {
     await freezeTime(new Date("2026-10-01T09:00:00Z"));
     const ada = await userFactory();
-    await incidentUpdateFactory.for("incidentId", await incidentFactory())();
+    await incidentUpdateFactory({ incident: await incidentFactory() });
 
     await travelBy({ minutes: 59 });
     await runSchedule("incidents.remind-stale");
@@ -1985,7 +1983,7 @@ describe("incidents.remind-stale schedule", () => {
   it("stays quiet for a resolved incident", async () => {
     await freezeTime(new Date("2026-10-01T09:00:00Z"));
     const ada = await userFactory();
-    await incidentUpdateFactory.for("incidentId", await resolvedIncidentFactory())();
+    await incidentUpdateFactory({ incident: await resolvedIncidentFactory() });
 
     await travelBy({ minutes: 61 });
     await runSchedule("incidents.remind-stale");

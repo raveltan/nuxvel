@@ -4,9 +4,7 @@ import { userTable } from "{{authImport}}";
 {{referenceImports}}
 export const {{camelName}}Table = pgTable("{{snakeName}}", {
   id: serial("id").primaryKey(),
-  ownerId: text("owner_id")
-    .notNull()
-    .references(() => userTable.id, { onDelete: "cascade" }),
+  ownerId: belongsTo(userTable),
 {{columns}}  ...timestamps(),
 {{softDeletesColumn}}}, (table) => [index("{{snakeName}}_owner_id_idx").on(table.ownerId){{crudIndexes}}]);
 

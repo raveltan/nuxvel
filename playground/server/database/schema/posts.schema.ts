@@ -1,5 +1,5 @@
 import { index, pgTable, serial, text } from "drizzle-orm/pg-core";
-import { searchable, searchIndex, softDeletes, timestamps } from "@nuxvel/nuxt/database";
+import { belongsTo, searchable, searchIndex, softDeletes, timestamps } from "@nuxvel/nuxt/database";
 import { userTable } from "./auth.schema";
 
 export const postsTable = pgTable(
@@ -8,9 +8,7 @@ export const postsTable = pgTable(
     id: serial("id").primaryKey(),
     title: text("title").notNull(),
     body: text("body").notNull(),
-    authorId: text("author_id")
-      .notNull()
-      .references(() => userTable.id, { onDelete: "cascade" }),
+    authorId: belongsTo(userTable),
     ...searchable(["title", "body"]),
     ...timestamps(),
     ...softDeletes(),

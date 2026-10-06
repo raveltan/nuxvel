@@ -126,14 +126,12 @@ An instructor owns a course. A course has a title, a summary and a status, `draf
 ```ts
 // server/domains/courses/schema/course.schema.ts
 import { index, pgTable, serial, text } from "drizzle-orm/pg-core";
-import { searchable, searchIndex, timestamps } from "@nuxvel/nuxt/database";
+import { belongsTo, searchable, searchIndex, timestamps } from "@nuxvel/nuxt/database";
 import { userTable } from "../../../database/schema/auth.schema";
 
 export const courseTable = pgTable("course", {
   id: serial("id").primaryKey(),
-  ownerId: text("owner_id")
-    .notNull()
-    .references(() => userTable.id, { onDelete: "cascade" }),
+  ownerId: belongsTo(userTable),
   status: text("status", { enum: ["draft", "published"] }).notNull().default("draft"),
   title: text("title").notNull(),
   summary: text("summary").notNull(),
@@ -149,19 +147,17 @@ A lesson can have a file, for example the notes as a PDF. Add a `fileKey` column
 
 ```ts
 // server/domains/courses/schema/lesson.schema.ts
-import { index, integer, pgTable, serial, text, varchar } from "drizzle-orm/pg-core";
-import { timestamps } from "@nuxvel/nuxt/database";
+import { index, pgTable, serial, text, varchar } from "drizzle-orm/pg-core";
+import { belongsTo, timestamps } from "@nuxvel/nuxt/database";
 import { userTable } from "../../../database/schema/auth.schema";
 import { courseTable } from "./course.schema";
 
 export const lessonTable = pgTable("lesson", {
   id: serial("id").primaryKey(),
-  ownerId: text("owner_id")
-    .notNull()
-    .references(() => userTable.id, { onDelete: "cascade" }),
+  ownerId: belongsTo(userTable),
   title: varchar("title", { length: 255 }).notNull(),
   body: text("body").notNull(),
-  courseId: integer("course_id").notNull().references(() => courseTable.id, { onDelete: "cascade" }),
+  courseId: belongsTo(courseTable),
   fileKey: text("file_key"),
   ...timestamps(),
 }, (table) => [index("lesson_owner_id_idx").on(table.ownerId), index("lesson_course_id_idx").on(table.courseId)]);
@@ -574,15 +570,15 @@ A `references` field finds its table in the same domain folder, in `server/datab
 
 ```ts
 // server/domains/learning/schema/enrollment.schema.ts
-import { index, integer, pgTable, serial, text, timestamp, unique } from "drizzle-orm/pg-core";
-import { timestamps } from "@nuxvel/nuxt/database";
+import { index, pgTable, serial, timestamp, unique } from "drizzle-orm/pg-core";
+import { belongsTo, timestamps } from "@nuxvel/nuxt/database";
 import { courseTable } from "../../courses/schema/course.schema";
 import { userTable } from "../../../database/schema/auth.schema";
 
 export const enrollmentTable = pgTable("enrollment", {
   id: serial("id").primaryKey(),
-  courseId: integer("course_id").notNull().references(() => courseTable.id, { onDelete: "cascade" }),
-  studentId: text("student_id").notNull().references(() => userTable.id, { onDelete: "cascade" }),
+  courseId: belongsTo(courseTable),
+  studentId: belongsTo(userTable),
   completedAt: timestamp("completed_at"),
   ...timestamps(),
 }, (table) => [index("enrollment_student_id_idx").on(table.studentId), unique().on(table.courseId, table.studentId)]);
@@ -593,15 +589,15 @@ export type NewEnrollmentRow = typeof enrollmentTable.$inferInsert;
 
 ```ts
 // server/domains/learning/schema/lesson-progress.schema.ts
-import { index, integer, pgTable, serial, unique } from "drizzle-orm/pg-core";
-import { timestamps } from "@nuxvel/nuxt/database";
+import { index, pgTable, serial, unique } from "drizzle-orm/pg-core";
+import { belongsTo, timestamps } from "@nuxvel/nuxt/database";
 import { enrollmentTable } from "./enrollment.schema";
 import { lessonTable } from "../../courses/schema/lesson.schema";
 
 export const lessonProgressTable = pgTable("lesson_progress", {
   id: serial("id").primaryKey(),
-  enrollmentId: integer("enrollment_id").notNull().references(() => enrollmentTable.id, { onDelete: "cascade" }),
-  lessonId: integer("lesson_id").notNull().references(() => lessonTable.id, { onDelete: "cascade" }),
+  enrollmentId: belongsTo(enrollmentTable),
+  lessonId: belongsTo(lessonTable),
   ...timestamps(),
 }, (table) => [index("lesson_progress_lesson_id_idx").on(table.lessonId), unique().on(table.enrollmentId, table.lessonId)]);
 
@@ -646,7 +642,7 @@ An enrollment is personal data of the student. `nuxvel user:export` and `nuxvel 
 // server/privacy/enrollment.user-data.ts
 import { enrollmentTable } from "#nuxvel/schema";
 
-export const enrollmentUserData = defineUserData(enrollmentTable, enrollmentTable.studentId);
+export const enrollmentUserData = defineUserData(enrollmentTable);
 ```
 
 ```bash
@@ -1247,13 +1243,13 @@ A certificate belongs to one enrollment and has a code that is hard to guess. Th
 
 ```ts
 // layers/certificates/server/domains/certificate/schema/certificate.schema.ts
-import { integer, pgTable, serial, uuid } from "drizzle-orm/pg-core";
-import { timestamps } from "@nuxvel/nuxt/database";
+import { pgTable, serial, uuid } from "drizzle-orm/pg-core";
+import { belongsTo, timestamps } from "@nuxvel/nuxt/database";
 import { enrollmentTable } from "../../../../../../server/domains/learning/schema/enrollment.schema";
 
 export const certificateTable = pgTable("certificate", {
   id: serial("id").primaryKey(),
-  enrollmentId: integer("enrollment_id").notNull().unique().references(() => enrollmentTable.id, { onDelete: "cascade" }),
+  enrollmentId: belongsTo(enrollmentTable).unique(),
   code: uuid("code").notNull().unique().defaultRandom(),
   ...timestamps(),
 });
@@ -1290,12 +1286,10 @@ The command writes the two files. Its last step, `factory:sync`, finds the table
 
 ```ts
 // layers/certificates/server/domains/certificate/factories/certificate.factory.ts
-import { enrollmentFactory } from "#server/domains/learning/factories/enrollment.factory";
 import { defineFactory } from "@nuxvel/nuxt/factories";
 import { certificateTable } from "#nuxvel/schema";
 
 export const certificateFactory = defineFactory(certificateTable, {
-  enrollmentId: async () => (await enrollmentFactory()).id,
 });
 ```
 

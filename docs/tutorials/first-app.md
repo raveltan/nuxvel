@@ -137,12 +137,10 @@ The command writes `server/factories/event.factory.ts` and a test. It selects a 
 ```ts
 // server/factories/event.factory.ts
 import { faker } from "@faker-js/faker";
-import { userFactory } from "./users.factory";
 import { defineFactory } from "@nuxvel/nuxt/factories";
 import { eventTable } from "#nuxvel/schema";
 
 export const eventFactory = defineFactory(eventTable, {
-  ownerId: async () => (await userFactory()).id,
   title: () => `${faker.word.adjective()} picnic`,
   startsOn: () => faker.date.soon({ days: 30 }).toISOString().slice(0, 10),
   place: () => faker.location.city(),
@@ -199,7 +197,7 @@ import { index, integer, pgTable, serial, text, unique } from "drizzle-orm/pg-co
 // server/privacy/rsvp.user-data.ts
 import { rsvpTable } from "#nuxvel/schema";
 
-export const rsvpUserData = defineUserData(rsvpTable, rsvpTable.guestId);
+export const rsvpUserData = defineUserData(rsvpTable);
 ```
 
 Without this file, `npm run test:arch` fails. Chapter 7 runs it. See [Privacy](../privacy.md#declaring-user-data).

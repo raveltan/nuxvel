@@ -68,7 +68,7 @@ The `plant` table has an `ownerId` column, so it holds user data. Declare it, or
 // server/privacy/plants.user-data.ts
 import { plantTable } from "#nuxvel/schema";
 
-export const plantsUserData = defineUserData(plantTable, plantTable.ownerId);
+export const plantsUserData = defineUserData(plantTable);
 ```
 
 The server is done. The rest of the tutorial changes only the UI.

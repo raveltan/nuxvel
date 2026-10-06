@@ -53,6 +53,7 @@ function tableValues(file: string, snakeName: string, options: TableOptions, cru
   const searching = searchable.length > 0;
   const fields = fieldValues(options.fields ?? [], file, snakeName, crud ? ["userTable"] : []);
   const databaseImports = [
+    ...(crud || fields.belongsTo ? ["belongsTo"] : []),
     ...(searching ? ["searchable", "searchIndex"] : []),
     ...(options.softDeletes ? ["softDeletes"] : []),
     "timestamps",
@@ -61,7 +62,7 @@ function tableValues(file: string, snakeName: string, options: TableOptions, cru
   const pgCore = new Set([
     "pgTable",
     "serial",
-    ...(crud || searching ? ["text"] : []),
+    ...(searching ? ["text"] : []),
     ...(crud || fields.indexes.length > 0 ? ["index"] : []),
     ...fields.pgCore,
   ]);

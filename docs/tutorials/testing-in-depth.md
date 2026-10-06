@@ -143,15 +143,11 @@ import { faker } from "@faker-js/faker";
 import { now } from "@nuxvel/nuxt/database";
 import { defineFactory } from "@nuxvel/nuxt/factories";
 import { bookingTable } from "#nuxvel/schema";
-import { roomFactory } from "./room.factory";
-import { userFactory } from "./users.factory";
 
 const hour = 60 * 60 * 1000;
 
 export const bookingFactory = defineFactory(bookingTable, {
   title: () => faker.company.catchPhrase(),
-  roomId: async () => (await roomFactory()).id,
-  bookerId: async () => (await userFactory()).id,
   startsAt: () => new Date(now().getTime() + 7 * 24 * hour),
   endsAt: (booking) => new Date(booking.startsAt.getTime() + hour),
   guests: 2,
@@ -175,7 +171,7 @@ export const bookingFactory = defineFactory(bookingTable, {
 The next chapters also use two more parts of factories:
 
 - A state is a factory with other defaults. `roomFactory.state({ capacity: 2 })` makes small rooms.
-- A relation sets a foreign key from a row. `bookingFactory.for("bookerId", ada)` books for Ada.
+- A relation sets a foreign key from a row. `bookingFactory({ booker: ada })` books for Ada.
 
 ### A scenario
 
@@ -188,7 +184,7 @@ import { bookingFactory, roomFactory, userFactory } from "#nuxvel/factories";
 export async function bookedRoom(at: { startsAt: Date; endsAt: Date }) {
   const booker = await userFactory();
   const room = await roomFactory();
-  const booking = await bookingFactory.for("roomId", room).for("bookerId", booker)(at);
+  const booking = await bookingFactory({ ...at, room, booker });
 
   return { booker, room, booking };
 }
@@ -817,7 +813,7 @@ import { bookingFactory, userFactory } from "#nuxvel/factories";
 describe("booking.send-confirmation job", () => {
   it("mails the booker", async () => {
     const ada = await userFactory();
-    const booking = await bookingFactory.for("bookerId", ada)();
+    const booking = await bookingFactory({ booker: ada });
 
     await runJob("booking.send-confirmation", { bookingId: booking.id });
 
@@ -873,7 +869,7 @@ describe("the booking list", () => {
   it("finds bookings by title, with the room and the booker", async () => {
     const ada = await userFactory({ name: "Ada Lovelace" });
     const room = await roomFactory({ name: "Hopper" });
-    await bookingFactory.for("roomId", room).for("bookerId", ada)({ title: "Sprint planning" });
+    await bookingFactory({ title: "Sprint planning", room, booker: ada });
     await bookingFactory({ title: "Board meeting" });
 
     const rows = await actingAs(ada).trpc.booking.list({ q: "sprint" });
@@ -1000,7 +996,7 @@ The pages of chapter 9 also need one booking by its ID, and the rooms for the fo
 describe("one booking", () => {
   it("shows a booking with its room and booker", async () => {
     const ada = await userFactory({ name: "Ada Lovelace" });
-    const booking = await bookingFactory.for("bookerId", ada)({ title: "Sprint planning" });
+    const booking = await bookingFactory({ title: "Sprint planning", booker: ada });
 
     const shown = await actingAs(ada).trpc.booking.byId({ id: booking.id });
 
@@ -1574,7 +1570,7 @@ describe("the booking pages", () => {
 
   it("cancels the booker's own booking", async () => {
     const ada = await userFactory();
-    const booking = await bookingFactory.for("bookerId", ada)({ title: "Sprint planning" });
+    const booking = await bookingFactory({ title: "Sprint planning", booker: ada });
 
     const page = await actingAs(ada).visit({ name: "bookings" });
     await button(page, "Cancel Sprint planning").click();

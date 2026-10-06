@@ -36,7 +36,8 @@ import {
   stopExperiment,
 } from "@nuxvel/nuxt/testing";
 import { defineFactory } from "@nuxvel/nuxt/factories";
-import { pgTable, serial, text } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, uuid } from "drizzle-orm/pg-core";
+import { belongsTo } from "@nuxvel/nuxt/database";
 import * as testNamespaces from "#build/nuxvel/test-namespaces.mjs";
 import { postsTable } from "~~/server/database/schema/posts.schema";
 import { postFactory } from "~~/server/factories/posts.factory";
@@ -221,6 +222,20 @@ const ticketsTable = pgTable("tickets", {
   subject: text("subject").notNull(),
   assigneeId: text("assignee_id").references(() => userTable.id),
 });
+const teamsTable = pgTable("teams", { id: uuid("id").primaryKey() });
+const membershipsTable = pgTable("memberships", {
+  id: serial("id").primaryKey(),
+  userId: belongsTo(userTable),
+  teamId: belongsTo(teamsTable, { nullable: true }),
+  ticketId: belongsTo(ticketsTable),
+});
+type MembershipRow = typeof membershipsTable.$inferSelect;
+type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : never) : never;
+
+export const belongsToFollowsTheIdType: IsAny<MembershipRow["userId"]> extends true ? never : Same<MembershipRow["userId"], (typeof userTable.$inferSelect)["id"]> = true;
+export const belongsToNullableIsNullable: Same<MembershipRow["teamId"], string | null> = true;
+export const belongsToSerialIsANumber: Same<MembershipRow["ticketId"], number> = true;
+
 const ticketFactory = defineFactory(ticketsTable);
 
 export async function factoriesReturnSelectRows() {
@@ -235,6 +250,12 @@ export async function factoriesReturnSelectRows() {
   // @ts-expect-error posts has no column named ownerId
   postFactory.for("ownerId", author);
   ticketFactory.for("assigneeId", author);
+  const byRelation = await postFactory({ author });
+  const byRelationIsTyped: IsAny<typeof byRelation.authorId> extends true ? never : true = true;
+  // @ts-expect-error author is a user, whose id is a string
+  postFactory({ author: { id: postId } });
+  // @ts-expect-error posts has no column named writerId
+  postFactory({ writer: author });
   // @ts-expect-error a state takes the table's columns
   postFactory.state({ archived: true });
 
@@ -243,7 +264,7 @@ export async function factoriesReturnSelectRows() {
   // @ts-expect-error user has no softDeletes() column, so its factory has no trashed()
   userFactory.trashed();
 
-  return { postId, postIdIsTyped, deletedAt };
+  return { postId, postIdIsTyped, deletedAt, byRelationIsTyped };
 }
 
 export async function callersAreTypedByTheRouter() {

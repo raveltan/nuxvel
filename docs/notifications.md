@@ -110,15 +110,13 @@ A new app defines the table in `server/database/schema/notifications.schema.ts`,
 import { index, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import type { NotificationMessage } from "@nuxvel/nuxt/database";
 import { userTable } from "./auth.schema";
-import { now } from "@nuxvel/nuxt/database";
+import { belongsTo, now } from "@nuxvel/nuxt/database";
 
 export const notificationsTable = pgTable(
   "notifications",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: text("user_id")
-      .notNull()
-      .references(() => userTable.id, { onDelete: "cascade" }),
+    userId: belongsTo(userTable),
     name: text("name").notNull(),
     data: jsonb("data").$type<NotificationMessage>().notNull(),
     readAt: timestamp("read_at"),
@@ -263,7 +261,7 @@ import { postFactory, userFactory } from "#nuxvel/factories";
 describe("posts.publish-post", () => {
   it("tells the author that the post is live", async () => {
     const author = await userFactory();
-    const post = await postFactory.for("authorId", author)();
+    const post = await postFactory({ author });
 
     await runAction("posts.publish-post", { id: post.id }, { actingAs: author });
 

@@ -61,13 +61,14 @@ import { faker } from "@faker-js/faker";
 import { defineFactory } from "@nuxvel/nuxt/factories";
 export const postFactory = defineFactory(postTable, {
   title: () => faker.lorem.sentence(),
-  authorId: async () => (await userFactory()).id,
 });
 await postFactory({ title: "Draft" });
 await postFactory.count(5)();
-await postFactory.for("authorId", user)();
+await postFactory({ author: user });
 await userFactory.state({ name: "Ada" }).has(3, (author) => postFactory.for("authorId", author))();
 ```
+
+A missing `NOT NULL` foreign key gets a parent row from the parent table's factory. `{ author: user }` sets `authorId` (the column name minus `Id`).
 
 ## Story (component test)
 

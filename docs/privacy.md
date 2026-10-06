@@ -10,7 +10,7 @@ nuxvel can export or erase all of the personal data of one user. You declare whi
 // server/privacy/posts.user-data.ts
 import { postTable } from "#nuxvel/schema";
 
-export const postsUserData = defineUserData(postTable, postTable.authorId);
+export const postsUserData = defineUserData(postTable);
 ```
 
 ```ts
@@ -20,11 +20,20 @@ import { userTable } from "#nuxvel/schema";
 export const usersUserData = defineUserData(userTable, userTable.id);
 ```
 
-Put one declaration in each file under `server/privacy/`. Export it as a named export whose name ends with `UserData`. A default export also works. Each declaration names a table and the column that holds the user's ID. `defineUserData` is auto-imported. nuxvel finds the files, so you do not register them.
+Put one declaration in each file under `server/privacy/`. Export it as a named export whose name ends with `UserData`. A default export also works. Each declaration names a table. It also names the column that holds the user's ID when the table has more than one, or none that references the user table. `defineUserData` is auto-imported. nuxvel finds the files, so you do not register them.
 
 The column must be a string column of the table that you pass. A column of another table, or a column that is not a string, fails `nuxt typecheck`.
 
-[`nuxvel test:arch`](./cli.md#nuxvel-testarch) reports a table with a column that references the user table, such as `userId`, `ownerId` or `authorId`, and has no declaration. The message names the column. A column counts when its `.references()` callback returns `userTable.id`.
+```ts
+// server/privacy/comments.user-data.ts
+import { commentTable } from "#nuxvel/schema";
+
+export const commentsUserData = defineUserData(commentTable);
+```
+
+Without a column, the declaration uses the one column of the table that references the user table, such as `authorId: belongsTo(userTable)`. A table with no such column, or with more than one, throws when the file loads. Name the column then.
+
+[`nuxvel test:arch`](./cli.md#nuxvel-testarch) reports a table with a column that references the user table, such as `userId`, `ownerId` or `authorId`, and has no declaration. The message names the column. A column counts when its `.references()` callback returns `userTable.id`, or when it is `belongsTo(userTable)`.
 
 [`nuxvel make:router --crud`](./cli.md#nuxvel-makerouter-name---crud) and [`nuxvel make:resource`](./cli.md#nuxvel-makeresource-name) write this file for the table that they create, with `ownerId` as the column: `server/privacy/<name>.user-data.ts`. Export and erasure then include the rows of the owner, and `nuxvel test:arch` passes. Run the command with `--force` to write the file again.
 
@@ -82,9 +91,9 @@ Some tables that nuxvel creates also hold user data. A `create-nuxvel` app decla
 | `user` | `defineUserData(userTable, userTable.id)` |
 | `flag_exposures` | `defineUserData(flagExposuresTable, flagExposuresTable.unitId)` |
 | `flag_conversions` | `defineUserData(flagConversionsTable, flagConversionsTable.unitId)` |
-| `notifications` | `defineUserData(notificationsTable, notificationsTable.userId)` |
-| `api_keys` | `defineUserData(apiKeysTable, apiKeysTable.userId)` |
-| `push_subscriptions` | `defineUserData(pushSubscriptionsTable, pushSubscriptionsTable.userId)` |
+| `notifications` | `defineUserData(notificationsTable)` |
+| `api_keys` | `defineUserData(apiKeysTable)` |
+| `push_subscriptions` | `defineUserData(pushSubscriptionsTable)` |
 
 `api_keys` holds the [API keys](./openapi.md#api-keys) of a user, as hashes. The export shows the name, the dates and the hash of each key, never the key.
 
@@ -177,7 +186,7 @@ import { postFactory, userFactory } from "#nuxvel/factories";
 describe("account.erase-account", () => {
   it("erases the author and their posts", async () => {
     const author = await userFactory();
-    await postFactory.for("authorId", author)();
+    await postFactory({ author });
 
     const erased = await runAction("account.erase-account", {}, { actingAs: author });
 

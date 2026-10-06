@@ -1,4 +1,4 @@
-export { defineFactory, type Factory, type FactoryDefinition } from "./testing/factories/define-factory";
+export { defineFactory, type Factory, type FactoryDefinition, type FactoryOverrides, type FactoryRelations } from "./testing/factories/define-factory";
 export { sequence } from "./testing/factories/sequence";
 export { configureFactories } from "./testing/factories/factory-database";
 export { encryptAuthSecret } from "./testing/factories/encrypt-auth-secret";

@@ -507,6 +507,19 @@ const trashed = await postFactory.trashed()();
 ### Relations
 
 ```ts
+export const postFactory = defineFactory(postTable);
+
+const post = await postFactory();
+const mine = await postFactory({ author });
+```
+
+A factory creates the parent row of a `NOT NULL` foreign key column that has no value, such as a [`belongsTo()`](./database.md#foreign-keys-with-belongsto) column. It inserts the parent with the factory of the parent table, so `postFactory()` also inserts a user with `userFactory`. Without a factory file for the parent table, it uses a bare factory of that table with [Faker values](#factories). A nullable foreign key stays `null`.
+
+When two factories are defined for one table, the first one that loads makes the parent rows. Define the main factory of a table first in its file, before any variant built from another `defineFactory()` call.
+
+Give a parent by its relation name, the column name without `Id`: `postFactory({ author })` sets `authorId` to `author.id`, and inserts no user. The type of `author.id` must fit the column.
+
+```ts
 const author = await userFactory();
 const post = await postFactory.for("authorId", author)();
 
@@ -528,7 +541,7 @@ const author = await userFactory();
 const post = await postFactory.recycle(userTable, author)();
 ```
 
-`factory.recycle(table, row)` returns a new factory. When a definition function, a `.has()` child or a hook calls a factory for `table` while this factory inserts, that call returns `row` and inserts nothing. Use it when a row has more than one path to the same parent, for example a comment and its post that both need one author. Only a call with no overrides reuses `row`. `.count()` still inserts.
+`factory.recycle(table, row)` returns a new factory. When a missing parent, a definition function, a `.has()` child or a hook calls a factory for `table` while this factory inserts, that call returns `row` and inserts nothing. Use it when a row has more than one path to the same parent, for example a comment and its post that both need one author. Only a call with no overrides reuses `row`. `.count()` still inserts.
 
 ### Hooks
 

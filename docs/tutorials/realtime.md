@@ -89,15 +89,15 @@ A user is a member of a room one time only. Replace the index on `room_id` with 
 
 ```ts
 // server/database/schema/room-member.schema.ts
-import { index, integer, pgTable, serial, text, uniqueIndex } from "drizzle-orm/pg-core";
-import { timestamps } from "@nuxvel/nuxt/database";
+import { index, pgTable, serial, uniqueIndex } from "drizzle-orm/pg-core";
+import { belongsTo, timestamps } from "@nuxvel/nuxt/database";
 import { roomTable } from "./room.schema";
 import { userTable } from "./auth.schema";
 
 export const roomMemberTable = pgTable("room_member", {
   id: serial("id").primaryKey(),
-  roomId: integer("room_id").notNull().references(() => roomTable.id, { onDelete: "cascade" }),
-  userId: text("user_id").notNull().references(() => userTable.id, { onDelete: "cascade" }),
+  roomId: belongsTo(roomTable),
+  userId: belongsTo(userTable),
   ...timestamps(),
 }, (table) => [uniqueIndex("room_member_room_id_user_id_idx").on(table.roomId, table.userId), index("room_member_user_id_idx").on(table.userId)]);
 
@@ -133,21 +133,21 @@ Write the migration, apply it and check it:
 // server/privacy/rooms.user-data.ts
 import { roomTable } from "#nuxvel/schema";
 
-export const roomsUserData = defineUserData(roomTable, roomTable.ownerId);
+export const roomsUserData = defineUserData(roomTable);
 ```
 
 ```ts
 // server/privacy/room-members.user-data.ts
 import { roomMemberTable } from "#nuxvel/schema";
 
-export const roomMembersUserData = defineUserData(roomMemberTable, roomMemberTable.userId);
+export const roomMembersUserData = defineUserData(roomMemberTable);
 ```
 
 ```ts
 // server/privacy/messages.user-data.ts
 import { messageTable } from "#nuxvel/schema";
 
-export const messagesUserData = defineUserData(messageTable, messageTable.authorId);
+export const messagesUserData = defineUserData(messageTable);
 ```
 
 `./nv test:arch` reports each column that references the user table and has no declaration, such as `ownerId`, `userId` and `authorId`. The erasure of an owner deletes the owner's rooms. The foreign keys then delete the members and the messages of those rooms. See [Privacy](../privacy.md).
@@ -165,12 +165,10 @@ Each command writes a factory and a test that inserts two rows. The generator se
 ```ts
 // server/factories/room.factory.ts
 import { faker } from "@faker-js/faker";
-import { userFactory } from "./users.factory";
 import { defineFactory } from "@nuxvel/nuxt/factories";
 import { roomTable } from "#nuxvel/schema";
 
 export const roomFactory = defineFactory(roomTable, {
-  ownerId: async () => (await userFactory()).id,
   name: () => `${faker.word.adjective()} ${faker.word.noun()}`,
 });
 ```
@@ -178,15 +176,11 @@ export const roomFactory = defineFactory(roomTable, {
 ```ts
 // server/factories/message.factory.ts
 import { faker } from "@faker-js/faker";
-import { roomFactory } from "./room.factory";
-import { userFactory } from "./users.factory";
 import { defineFactory } from "@nuxvel/nuxt/factories";
 import { messageTable } from "#nuxvel/schema";
 
 export const messageFactory = defineFactory(messageTable, {
   body: () => faker.lorem.sentence(),
-  roomId: async () => (await roomFactory()).id,
-  authorId: async () => (await userFactory()).id,
 });
 ```
 

@@ -78,6 +78,10 @@ describe("architecture lint preset", () => {
       expect(messages.map((message) => message.message).join()).toContain(`column ${column}`);
     }
 
+    const belongsTo = `export const taskTable = pgTable("task", { assigneeId: belongsTo(userTable, { nullable: true }) });`;
+
+    expect((await lint(belongsTo)).map((message) => message.message).join()).toContain("column assigneeId");
+
     const other = `export const taskTable = pgTable("task", { teamId: text("x").references(() => teamTable.id) });`;
 
     expect((await lint(other)).map((message) => message.ruleId)).not.toContain("nuxvel/user-data-declared");

@@ -286,14 +286,15 @@ export async function withReferences(fields: Field[], paths: AppPaths, domain?: 
 function fieldColumn(field: Field) {
   const type = fieldTypes[field.type];
   const reference = field.reference;
-  const base = reference ? `${reference.id}("${field.column}")` : (type?.column(field.column, field.arg) ?? "");
+  if (reference) {
+    return `belongsTo(${reference.table}${field.nullable ? ', { nullable: true, onDelete: "set null" }' : ""})${field.unique ? ".unique()" : ""}`;
+  }
 
   return [
-    base,
+    type?.column(field.column, field.arg) ?? "",
     field.nullable ? "" : ".notNull()",
     field.unique ? ".unique()" : "",
     field.defaultValue === undefined ? "" : `.default(${field.defaultValue})`,
-    reference ? `.references(() => ${reference.table}.id, { onDelete: "${field.nullable ? "set null" : "cascade"}" })` : "",
   ].join("");
 }
 
@@ -364,7 +365,8 @@ export function fieldValues(fields: Field[], file: string, snakeTable: string, i
     columns: fields.map((field) => `  ${field.key}: ${fieldColumn(field)},\n`).join(""),
     zodFields: fields.map((field) => `  ${field.key}: ${fieldZod(field)},\n`).join(""),
     rowFields: fields.map((field) => `  ${field.key}: ${fieldRowZod(field)},\n`).join(""),
-    pgCore: fields.map((field) => (field.reference ? field.reference.id : (fieldTypes[field.type]?.pg ?? ""))),
+    pgCore: fields.flatMap((field) => (field.reference ? [] : [fieldTypes[field.type]?.pg ?? ""])),
+    belongsTo: fields.some((field) => field.reference),
     indexes: fields
       .filter((field) => !field.unique && (field.index || field.reference))
       .map((field) => `index("${snakeTable}_${field.column}_idx").on(table.${field.key})`),

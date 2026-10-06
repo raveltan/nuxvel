@@ -235,7 +235,7 @@ The command exits `1`. A link belongs to a user, so `nuxvel user:export` and `nu
 // server/privacy/link.user-data.ts
 import { linkTable } from "#nuxvel/schema";
 
-export const linkUserData = defineUserData(linkTable, linkTable.ownerId);
+export const linkUserData = defineUserData(linkTable);
 ```
 
 ```bash

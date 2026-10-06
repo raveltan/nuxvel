@@ -1,3 +1,3 @@
 import { postsTable } from "#nuxvel/schema";
 
-export const postsUserData = defineUserData(postsTable, postsTable.authorId);
+export const postsUserData = defineUserData(postsTable);

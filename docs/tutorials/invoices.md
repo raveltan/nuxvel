@@ -174,13 +174,13 @@ While `npm run dev` runs, the last line of each command is `○ Types update in 
 
 ```ts
 // server/database/schema/team.schema.ts
-import { index, pgTable, serial, text, varchar } from "drizzle-orm/pg-core";
-import { timestamps } from "@nuxvel/nuxt/database";
+import { index, pgTable, serial, varchar } from "drizzle-orm/pg-core";
+import { belongsTo, timestamps } from "@nuxvel/nuxt/database";
 import { userTable } from "./auth.schema";
 
 export const teamTable = pgTable("team", {
   id: serial("id").primaryKey(),
-  ownerId: text("owner_id").references(() => userTable.id, { onDelete: "set null" }),
+  ownerId: belongsTo(userTable, { nullable: true, onDelete: "set null" }),
   name: varchar("name", { length: 255 }).notNull(),
   ...timestamps(),
 }, (table) => [index("team_owner_id_idx").on(table.ownerId)]);
@@ -192,17 +192,17 @@ export type NewTeamRow = typeof teamTable.$inferInsert;
 ```ts
 // server/database/schema/invoice.schema.ts
 import { index, integer, pgTable, serial, text, varchar } from "drizzle-orm/pg-core";
-import { timestamps } from "@nuxvel/nuxt/database";
+import { belongsTo, timestamps } from "@nuxvel/nuxt/database";
 import { userTable } from "./auth.schema";
 import { teamTable } from "./team.schema";
 
 export const invoiceTable = pgTable("invoice", {
   id: serial("id").primaryKey(),
-  ownerId: text("owner_id").references(() => userTable.id, { onDelete: "set null" }),
+  ownerId: belongsTo(userTable, { nullable: true, onDelete: "set null" }),
   customer: varchar("customer", { length: 255 }).notNull(),
   amount: integer("amount").notNull(),
   status: text("status", { enum: ["draft", "sent", "paid"] }).notNull().default("draft"),
-  teamId: integer("team_id").notNull().references(() => teamTable.id, { onDelete: "cascade" }),
+  teamId: belongsTo(teamTable),
   ...timestamps(),
 }, (table) => [index("invoice_owner_id_idx").on(table.ownerId), index("invoice_team_id_idx").on(table.teamId)]);
 
@@ -225,15 +225,15 @@ A user is in a team at most once. The generated membership table has an index fo
 
 ```ts
 // server/database/schema/membership.schema.ts
-import { index, integer, pgTable, serial, text, uniqueIndex } from "drizzle-orm/pg-core";
-import { timestamps } from "@nuxvel/nuxt/database";
+import { index, pgTable, serial, text, uniqueIndex } from "drizzle-orm/pg-core";
+import { belongsTo, timestamps } from "@nuxvel/nuxt/database";
 import { teamTable } from "./team.schema";
 import { userTable } from "./auth.schema";
 
 export const membershipTable = pgTable("membership", {
   id: serial("id").primaryKey(),
-  teamId: integer("team_id").notNull().references(() => teamTable.id, { onDelete: "cascade" }),
-  userId: text("user_id").notNull().references(() => userTable.id, { onDelete: "cascade" }),
+  teamId: belongsTo(teamTable),
+  userId: belongsTo(userTable),
   role: text("role", { enum: ["admin", "member", "viewer"] }).notNull(),
   ...timestamps(),
 }, (table) => [uniqueIndex("membership_team_id_user_id_idx").on(table.teamId, table.userId), index("membership_user_id_idx").on(table.userId)]);
@@ -248,7 +248,7 @@ A membership is the user's personal data, so declare it for `nuxvel user:export`
 // server/privacy/membership.user-data.ts
 import { membershipTable } from "#nuxvel/schema";
 
-export const membershipUserData = defineUserData(membershipTable, membershipTable.userId);
+export const membershipUserData = defineUserData(membershipTable);
 ```
 
 Write the migration, apply it and check it:
@@ -289,14 +289,10 @@ export const teamFactory = defineFactory(teamTable, {
 
 ```ts
 // server/factories/membership.factory.ts
-import { teamFactory } from "./team.factory";
-import { userFactory } from "./users.factory";
 import { defineFactory } from "@nuxvel/nuxt/factories";
 import { membershipTable } from "#nuxvel/schema";
 
 export const membershipFactory = defineFactory(membershipTable, {
-  teamId: async () => (await teamFactory()).id,
-  userId: async () => (await userFactory()).id,
   role: "member",
 });
 ```
@@ -304,14 +300,12 @@ export const membershipFactory = defineFactory(membershipTable, {
 ```ts
 // server/factories/invoice.factory.ts
 import { faker } from "@faker-js/faker";
-import { teamFactory } from "./team.factory";
 import { defineFactory } from "@nuxvel/nuxt/factories";
 import { invoiceTable } from "#nuxvel/schema";
 
 export const invoiceFactory = defineFactory(invoiceTable, {
   customer: () => faker.company.name(),
   amount: () => faker.number.int({ min: 1_000, max: 500_000 }),
-  teamId: async () => (await teamFactory()).id,
 });
 ```
 
@@ -359,12 +353,12 @@ export const databaseSeeder = defineSeeder(async () => {
   const demo = await userFactory.withPassword(DEMO_PASSWORD)({ name: "Demo User", email: DEMO_EMAIL, emailVerified: true });
   const grace = await userFactory({ name: "Grace Hopper", emailVerified: true });
 
-  const acme = await teamFactory.for("ownerId", demo)({ name: "Acme" });
+  const acme = await teamFactory({ name: "Acme", owner: demo });
   await membershipFactory({ teamId: acme.id, userId: demo.id, role: "admin" });
   await membershipFactory({ teamId: acme.id, userId: grace.id, role: "viewer" });
   await invoiceFactory.for("teamId", acme).for("ownerId", demo).count(5)();
 
-  const globex = await teamFactory.for("ownerId", grace)({ name: "Globex" });
+  const globex = await teamFactory({ name: "Globex", owner: grace });
   await membershipFactory({ teamId: globex.id, userId: grace.id, role: "admin" });
   await invoiceFactory.for("teamId", globex).for("ownerId", grace).count(3)();
 

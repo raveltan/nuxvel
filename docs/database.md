@@ -46,14 +46,14 @@ nuxvel make:schema post title body:text author:references=user
 ```ts
 // server/database/schema/post.schema.ts
 import { index, pgTable, serial, text, varchar } from "drizzle-orm/pg-core";
-import { timestamps } from "@nuxvel/nuxt/database";
+import { belongsTo, timestamps } from "@nuxvel/nuxt/database";
 import { userTable } from "./auth.schema";
 
 export const postTable = pgTable("post", {
   id: serial("id").primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),
   body: text("body").notNull(),
-  authorId: text("author_id").notNull().references(() => userTable.id, { onDelete: "cascade" }),
+  authorId: belongsTo(userTable),
   ...timestamps(),
 }, (table) => [index("post_author_id_idx").on(table.authorId)]);
 
@@ -79,13 +79,13 @@ nuxvel make:schema comment post:references body:text
 
 ```ts
 // server/database/schema/comment.schema.ts
-import { index, integer, pgTable, serial, text } from "drizzle-orm/pg-core";
-import { timestamps } from "@nuxvel/nuxt/database";
+import { index, pgTable, serial, text } from "drizzle-orm/pg-core";
+import { belongsTo, timestamps } from "@nuxvel/nuxt/database";
 import { postTable } from "./post.schema";
 
 export const commentTable = pgTable("comment", {
   id: serial("id").primaryKey(),
-  postId: integer("post_id").notNull().references(() => postTable.id, { onDelete: "cascade" }),
+  postId: belongsTo(postTable),
   body: text("body").notNull(),
   ...timestamps(),
 }, (table) => [index("comment_post_id_idx").on(table.postId)]);
@@ -107,6 +107,36 @@ export default defineNuxtConfig({
 ```
 
 A key is `<table>.<column>`. For a foreign key on more than one column, join the columns with commas. See the [CLI reference](./cli.md#nuxvel-dbcheck).
+
+### Foreign keys with `belongsTo()`
+
+`belongsTo(table)` writes a foreign key column to the `id` of `table`:
+
+```ts
+// server/database/schema/comment.schema.ts
+import { index, pgTable, serial, text } from "drizzle-orm/pg-core";
+import { belongsTo, timestamps } from "@nuxvel/nuxt/database";
+import { postTable } from "./post.schema";
+import { userTable } from "./auth.schema";
+
+export const commentTable = pgTable("comment", {
+  id: serial("id").primaryKey(),
+  postId: belongsTo(postTable),
+  editorId: belongsTo(userTable, { nullable: true, onDelete: "set null" }),
+  body: text("body").notNull(),
+  ...timestamps(),
+}, (table) => [index("comment_post_id_idx").on(table.postId), index("comment_editor_id_idx").on(table.editorId)]);
+```
+
+`postId: belongsTo(postTable)` is the same column as `postId: integer("post_id").notNull().references(() => postTable.id, { onDelete: "cascade" })`, so changing one into the other needs no migration. The column has the type of the parent's `id` (`text`, `uuid`, or `integer` for a `serial`). Its name is the key in snake_case.
+
+| Option | Default | |
+|---|---|---|
+| `column` | the key in snake_case | the SQL name of the column |
+| `onDelete` | `"cascade"` | what a delete of the parent row does |
+| `nullable` | `false` | `true` drops `NOT NULL` |
+
+`belongsTo()` adds no index. Keep the `index(...)` line. It reads the parent table when the schema loads, so a table that references itself keeps the hand-written `.references(() => ...)`. A factory creates the parent row of a `belongsTo()` column when a test gives none. See [Testing: factories](./testing.md#factories).
 
 ### The current time
 

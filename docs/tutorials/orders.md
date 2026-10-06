@@ -79,15 +79,15 @@ The order also needs a column that records when the confirmation mail went out. 
 
 ```ts
 // server/database/schema/order.schema.ts
-import { index, integer, numeric, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
-import { timestamps } from "@nuxvel/nuxt/database";
+import { index, integer, numeric, pgTable, serial, timestamp } from "drizzle-orm/pg-core";
+import { belongsTo, timestamps } from "@nuxvel/nuxt/database";
 import { userTable } from "./auth.schema";
 import { productTable } from "./product.schema";
 
 export const orderTable = pgTable("order", {
   id: serial("id").primaryKey(),
-  buyerId: text("buyer_id").notNull().references(() => userTable.id, { onDelete: "cascade" }),
-  productId: integer("product_id").notNull().references(() => productTable.id, { onDelete: "cascade" }),
+  buyerId: belongsTo(userTable),
+  productId: belongsTo(productTable),
   quantity: integer("quantity").notNull(),
   total: numeric("total", { precision: 10, scale: 2 }).notNull(),
   confirmationSentAt: timestamp("confirmation_sent_at"),
@@ -102,13 +102,13 @@ The generator gives `invoice` and `sale` an index on `order_id` next to the uniq
 
 ```ts
 // server/database/schema/invoice.schema.ts
-import { integer, pgTable, serial, varchar } from "drizzle-orm/pg-core";
-import { timestamps } from "@nuxvel/nuxt/database";
+import { pgTable, serial, varchar } from "drizzle-orm/pg-core";
+import { belongsTo, timestamps } from "@nuxvel/nuxt/database";
 import { orderTable } from "./order.schema";
 
 export const invoiceTable = pgTable("invoice", {
   id: serial("id").primaryKey(),
-  orderId: integer("order_id").notNull().unique().references(() => orderTable.id, { onDelete: "cascade" }),
+  orderId: belongsTo(orderTable).unique(),
   number: varchar("number", { length: 255 }).notNull().unique(),
   ...timestamps(),
 });
@@ -122,14 +122,14 @@ The sale keeps its index on `product_id`:
 ```ts
 // server/database/schema/sale.schema.ts
 import { date, index, integer, pgTable, serial } from "drizzle-orm/pg-core";
-import { timestamps } from "@nuxvel/nuxt/database";
+import { belongsTo, timestamps } from "@nuxvel/nuxt/database";
 import { orderTable } from "./order.schema";
 import { productTable } from "./product.schema";
 
 export const saleTable = pgTable("sale", {
   id: serial("id").primaryKey(),
-  orderId: integer("order_id").notNull().unique().references(() => orderTable.id, { onDelete: "cascade" }),
-  productId: integer("product_id").notNull().references(() => productTable.id, { onDelete: "cascade" }),
+  orderId: belongsTo(orderTable).unique(),
+  productId: belongsTo(productTable),
   day: date("day").notNull(),
   revenueCents: integer("revenue_cents").notNull(),
   ...timestamps(),
@@ -221,14 +221,10 @@ export const productFactory = defineFactory(productTable, {
 ```ts
 // server/factories/order.factory.ts
 import { faker } from "@faker-js/faker";
-import { productFactory } from "./product.factory";
-import { userFactory } from "./users.factory";
 import { defineFactory } from "@nuxvel/nuxt/factories";
 import { orderTable } from "#nuxvel/schema";
 
 export const orderFactory = defineFactory(orderTable, {
-  buyerId: async () => (await userFactory()).id,
-  productId: async () => (await productFactory()).id,
   quantity: () => faker.number.int({ min: 1, max: 3 }),
   total: () => faker.finance.amount({ max: 9 }),
 });
@@ -1524,15 +1520,15 @@ The next release reads only `total_cents`. Make the column `NOT NULL` and delete
 
 ```ts
 // server/database/schema/order.schema.ts
-import { index, integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
-import { timestamps } from "@nuxvel/nuxt/database";
+import { index, integer, pgTable, serial, timestamp } from "drizzle-orm/pg-core";
+import { belongsTo, timestamps } from "@nuxvel/nuxt/database";
 import { userTable } from "./auth.schema";
 import { productTable } from "./product.schema";
 
 export const orderTable = pgTable("order", {
   id: serial("id").primaryKey(),
-  buyerId: text("buyer_id").notNull().references(() => userTable.id, { onDelete: "cascade" }),
-  productId: integer("product_id").notNull().references(() => productTable.id, { onDelete: "cascade" }),
+  buyerId: belongsTo(userTable),
+  productId: belongsTo(productTable),
   quantity: integer("quantity").notNull(),
   totalCents: integer("total_cents").notNull(),
   confirmationSentAt: timestamp("confirmation_sent_at"),

@@ -315,7 +315,7 @@ import { postFactory, userFactory } from "#nuxvel/factories";
 describe("posts.set-cover", () => {
   it("refuses a key that the upload did not give", async () => {
     const author = await userFactory();
-    const post = await postFactory.for("authorId", author)();
+    const post = await postFactory({ author });
 
     await expect(
       runAction(

@@ -150,14 +150,12 @@ Use the same key pair for as long as the app exists. A new pair ends every subsc
 // server/database/schema/push-subscriptions.schema.ts
 import { index, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 import { sessionTable, userTable } from "./auth.schema";
-import { now } from "@nuxvel/nuxt/database";
+import { belongsTo, now } from "@nuxvel/nuxt/database";
 
 export const pushSubscriptionsTable = pgTable("push_subscriptions", {
   id: serial("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => userTable.id, { onDelete: "cascade" }),
-  sessionId: text("session_id").references(() => sessionTable.id, { onDelete: "cascade" }),
+  userId: belongsTo(userTable),
+  sessionId: belongsTo(sessionTable, { nullable: true }),
   endpoint: text("endpoint").notNull().unique(),
   p256dh: text("p256dh").notNull(),
   auth: text("auth").notNull(),
@@ -289,7 +287,7 @@ describe("comment notifications", () => {
   it("notifies the author of the post", async () => {
     const author = await userFactory();
     const reader = await userFactory();
-    const post = await postFactory.for("authorId", author)();
+    const post = await postFactory({ author });
 
     await runAction("comments.create-comment", { postId: post.id, body: "Nice post" }, { actingAs: reader });
 

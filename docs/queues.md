@@ -604,7 +604,7 @@ import { postFactory, userFactory } from "#nuxvel/factories";
 describe("post.notify-followers job", () => {
   it("is queued when a post is published", async () => {
     const author = await userFactory();
-    const post = await postFactory.for("authorId", author)();
+    const post = await postFactory({ author });
 
     await runAction("posts.publish-post", { id: post.id }, { actingAs: author });
 

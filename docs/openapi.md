@@ -235,16 +235,14 @@ export const apiKeyRateLimit = defineRateLimit({ points: 600, window: { minutes:
 // server/database/schema/api-keys.schema.ts
 import { index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { userTable } from "./auth.schema";
-import { now } from "@nuxvel/nuxt/database";
+import { belongsTo, now } from "@nuxvel/nuxt/database";
 
 export const apiKeysTable = pgTable(
   "api_keys",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     keyHash: text("key_hash").notNull().unique(),
-    userId: text("user_id")
-      .notNull()
-      .references(() => userTable.id, { onDelete: "cascade" }),
+    userId: belongsTo(userTable),
     name: text("name").notNull(),
     lastUsedAt: timestamp("last_used_at"),
     expiresAt: timestamp("expires_at"),
