@@ -15,7 +15,7 @@ import type { DataState, UseQueryReturn } from "@pinia/colada";
  *
  * @example
  * ```ts
- * const posts = useQuery(useTRPC().post.list.queryOptions());
+ * const posts = $api.post.list.useQuery();
  * ```
  * ```vue
  * <QueryState :query="posts">

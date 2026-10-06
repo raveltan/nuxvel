@@ -5,7 +5,7 @@ import { useQueryCache, type EntryKeyTagged } from "@pinia/colada";
  * {@link optimistic}.
  */
 export interface OptimisticUpdate<TVars, TData> {
-  /** The query to patch, usually `useTRPC().<path>.key(input)`. */
+  /** The query to patch, usually `$api.<path>.key(input)`. */
   key: (vars: TVars) => EntryKeyTagged<TData, unknown>;
   /** Derives the optimistic value from what is cached now. */
   apply: (current: TData, vars: TVars) => TData;
@@ -24,22 +24,21 @@ export interface OptimisticUpdate<TVars, TData> {
  *
  * The type of the mutation's `error` is `Error`, or the `TError` of `mutationOptions`.
  *
- * @param mutationOptions - Usually `useTRPC().<path>.mutationOptions()`.
+ * @param mutationOptions - Usually `$api.<path>.mutationOptions()`.
  * @param update - The {@link OptimisticUpdate} to apply.
  *
  * @example
  * ```ts
- * const trpc = useTRPC();
  * const { mutate: renamePost } = useMutation(
- *   optimistic(trpc.post.update.mutationOptions(), {
- *     key: (input) => trpc.post.byId.key({ id: input.id }),
+ *   optimistic($api.post.update.mutationOptions(), {
+ *     key: (input) => $api.post.byId.key({ id: input.id }),
  *     apply: (post, input) => ({ ...post, title: input.title }),
  *   }),
  * );
  *
  * const { mutate: deletePost } = useMutation(
- *   optimistic({ ...trpc.post.delete.mutationOptions(), onError: () => toast.add({ title: "Not deleted" }) }, {
- *     key: () => trpc.post.list.key(),
+ *   optimistic({ ...$api.post.delete.mutationOptions(), onError: () => toast.add({ title: "Not deleted" }) }, {
+ *     key: () => $api.post.list.key(),
  *     apply: (posts, input) => posts.filter((post) => post.id !== input.id),
  *   }),
  * );

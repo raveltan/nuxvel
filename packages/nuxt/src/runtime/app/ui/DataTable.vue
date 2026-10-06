@@ -35,10 +35,9 @@ import DataTableSortButton from "./DataTableSortButton.vue";
  *
  * @example
  * ```ts
- * const trpc = useTRPC();
  * const route = useRoute();
  * const input = computed(() => listQueryParams(postListInput.catch({ sort: [], filters: {} }).parse(route.query)));
- * const posts = useQuery(() => trpc.post.list.queryOptions(input.value));
+ * const posts = $api.post.list.useQuery(input);
  * ```
  * ```vue
  * <DataTable

@@ -16,7 +16,7 @@ import QueryState from "./QueryState.vue";
  *
  * @example
  * ```ts
- * const posts = useQuery(useTRPC().post.list.queryOptions());
+ * const posts = $api.post.list.useQuery();
  * ```
  * ```vue
  * <QueryState :query="posts">

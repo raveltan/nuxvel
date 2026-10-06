@@ -65,8 +65,8 @@ export interface LiveQueryUpdates<TData, Name extends ChannelName> {
  * {@link optimistic} instead to patch from this tab's own mutations,
  * and for `useChannel()` when the events are not about a query.
  *
- * @param queryOptions Usually `useTRPC().<path>.queryOptions(input)`, or
- * a getter returning it — `() => trpc.post.byId.queryOptions({ id:
+ * @param queryOptions Usually `$api.<path>.queryOptions(input)`, or
+ * a getter returning it — `() => $api.post.byId.queryOptions({ id:
  * id.value })` — so a changed input refetches, and later broadcasts
  * patch the entry for the new input.
  * @param updates Which channel to follow, and how its events patch or
@@ -74,8 +74,7 @@ export interface LiveQueryUpdates<TData, Name extends ChannelName> {
  *
  * @example
  * ```ts
- * const trpc = useTRPC();
- * const posts = useLiveQuery(trpc.post.list.queryOptions(), {
+ * const posts = useLiveQuery($api.post.list.queryOptions(), {
  *   channel: "posts",
  *   on: {
  *     created: (rows, payload) => {
@@ -86,12 +85,12 @@ export interface LiveQueryUpdates<TData, Name extends ChannelName> {
  *   },
  * });
  *
- * const ticket = useLiveQuery(trpc.ticket.show.queryOptions({ id }), {
+ * const ticket = useLiveQuery($api.ticket.show.queryOptions({ id }), {
  *   channel: "tickets",
  *   refetch: { updated: (payload) => payload.id === id },
  * });
  *
- * const cards = useLiveQuery(trpc.card.list.queryOptions({ boardId }), {
+ * const cards = useLiveQuery($api.card.list.queryOptions({ boardId }), {
  *   channel: "board",
  *   params: { boardId },
  *   refetch: { moved: true },

@@ -111,7 +111,7 @@ function valueAt(state: unknown, path: string): unknown {
  * announced through `useAnnouncer()`, so render `<NuxtAnnouncer>` in
  * `app.vue`. Without Nuxt UI, `submit()` validates `state` itself and fills
  * `errors` per field (the {@link ValidationError} shape) from both the
- * schema and the server. Pass `useTRPC().<path>.mutationOptions()`,
+ * schema and the server. Pass `$api.<path>.mutationOptions()`,
  * optionally wrapped in {@link optimistic}. A submit while the mutation
  * runs does nothing. Every submit sends the one idempotency key of those
  * options, so a procedure with `idempotent()` answers a repeat of the
@@ -131,8 +131,7 @@ function valueAt(state: unknown, path: string): unknown {
  * @example
  * ```vue
  * <script setup lang="ts">
- * const trpc = useTRPC();
- * const form = useActionForm(createPostInput, trpc.post.create.mutationOptions(), {
+ * const form = useActionForm(createPostInput, $api.post.create.mutationOptions(), {
  *   defaults: { title: "", body: "" },
  *   onSuccess: (post) => navigateTo(`/posts/${post.id}`),
  * });
