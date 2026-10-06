@@ -23,6 +23,9 @@ applies each step below that names a codemod.
 
 ### Changes
 
+- Generated files import tables from `#nuxvel/schema`, factories from
+  `#nuxvel/factories` and other server code from `#server/<path>`, in place
+  of relative paths.
 - `nuxvel factory:sync` finds the table of a factory that imports it from
   `#nuxvel/schema`.
 - `nuxvel upgrade` applies the codemods of the installed nuxvel;

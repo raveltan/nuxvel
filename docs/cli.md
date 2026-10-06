@@ -890,7 +890,7 @@ A generator lists each file that it wrote on stdout. Then it runs `nuxt prepare`
 
 When `nuxvel dev` runs in another terminal, a generator does not run `nuxt prepare`. It prints `○ Types update in the running nuxt dev (nuxt prepare skipped)`, and the dev server updates the types itself. A generator finds the dev server from the `nuxt.lock` file that Nuxt writes in `.nuxt`. `nuxvel dev` sets `NUXT_LOCK=1`, so Nuxt always writes this file.
 
-Most generators also write a functional test next to the file. The test passes with no change and typechecks. It imports its fixtures from `@nuxvel/nuxt/testing` and writes no files into the app.
+A generated file imports tables from `#nuxvel/schema`, factories from `#nuxvel/factories`, other server code from `#server/<path>` and shared code from `#shared/<path>`. It imports a file of the same folder, and a table or factory of its own kind (a schema file imports another schema file, a factory another factory), by a relative path. Most generators also write a functional test next to the file. The test passes with no change and typechecks. It imports its fixtures from `@nuxvel/nuxt/testing` and writes no files into the app.
 
 ### Names
 
@@ -1094,7 +1094,7 @@ nuxvel make:policy blog-post
 
 ```ts
 // server/policies/blog-post.policy.ts
-import { blogPostTable } from "../database/schema/blog-post.schema";
+import { blogPostTable } from "#nuxvel/schema";
 
 export const blogPostPolicy = definePolicy(blogPostTable, {});
 ```

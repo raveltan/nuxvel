@@ -221,7 +221,7 @@ describe("nuxvel make:* generators", () => {
     expect(exitCode).toBe(0);
 
     const policyFile = readFileSync(join(fixtureCwd, "server", "policies", "widget-item.policy.ts"), "utf-8");
-    expect(policyFile).toContain('import { widgetItemTable } from "../database/schema/widget-item.schema";');
+    expect(policyFile).toContain('import { widgetItemTable } from "#nuxvel/schema";');
     expect(policyFile).toContain("export const widgetItemPolicy = definePolicy(widgetItemTable, {});");
   });
 
@@ -870,7 +870,7 @@ export default defineDeploy({
       "utf-8",
     );
     expect(createFile).toContain("export const createWidgetItemAction = defineAction({");
-    expect(createFile).toContain('import { widgetItemTable } from "../../database/schema/widget-item.schema";');
+    expect(createFile).toContain('import { widgetItemTable } from "#nuxvel/schema";');
     expect(createFile).toContain('import { createWidgetItemInput } from "#shared/schemas/widget-item";');
     expect(createFile).toContain('await audit("widget-item.created", row);');
 
@@ -1094,7 +1094,7 @@ export default defineDeploy({
       "if (Object.keys(fields).length === 0) return row;",
     );
     const createTask = readFileSync(join(fixtureCwd, "server", "actions", "task", "create-task.action.ts"), "utf-8");
-    expect(createTask).toContain('import { projectTable } from "../../database/schema/project.schema";\n');
+    expect(createTask).toContain('import { projectTable } from "#nuxvel/schema";\n');
     expect(createTask).toContain(
       "    await useDb()\n      .select()\n      .from(projectTable)\n      .where(and(eq(projectTable.id, input.projectId), eq(projectTable.ownerId, ctx.actor.userId ?? ctx.actor.id)))\n      .then(firstOrFail);\n\n    const row",
     );
@@ -1104,7 +1104,7 @@ export default defineDeploy({
     );
 
     const testFile = readFileSync(join(fixtureCwd, "server", "trpc", "routers", "task.router.test.ts"), "utf-8");
-    expect(testFile).toContain('import { projectTable } from "../../database/schema/project.schema";\n');
+    expect(testFile).toContain('import { projectTable } from "#nuxvel/schema";\n');
     expect(testFile).toContain(
       "const projectFactory = defineFactory(projectTable, {\n  ownerId: async () => (await userFactory()).id,\n});\n",
     );
@@ -1216,7 +1216,7 @@ export default defineDeploy({
     expect(definition).toContain("export const postPublishedNotification = defineNotification({");
     expect(definition).toContain('via: ["database"],');
     expect(definition).toContain('toDatabase: ({ message }) => ({ title: "Post published", body: message }),');
-    expect(test).toContain('import { userTable } from "../../database/schema/auth.schema";');
+    expect(test).toContain('import { userTable } from "#nuxvel/schema";');
     expect(test).toContain('await sendNotification(recipient, "post.published", { message: "Hello" });');
 
     const rejected = await runCliAt(fixtureCwd, "make:notification", "Post.published");
@@ -1243,7 +1243,7 @@ export default defineDeploy({
       "export const orderShippedNotification = defineNotification({",
     );
     expect(readFileSync(join(domainDir, "shipped.notification.test.ts"), "utf8")).toContain(
-      'import { userTable } from "../../../database/schema/auth.schema";',
+      'import { userTable } from "#nuxvel/schema";',
     );
 
     const badDomain = await runCliAt(fixtureCwd, "make:notification", "shipped", "--domain", "Order");
@@ -1269,7 +1269,7 @@ export default defineDeploy({
 
     expect(exitCode, stderr).toBe(0);
     expect(readFileSync(join(fixtureCwd, "server", "domains", "link", "backfills", "fill-slugs.backfill.ts"), "utf8")).toContain(
-      'from "../schema/link.schema"',
+      'from "#nuxvel/schema"',
     );
   });
 
@@ -1367,7 +1367,7 @@ export default defineDeploy({
     expect(existsSync(join(domain, "routers", "crate.router.ts"))).toBe(true);
     expect(existsSync(join(fixtureCwd, "server", "database", "schema", "crate.schema.ts"))).toBe(false);
     expect(readFileSync(join(fixtureCwd, "server", "privacy", "crate.user-data.ts"), "utf8")).toContain(
-      'from "../domains/parcel/schema/crate.schema"',
+      'from "#nuxvel/schema"',
     );
   });
 

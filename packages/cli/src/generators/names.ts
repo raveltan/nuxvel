@@ -53,10 +53,36 @@ export function definitionExport(name: string, kind: string) {
   return toCamelCase(`${name}-${kind}`);
 }
 
-export function importFrom(file: string, target: string) {
+const schemaFolder = /\/server\/(?:database\/schema|domains\/[^/]+\/schema)\//;
+const factoriesFolder = /\/server\/(?:factories|domains\/[^/]+\/factories)\//;
+const serverFolder = /^(.*)\/server\/(.+)$/;
+const sharedFolder = /^(.*)\/shared\/(.+)$/;
+
+function relativeImport(file: string, target: string) {
   const specifier = relative(dirname(file), target).split(sep).join("/");
 
   return specifier.startsWith(".") ? specifier : `./${specifier}`;
+}
+
+function aliasedImport(file: string, target: string) {
+  if (schemaFolder.test(target)) return schemaFolder.test(file) ? undefined : "#nuxvel/schema";
+  if (factoriesFolder.test(target)) return factoriesFolder.test(file) ? undefined : "#nuxvel/factories";
+
+  const [, serverRoot, serverPath] = serverFolder.exec(target) ?? [];
+
+  if (serverRoot !== undefined && serverPath) return /\/layers\/[^/]+$/.test(serverRoot) ? undefined : `#server/${serverPath}`;
+
+  const [, , sharedPath] = sharedFolder.exec(target) ?? [];
+
+  return sharedPath ? `#shared/${sharedPath}` : undefined;
+}
+
+export function importFrom(file: string, target: string) {
+  const normalized = target.split(sep).join("/");
+
+  if (dirname(file) === dirname(target)) return relativeImport(file, target);
+
+  return aliasedImport(file.split(sep).join("/"), normalized) ?? relativeImport(file, target);
 }
 
 export function actionName(name: string) {
