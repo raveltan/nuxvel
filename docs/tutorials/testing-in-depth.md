@@ -1282,10 +1282,9 @@ While one story file cannot load, the stories of the starter fail too, with an a
 <script setup lang="ts">
 const props = defineProps<{ rooms: { id: number; name: string; capacity: number }[] }>();
 
-const trpc = useTRPC();
 const queryCache = useQueryCache();
 
-const form = useActionForm(createBookingInput, toasted(trpc.booking.create.mutationOptions(), "Room booked"), {
+const form = useActionForm(createBookingInput, toasted($api.booking.create.mutationOptions(), "Room booked"), {
   defaults: { title: "", roomId: undefined, startsAt: undefined, endsAt: undefined, guests: 1 },
   failures: {
     "booking.over-capacity": "guests",
@@ -1293,7 +1292,7 @@ const form = useActionForm(createBookingInput, toasted(trpc.booking.create.mutat
     "booking.in-the-past": "startsAt",
   },
   onSuccess: async () => {
-    await queryCache.invalidateQueries({ key: trpc.booking.key() });
+    await queryCache.invalidateQueries({ key: $api.booking.key() });
     await navigateTo({ name: "bookings" });
   },
 });
@@ -1427,14 +1426,13 @@ A first version of the component, as an icon button often starts:
 <script setup lang="ts">
 const props = defineProps<{ booking: { id: number; title: string; room: string; booker: string; startsAt: Date } }>();
 
-const trpc = useTRPC();
 const queryCache = useQueryCache();
 
 const cancel = useMutation(
   toasted(
     {
-      ...trpc.booking.cancel.mutationOptions(),
-      onSuccess: () => queryCache.invalidateQueries({ key: trpc.booking.key() }),
+      ...$api.booking.cancel.mutationOptions(),
+      onSuccess: () => queryCache.invalidateQueries({ key: $api.booking.key() }),
     },
     "Booking cancelled",
   ),
@@ -1663,8 +1661,7 @@ The pages do not exist, so the router of the app cannot resolve the route names.
 definePageMeta({ layout: "app", middleware: "auth" });
 
 const q = ref("");
-const trpc = useTRPC();
-const bookings = useQuery(() => trpc.booking.list.queryOptions({ q: q.value }));
+const bookings = $api.booking.list.useQuery(() => ({ q: q.value }));
 
 useSeo({ title: "Bookings" });
 </script>
@@ -1697,7 +1694,7 @@ useSeo({ title: "Bookings" });
 <script setup lang="ts">
 definePageMeta({ layout: "app", middleware: "auth" });
 
-const rooms = useQuery(useTRPC().room.list.queryOptions());
+const rooms = $api.room.list.useQuery();
 
 useSeo({ title: "Book a room" });
 </script>
@@ -1720,9 +1717,9 @@ useSeo({ title: "Book a room" });
 definePageMeta({ layout: "app", middleware: "auth" });
 
 const route = useRoute("bookings-id");
-const booking = useQuery(useTRPC().booking.byId.queryOptions({ id: Number(route.params.id) }));
+const booking = $api.booking.byId.useQuery({ id: Number(route.params.id) });
 
-useSeo(() => ({ title: booking.data.value?.title ?? "Booking" }));
+useSeo(() => ({ title: booking.data?.title ?? "Booking" }));
 </script>
 
 <template>

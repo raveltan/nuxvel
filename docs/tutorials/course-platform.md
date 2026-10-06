@@ -1466,7 +1466,7 @@ The output lists only the name, the course and the date. The email of the studen
 definePageMeta({ layout: "app" });
 
 const route = useRoute("certificates-code");
-const certificate = useQuery(() => useTRPC().certificate.verify.queryOptions({ code: route.params.code }));
+const certificate = $api.certificate.verify.useQuery(() => ({ code: route.params.code }));
 
 useSeo({ title: "Certificate" });
 </script>
@@ -1625,10 +1625,9 @@ A check in a page only hides a link. The procedures enforce the roles. Each link
 definePageMeta({ layout: "app" });
 useSeo({ title: "Courses" });
 
-const trpc = useTRPC();
 const route = useRoute();
 const input = computed(() => paginationSchema.catch({}).parse(route.query));
-const courses = useQuery(() => trpc.courses.course.catalogue.queryOptions(input.value));
+const courses = $api.courses.course.catalogue.useQuery(input);
 </script>
 
 <template>
@@ -1664,23 +1663,22 @@ The course page shows the summary and the lesson titles to everyone. A signed-in
 <script setup lang="ts">
 const props = defineProps<{ courseId: number }>();
 
-const trpc = useTRPC();
 const queryCache = useQueryCache();
-const lessons = useQuery(() => trpc.courses.lesson.forCourse.queryOptions({ courseId: props.courseId }));
-const progress = useQuery(() => trpc.learning.progress.queryOptions({ courseId: props.courseId }));
+const lessons = $api.courses.lesson.forCourse.useQuery(() => ({ courseId: props.courseId }));
+const progress = $api.learning.progress.useQuery(() => ({ courseId: props.courseId }));
 const { mutate: complete } = useMutation({
-  ...trpc.learning.completeLesson.mutationOptions(),
-  onSettled: () => queryCache.invalidateQueries({ key: trpc.learning.key() }),
+  ...$api.learning.completeLesson.mutationOptions(),
+  onSettled: () => queryCache.invalidateQueries({ key: $api.learning.key() }),
 });
 
-const done = computed(() => new Set(progress.data.value?.completedLessonIds));
+const done = computed(() => new Set(progress.data?.completedLessonIds));
 </script>
 
 <template>
   <section aria-labelledby="lessons" class="space-y-4">
     <h2 id="lessons" class="text-lg font-semibold">Lessons</h2>
     <UAlert
-      v-if="progress.data.value?.finished"
+      v-if="progress.data?.finished"
       color="success"
       icon="i-lucide-graduation-cap"
       title="You finished this course"
@@ -1723,17 +1721,16 @@ definePageMeta({ layout: "app" });
 
 const route = useRoute("courses-id");
 const courseId = computed(() => Number(route.params.id));
-const trpc = useTRPC();
 const queryCache = useQueryCache();
 const { user } = useUser();
-const course = useQuery(() => trpc.courses.course.show.queryOptions({ id: courseId.value }));
-const progress = useQuery(() => ({ ...trpc.learning.progress.queryOptions({ courseId: courseId.value }), enabled: Boolean(user.value) }));
+const course = $api.courses.course.show.useQuery(() => ({ id: courseId.value }));
+const progress = $api.learning.progress.useQuery(() => ({ courseId: courseId.value }), { enabled: () => Boolean(user.value) });
 const { mutate: enroll } = useMutation({
-  ...trpc.learning.enroll.mutationOptions(),
-  onSettled: () => queryCache.invalidateQueries({ key: trpc.learning.key() }),
+  ...$api.learning.enroll.mutationOptions(),
+  onSettled: () => queryCache.invalidateQueries({ key: $api.learning.key() }),
 });
 
-useSeo(() => ({ title: course.data.value?.title ?? "Course" }));
+useSeo(() => ({ title: course.data?.title ?? "Course" }));
 </script>
 
 <template>
@@ -1744,7 +1741,7 @@ useSeo(() => ({ title: course.data.value?.title ?? "Course" }));
           <h1 class="text-2xl font-semibold">{{ data.title }}</h1>
           <p class="text-muted">{{ data.summary }}</p>
         </header>
-        <LessonList v-if="progress.data.value?.enrolled" :course-id="data.id" />
+        <LessonList v-if="progress.data?.enrolled" :course-id="data.id" />
         <template v-else>
           <ol class="list-decimal space-y-1 pl-6">
             <li v-for="lesson in data.lessons" :key="lesson.id">{{ lesson.title }}</li>
@@ -1770,9 +1767,8 @@ useSeo(() => ({ title: course.data.value?.title ?? "Course" }));
 definePageMeta({ layout: "app", middleware: "auth" });
 useSeo({ title: "Teach" });
 
-const trpc = useTRPC();
-const courses = useQuery(trpc.courses.course.list.queryOptions({}));
-const form = useActionForm(createCourseInput, trpc.courses.course.create.mutationOptions(), {
+const courses = $api.courses.course.list.useQuery({});
+const form = useActionForm(createCourseInput, $api.courses.course.create.mutationOptions(), {
   defaults: { title: "", summary: "" },
   onSuccess: (course) => navigateTo({ name: "teach-id", params: { id: course.id } }),
 });
@@ -1822,15 +1818,14 @@ The lesson form uploads the file with `<UploadField>`. The field sends the file 
 <script setup lang="ts">
 const props = defineProps<{ courseId: number }>();
 
-const trpc = useTRPC();
 const queryCache = useQueryCache();
-const form = useActionForm(newLessonInput, trpc.courses.lesson.create.mutationOptions(), {
+const form = useActionForm(newLessonInput, $api.courses.lesson.create.mutationOptions(), {
   defaults: { courseId: props.courseId, title: "", body: "", fileKey: "" },
   onSuccess: async () => {
     form.state.title = "";
     form.state.body = "";
     form.state.fileKey = "";
-    await queryCache.invalidateQueries({ key: trpc.courses.lesson.key() });
+    await queryCache.invalidateQueries({ key: $api.courses.lesson.key() });
   },
 });
 </script>
@@ -1866,16 +1861,15 @@ definePageMeta({ layout: "app", middleware: "auth" });
 
 const route = useRoute("teach-id");
 const courseId = computed(() => Number(route.params.id));
-const trpc = useTRPC();
 const queryCache = useQueryCache();
-const course = useQuery(() => trpc.courses.course.byId.queryOptions({ id: courseId.value }));
-const lessons = useQuery(() => trpc.courses.lesson.forCourse.queryOptions({ courseId: courseId.value }));
+const course = $api.courses.course.byId.useQuery(() => ({ id: courseId.value }));
+const lessons = $api.courses.lesson.forCourse.useQuery(() => ({ courseId: courseId.value }));
 const { mutate: update } = useMutation({
-  ...trpc.courses.course.update.mutationOptions(),
-  onSettled: () => queryCache.invalidateQueries({ key: trpc.courses.course.key() }),
+  ...$api.courses.course.update.mutationOptions(),
+  onSettled: () => queryCache.invalidateQueries({ key: $api.courses.course.key() }),
 });
 
-useSeo(() => ({ title: course.data.value?.title ?? "Course" }));
+useSeo(() => ({ title: course.data?.title ?? "Course" }));
 </script>
 
 <template>
@@ -1921,7 +1915,7 @@ useSeo(() => ({ title: course.data.value?.title ?? "Course" }));
 definePageMeta({ layout: "app", middleware: "auth" });
 useSeo({ title: "My learning" });
 
-const courses = useQuery(useTRPC().learning.dashboard.queryOptions());
+const courses = $api.learning.dashboard.useQuery();
 </script>
 
 <template>
@@ -2188,19 +2182,18 @@ const week = 7 * 24 * 60 * 60 * 1000;
 
 ```vue
 <!-- app/pages/learning.vue, the script -->
-const trpc = useTRPC();
-const courses = useQuery(trpc.learning.dashboard.queryOptions());
+const courses = $api.learning.dashboard.useQuery();
 const weeklyGoal = useFlag($flags.learning.weeklyGoal);
-const lessonsThisWeek = useQuery(() => ({ ...trpc.learning.weeklyGoal.queryOptions(), enabled: weeklyGoal.value }));
+const lessonsThisWeek = $api.learning.weeklyGoal.useQuery(undefined, { enabled: weeklyGoal });
 ```
 
 ```vue
 <!-- app/pages/learning.vue, under the heading -->
     <UAlert
-      v-if="weeklyGoal && lessonsThisWeek.data.value !== undefined"
+      v-if="weeklyGoal && lessonsThisWeek.data !== undefined"
       icon="i-lucide-target"
       title="Weekly goal: 3 lessons"
-      :description="`You completed ${lessonsThisWeek.data.value} lessons in the last 7 days.`"
+      :description="`You completed ${lessonsThisWeek.data} lessons in the last 7 days.`"
     >
       <template #actions>
         <UBadge label="Beta" variant="subtle" />
