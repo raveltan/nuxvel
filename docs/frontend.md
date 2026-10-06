@@ -742,7 +742,7 @@ const form = useActionForm($api.profile.setAvatar, {
 ```vue
 <script setup lang="ts">
 const coverKey = ref("");
-const { upload, uploading, progress } = useUpload("post-cover");
+const { upload, isPending, progress } = useUpload("post-cover");
 
 async function onChange(event: Event) {
   const file = event.target instanceof HTMLInputElement ? event.target.files?.[0] : undefined;
@@ -752,14 +752,14 @@ async function onChange(event: Event) {
 </script>
 
 <template>
-  <input type="file" accept="image/png,image/jpeg" :disabled="uploading" @change="onChange" />
-  <progress v-if="uploading" :value="progress ?? undefined" max="100" />
+  <input type="file" accept="image/png,image/jpeg" :disabled="isPending" @change="onChange" />
+  <progress v-if="isPending" :value="progress ?? undefined" max="100" />
 </template>
 ```
 
 `useUpload(name)` is the composable that `<UploadField>` uses. It is auto-imported and works without Nuxt UI. `upload(file)` asks the server for a presigned URL, sends the file to storage and resolves to the key under `tmp/`.
 
-- `uploading` is `true` while a file uploads.
+- `isPending` is `true` while a file uploads, as in `useUser()`.
 - `progress` is the percentage sent. It is `null` when the browser cannot measure it.
 - When the server refuses the file, `upload()` rejects with an `Error`. Its message is the message of the server, for example the reason for a file that is too large. When storage refuses the `PUT`, the message says so.
 

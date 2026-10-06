@@ -70,8 +70,7 @@
     "sentTo": "确认链接已发送至 {email}。打开链接即可完成注册。链接在 24 小时后失效。",
     "yourAddress": "你的邮箱地址",
     "resent": "新的链接已发出",
-    "resend": "重新发送链接",
-    "resendFailed": "无法重新发送链接"
+    "resend": "重新发送链接"
   },
   "offline": {
     "title": "离线",

@@ -5,6 +5,8 @@ import { UAlert, UButton, UForm, UFormField, UInput } from "#components";
 import { ref } from "vue";
 import { z } from "zod";
 import { authClient } from "../auth/client";
+import { unwrapAuth } from "../composables/unwrap-auth";
+import { useTwoFactor } from "../composables/use-two-factor";
 import { bindActionForm } from "../forms/action-form";
 import { forgotPasswordSchema, resetPasswordSchema, signInSchema, signUpSchema } from "../../shared/auth/schemas";
 import SocialSignIn from "./SocialSignIn.vue";
@@ -32,7 +34,8 @@ import SocialSignIn from "./SocialSignIn.vue";
  * `token` query parameter, sets the new password and opens
  * `/sign-in`. Each of these pages opens in the locale of the form's
  * page: on `/zh/sign-in`, sign-in opens `/zh`. The text of the form is in
- * the locale of the page, from the `nuxvel.authForm` translation keys.
+ * the locale of the page, from the `nuxvel.authForm` and `nuxvel.auth`
+ * translation keys.
  *
  * @param mode - `"sign-in"`, `"sign-up"` (adds a name field),
  * `"forgot-password"` (email only) or `"reset-password"` (new password
@@ -52,20 +55,11 @@ const { ts, localePath } = useI18n();
 
 const needsCode = ref(props.mode === "sign-in" && route.query.twoFactor === "true");
 
-function unwrap<T>(
-  result: { data: T | null; error: { message?: string | undefined } | null },
-  failedKey: Parameters<typeof ts>[0],
-): T {
-  if (result.error || result.data === null) throw new Error(result.error?.message ?? ts(failedKey));
-
-  return result.data;
-}
-
 const signIn = bindActionForm(
   signInSchema,
   {
     mutation: async (input) => {
-      const data = unwrap(await authClient.signIn.email(input), "nuxvel.authForm.signInFailed");
+      const data = unwrapAuth(await authClient.signIn.email(input), ts("nuxvel.authForm.signInFailed"));
 
       needsCode.value = "twoFactorRedirect" in data && data.twoFactorRedirect === true;
 
@@ -75,24 +69,18 @@ const signIn = bindActionForm(
   { defaults: { email: "", password: "" }, onSuccess: () => (needsCode.value ? undefined : navigateTo(localePath("/"))) },
 );
 
+const { verify } = useTwoFactor();
+
 const twoFactor = bindActionForm(
   z.object({ code: z.string().trim().min(1) }),
-  {
-    mutation: async ({ code }) =>
-      unwrap(
-        /^\d{6}$/.test(code)
-          ? await authClient.twoFactor.verifyTotp({ code })
-          : await authClient.twoFactor.verifyBackupCode({ code }),
-        "nuxvel.authForm.codeFailed",
-      ),
-  },
+  { mutation: ({ code }) => verify.mutateAsync(code) },
   { defaults: { code: "" }, onSuccess: () => navigateTo(localePath("/")) },
 );
 
 const signUp = bindActionForm(
   signUpSchema,
   {
-    mutation: async (input) => unwrap(await authClient.signUp.email(input), "nuxvel.authForm.signUpFailed"),
+    mutation: async (input) => unwrapAuth(await authClient.signUp.email(input), ts("nuxvel.authForm.signUpFailed")),
   },
   {
     defaults: { name: "", email: "", password: "" },
@@ -107,9 +95,9 @@ const forgotPassword = bindActionForm(
   forgotPasswordSchema,
   {
     mutation: async ({ email }) =>
-      unwrap(
+      unwrapAuth(
         await authClient.requestPasswordReset({ email, redirectTo: localePath("/reset-password") }),
-        "nuxvel.authForm.resetLinkFailed",
+        ts("nuxvel.authForm.resetLinkFailed"),
       ),
   },
   { defaults: { email: "" }, onSuccess: () => (resetLinkSent.value = true) },
@@ -121,7 +109,7 @@ const resetPassword = bindActionForm(
   resetPasswordSchema,
   {
     mutation: async ({ password }) =>
-      unwrap(await authClient.resetPassword({ newPassword: password, token: resetToken }), "nuxvel.authForm.resetFailed"),
+      unwrapAuth(await authClient.resetPassword({ newPassword: password, token: resetToken }), ts("nuxvel.authForm.resetFailed")),
   },
   { defaults: { password: "" }, onSuccess: () => navigateTo(localePath("/sign-in")) },
 );

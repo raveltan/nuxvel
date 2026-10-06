@@ -57,7 +57,7 @@ defineSlots<{
   uploading?(props: { file: File; progress: number | null }): unknown;
 }>();
 
-const { upload, uploading, progress } = useUpload(() => props.name);
+const { upload, isPending, progress } = useUpload(() => props.name);
 const file = ref<File | null>(null);
 const failure = ref<string>();
 
@@ -82,12 +82,12 @@ watch(file, async (chosen) => {
       v-model="file"
       :accept="accept"
       :preview="false"
-      :disabled="uploading"
+      :disabled="isPending"
       :label="$ts('nuxvel.uploadField.drop')"
       :ui="ui"
       class="w-full"
     />
-    <template v-if="uploading">
+    <template v-if="isPending">
       <slot v-if="file" name="uploading" :file="file" :progress="progress">
         <UProgress :model-value="progress" :aria-label="$ts('nuxvel.uploadField.uploading', { file: file.name })" class="mt-2" />
       </slot>

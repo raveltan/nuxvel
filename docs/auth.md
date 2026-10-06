@@ -31,6 +31,16 @@ await authClient.signIn.email({ email, password });
 
 `authClient` is the Better Auth Vue client. It is auto-imported and configured for you.
 
+For the account pages, nuxvel has composables over `authClient`: [`useSessions()`](#managing-sessions), [`useChangeEmail()`](#changing-the-email-address), [`useTwoFactor()`](#two-factor-sign-in) and [`useResendVerification()`](#email-verification). Each action has the shape of [`$api.x.useMutation()`](./api.md#caching-queries-pinia-colada): `mutate`, `mutateAsync`, `status`, `isLoading`, `data`, `error` and `reset`. `error` holds Better Auth's message, or a translated fallback (the `nuxvel.auth.*` keys) when Better Auth gives none.
+
+`authClient` stays available for every other Better Auth call. Pass its result and a fallback message to `unwrapAuth()`, which returns the data or throws the same `Error` as the composables. The fallback is the message when Better Auth gives none. Translate it with `ts()` in `setup`, not after an `await`. The `cause` of the error is Better Auth's error, with its `code` and `status`:
+
+```ts
+const updateName = useMutation({
+  mutation: async (name: string) => unwrapAuth(await authClient.updateUser({ name }), "Could not save your name"),
+});
+```
+
 Sign out with `useUser().signOut()`, not with `authClient.signOut()`. `authClient.signOut()` ends the session, but it does not clear the query cache. The data of the previous user then stays in the page. See [Reading the current user](#reading-the-current-user).
 
 ### The sign-in and sign-up forms
@@ -83,7 +93,7 @@ export const resetPasswordSchema = z.object({
 });
 ```
 
-The starter's `app/pages/(guest)/verify-email.vue` tells a new user to open the link in the mail. Its button sends the link again with `authClient.sendVerificationEmail()`.
+The starter's `app/pages/(guest)/verify-email.vue` tells a new user to open the link in the mail. Its button sends the link again with `useResendVerification()`.
 
 To build a form of your own, use a `<UForm>` with the shared schema, call `authClient` in `submit`, and show the errors with [`useFormErrors()`](./frontend.md#form-errors-without-useactionform):
 
@@ -121,16 +131,27 @@ Set `nuxvel.auth.signInPath` to the sign-in page, so that the `auth` middleware 
 ## Email verification
 
 ```ts
-const { error } = await authClient.signIn.email({ email, password });
+const resend = useResendVerification(() => state.email);
+const { error } = await authClient.signIn.email(state);
 
-if (error?.code === "EMAIL_NOT_VERIFIED") {
-  await authClient.sendVerificationEmail({ email, callbackURL: "/" });
-}
+if (error?.code === "EMAIL_NOT_VERIFIED") resend.mutate();
+```
+
+```vue
+<script setup lang="ts">
+const route = useRoute();
+const resend = useResendVerification(() => String(route.query.email));
+</script>
+
+<template>
+  <UButton label="Send the link again" :loading="resend.isLoading" @click="resend.mutate()" />
+  <p v-if="resend.error">{{ resend.error.message }}</p>
+</template>
 ```
 
 In a production build, a user must confirm their email address before they can sign in with a password. Sign-up creates the user, starts no session, and sends the `nuxvel.auth.verify-email` mail. The mail does not print the name from the sign-up. The person who asks for it chooses that name, and the address is not confirmed yet. A password sign-in before the confirmation answers HTTP 403 with the code `EMAIL_NOT_VERIFIED`.
 
-The mail holds a link to `/api/auth/verify-email`. The link sets `emailVerified` on the user, signs the user in, and sends the browser to the `callbackURL` of the sign-up. If the user has [two-factor sign-in](#two-factor-sign-in) on, the link starts no session. It sends the browser to `nuxvel.auth.signInPath` with `?twoFactor=true` instead. The link expires after 24 hours. A user asks for a new link with `authClient.sendVerificationEmail()`, at most 3 times an hour.
+The mail holds a link to `/api/auth/verify-email`. The link sets `emailVerified` on the user, signs the user in, and sends the browser to the `callbackURL` of the sign-up. If the user has [two-factor sign-in](#two-factor-sign-in) on, the link starts no session. It sends the browser to `nuxvel.auth.signInPath` with `?twoFactor=true` instead. The link expires after 24 hours. A user asks for a new link with `useResendVerification(email).mutate()` or `authClient.sendVerificationEmail()`, at most 3 times an hour. The link of `useResendVerification()` opens the home page in the locale of the current page.
 
 | Build | Verification |
 |---|---|
@@ -340,13 +361,25 @@ await fakeFetch({
 
 ## Managing sessions
 
-```ts
-const { data: sessions } = await authClient.listSessions();
+```vue
+<script setup lang="ts">
+const { list, revoke, revokeOthers } = useSessions();
+</script>
 
-await authClient.revokeSession({ token: sessions?.[1]?.token ?? "" });
+<template>
+  <QueryState :query="list">
+    <template #default="{ data }">
+      <div v-for="session in data" :key="session.id">
+        {{ session.userAgent }}, {{ session.ipAddress }}
+        <UButton label="Sign out" @click="revoke.mutate(session.token)" />
+      </div>
+    </template>
+  </QueryState>
+  <UButton label="Sign out everywhere else" :loading="revokeOthers.isLoading" @click="revokeOthers.mutate()" />
+</template>
 ```
 
-`authClient.listSessions()` returns every session of the signed-in user. Each session has the device's `userAgent`, its `ipAddress`, and `updatedAt`, the time of its last activity. `authClient.revokeSession({ token })` ends one session, and that device is signed out on its next request and gets no more [push notifications](./pwa.md#push-notifications). `authClient.revokeOtherSessions()` ends every session except the current one.
+`useSessions()` lists every session of the signed-in user. `list` is a query that fits [`<QueryState>`](./frontend.md#page-states). It loads in the browser only, so the session tokens never reach the server-rendered page. Each session has the device's `userAgent`, its `ipAddress`, and `updatedAt`, the time of its last activity. `revoke.mutate(token)` ends one session, and that device is signed out on its next request and gets no more [push notifications](./pwa.md#push-notifications). `revokeOthers.mutate()` ends every session except the current one. Both refresh `list`. The type of a session is `AuthSession`. With `authClient`, the same calls are `listSessions()`, `revokeSession({ token })` and `revokeOtherSessions()`.
 
 A password change with `authClient.changePassword()` ends every other session of the user. Those devices are signed out and get no more push notifications. The current session stays signed in, with its two-factor state.
 
@@ -354,22 +387,48 @@ A session lasts 7 days. Better Auth extends it once a day while the user is acti
 
 ## Changing the email address
 
-```ts
-await authClient.changeEmail({ newEmail: "ada@new.example.com", callbackURL: "/settings" });
+```vue
+<script setup lang="ts">
+const email = ref("");
+const changeEmail = useChangeEmail();
+</script>
+
+<template>
+  <form @submit.prevent="changeEmail.mutate(email)">
+    <UInput v-model="email" type="email" />
+    <UButton type="submit" label="Change" :loading="changeEmail.isLoading" />
+    <p v-if="changeEmail.error">{{ changeEmail.error.message }}</p>
+    <p v-if="changeEmail.requested">Open the link in the mail we sent you.</p>
+  </form>
+</template>
 ```
 
-`changeEmail()` needs a sign-in in the last 10 minutes, the same rule as [`freshProcedure`](#recent-sign-in-procedures). An older session gets `FORBIDDEN` with the code `SESSION_NOT_FRESH`. Ask the user to sign in again. `changeEmail()` does not change the address at once. When the current address is verified, it sends the `nuxvel.auth.security-notice` mail with an approval link to the current address. When the user opens that link, nuxvel sends the `nuxvel.auth.verify-email` mail with a confirmation link to the new address. The address changes when the user opens the second link. A stolen session alone therefore cannot move the account to another address. When the current address is not verified, the first step does not occur: the confirmation link goes straight to the new address, and the current address gets the `nuxvel.auth.security-notice` mail with no link. Each link expires after 24 hours, and the last link sends the browser to `callbackURL`.
+`useChangeEmail().mutate(newEmail)` calls `authClient.changeEmail()` with the current page as the `callbackURL`. `requested` is `true` once the mail is on its way. `changeEmail()` needs a sign-in in the last 10 minutes, the same rule as [`freshProcedure`](#recent-sign-in-procedures). An older session gets `FORBIDDEN` with the code `SESSION_NOT_FRESH`. Ask the user to sign in again. `changeEmail()` does not change the address at once. When the current address is verified, it sends the `nuxvel.auth.security-notice` mail with an approval link to the current address. When the user opens that link, nuxvel sends the `nuxvel.auth.verify-email` mail with a confirmation link to the new address. The address changes when the user opens the second link. A stolen session alone therefore cannot move the account to another address. When the current address is not verified, the first step does not occur: the confirmation link goes straight to the new address, and the current address gets the `nuxvel.auth.security-notice` mail with no link. Each link expires after 24 hours, and the last link sends the browser to `callbackURL`.
 
 ## Two-factor sign-in
 
-```ts
-const { data } = await authClient.twoFactor.enable({ password });
-// show data.totpURI as a QR code or a key, and keep data.backupCodes
+```vue
+<script setup lang="ts">
+const password = ref("");
+const code = ref("");
+const { enable, verify, backupCodes } = useTwoFactor();
+</script>
 
-await authClient.twoFactor.verifyTotp({ code });
+<template>
+  <form v-if="!enable.data" @submit.prevent="enable.mutate(password)">
+    <UInput v-model="password" type="password" />
+    <UButton type="submit" label="Turn on" :loading="enable.isLoading" />
+  </form>
+  <form v-else @submit.prevent="verify.mutate(code)">
+    <code>{{ enable.data.totpURI }}</code>
+    <p>Keep these backup codes: {{ backupCodes.join(", ") }}</p>
+    <UInput v-model="code" autocomplete="one-time-code" />
+    <UButton type="submit" label="Confirm" :loading="verify.isLoading" />
+  </form>
+</template>
 ```
 
-Every user can turn on two-factor sign-in with Better Auth's [two-factor plugin](https://www.better-auth.com/docs/plugins/2fa). `twoFactor.enable()` checks the password and returns a TOTP URI for an authenticator app and 10 backup codes. The first `verifyTotp()` with a code from the app turns two-factor sign-in on. `nuxvel.seo.siteName` is the issuer name that the app shows.
+Every user can turn on two-factor sign-in with Better Auth's [two-factor plugin](https://www.better-auth.com/docs/plugins/2fa). `useTwoFactor().enable.mutate(password)` checks the password and returns a TOTP URI for an authenticator app and 10 backup codes, which `backupCodes` also holds. Show the URI as a QR code or a key. The first `verify.mutate(code)` with a code from the app turns two-factor sign-in on. `verify` takes a 6-digit code from the app, or else a backup code. `disable.mutate(password)` turns it off. With `authClient`, the same calls are `twoFactor.enable({ password })`, `twoFactor.verifyTotp({ code })`, `twoFactor.verifyBackupCode({ code })` and `twoFactor.disable({ password })`. `nuxvel.seo.siteName` is the issuer name that the app shows.
 
 When two-factor sign-in is on, a correct password starts no session. `signIn.email()` answers `{ twoFactorRedirect: true }` instead. Then `authClient.twoFactor.verifyTotp({ code })` or `authClient.twoFactor.verifyBackupCode({ code })` starts the session. A wrong code answers HTTP 401. Each backup code works once. `<AuthForm>` asks for the code itself.
 
@@ -377,7 +436,7 @@ A social sign-in or an email verification link of a user with two-factor sign-in
 
 In a test, `totpCode(totpURI)` from `@nuxvel/nuxt/testing` returns the current code of the `totpURI` that `twoFactor.enable()` answers. It follows the test clock. See [Testing](./testing.md).
 
-`authClient.twoFactor.disable({ password })` turns it off. The session user has a `twoFactorEnabled` field.
+The session user has a `twoFactorEnabled` field, which `useUser()` follows after each of these calls.
 
 ## Security notices
 

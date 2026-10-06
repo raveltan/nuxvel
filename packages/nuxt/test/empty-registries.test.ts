@@ -7,6 +7,7 @@ import { afterAll, describe, it } from "vitest";
 import { buildActionsModuleCode } from "../src/actions";
 import { buildDiscoveredModuleCode } from "../src/discovered-module";
 import { buildEventsModuleCode } from "../src/events";
+import { buildMailTemplatesModuleCode } from "../src/mail-templates";
 import { buildTaskNamesModuleCode } from "../src/task-names";
 import { buildTranslationsModuleCode } from "../src/translations";
 import { buildUserDataModuleCode } from "../src/user-data";
@@ -42,6 +43,7 @@ const emptyModules = {
   "error-classifiers": buildDiscoveredModuleCode("errors", []),
   translations: buildTranslationsModuleCode({ en: [] }),
   "user-data": buildUserDataModuleCode([]),
+  "mail-templates": buildMailTemplatesModuleCode(new Map()),
 };
 
 const registries = [

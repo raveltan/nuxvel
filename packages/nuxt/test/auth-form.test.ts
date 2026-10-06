@@ -2,6 +2,7 @@ import { describe, it } from "vitest";
 import { url } from "@nuxt/test-utils/e2e";
 import { button, expect, expectAccessible, expectMailSent, fakeFetch, text, totpCode, visit } from "@nuxvel/nuxt/testing";
 import postgres from "postgres";
+import { userFactory } from "../../../playground/server/factories/users.factory";
 import { postJson, signUpWithTwoFactor } from "./helpers/auth-flows";
 import { setupPlayground } from "./helpers/playground";
 
@@ -130,5 +131,15 @@ describe("<AuthForm> on the playground's sign-up and sign-in pages", async () =>
 
     await expect(text(page, "waiting@example.com")).toBeVisible();
     await expect(button(page, "Send the link again")).toBeVisible();
+  });
+
+  it("sends the link again from the verify-email page", async () => {
+    const user = await userFactory({ email: "resend-link@example.com", emailVerified: false });
+    const page = await visit("/verify-email?email=resend-link%40example.com");
+
+    await button(page, "Send the link again").click();
+
+    await expect(text(page, "A new link is on its way")).toBeVisible();
+    await expectMailSent("nuxvel.auth.verify-email", { to: user.email });
   });
 });

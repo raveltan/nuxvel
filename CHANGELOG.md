@@ -160,9 +160,30 @@ applies each step below that names a codemod.
   config that is not an object literal, and a config with a spread, as
   manual steps). The `nuxvel.notification` job keeps its `{ mail, data }`
   payload, so a job queued before the deploy still runs.
+- `useUpload()` returns `isPending` in place of `uploading`, as
+  `useUser()` does. By hand: write `const { upload, isPending, progress }
+  = useUpload(name)`, or `isPending: uploading` to keep the old name, and
+  read `.isPending` in place of `.uploading`. Codemod: `upload-pending`
+  (it prints a destructured `uploading` with a default as a manual step).
+- The translation key `nuxvel.authForm.codeFailed` is now
+  `nuxvel.auth.verifyFailed`. By hand: if a locale file of the app sets
+  `nuxvel.authForm.codeFailed`, rename it to `nuxvel.auth.verifyFailed`.
 
 ### Changes
 
+- The server-rendered page no longer carries a session token: the
+  session state of `useUser()` drops it, and `useSessions().list` loads
+  in the browser only.
+- `useResendVerification(email)` sends the mail that confirms an email
+  address again, with the shape of `$api.x.useMutation()`. New apps use
+  it on the verify-email page.
+- `useSessions()`, `useChangeEmail()` and `useTwoFactor()` list and
+  revoke sessions, change the email address and turn two-factor sign-in
+  on and off. Each action has the shape of `$api.x.useMutation()`, with
+  Better Auth's message or a translated fallback in `error`.
+  `unwrapAuth(result, fallback)` returns the data of any other
+  `authClient` call, or throws the same error. `<AuthForm>` checks its sign-in code with
+  `useTwoFactor()`.
 - `make:resource --ui` writes its pages into `app/pages/(app)/` when the
   app has that folder, with no `definePageMeta`.
 - New apps start with an empty `app/pages/(app)/` folder, so

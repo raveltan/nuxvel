@@ -70,8 +70,7 @@
     "sentTo": "A link to confirm your address went to {email}. Open it to finish signing up. The link expires in 24 hours.",
     "yourAddress": "your email address",
     "resent": "A new link is on its way",
-    "resend": "Send the link again",
-    "resendFailed": "Could not send the link again"
+    "resend": "Send the link again"
   },
   "offline": {
     "title": "Offline",

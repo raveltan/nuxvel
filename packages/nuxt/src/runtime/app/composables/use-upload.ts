@@ -24,8 +24,9 @@ function refusalMessage(error: unknown) {
  * locale with `useI18n()`. `upload(file)` asks `POST /api/uploads/<name>`
  * for a presigned URL, sends the file there with a `PUT`, and resolves to
  * the key under `tmp/<name>/`. Send that key to an action that calls
- * `promoteUpload()`. While it runs, `uploading` is `true` and `progress`
- * is the percentage sent, or `null` when the browser cannot tell.
+ * `promoteUpload()`. While it runs, `isPending` is `true`, as in
+ * {@link useUser}, and `progress` is the percentage sent, or `null` when
+ * the browser cannot tell.
  *
  * `upload()` rejects with an `Error` whose message is readable: the
  * server's reason for a refused file (too large, wrong type, not
@@ -36,7 +37,7 @@ function refusalMessage(error: unknown) {
  *
  * @example
  * ```ts
- * const { upload, uploading, progress } = useUpload("post-cover");
+ * const { upload, isPending, progress } = useUpload("post-cover");
  *
  * async function onFile(file: File) {
  *   form.state.coverKey = await upload(file);
@@ -45,7 +46,7 @@ function refusalMessage(error: unknown) {
  */
 export function useUpload(name: MaybeRefOrGetter<UploadName>) {
   const { ts } = useI18n();
-  const uploading = ref(false);
+  const isPending = ref(false);
   const progress = ref<number | null>(null);
 
   function put(url: string, headers: Record<string, string>, body: File) {
@@ -64,7 +65,7 @@ export function useUpload(name: MaybeRefOrGetter<UploadName>) {
   }
 
   async function upload(file: File): Promise<string> {
-    uploading.value = true;
+    isPending.value = true;
     progress.value = 0;
 
     try {
@@ -79,9 +80,9 @@ export function useUpload(name: MaybeRefOrGetter<UploadName>) {
 
       return presigned.key;
     } finally {
-      uploading.value = false;
+      isPending.value = false;
     }
   }
 
-  return { upload, uploading, progress };
+  return { upload, isPending, progress };
 }

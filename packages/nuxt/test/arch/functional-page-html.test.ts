@@ -10,6 +10,7 @@ const REPO_DIR = fileURLToPath(new URL("../../../..", import.meta.url));
 const functionalTestsConfig = architecture.find((config) => config.name === "nuxvel/functional-tests");
 
 const SERVER_RENDERED_OUTPUT = [
+  "packages/nuxt/test/auth-sessions.test.ts",
   "packages/nuxt/test/console-logging.test.ts",
   "packages/nuxt/test/date-time.test.ts",
   "packages/nuxt/test/dev-scratch-app/shared-schemas-watch.ts",

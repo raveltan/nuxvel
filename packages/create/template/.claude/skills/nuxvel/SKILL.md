@@ -34,7 +34,7 @@ Read only the file that the task needs.
 | Where a file goes, its export, its name | [resources/files.md](resources/files.md) |
 | Table, schema, action, router, policy, error, query | [resources/server.md](resources/server.md) |
 | Event, job, schedule, mail, notification, channel, upload, webhook, flag, cache | [resources/background.md](resources/background.md) |
-| Page, form, query, table, realtime in the browser | [resources/app.md](resources/app.md) |
+| Page, form, query, table, realtime, account page in the browser | [resources/app.md](resources/app.md) |
 | Functional, component or end-to-end test, factory | [resources/testing.md](resources/testing.md) |
 | Text on a page, translation, locale, link in a locale | [resources/i18n.md](resources/i18n.md) |
 

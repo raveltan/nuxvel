@@ -70,6 +70,8 @@ SSR: `NOT_FOUND`/`FORBIDDEN`/`UNAUTHORIZED` render the `error` slot with 404/403
 | Name | Use |
 |---|---|
 | `useUser()` | `{ user, isPending, signOut, signInWith }`. Sign out only with `signOut()` |
+| `useSessions()`, `useChangeEmail()`, `useTwoFactor()`, `useResendVerification(email)` | account pages: `{ list, revoke, revokeOthers }`, `mutate(newEmail)` + `requested`, `{ enable, verify, disable, backupCodes }`, `mutate()`. Each action is a mutation: `.mutate()`, `.isLoading`, `.error` |
+| `unwrapAuth(await authClient.x(...), fallback)` | data of any other Better Auth call, or throws its message. Never read `{ data, error }` by hand |
 | `{ confirm: { title, confirmLabel, color } }` in `.useMutation()` or `.mutationOptions()` | dialog before the mutation runs |
 | `useConfirm()` | `await confirm({ title, description, confirmLabel, color })` → boolean, to ask in your own code |
 | `{ toast: "Saved" }` in `.useMutation()` or `.mutationOptions()` | success toast |
@@ -77,7 +79,7 @@ SSR: `NOT_FOUND`/`FORBIDDEN`/`UNAUTHORIZED` render the `error` slot with 404/403
 | `useChannel("posts", { limit })` | `{ events, status, close }` |
 | `usePresence("posts", { params: { id } })` | `{ members, setState }` |
 | `useJobChannel("post.import")` | `{ status, progress, result, error, events, close }` of a job with `channel` |
-| `useUpload("post-cover")` | `{ upload, uploading, progress }` |
+| `useUpload("post-cover")` | `{ upload, isPending, progress }` |
 | `useFlag("new-editor")`, `useExperiment("subscribe-button")` | flag, variant |
 | `useNotifications()` | the database notifications |
 | `useSeo({ title, description })` | head tags. Getter for loaded data |

@@ -1,5 +1,14 @@
 {
   "nuxvel": {
+    "auth": {
+      "revokeFailed": "Could not sign out that session",
+      "revokeOthersFailed": "Could not sign out your other sessions",
+      "changeEmailFailed": "Could not change your email address",
+      "verifyFailed": "Could not check the code",
+      "enableTwoFactorFailed": "Could not turn on two-factor sign-in",
+      "disableTwoFactorFailed": "Could not turn off two-factor sign-in",
+      "resendFailed": "Could not send the link again"
+    },
     "authForm": {
       "name": "Name",
       "email": "Email",
@@ -17,7 +26,6 @@
       "linkExpired": "This link has expired or was used",
       "linkExpiredDescription": "Ask for a new link from the sign-in page.",
       "signInFailed": "Could not sign in",
-      "codeFailed": "Could not check the code",
       "signUpFailed": "Could not sign up",
       "resetLinkFailed": "Could not send the reset link",
       "resetFailed": "Could not reset the password"

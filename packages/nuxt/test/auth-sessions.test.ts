@@ -1,4 +1,4 @@
-import { actingAs, expect, guest, heading } from "@nuxvel/nuxt/testing";
+import { actingAs, button, expect, expectMailSent, field, guest, heading, text, totpCode } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
 import { userFactory } from "../../../playground/server/factories/users.factory";
 import { postJson, sessionCookie } from "./helpers/auth-flows";
@@ -40,6 +40,56 @@ describe("session list", async () => {
     const page = await actingAs(user).visit("/security");
 
     await expect(heading(page, "Where you are signed in")).toBeVisible();
+  });
+
+  it("leaves the session tokens out of the server-rendered security page", async () => {
+    const client = actingAs(await userFactory({ email: "security-html@example.com" }));
+    const html = await client.$fetch<string>("/security");
+    const sessions = await client.$fetch<ListedSession[]>("/api/auth/list-sessions");
+
+    expect(sessions).toHaveLength(1);
+    for (const { token } of sessions) expect(html).not.toContain(token);
+  });
+
+  it("signs out another session from the security page", async () => {
+    const user = await userFactory.withPassword(PASSWORD)({ email: "security-revoke@example.com" });
+    const phone =
+      sessionCookie(await postJson("/api/auth/sign-in/email", { email: user.email, password: PASSWORD }, { "user-agent": "Phone/1.0" })) ?? "";
+    const page = await actingAs(user).visit("/security");
+    const row = page.getByRole("listitem").filter({ hasText: "Phone/1.0" });
+
+    await button(row, "Sign out").click();
+
+    await expect(row).toHaveCount(0);
+    expect(await guest().$fetch("/api/auth/get-session", { headers: { cookie: phone } })).toBeNull();
+  });
+
+  it("turns on two-factor sign-in from the security page, after a refused password", async () => {
+    const user = await userFactory.withPassword(PASSWORD)({ email: "security-two-factor@example.com" });
+    const page = await actingAs(user).visit("/security");
+
+    await field(page, "Current password").fill("a-wrong-password");
+    await button(page, "Turn on").click();
+    await expect(text(page, "Invalid password")).toBeVisible();
+
+    await field(page, "Current password").fill(PASSWORD);
+    await button(page, "Turn on").click();
+    const totpURI = (await page.locator("code").textContent()) ?? "";
+    await field(page, "Authentication code").fill(totpCode(totpURI));
+    await button(page, "Confirm").click();
+
+    await expect(text(page, "Two-factor sign-in is on.")).toBeVisible();
+  });
+
+  it("asks for an email change from the security page", async () => {
+    const user = await userFactory({ email: "security-email@example.com" });
+    const page = await actingAs(user).visit("/security");
+
+    await field(page, "New email address").fill("security-email-new@example.com");
+    await button(page, "Change").click();
+
+    await expect(text(page, "Open the link in the mail we sent you.")).toBeVisible();
+    await expectMailSent("nuxvel.auth.verify-email", { to: "security-email-new@example.com" });
   });
 
   it("ends every other session on a password change, and keeps the session that changed it", async () => {

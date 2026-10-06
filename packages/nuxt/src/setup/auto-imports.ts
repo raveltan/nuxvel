@@ -34,6 +34,7 @@ const APP_TYPE_IMPORTS: Record<string, string[]> = {
   "use-maintenance": ["MaintenanceStatus"],
   "use-notifications": ["NotificationEntry"],
   "use-presence": ["PresenceRoom", "PresenceRoomOf"],
+  "use-sessions": ["AuthSession"],
   "router-types": ["RouterInputs", "RouterOutputs"],
 };
 

@@ -81,7 +81,7 @@ describe("useUpload()", () => {
   });
 
   it("requests the URL, uploads with progress and reports the key", async () => {
-    const { upload, uploading, progress } = useUpload("profile-avatar");
+    const { upload, isPending, progress } = useUpload("profile-avatar");
     const file = new File(["png"], "avatar.png", { type: "image/png" });
 
     const uploaded = upload(file);
@@ -92,7 +92,7 @@ describe("useUpload()", () => {
     expect(request.url).toBe("https://storage.test/bucket/tmp/profile-avatar/key-1?signed");
     expect(request.headers).toEqual({ "content-type": "image/png" });
     expect(request.body).toBe(file);
-    expect(uploading.value).toBe(true);
+    expect(isPending.value).toBe(true);
 
     request.progress(1, 4);
     expect(progress.value).toBe(25);
@@ -100,15 +100,15 @@ describe("useUpload()", () => {
     request.finish(200);
 
     await expect(uploaded).resolves.toBe("tmp/profile-avatar/key-1");
-    expect(uploading.value).toBe(false);
+    expect(isPending.value).toBe(false);
   });
 
   it("rejects with the server's reason for a refused file", async () => {
-    const { upload, uploading } = useUpload("profile-avatar");
+    const { upload, isPending } = useUpload("profile-avatar");
 
     await expect(upload(new File(["far too large"], "big.png", { type: "image/png" }))).rejects.toThrow("File is too large");
     expect(FakeUploadRequest.last).toBeUndefined();
-    expect(uploading.value).toBe(false);
+    expect(isPending.value).toBe(false);
   });
 
   it("rejects when storage refuses the PUT", async () => {

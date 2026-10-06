@@ -1299,4 +1299,76 @@ describe("nuxvel upgrade", () => {
       );
     }, 60000);
   });
+
+  describe("upload-pending", () => {
+    it("renames uploading of useUpload() to isPending in script and template reads, keeps a local name in use, and leaves other objects", async () => {
+      const appDir = scratchPlayground("upgrade-upload-pending");
+      const component = join(appDir, "app", "components", "CoverUpload.vue");
+      const composable = join(appDir, "app", "composables", "use-cover.ts");
+      mkdirSync(join(appDir, "app", "composables"), { recursive: true });
+      const before = [
+        '<script setup lang="ts">',
+        'const { upload, uploading, progress } = useUpload("post-cover");',
+        'const cover = useUpload("post-cover");',
+        'const { uploading: busy } = useUpload("profile-avatar");',
+        'const once = useUpload("post-cover").uploading;',
+        'const migrated = useUpload("post-cover").isPending;',
+        "const ready = computed(() => !cover.uploading.value);",
+        "const other = { uploading: true };",
+        "const flag = other.uploading;",
+        "</script>",
+        "",
+        "<template>",
+        '  <input type="file" :disabled="uploading || busy || cover.uploading.value" @change="upload" />',
+        '  <progress v-if="cover.uploading.value" :value="progress ?? undefined" />',
+        "</template>",
+        "",
+      ];
+      const beforeComposable = ['export function useCover() {', '  const { upload, uploading } = useUpload("post-cover");', "", "  return { upload };", "}", ""];
+      writeFileSync(component, before.join("\n"));
+      writeFileSync(composable, beforeComposable.join("\n"));
+
+      const applied = await runCliAt(appDir, "upgrade", "--only", "upload-pending");
+
+      expect(applied.exitCode, applied.stderr).toBe(0);
+      expect(applied.stdout).toContain("updated: app/components/CoverUpload.vue\n");
+      expect(applied.stdout).toContain("updated: app/composables/use-cover.ts\n");
+      expect(stripAnsi(applied.stderr)).not.toContain("▲ ");
+      expect(readFileSync(component, "utf8")).toBe(
+        before
+          .map((line) =>
+            line
+              .replace("{ upload, uploading, progress }", "{ upload, isPending: uploading, progress }")
+              .replace("{ uploading: busy }", "{ isPending: busy }")
+              .replace('useUpload("post-cover").uploading', 'useUpload("post-cover").isPending')
+              .replaceAll("cover.uploading", "cover.isPending"),
+          )
+          .join("\n"),
+      );
+      expect(readFileSync(composable, "utf8")).toBe(beforeComposable.map((line) => line.replace("{ upload, uploading }", "{ upload, isPending }")).join("\n"));
+
+      const again = await runCliAt(appDir, "upgrade", "--only", "upload-pending");
+
+      expect(again.stdout).not.toContain("CoverUpload.vue");
+      expect(again.stdout).not.toContain("use-cover.ts");
+    }, 60000);
+
+    it("prints a destructured uploading with a default as a manual step and leaves it", async () => {
+      const appDir = scratchPlayground("upgrade-upload-pending-default");
+      const file = join(appDir, "app", "composables", "use-avatar.ts");
+      mkdirSync(join(appDir, "app", "composables"), { recursive: true });
+      const before = ['export function useAvatar() {', '  const { upload, uploading = false } = useUpload("profile-avatar");', "", "  return { upload, uploading };", "}", ""];
+      writeFileSync(file, before.join("\n"));
+
+      const applied = await runCliAt(appDir, "upgrade", "--only", "upload-pending");
+      const stderr = stripAnsi(applied.stderr);
+
+      expect(applied.exitCode, applied.stderr).toBe(0);
+      expect(stderr).toContain(
+        "▲ app/composables/use-avatar.ts:2: useUpload() returns isPending in place of uploading: rename this destructured uploading with its default by hand",
+      );
+      expect(stderr.match(/▲ /g)).toHaveLength(1);
+      expect(readFileSync(file, "utf8")).toBe(before.join("\n"));
+    }, 60000);
+  });
 });

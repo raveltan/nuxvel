@@ -11,6 +11,7 @@ import { notificationInput } from "./codemods/notification-input.ts";
 import { presenceParams } from "./codemods/presence-params.ts";
 import { removedGlobals } from "./codemods/removed-globals.ts";
 import { testAliases } from "./codemods/test-aliases.ts";
+import { uploadPending } from "./codemods/upload-pending.ts";
 import { useTrpc } from "./codemods/use-trpc.ts";
 
-export const codemods: Codemod[] = [testAliases, imports, useTrpc, invalidate, mutationOptions, audit, actionForm, actorArg, removedGlobals, definitionMethods, durations, presenceParams, notificationInput];
+export const codemods: Codemod[] = [testAliases, imports, useTrpc, invalidate, mutationOptions, audit, actionForm, actorArg, removedGlobals, definitionMethods, durations, presenceParams, notificationInput, uploadPending];

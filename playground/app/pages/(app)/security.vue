@@ -1,64 +1,11 @@
 <script setup lang="ts">
-type AuthSession = typeof authClient.$Infer.Session.session;
-
-const queryCache = useQueryCache();
-const requestFetch = useRequestFetch();
-
-const sessions = useQuery({
-  key: ["auth", "sessions"],
-  query: () => requestFetch<AuthSession[]>("/api/auth/list-sessions"),
-});
-
-const { mutate: revoke, isLoading: revoking } = useMutation({
-  mutation: async (token: string) => {
-    const { error } = await authClient.revokeSession({ token });
-
-    if (error) throw new Error(error.message ?? "Could not sign out that session");
-  },
-  onSettled: () => queryCache.invalidateQueries({ key: ["auth", "sessions"] }),
-});
-
-const newEmail = ref("");
-
-const {
-  mutate: changeEmail,
-  isLoading: changingEmail,
-  data: emailRequested,
-} = useMutation({
-  mutation: async (email: string) => {
-    const { error } = await authClient.changeEmail({ newEmail: email, callbackURL: "/security" });
-
-    if (error) throw new Error(error.message ?? "Could not change your email address");
-
-    return true;
-  },
-});
-
 const { user } = useUser();
+const { list: sessions, revoke } = useSessions();
+const changeEmail = useChangeEmail();
+const { enable, verify } = useTwoFactor();
+const newEmail = ref("");
 const password = ref("");
 const code = ref("");
-
-const {
-  mutate: enableTwoFactor,
-  data: setup,
-  isLoading: enabling,
-} = useMutation({
-  mutation: async (currentPassword: string) => {
-    const { data, error } = await authClient.twoFactor.enable({ password: currentPassword });
-
-    if (error || !("totpURI" in data)) throw new Error(error?.message ?? "Could not turn on two-factor sign-in");
-
-    return data;
-  },
-});
-
-const { mutate: confirmTwoFactor, isLoading: confirming } = useMutation({
-  mutation: async (totp: string) => {
-    const { error } = await authClient.twoFactor.verifyTotp({ code: totp });
-
-    if (error) throw new Error(error.message ?? "That code did not match");
-  },
-});
 </script>
 
 <template>
@@ -68,30 +15,33 @@ const { mutate: confirmTwoFactor, isLoading: confirming } = useMutation({
       <template #header>
         <h2 class="font-semibold">Email address</h2>
       </template>
-      <form class="flex gap-2" @submit.prevent="changeEmail(newEmail)">
+      <form class="flex gap-2" @submit.prevent="changeEmail.mutate(newEmail)">
         <UInput v-model="newEmail" type="email" aria-label="New email address" placeholder="New email address" class="flex-1" />
-        <UButton type="submit" label="Change" :loading="changingEmail" />
+        <UButton type="submit" label="Change" :loading="changeEmail.isLoading" />
       </form>
-      <p v-if="emailRequested" class="mt-2 text-sm text-muted">Open the link in the mail we sent you.</p>
+      <p v-if="changeEmail.error" class="mt-2 text-sm text-error">{{ changeEmail.error.message }}</p>
+      <p v-if="changeEmail.requested" class="mt-2 text-sm text-muted">Open the link in the mail we sent you.</p>
     </UCard>
     <UCard>
       <template #header>
         <h2 class="font-semibold">Two-factor sign-in</h2>
       </template>
       <p v-if="user?.twoFactorEnabled" class="text-sm">Two-factor sign-in is on.</p>
-      <form v-else-if="!setup" class="flex gap-2" @submit.prevent="enableTwoFactor(password)">
+      <form v-else-if="!enable.data" class="flex gap-2" @submit.prevent="enable.mutate(password)">
         <UInput v-model="password" type="password" aria-label="Current password" placeholder="Current password" class="flex-1" />
-        <UButton type="submit" label="Turn on" :loading="enabling" />
+        <UButton type="submit" label="Turn on" :loading="enable.isLoading" />
       </form>
       <div v-else class="space-y-3 text-sm">
         <p>Add this key to your authenticator app, then enter the code it shows.</p>
-        <code class="block break-all">{{ setup.totpURI }}</code>
-        <p>Keep these backup codes somewhere safe: {{ setup.backupCodes.join(", ") }}</p>
-        <form class="flex gap-2" @submit.prevent="confirmTwoFactor(code)">
+        <code class="block break-all">{{ enable.data.totpURI }}</code>
+        <p>Keep these backup codes somewhere safe: {{ enable.data.backupCodes.join(", ") }}</p>
+        <form class="flex gap-2" @submit.prevent="verify.mutate(code)">
           <UInput v-model="code" aria-label="Authentication code" autocomplete="one-time-code" class="flex-1" />
-          <UButton type="submit" label="Confirm" :loading="confirming" />
+          <UButton type="submit" label="Confirm" :loading="verify.isLoading" />
         </form>
+        <p v-if="verify.error" class="text-error">{{ verify.error.message }}</p>
       </div>
+      <p v-if="enable.error" class="mt-2 text-sm text-error">{{ enable.error.message }}</p>
     </UCard>
     <UCard>
       <template #header>
@@ -112,8 +62,8 @@ const { mutate: confirmTwoFactor, isLoading: confirming } = useMutation({
                 label="Sign out"
                 color="neutral"
                 variant="outline"
-                :loading="revoking"
-                @click="revoke(session.token)"
+                :loading="revoke.isLoading && revoke.variables === session.token"
+                @click="revoke.mutate(session.token)"
               />
             </li>
           </ul>

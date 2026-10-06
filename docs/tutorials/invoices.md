@@ -1292,42 +1292,21 @@ export const totpCodeInput = z.object({ code: z.string().trim().regex(/^\d{6}$/,
 export const createApiKeyInput = z.object({ name: z.string().trim().min(1, "Name the key").max(100) });
 ```
 
-The component calls the Better Auth client in three steps. `twoFactor.enable({ password })` checks the password and returns a TOTP URI and 10 backup codes. The page shows the key of the URI, and the user adds it to an authenticator app. `twoFactor.verifyTotp({ code })` with the first code from the app turns two-factor sign-in on. `twoFactor.disable({ password })` turns it off:
+`useTwoFactor()` has one mutation for each step. `enable.mutate(password)` checks the password and returns a TOTP URI and 10 backup codes. The page shows the key of the URI, and the user adds it to an authenticator app. `verify.mutate(code)` with the first code from the app turns two-factor sign-in on. `disable.mutate(password)` turns it off. Each mutation holds the refusal of Better Auth in its `error`:
 
 ```vue
 <!-- app/components/TwoFactorSettings.vue -->
 <script setup lang="ts">
 const { user } = useUser();
-const setup = ref<{ totpURI: string; backupCodes: string[] }>();
-const setupKey = computed(() => (setup.value ? new URL(setup.value.totpURI).searchParams.get("secret") : null));
+const { enable, verify, disable, backupCodes } = useTwoFactor();
+const setupKey = computed(() => (enable.data ? new URL(enable.data.totpURI).searchParams.get("secret") : null));
 
-const enableErrors = useFormErrors();
 const enableState = reactive({ password: "" });
-
-async function enable() {
-  enableErrors.clear();
-  const { data, error } = await authClient.twoFactor.enable(enableState);
-  if (error || !data || !("totpURI" in data)) return enableErrors.set(new Error(error?.message ?? "Could not turn on two-factor sign-in"));
-  setup.value = data;
-}
-
-const confirmErrors = useFormErrors();
 const confirmState = reactive({ code: "" });
-
-async function confirm() {
-  confirmErrors.clear();
-  const { error } = await authClient.twoFactor.verifyTotp(confirmState);
-  if (error) confirmErrors.set(new Error(error.message ?? "Could not check the code"));
-}
-
-const disableErrors = useFormErrors();
 const disableState = reactive({ password: "" });
 
-async function disable() {
-  disableErrors.clear();
-  const { error } = await authClient.twoFactor.disable(disableState);
-  if (error) return disableErrors.set(new Error(error.message ?? "Could not turn off two-factor sign-in"));
-  setup.value = undefined;
+async function turnOff() {
+  await disable.mutateAsync(disableState.password).then(enable.reset, () => {});
 }
 </script>
 
@@ -1336,48 +1315,48 @@ async function disable() {
     <h2 class="text-lg font-semibold">Two-factor sign-in</h2>
     <template v-if="user?.twoFactorEnabled">
       <p>Two-factor sign-in is on.</p>
-      <div v-if="setup">
+      <div v-if="backupCodes.length">
         <p class="text-sm">Keep these backup codes in a safe place. Each code works once.</p>
         <ul class="mt-2 grid grid-cols-2 gap-1 font-mono text-sm" aria-label="Backup codes">
-          <li v-for="code in setup.backupCodes" :key="code">{{ code }}</li>
+          <li v-for="code in backupCodes" :key="code">{{ code }}</li>
         </ul>
       </div>
-      <UForm :schema="passwordInput" :state="disableState" class="flex items-start gap-2" @submit="disable">
+      <UForm :schema="passwordInput" :state="disableState" class="flex items-start gap-2" @submit="turnOff">
         <UFormField name="password" label="Password" class="w-64">
           <UInput v-model="disableState.password" type="password" autocomplete="current-password" class="w-full" />
         </UFormField>
         <UButton type="submit" class="mt-6" color="neutral" variant="outline" label="Turn off" />
       </UForm>
-      <UAlert v-if="disableErrors.formError" role="alert" color="error" variant="subtle" :title="disableErrors.formError" />
+      <UAlert v-if="disable.error" role="alert" color="error" variant="subtle" :title="disable.error.message" />
     </template>
-    <template v-else-if="setup">
+    <template v-else-if="enable.data">
       <p class="text-sm">Add this key to your authenticator app, then enter the code that the app shows.</p>
       <UFormField label="Setup key" class="w-80">
         <UInput :model-value="setupKey ?? ''" readonly class="w-full font-mono" />
       </UFormField>
-      <UForm :schema="totpCodeInput" :state="confirmState" class="flex items-start gap-2" @submit="confirm">
+      <UForm :schema="totpCodeInput" :state="confirmState" class="flex items-start gap-2" @submit="verify.mutate(confirmState.code)">
         <UFormField name="code" label="Authentication code" class="w-64">
           <UInput v-model="confirmState.code" autocomplete="one-time-code" class="w-full" />
         </UFormField>
         <UButton type="submit" class="mt-6" label="Confirm" />
       </UForm>
-      <UAlert v-if="confirmErrors.formError" role="alert" color="error" variant="subtle" :title="confirmErrors.formError" />
+      <UAlert v-if="verify.error" role="alert" color="error" variant="subtle" :title="verify.error.message" />
     </template>
     <template v-else>
       <p class="text-sm">Ask for a code from an authenticator app at each sign-in.</p>
-      <UForm :schema="passwordInput" :state="enableState" class="flex items-start gap-2" @submit="enable">
+      <UForm :schema="passwordInput" :state="enableState" class="flex items-start gap-2" @submit="enable.mutate(enableState.password)">
         <UFormField name="password" label="Password" class="w-64">
           <UInput v-model="enableState.password" type="password" autocomplete="current-password" class="w-full" />
         </UFormField>
         <UButton type="submit" class="mt-6" label="Turn on" />
       </UForm>
-      <UAlert v-if="enableErrors.formError" role="alert" color="error" variant="subtle" :title="enableErrors.formError" />
+      <UAlert v-if="enable.error" role="alert" color="error" variant="subtle" :title="enable.error.message" />
     </template>
   </section>
 </template>
 ```
 
-A call of `authClient` that changes the session refreshes `useUser()`. So after the confirmation, `user.twoFactorEnabled` is `true`, and the component shows the backup codes. `useFormErrors()` shows the refusal of Better Auth above the button, as `<AuthForm>` does. See [Authentication: two-factor sign-in](../auth.md#two-factor-sign-in).
+Each mutation refreshes `useUser()`. So after the confirmation, `user.twoFactorEnabled` is `true`, and the component shows the backup codes. A refusal of Better Auth shows above the button, as in `<AuthForm>`. See [Authentication: two-factor sign-in](../auth.md#two-factor-sign-in).
 
 Put the component on a page. Chapter 13 adds the API keys to the same page:
 
