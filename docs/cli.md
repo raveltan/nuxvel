@@ -890,7 +890,7 @@ A generator lists each file that it wrote on stdout. Then it runs `nuxt prepare`
 
 When `nuxvel dev` runs in another terminal, a generator does not run `nuxt prepare`. It prints `○ Types update in the running nuxt dev (nuxt prepare skipped)`, and the dev server updates the types itself. A generator finds the dev server from the `nuxt.lock` file that Nuxt writes in `.nuxt`. `nuxvel dev` sets `NUXT_LOCK=1`, so Nuxt always writes this file.
 
-Most generators also write a functional test next to the file. The test passes with no change and typechecks. It imports its fixtures from `@nuxvel/nuxt/testing` and writes no files into the app.
+A generated file imports tables from `#nuxvel/schema`, factories from `#nuxvel/factories`, other server code from `#server/<path>` and shared code from `#shared/<path>`. It imports a file of the same folder, and a table or factory of its own kind (a schema file imports another schema file, a factory another factory), by a relative path. Most generators also write a functional test next to the file. The test passes with no change and typechecks. It imports its fixtures from `@nuxvel/nuxt/testing` and writes no files into the app.
 
 ### Names
 
@@ -1094,7 +1094,7 @@ nuxvel make:policy blog-post
 
 ```ts
 // server/policies/blog-post.policy.ts
-import { blogPostTable } from "../database/schema/blog-post.schema";
+import { blogPostTable } from "#nuxvel/schema";
 
 export const blogPostPolicy = definePolicy(blogPostTable, {});
 ```
@@ -1419,7 +1419,7 @@ nuxvel factory:sync         # every factory
 nuxvel factory:sync post   # the factory file post.factory.ts only, or post.ts
 ```
 
-`nuxvel factory:sync` adds values to the factories under `server/factories/` and `server/domains/<domain>/factories/`, in the app and in each module for the columns that became required after you wrote the factory. A column needs a value when it is `NOT NULL`, has no database default, and the factory does not cover it.
+`nuxvel factory:sync` adds values to the factories under `server/factories/` and `server/domains/<domain>/factories/`, in the app and in each module for the columns that became required after you wrote the factory. A column needs a value when it is `NOT NULL`, has no database default, and the factory does not cover it. The factory may import its table from `#nuxvel/schema` or from the schema file by a relative path.
 
 The command prints one line on stdout for each factory that it changes, for example `post.factory.ts: added slug, rank`. When no factory needs a change, stderr shows `✔ All factories are up to date`. A name that matches no factory file stops the command with exit code `1`.
 
@@ -1488,22 +1488,54 @@ A placeholder is written `{{name}}`. Start from a copy of the built-in template,
 | `make:page` | `page.vue.txt` |
 | `make:story` | `story.ts.txt` |
 
-### `nuxvel upgrade --dry-run`
+### `nuxvel upgrade`
 
 ```sh
-nuxvel upgrade --dry-run
+nuxvel upgrade [--dry-run] [--only <codemod>]
 ```
+
+Run `nuxvel upgrade` after `npm update @nuxvel/nuxt @nuxvel/cli`. It applies the codemods of the installed nuxvel: each one rewrites the code that a release changed, so the app takes the release without the hand steps of the [changelog](../CHANGELOG.md). It prints each file that it changes on stdout:
+
+```
+updated: package.json
+```
+
+| Codemod | Since | What it changes |
+| --- | --- | --- |
+| `test-aliases` | 0.3.0 | Adds `#nuxvel/schema`, `#nuxvel/factories`, `#server/*` and `#shared/*` to the `imports` of `package.json`, so tests can import them |
+
+The command runs every codemod, oldest first. A codemod changes only the code that still needs it, so a second run changes nothing and prints `✔ No codemod changed a file`. `--only <codemod>` runs one codemod. An unknown name exits `2` and lists the codemods.
+
+A codemod leaves code that it cannot rewrite safely as it is, and prints the file and line with the step to take by hand, on stderr:
+
+```
+▲ package.json:9: #server/* maps to "./src/server/*": map it to "./server/*" so tests can import it
+```
+
+`--dry-run` writes nothing. It prints what the codemods would change as a unified diff on stdout:
+
+```diff
+--- a/package.json
++++ b/package.json
+@@ -5,3 +5,7 @@
+   "imports": {
+-    "#nuxvel/test-namespaces": "./.nuxt/nuxvel/test-namespaces.mjs"
++    "#nuxvel/test-namespaces": "./.nuxt/nuxvel/test-namespaces.mjs",
++    "#nuxvel/schema": "./.nuxt/nuxvel/schema.ts",
++    "#nuxvel/factories": "./.nuxt/nuxvel/factories.ts",
++    "#server/*": "./server/*",
++    "#shared/*": "./shared/*"
+   },
+```
+
+Then it reports the generated files that you edited by hand:
 
 ```
 modified: server/policies/blog-post.policy.ts
 missing: server/actions/posts/create-post.action.ts
 ```
 
-nuxvel records each file that a `make:*` command writes in `.nuxvel/generated.json`. The record holds the template of the file, the version of that template, and a hash of what the command wrote. `upgrade --dry-run` hashes those files again and reports the ones that you edited since, or deleted.
-
-The list goes to stdout. When you edited nothing, stdout stays empty and stderr shows `✔ No generated files were hand-edited`.
-
-Only `--dry-run` works for now. Without it, the command exits `2`. A mode that applies template changes comes with the first template that changes.
+nuxvel records each file that a `make:*` command writes in `.nuxvel/generated.json`. The record holds the template of the file, the version of that template, and a hash of what the command wrote. `upgrade --dry-run` hashes those files again and reports the ones that you edited since, or deleted. When you edited nothing, stderr shows `✔ No generated files were hand-edited`.
 
 A `generated.json` that is not valid JSON, or that has an entry without its `template`, `templateVersion` and `hash`, stops the command. The error names the path, and the command exits `1`. `make:*` and `factory:sync` also update the file, and they fail the same way. Fix the entry, or delete the file to stop tracking what was generated so far.
 

@@ -3,7 +3,11 @@
   "type": "module",
   "private": true,
   "imports": {
-    "#nuxvel/test-namespaces": "./.nuxt/nuxvel/test-namespaces.mjs"
+    "#nuxvel/test-namespaces": "./.nuxt/nuxvel/test-namespaces.mjs",
+    "#nuxvel/schema": "./.nuxt/nuxvel/schema.ts",
+    "#nuxvel/factories": "./.nuxt/nuxvel/factories.ts",
+    "#server/*": "./server/*",
+    "#shared/*": "./shared/*"
   },
   "scripts": {
     "dev": "nuxvel dev",

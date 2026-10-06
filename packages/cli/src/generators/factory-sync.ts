@@ -45,7 +45,34 @@ export async function importTable(modulePath: string, exportName: string) {
   return is(table, PgTable) ? table : undefined;
 }
 
-async function loadTable(factoryPath: string, program: TSESTree.Program, identifier: string) {
+type SchemaFiles = () => Promise<string[]>;
+
+const schemaAlias = "#nuxvel/schema";
+
+function schemaFilesOf(cwd: string): SchemaFiles {
+  let files: Promise<string[]> | undefined;
+
+  return () => (files ??= loadAppLayout(cwd, ["database/schema"]).then((layout) => (layout.files["database/schema"] ?? []).sort()));
+}
+
+async function resolveTable(factoryPath: string, imported: { source: string; imported: string }, schemaFiles: SchemaFiles) {
+  if (imported.source !== schemaAlias) {
+    const modulePath = resolve(dirname(factoryPath), imported.source);
+
+    return { modulePath, table: await importTable(modulePath, imported.imported) };
+  }
+
+  for (const file of await schemaFiles()) {
+    const modulePath = file.replace(/\.ts$/, "");
+    const table = await importTable(modulePath, imported.imported);
+
+    if (table) return { modulePath, table };
+  }
+
+  return { modulePath: undefined, table: undefined };
+}
+
+async function loadTable(factoryPath: string, program: TSESTree.Program, identifier: string, schemaFiles: SchemaFiles) {
   const imported = importedNames(program).get(identifier);
 
   if (!imported) {
@@ -54,25 +81,20 @@ async function loadTable(factoryPath: string, program: TSESTree.Program, identif
     });
   }
 
-  const modulePath = resolve(dirname(factoryPath), imported.source);
-  const table = await importTable(modulePath, imported.imported);
+  const { modulePath, table } = await resolveTable(factoryPath, imported, schemaFiles);
 
-  if (!table) {
+  if (!table || !modulePath) {
     fail(`"${identifier}" exported by ${imported.source} is not a Drizzle table`, {
       hint: "Pass defineFactory the pgTable(...) the factory builds rows for",
     });
   }
 
-  return table;
+  return { table, modulePath };
 }
 
-function sanitizedHtmlKeys(factoryPath: string, program: TSESTree.Program, identifier: string) {
-  const imported = importedNames(program).get(identifier);
+function sanitizedHtmlKeys(modulePath: string) {
   const keys = new Set<string>();
-
-  if (!imported) return keys;
-
-  const source = readFileSync(`${resolve(dirname(factoryPath), imported.source)}.ts`, "utf-8");
+  const source = readFileSync(`${modulePath}.ts`, "utf-8");
 
   eachNode(parseSource(source), (node) => {
     if (node.type !== "Property" || node.computed || node.key.type !== "Identifier") return;
@@ -96,7 +118,7 @@ function exportedFactory(program: TSESTree.Program) {
 
 const factoryGlobs = ["factories/*.ts", "domains/*/factories/**/*.factory.ts"];
 
-async function indexFactories(files: string[]) {
+async function indexFactories(files: string[], schemaFiles: SchemaFiles) {
   const indexed: IndexedFactory[] = [];
 
   for (const file of files) {
@@ -104,16 +126,16 @@ async function indexFactories(files: string[]) {
     const call = findFactoryCall(program);
     const name = exportedFactory(program);
 
-    if (call && name) indexed.push({ table: await loadTable(file, program, call.table.name), file, name });
+    if (call && name) indexed.push({ table: (await loadTable(file, program, call.table.name, schemaFiles)).table, file, name });
   }
 
   return indexed;
 }
 
-export async function indexAppFactories(serverDir: string) {
+export async function indexAppFactories(serverDir: string, cwd: string) {
   const files = await glob(factoryGlobs, { cwd: serverDir });
 
-  return indexFactories(files.sort().map((file) => join(serverDir, file)));
+  return indexFactories(files.sort().map((file) => join(serverDir, file)), schemaFilesOf(cwd));
 }
 
 function foreignFactories(table: PgTable, factories: IndexedFactory[], factoryPath: string) {
@@ -159,14 +181,14 @@ function refreshManifestEntry(cwd: string, factoryPath: string, before: string, 
   writeManifest(cwd, { ...manifest, [key]: { ...entry, hash: hash(after) } });
 }
 
-async function syncFactoryFile(cwd: string, factoryPath: string, factories: () => Promise<IndexedFactory[]>) {
+async function syncFactoryFile(cwd: string, factoryPath: string, factories: () => Promise<IndexedFactory[]>, schemaFiles: SchemaFiles) {
   const source = readFileSync(factoryPath, "utf-8");
   const program = parseSource(source);
   const call = findFactoryCall(program);
 
   if (!call) return [];
 
-  const table = await loadTable(factoryPath, program, call.table.name);
+  const { table, modulePath } = await loadTable(factoryPath, program, call.table.name, schemaFiles);
   const existing = definedKeys(call.definition);
   const missing = Object.entries(getTableColumns(table)).filter(([key, column]) => column.notNull && !column.hasDefault && !existing.has(key));
 
@@ -175,7 +197,7 @@ async function syncFactoryFile(cwd: string, factoryPath: string, factories: () =
   const foreign = getTableConfig(table).foreignKeys.length > 0 ? foreignFactories(table, await factories(), factoryPath) : new Map();
   const imported = importedNames(program);
   const imports = new Set<string>();
-  const sanitized = sanitizedHtmlKeys(factoryPath, program, call.table.name);
+  const sanitized = sanitizedHtmlKeys(modulePath);
   const entries = missing.map(([key, column]) => {
     const reference = foreign.get(column);
 
@@ -204,6 +226,7 @@ async function syncFactoryFile(cwd: string, factoryPath: string, factories: () =
 }
 
 export async function syncFactories(name: string | undefined, cwd: string) {
+  const schemaFiles = schemaFilesOf(cwd);
   const layout = await loadAppLayout(cwd, ["factories"]);
   const all = (layout.files.factories ?? []).sort();
   const files = name ? all.filter((file) => [`${name}.factory.ts`, `${name}.ts`].includes(basename(file))) : all;
@@ -214,10 +237,10 @@ export async function syncFactories(name: string | undefined, cwd: string) {
   }
 
   let index: Promise<IndexedFactory[]> | undefined;
-  const factories = () => (index ??= indexFactories(all));
+  const factories = () => (index ??= indexFactories(all, schemaFiles));
 
   for (const file of files) {
-    const columns = await syncFactoryFile(cwd, file, factories);
+    const columns = await syncFactoryFile(cwd, file, factories, schemaFiles);
     const serverDir = layout.serverDirs.find((dir) => file.startsWith(`${dir}${sep}`)) ?? layout.serverDir;
 
     if (columns.length > 0) synced.push({ file: relative(serverDir, file).replace(/^factories\//, ""), columns });

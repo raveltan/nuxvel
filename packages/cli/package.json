@@ -52,6 +52,7 @@
     "citty": "^0.2.2",
     "consola": "^3.4.2",
     "detect-libc": "^2.1.2",
+    "diff": "^8.0.4",
     "drizzle-orm": "^0.45.2",
     "drizzle-seed": "^0.3.1",
     "eslint": "^10.11.0",

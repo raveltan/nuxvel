@@ -385,7 +385,13 @@ describe("create-nuxvel", () => {
 
       const manifest = JSON.parse(readFileSync(join(appDir, "package.json"), "utf8"));
       expect(manifest.name).toBe("my-app");
-      expect(manifest.imports).toEqual({ "#nuxvel/test-namespaces": "./.nuxt/nuxvel/test-namespaces.mjs" });
+      expect(manifest.imports).toEqual({
+        "#nuxvel/test-namespaces": "./.nuxt/nuxvel/test-namespaces.mjs",
+        "#nuxvel/schema": "./.nuxt/nuxvel/schema.ts",
+        "#nuxvel/factories": "./.nuxt/nuxvel/factories.ts",
+        "#server/*": "./server/*",
+        "#shared/*": "./shared/*",
+      });
       expect(readFileSync(join(appDir, "tests", "tsconfig.json"), "utf8")).toContain('"extends": "../.nuxt/tsconfig.server.json"');
       expect(readFileSync(join(appDir, "tests", "tsconfig.json"), "utf8")).toContain('"../.nuxt/types/typed-router.d.ts"');
       expect(readFileSync(join(appDir, "tsconfig.json"), "utf8")).toContain('"path": "./tests"');

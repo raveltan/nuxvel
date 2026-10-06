@@ -359,11 +359,11 @@ describe("nuxvel make:* output running in an app", () => {
 
   it("make:resource and make:router --crud write the user data declaration, so test:arch passes", () => {
     expect(source("server/privacy/invoice.user-data.ts")).toBe(
-      'import { invoiceTable } from "../database/schema/invoice.schema";\n\nexport const invoiceUserData = defineUserData(invoiceTable, invoiceTable.ownerId);\n',
+      'import { invoiceTable } from "#nuxvel/schema";\n\nexport const invoiceUserData = defineUserData(invoiceTable, invoiceTable.ownerId);\n',
     );
     expect(source("server/privacy/widget-item.user-data.ts")).toContain("defineUserData(widgetItemTable, widgetItemTable.ownerId)");
     expect(source("server/privacy/crate.user-data.ts")).toContain(
-      'from "../domains/parcel/schema/crate.schema"',
+      'from "#nuxvel/schema"',
     );
     expect(arch.exitCode, `${arch.stdout}${arch.stderr}`).toBe(0);
   });
@@ -424,7 +424,7 @@ describe("nuxvel make:* output running in an app", () => {
 
     expect(source(`${module}/domains/payment/jobs/charge.job.ts`)).toContain("export const paymentChargeJob = defineJob({");
     expect(source(`${module}/notifications/shipment/returned.notification.test.ts`)).toContain(
-      'import { userTable } from "../../../../../server/database/schema/auth.schema";',
+      'import { userTable } from "#nuxvel/schema";',
     );
     expectAppTestPassed(`${module}/domains/payment/jobs/charge.job.test.ts`);
     expectAppTestPassed(`${module}/notifications/shipment/returned.notification.test.ts`);
@@ -440,15 +440,15 @@ describe("nuxvel make:* output running in an app", () => {
     expect(source(`${domain}/actions/cancel-parcel.action.ts`)).toContain("export const cancelParcelAction = defineAction(");
     expect(source(`${domain}/jobs/notify-courier.job.ts`)).toContain("export const parcelNotifyCourierJob = defineJob({");
     expect(source(`${domain}/listeners/log-dispatch.listener.ts`)).toContain(
-      'import { parcelDispatchedEvent } from "../events/dispatched.event";',
+      'import { parcelDispatchedEvent } from "#server/domains/parcel/events/dispatched.event";',
     );
-    expect(source(`${domain}/factories/courier.factory.ts`)).toContain('import { courierTable } from "../schema/courier.schema";');
-    expect(source(`${domain}/policies/courier.policy.ts`)).toContain('import { courierTable } from "../schema/courier.schema";');
+    expect(source(`${domain}/factories/courier.factory.ts`)).toContain('import { courierTable } from "#nuxvel/schema";');
+    expect(source(`${domain}/policies/courier.policy.ts`)).toContain('import { courierTable } from "#nuxvel/schema";');
     expect(source(`${domain}/policies/courier.policy.ts`)).toContain("export const parcelCourierPolicy = definePolicy(");
     expect(source("server/domains/depot/policies/depot.policy.ts")).toContain("export const depotPolicy = definePolicy(");
-    expect(source(`${domain}/routers/crate.router.ts`)).toContain('import { createCrateAction } from "../actions/create-crate.action";');
+    expect(source(`${domain}/routers/crate.router.ts`)).toContain('import { createCrateAction } from "#server/domains/parcel/actions/create-crate.action";');
     expect(source(`${domain}/routers/crate.router.ts`)).toContain("export const parcelCrateRouter = {");
-    expect(source(`${domain}/actions/update-crate.action.ts`)).toContain('import { crateTable } from "../schema/crate.schema";');
+    expect(source(`${domain}/actions/update-crate.action.ts`)).toContain('import { crateTable } from "#nuxvel/schema";');
     expect(source(`${domain}/routers/crate.router.test.ts`)).toContain("actingAs(owner).trpc.parcel.crate.list()");
 
     for (const file of [
@@ -466,7 +466,7 @@ describe("nuxvel make:* output running in an app", () => {
   it("make:backfill's generated test passes unmodified against the generated backfill", () => {
     const backfill = source("server/database/backfills/posts/fill-slugs.backfill.ts");
 
-    expect(backfill).toContain('import { postsTable } from "../../schema/posts.schema";');
+    expect(backfill).toContain('import { postsTable } from "#nuxvel/schema";');
     expect(backfill).toContain("export const postsFillSlugsBackfill = defineBackfill({");
     expect(backfill).not.toContain("name:");
     expect(backfill).toContain("table: postsTable,");
@@ -492,7 +492,7 @@ describe("nuxvel make:* output running in an app", () => {
       [
         'import { faker } from "@faker-js/faker";',
         'import { defineFactory } from "@nuxvel/nuxt/factories";',
-        'import { flagExposuresTable } from "../database/schema/flag-exposures.schema";',
+        'import { flagExposuresTable } from "#nuxvel/schema";',
         "",
         "export const flagExposuresFactory = defineFactory(flagExposuresTable, {",
         "  name: () => faker.person.fullName(),",
@@ -541,7 +541,7 @@ describe("nuxvel make:* output running in an app", () => {
     expect(source("server/events/shipment/published.event.ts")).toContain("export const shipmentPublishedEvent = defineEvent({");
     expect(source("server/events/shipment/published.event.ts")).not.toContain("name:");
     expect(source("server/listeners/shipment/notify.listener.ts")).toContain(
-      'import { shipmentPublishedEvent } from "../../events/shipment/published.event";',
+      'import { shipmentPublishedEvent } from "#server/events/shipment/published.event";',
     );
     expect(source("server/listeners/shipment/notify.listener.ts")).toContain("export const shipmentNotifyListener = defineListener({");
     expectAppTestPassed("server/events/shipment/published.event.test.ts");
@@ -593,7 +593,7 @@ describe("nuxvel make:* output running in an app", () => {
   it("make:resource reuses the app factory of a referenced table, so a required reference of that table gets a real row", () => {
     const test = source("server/trpc/routers/bin.router.test.ts");
 
-    expect(test).toContain('import { rackFactory } from "../../factories/rack.factory";\n');
+    expect(test).toContain('import { rackFactory } from "#nuxvel/factories";\n');
     expect(test).not.toContain("defineFactory(rackTable");
     expect(source("server/factories/rack.factory.ts")).toContain("  widgetId: async () => (await widgetFactory()).id,\n");
     expectAppTestPassed("server/trpc/routers/bin.router.test.ts");

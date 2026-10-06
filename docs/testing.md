@@ -283,8 +283,8 @@ Use one shard for each machine. Each shard builds the app for tests, and the tes
 // tests/functional/posts.test.ts
 import { actingAs, expect, expectRow } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { postTable } from "../../server/database/schema/post.schema";
-import { userFactory } from "../../server/factories/users.factory";
+import { userFactory } from "#nuxvel/factories";
+import { postTable } from "#nuxvel/schema";
 
 describe("posts", () => {
   it("creates a post", async () => {
@@ -299,6 +299,8 @@ describe("posts", () => {
 ```
 
 Put tests in `tests/functional/`, or next to the server file they cover.
+
+Import tables from `#nuxvel/schema`, factories from `#nuxvel/factories`, server files from `#server/<path>` and shared files from `#shared/<path>`, never through `../`. The `imports` field in the starter's `package.json` maps these specifiers for Vitest, so a test file can import them wherever it is. An app made before 0.3.0 gets the field from [`nuxvel upgrade`](./cli.md#nuxvel-upgrade).
 
 Import `expect` from `@nuxvel/nuxt/testing`, never from `vitest`. It checks a Playwright `Locator` or `Page` with the Playwright `expect`, and any other value with the Vitest `expect`. Import `describe`, `it`, `vi` and the hooks from `vitest`. In a story, import `expect` from `@nuxvel/nuxt/storybook/test`.
 

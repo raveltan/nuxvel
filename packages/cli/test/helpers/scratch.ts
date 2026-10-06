@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, symlinkSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -79,6 +79,12 @@ export function copyPlayground(dir: string) {
 export function addTemplateTestSetup(appDir: string) {
   cpSync(join(templateDir, "vitest.config.ts"), join(appDir, "vitest.config.ts"));
   cpSync(join(templateDir, "tests", "setup"), join(appDir, "tests", "setup"), { recursive: true });
+
+  const templateImports = JSON.parse(readFileSync(join(templateDir, "package.json"), "utf-8")).imports;
+  const manifestPath = join(appDir, "package.json");
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
+
+  writeFileSync(manifestPath, `${JSON.stringify({ ...manifest, imports: { ...manifest.imports, ...templateImports } }, null, 2)}\n`);
 }
 
 export function directorySnapshot(dir: string) {

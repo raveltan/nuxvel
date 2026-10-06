@@ -6,6 +6,7 @@ import { functionalPageHtml } from "./rules/functional-page-html";
 import { listenerEmitLoop } from "./rules/listener-emit-loop";
 import { moduleImports } from "./rules/module-imports";
 import { noAuditReads } from "./rules/no-audit-reads";
+import { noParentImports } from "./rules/no-parent-imports";
 import { noRawVHtml } from "./rules/no-raw-v-html";
 import { routeWrites } from "./rules/route-writes";
 import { routerDbWrites } from "./rules/router-db-writes";
@@ -65,8 +66,13 @@ const TEST_FILES = ["tests/**/*.ts", "server/**/*.test.ts", "app/**/*.stories.ts
  * `nuxvel/translation-keys` wants each literal key of `$t`, `$ts`, `$tc`,
  * `t`, `ts`, `tc` and `<i18n-t keypath>` in a translation file of the
  * default locale; it checks nothing until its `keys` option lists the
- * known keys, which `nuxvel test:arch` passes. Use it through
- * {@link architecture}.
+ * known keys, which `nuxvel test:arch` passes.
+ * `nuxvel/no-parent-imports` wants an alias (`#nuxvel/schema`,
+ * `#nuxvel/factories`, `#server/*`, `#shared/*`, `~/*`, `#layers/<name>/*`)
+ * for an import that climbs with `../` out of its kind folder into another
+ * one, and fixes it; its `allow` option lists globs of targets a relative
+ * import may reach. {@link architecture} leaves it out for now. Use the
+ * plugin through {@link architecture}.
  */
 export const nuxvelPlugin: ESLint.Plugin = {
   meta: { name: "nuxvel" },
@@ -78,6 +84,7 @@ export const nuxvelPlugin: ESLint.Plugin = {
     "listener-emit-loop": listenerEmitLoop,
     "module-imports": moduleImports,
     "no-audit-reads": noAuditReads,
+    "no-parent-imports": noParentImports,
     "no-raw-v-html": noRawVHtml,
     "route-writes": routeWrites,
     "router-db-writes": routerDbWrites,

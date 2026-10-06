@@ -276,7 +276,7 @@ async function resolveReference(paths: AppPaths, target: string, domain: string 
 
 export async function withReferences(fields: Field[], paths: AppPaths, domain?: string) {
   let index: AppFactories | undefined;
-  const factories = () => (index ??= indexAppFactories(paths.serverDir));
+  const factories = () => (index ??= indexAppFactories(paths.serverDir, paths.rootDir));
 
   return Promise.all(
     fields.map(async (field) => (field.target ? { ...field, reference: await resolveReference(paths, field.target, domain, factories) } : field)),

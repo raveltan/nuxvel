@@ -221,7 +221,7 @@ describe("nuxvel make:* generators", () => {
     expect(exitCode).toBe(0);
 
     const policyFile = readFileSync(join(fixtureCwd, "server", "policies", "widget-item.policy.ts"), "utf-8");
-    expect(policyFile).toContain('import { widgetItemTable } from "../database/schema/widget-item.schema";');
+    expect(policyFile).toContain('import { widgetItemTable } from "#nuxvel/schema";');
     expect(policyFile).toContain("export const widgetItemPolicy = definePolicy(widgetItemTable, {});");
   });
 
@@ -870,7 +870,7 @@ export default defineDeploy({
       "utf-8",
     );
     expect(createFile).toContain("export const createWidgetItemAction = defineAction({");
-    expect(createFile).toContain('import { widgetItemTable } from "../../database/schema/widget-item.schema";');
+    expect(createFile).toContain('import { widgetItemTable } from "#nuxvel/schema";');
     expect(createFile).toContain('import { createWidgetItemInput } from "#shared/schemas/widget-item";');
     expect(createFile).toContain('await audit("widget-item.created", row);');
 
@@ -1094,7 +1094,7 @@ export default defineDeploy({
       "if (Object.keys(fields).length === 0) return row;",
     );
     const createTask = readFileSync(join(fixtureCwd, "server", "actions", "task", "create-task.action.ts"), "utf-8");
-    expect(createTask).toContain('import { projectTable } from "../../database/schema/project.schema";\n');
+    expect(createTask).toContain('import { projectTable } from "#nuxvel/schema";\n');
     expect(createTask).toContain(
       "    await useDb()\n      .select()\n      .from(projectTable)\n      .where(and(eq(projectTable.id, input.projectId), eq(projectTable.ownerId, ctx.actor.userId ?? ctx.actor.id)))\n      .then(firstOrFail);\n\n    const row",
     );
@@ -1104,7 +1104,7 @@ export default defineDeploy({
     );
 
     const testFile = readFileSync(join(fixtureCwd, "server", "trpc", "routers", "task.router.test.ts"), "utf-8");
-    expect(testFile).toContain('import { projectTable } from "../../database/schema/project.schema";\n');
+    expect(testFile).toContain('import { projectTable } from "#nuxvel/schema";\n');
     expect(testFile).toContain(
       "const projectFactory = defineFactory(projectTable, {\n  ownerId: async () => (await userFactory()).id,\n});\n",
     );
@@ -1159,11 +1159,6 @@ export default defineDeploy({
     expect(unparsable.exitCode).toBe(1);
     expect(unparsable.stderr).toContain(`${manifest} is not valid JSON`);
     expect(stripAnsi(unparsable.stderr)).toContain("→ Fix the file, or delete it");
-
-    const notDryRun = await runCliAt(fixtureCwd, "upgrade");
-
-    expect(notDryRun.exitCode).toBe(2);
-    expect(stripAnsi(notDryRun.stderr)).toContain("→ Run nuxvel upgrade --dry-run");
   });
 
   it("a generator prints why nuxt prepare failed and exits non-zero", async () => {
@@ -1221,7 +1216,7 @@ export default defineDeploy({
     expect(definition).toContain("export const postPublishedNotification = defineNotification({");
     expect(definition).toContain('via: ["database"],');
     expect(definition).toContain('toDatabase: ({ message }) => ({ title: "Post published", body: message }),');
-    expect(test).toContain('import { userTable } from "../../database/schema/auth.schema";');
+    expect(test).toContain('import { userTable } from "#nuxvel/schema";');
     expect(test).toContain('await sendNotification(recipient, "post.published", { message: "Hello" });');
 
     const rejected = await runCliAt(fixtureCwd, "make:notification", "Post.published");
@@ -1248,7 +1243,7 @@ export default defineDeploy({
       "export const orderShippedNotification = defineNotification({",
     );
     expect(readFileSync(join(domainDir, "shipped.notification.test.ts"), "utf8")).toContain(
-      'import { userTable } from "../../../database/schema/auth.schema";',
+      'import { userTable } from "#nuxvel/schema";',
     );
 
     const badDomain = await runCliAt(fixtureCwd, "make:notification", "shipped", "--domain", "Order");
@@ -1274,7 +1269,7 @@ export default defineDeploy({
 
     expect(exitCode, stderr).toBe(0);
     expect(readFileSync(join(fixtureCwd, "server", "domains", "link", "backfills", "fill-slugs.backfill.ts"), "utf8")).toContain(
-      'from "../schema/link.schema"',
+      'from "#nuxvel/schema"',
     );
   });
 
@@ -1372,7 +1367,7 @@ export default defineDeploy({
     expect(existsSync(join(domain, "routers", "crate.router.ts"))).toBe(true);
     expect(existsSync(join(fixtureCwd, "server", "database", "schema", "crate.schema.ts"))).toBe(false);
     expect(readFileSync(join(fixtureCwd, "server", "privacy", "crate.user-data.ts"), "utf8")).toContain(
-      'from "../domains/parcel/schema/crate.schema"',
+      'from "#nuxvel/schema"',
     );
   });
 
@@ -1557,6 +1552,47 @@ export default defineDeploy({
 
     expect(missing.exitCode).toBe(1);
     expect(stripAnsi(missing.stderr)).toContain('No factory named "gizmo"');
+  });
+
+  it("factory:sync finds the table a factory imports from #nuxvel/schema among the schema files", async () => {
+    const fixtureCwd = scratchDir("factory-sync-alias");
+
+    buildNuxtFixture(fixtureCwd);
+    mkdirSync(join(fixtureCwd, "server", "database", "schema"), { recursive: true });
+    mkdirSync(join(fixtureCwd, "server", "factories"), { recursive: true });
+
+    for (const table of ["gadget", "widget"]) {
+      writeFileSync(
+        join(fixtureCwd, "server", "database", "schema", `${table}.schema.ts`),
+        [
+          'import { pgTable, serial, text } from "drizzle-orm/pg-core";',
+          "",
+          `export const ${table} = pgTable("${table}", {`,
+          '  id: serial("id").primaryKey(),',
+          '  slug: text("slug").notNull(),',
+          "});",
+          "",
+        ].join("\n"),
+      );
+    }
+
+    const factoryPath = join(fixtureCwd, "server", "factories", "widget.factory.ts");
+    writeFileSync(
+      factoryPath,
+      [
+        'import { defineFactory } from "@nuxvel/nuxt/factories";',
+        'import { widget } from "#nuxvel/schema";',
+        "",
+        "export const widgetFactory = defineFactory(widget);",
+        "",
+      ].join("\n"),
+    );
+
+    const { stdout, exitCode } = await runCliAt(fixtureCwd, "factory:sync", "widget");
+
+    expect(exitCode).toBe(0);
+    expect(stdout).toBe("widget.factory.ts: added slug\n");
+    expect(readFileSync(factoryPath, "utf-8")).toContain("  slug: () => faker.lorem.slug(),");
   });
 
   it("factory:sync writes sanitizeHtml for a SanitizedHtml column and the scratch app typechecks", async () => {
