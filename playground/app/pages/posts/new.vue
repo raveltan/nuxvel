@@ -1,13 +1,12 @@
 <script setup lang="ts">
 definePageMeta({ middleware: "auth", layout: "app" });
 
-const trpc = useTRPC();
 const queryCache = useQueryCache();
 
-const form = useActionForm(createPostInput, trpc.post.create.mutationOptions(), {
+const form = useActionForm(createPostInput, $api.post.create.mutationOptions(), {
   defaults: { title: "", body: "" },
   onSuccess: async () => {
-    await queryCache.invalidateQueries({ key: trpc.post.key() });
+    await queryCache.invalidateQueries({ key: $api.post.key() });
     await navigateTo({ name: "posts" });
   },
 });

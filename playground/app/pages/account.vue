@@ -1,7 +1,7 @@
 <script setup lang="ts">
 definePageMeta({ middleware: "auth", layout: "app" });
 
-const posts = useQuery(useTRPC().account.posts.queryOptions());
+const posts = $api.account.posts.useQuery();
 
 const columns = [
   { accessorKey: "createdAt", header: "Written" },

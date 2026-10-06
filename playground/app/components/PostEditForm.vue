@@ -1,17 +1,16 @@
 <script setup lang="ts">
 const props = defineProps<{ post: RouterOutputs["post"]["byId"] }>();
 
-const trpc = useTRPC();
 const queryCache = useQueryCache();
 
 const form = useActionForm(
   updatePostInput,
-  toasted(trpc.post.update.mutationOptions(), "Post saved"),
+  toasted($api.post.update.mutationOptions(), "Post saved"),
   {
     defaults: { id: props.post.id, title: props.post.title, body: props.post.body },
     failures: { "post.body-empty": "body" },
     onSuccess: async () => {
-      await queryCache.invalidateQueries({ key: trpc.post.key() });
+      await queryCache.invalidateQueries({ key: $api.post.key() });
       await navigateTo({ name: "posts" });
     },
   },
