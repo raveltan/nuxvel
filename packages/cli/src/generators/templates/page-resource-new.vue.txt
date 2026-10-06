@@ -10,7 +10,6 @@ const form = useActionForm(create{{tablePascalName}}Input, $api.{{tableCamelName
       { key: $api.{{tableCamelName}}.list.key() },
       (list) => list && { ...list, rows: [created, ...list.rows], total: list.total + 1 },
     );
-    queryCache.invalidateQueries({ key: $api.{{tableCamelName}}.key() });
     await navigateTo({ name: "{{tableName}}" });
   },
 });

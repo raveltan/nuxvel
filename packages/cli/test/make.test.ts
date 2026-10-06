@@ -1046,12 +1046,14 @@ export default defineDeploy({
     expect(newPage).toContain('await navigateTo({ name: "widget-item" });');
     expect(list).toContain('<WidgetItemForm :key="data.id" :row="data" @saved="closeEdit" />');
     expect(newPage).toContain("(list) => list && { ...list, rows: [created, ...list.rows], total: list.total + 1 },");
+    expect(newPage).not.toContain("invalidateQueries");
     const form = readFileSync(join(fixtureCwd, "components", "WidgetItemForm.vue"), "utf-8");
     expect(form).toContain(
       "defaults: { id: props.row.id, notes: props.row.notes, done: props.row.done, count: props.row.count, status: props.row.status, dueAt: props.row.dueAt, name: props.row.name },",
     );
     expect(form).toContain("(list) => list && { ...list, rows: list.rows.map((row) => (row.id === saved.id ? saved : row)) },");
     expect(form).not.toContain("navigateTo");
+    expect(form).not.toContain("invalidateQueries");
     expect(readFileSync(join(fixtureCwd, "shared", "schemas", "widget-item.ts"), "utf-8")).toContain(
       "export const widgetItemListColumns = {\n" +
         '  sort: ["id", "notes", "done", "count", "status", "dueAt", "name", "createdAt", "updatedAt"],\n' +

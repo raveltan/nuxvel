@@ -76,6 +76,9 @@ applies each step below that names a codemod.
   runs `useMutation()` and returns its result wrapped in `reactive()`.
 - The pages and the form that `make:resource --ui` writes read the API
   through `$api` and `.useQuery()`, in place of `useTRPC()`.
+- The new page and the form that `make:resource --ui` writes no longer
+  invalidate the queries of the resource: the client does it after the
+  mutation.
 - `nuxvel upgrade --only use-trpc` replaces `useTRPC()` with `$api`: a
   `const` bound to `useTRPC()` goes, and each use of it becomes `$api`.
 - The `use-trpc` codemod also turns `useQuery($api.<path>.queryOptions(input))`

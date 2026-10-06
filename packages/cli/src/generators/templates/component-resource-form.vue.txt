@@ -11,7 +11,6 @@ const form = useActionForm(update{{tablePascalName}}Input, $api.{{tableCamelName
       { key: $api.{{tableCamelName}}.list.key() },
       (list) => list && { ...list, rows: list.rows.map((row) => (row.id === saved.id ? saved : row)) },
     );
-    queryCache.invalidateQueries({ key: $api.{{tableCamelName}}.key() });
     emit("saved");
   },
 });
