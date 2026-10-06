@@ -1,5 +1,6 @@
 import { useNuxtApp } from "#app";
 import type { AppTRPC } from "./app-trpc";
+import { PROCEDURE_PATH } from "./options-proxy";
 
 function childOf(node: unknown, segment: string): unknown {
   return (typeof node === "object" || typeof node === "function") && node !== null
@@ -11,6 +12,7 @@ function apiPath(path: string[]): unknown {
   return new Proxy(() => {}, {
     get: (_target, prop) => {
       if (prop === "__v_skip") return true;
+      if (prop === PROCEDURE_PATH) return path.join(".");
       if (typeof prop !== "string" || prop === "then" || prop === "toJSON" || prop.startsWith("__v_")) return undefined;
       return apiPath([...path, prop]);
     },
@@ -34,7 +36,8 @@ function apiPath(path: string[]): unknown {
  * middleware. Every query has `useQuery(input, options?)`, `query(input)`,
  * `queryOptions(input)` and `key(input?)`, every mutation
  * `useMutation(options?)`, `mutate(input)` and `mutationOptions()`, and
- * every namespace `key()`. Keys start with `"trpc"`.
+ * every namespace `key()`. Keys start with `"trpc"`. Pass a mutation
+ * to `useActionForm()` for a form.
  *
  * @example
  * ```ts

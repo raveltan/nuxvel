@@ -193,7 +193,7 @@ import { productTable } from "#nuxvel/schema";
 export const createProductAction = defineAction({
   input: createProductInput,
   errors: {
-    "product.needs-image": "Add an image before you publish the product",
+    "product.needs-image": { message: "Add an image before you publish the product", field: "imageKey" },
   },
   handler: async ({ imageKey, ...input }, ctx, fail) => {
     if (input.published && !imageKey) fail("product.needs-image");
@@ -627,9 +627,8 @@ The new page has a form with one control of each Nuxt UI kind. The controls are 
 <script setup lang="ts">
 const emit = defineEmits<{ created: [product: { id: number }] }>();
 
-const form = useActionForm(createProductInput, $api.product.create.mutationOptions(), {
+const form = useActionForm($api.product.create, {
   defaults: { name: "", description: "", price: undefined, category: undefined, published: false, launchOn: undefined, imageKey: "" },
-  failures: { "product.needs-image": "imageKey" },
   onSuccess: (product) => emit("created", product),
 });
 
@@ -672,8 +671,8 @@ const categories = [
 </template>
 ```
 
-- `useActionForm(createProductInput, ...)` checks the state with the shared schema before it sends anything. Each message shows under the `<UFormField>` of its field. See [Frontend: forms](../frontend.md#forms).
-- `failures` maps the code of the action's `fail()` to the `imageKey` field. The `<UFormField>` inside `<UploadField>` shows the message, because `field="imageKey"` gives it the field name.
+- `useActionForm($api.product.create, ...)` checks the state with the shared schema of the action before it sends anything. Each message shows under the `<UFormField>` of its field. See [Frontend: forms](../frontend.md#forms).
+- The `field` of `product.needs-image` in the action puts its message under the `imageKey` field. The `<UFormField>` inside `<UploadField>` shows the message, because `field="imageKey"` gives it the field name.
 - `eager-validation` on the name field checks the name while the user types, not only after the field loses focus.
 - The price has a help button in a `UTooltip`. An icon button has no text, so `aria-label` gives it a name.
 - This tutorial was not run again in its app after `field` was added to `<UploadField>`.
@@ -780,7 +779,7 @@ export const NameTaken: Story = {
 
 export const NeedsAnImage: Story = {
   parameters: {
-    msw: [mockTrpc({ product: { create: () => { throw new ActionError("product.needs-image", "Add an image before you publish the product"); } } })],
+    msw: [mockTrpc({ product: { create: () => { throw new ActionError("product.needs-image", "Add an image before you publish the product", "product.create-product", "imageKey"); } } })],
   },
   play: async () => {
     await fillForm(page, { ...draft, Published: true });
@@ -814,7 +813,7 @@ export const TooManyProducts: Story = {
 | Story | Error | Where the message shows |
 |---|---|---|
 | `NameTaken` | `ConflictError(message, { field: "name" })`, as the unique name gives | under **Name** |
-| `NeedsAnImage` | `ActionError("product.needs-image", message)`, as `fail()` gives | under the image field, through `failures` |
+| `NeedsAnImage` | `ActionError("product.needs-image", message, action, "imageKey")`, as `fail()` gives | under the image field, through the `field` of the failure |
 | `TooManyProducts` | `RateLimitedError(message, { retryAfter })`, as a rate limit gives | in the `UAlert` of `form.formError` |
 
 The mock adds the same `data` to the answer as the server, from the same function. So the form gets `data.fields` or `data.actionCode` as in production. See [Storybook: mocking the server](../storybook.md#mocking-the-server).

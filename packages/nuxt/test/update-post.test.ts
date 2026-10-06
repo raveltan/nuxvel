@@ -35,5 +35,26 @@ describe("update-post action (owner-only via policy)", async () => {
 
     expect(actionError).toBeActionError("post.body-empty");
     await expect(actingAs(owner).trpc.post.update(input)).rejects.toBeTrpcError("UNPROCESSABLE_CONTENT");
+    await expect(actingAs(owner).trpc.post.update(input)).rejects.toHaveValidationErrors({
+      body: "Body cannot be empty after trimming",
+    });
+  });
+
+  it("sends the failure's field in data.fields over HTTP, next to data.actionCode", async () => {
+    const owner = await userFactory();
+    const post = await postFactory({ authorId: owner.id });
+
+    const response = await actingAs(owner).fetch("/api/trpc/post.update", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ json: { id: post.id, title: "After", body: "   " } }),
+    });
+
+    expect(response.status).toBe(422);
+    expect((await response.json()).error.json.data).toMatchObject({
+      code: "UNPROCESSABLE_CONTENT",
+      actionCode: "post.body-empty",
+      fields: { body: ["Body cannot be empty after trimming"] },
+    });
   });
 });

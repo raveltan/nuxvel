@@ -1,5 +1,5 @@
 import type { AnyProcedureBuilder, MutationProcedure } from "@trpc/server/unstable-core-do-not-import";
-import type { Action } from "../actions/define-action";
+import type { Action, ActionFailure } from "../actions/define-action";
 import { adminProcedure, authedProcedure, publicProcedure } from "./procedures";
 import type { t } from "./trpc";
 
@@ -16,7 +16,7 @@ function isNode(value: unknown): value is Record<string, unknown> {
 }
 
 export function mountAction<Input, Output, Served>(
-  action: Action<Input, Output, Record<string, string>, string, Served>,
+  action: Action<Input, Output, Record<string, ActionFailure>, string, Served>,
 ): MutationProcedure<{ input: Input; output: Served; meta: Meta }> {
   const procedure = typeof action.procedure === "string" ? NAMED_PROCEDURES[action.procedure] : action.procedure;
 

@@ -52,11 +52,19 @@ export interface ActionContext {
 }
 
 /**
+ * A failure an action declares in `errors`: its default message, or
+ * `{ message, field }` when the failure belongs to one input field. A
+ * procedure then sends it as a field error too, so `useActionForm()`
+ * shows it under that field.
+ */
+export type ActionFailure<Field extends string = string> = string | { message: string; field: Field };
+
+/**
  * Third argument an action handler receives. Calling it throws an
  * {@link ActionError} with `code` as its `actionCode` and never returns,
  * so it can be used in an expression position.
  */
-export type Fail<Errors extends Record<string, string>> = (
+export type Fail<Errors extends Record<string, ActionFailure>> = (
   code: keyof Errors & string,
   message?: string,
 ) => never;
@@ -82,7 +90,7 @@ declare const served: unique symbol;
 export interface Action<
   Input,
   Output,
-  Errors extends Record<string, string>,
+  Errors extends Record<string, ActionFailure>,
   Name extends string = string,
   Served = Output,
 > {
@@ -124,7 +132,8 @@ export interface Action<
  * receives the parsed output. Without it the action takes `{}` or
  * `undefined`.
  * @param config.errors Error codes this action can `fail()` with, mapped
- * to default messages. Without it, `fail()` accepts no code.
+ * to default messages, or to `{ message, field }` for a failure that
+ * belongs to one input field. Without it, `fail()` accepts no code.
  * @param config.handler The work itself. It gets the parsed input,
  * `{ actor, locale }` and `fail`.
  * @param config.transaction Set to `false` to opt out of the wrapping
@@ -192,7 +201,7 @@ export interface Action<
 export function defineAction<
   Schema extends z.ZodType = typeof noInput,
   Output = unknown,
-  Errors extends Record<string, string> = Record<never, string>,
+  Errors extends Record<string, ActionFailure<keyof z.input<Schema> & string>> = Record<never, string>,
   OutputSchema extends z.ZodType = z.ZodType<Output>,
 >(config: {
   input?: Schema;
@@ -213,7 +222,9 @@ export function defineAction<
   const schema = config.input ?? (noInput as unknown as Schema);
   const limitCall = config.rateLimit && actionRateLimiter(config.rateLimit);
   const fail: Fail<Errors> = (code, message) => {
-    throw new ActionError(code, message ?? config.errors?.[code] ?? code, defined.actionName);
+    const declared: ActionFailure | undefined = config.errors?.[code];
+    const failure = typeof declared === "object" ? declared : { message: declared, field: undefined };
+    throw new ActionError(code, message ?? failure.message ?? code, defined.actionName, failure.field);
   };
 
   async function run(

@@ -13,17 +13,17 @@ export interface MountedAction {
   segments: string[];
 }
 
-function keyName({ key }: ObjectProperty) {
+export function keyName({ key }: ObjectProperty) {
   if (key.type === "Identifier") return key.name;
 
   return key.type === "Literal" ? String(key.value) : undefined;
 }
 
-function properties(object: ObjectExpression) {
+export function properties(object: ObjectExpression) {
   return object.properties.filter((property): property is ObjectProperty => property.type === "Property" && !property.computed);
 }
 
-function exportedValues(file: string): [string, Node][] {
+export function exportedValues(file: string): [string, Node][] {
   const { program } = parseSync(file, readFileSync(file, "utf8"));
 
   return program.body.flatMap((statement): [string, Node][] => {
@@ -45,24 +45,36 @@ function keyTree(object: ObjectExpression): KeyTree {
   );
 }
 
+export function routerObject(file: string): ObjectExpression | undefined {
+  for (const [name, value] of exportedValues(file)) {
+    if ((name === "default" || name.endsWith("Router")) && value.type === "ObjectExpression") return value;
+  }
+
+  return undefined;
+}
+
 /**
  * The keys of the router object literal `file` exports, by default or
  * under a name ending with `Router`, or `undefined` when it exports no
  * object literal.
  */
 export function routerKeys(file: string): KeyTree | undefined {
-  for (const [name, value] of exportedValues(file)) {
-    if ((name === "default" || name.endsWith("Router")) && value.type === "ObjectExpression") return keyTree(value);
-  }
+  const object = routerObject(file);
 
-  return undefined;
+  return object && keyTree(object);
+}
+
+export function actionConfig(value: Node): ObjectExpression | undefined {
+  if (value.type !== "CallExpression" || value.callee.type !== "Identifier" || value.callee.name !== "defineAction") return undefined;
+  const [config] = value.arguments;
+
+  return config?.type === "ObjectExpression" ? config : undefined;
 }
 
 function setsProcedure(value: Node) {
-  if (value.type !== "CallExpression" || value.callee.type !== "Identifier" || value.callee.name !== "defineAction") return false;
-  const [config] = value.arguments;
+  const config = actionConfig(value);
 
-  return config?.type === "ObjectExpression" && properties(config).some((property) => keyName(property) === "procedure");
+  return config !== undefined && properties(config).some((property) => keyName(property) === "procedure");
 }
 
 /**

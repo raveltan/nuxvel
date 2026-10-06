@@ -204,14 +204,14 @@ export const Forbidden: StoryObj<typeof meta> = {
 
 export const BodyEmpty: StoryObj<typeof meta> = {
   parameters: {
-    msw: [mockTrpc({ post: { update: () => { throw new ActionError("post.body-empty", "Body cannot be empty after trimming"); } } })],
+    msw: [mockTrpc({ post: { update: () => { throw new ActionError("post.body-empty", "Body cannot be empty after trimming", "posts.update-post", "body"); } } })],
   },
 };
 ```
 
 The handler sends the error in the same shape and with the same HTTP status as the nuxvel server, so `error.data` in the component has the same values as in production. A `TRPCError` keeps its code and its message. Any other error becomes `INTERNAL_SERVER_ERROR`. `@nuxvel/nuxt/storybook/mocks` also exports the errors that add data to the answer:
 
-- `ActionError(code, message)` adds `data.actionCode`, the error of an action's `fail()`. `useActionForm` shows it under the field that its `failures` option names.
+- `ActionError(code, message, action?, field?)` adds `data.actionCode`, the error of an action's `fail()`. A `field` adds the message to `data.fields`, so `useActionForm` shows it under that field. The `failures` option of the form overrides the field.
 - `ValidationFailedError(zodError)` and `ConflictError(message, { field })` add `data.fields`, the messages per input field.
 - `RateLimitedError(message, { retryAfter })` adds `data.retryAfter`.
 
@@ -270,7 +270,7 @@ export default meta;
 
 export const BodyEmpty: StoryObj<typeof meta> = {
   parameters: {
-    msw: [mockTrpc({ post: { update: () => { throw new ActionError("post.body-empty", "Body cannot be empty after trimming"); } } })],
+    msw: [mockTrpc({ post: { update: () => { throw new ActionError("post.body-empty", "Body cannot be empty after trimming", "posts.update-post", "body"); } } })],
   },
   play: async () => {
     await field(page, "Title").fill("Hello again");

@@ -3,7 +3,7 @@ definePageMeta({ middleware: "auth", layout: "app" });
 
 const me = $api.profile.me.useQuery();
 
-const avatarForm = useActionForm(setAvatarInput, $api.profile.setAvatar.mutationOptions(), {
+const avatarForm = useActionForm($api.profile.setAvatar, {
   defaults: { key: "" },
   onSuccess: () => {
     avatarForm.state.key = "";

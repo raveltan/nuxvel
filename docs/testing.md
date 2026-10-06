@@ -379,7 +379,7 @@ Use `headers` for `Idempotency-Key`, for `accept-language`, or for `x-forwarded-
 
 `guest()` returns the same members with no session, except `login`. `guest({ locale: "zh" })` takes the `locale` option of `actingAs`. A `publicProcedure` sees `ctx.user` as `null`, and an `authedProcedure` rejects with `UNAUTHORIZED`.
 
-Results keep their types, dates included. A rejection keeps the error's `code`, `actionCode` and `fields` for the [matchers](#expecting-failures). When the `.input()` schema of the procedure refuses the input, the rejection has `fields` too, so `toHaveValidationErrors` matches it. A `ConflictError` with a `field` has `fields` too, with the message under that field. A path that is not a procedure of the router, such as a typo that the types did not catch, throws `No tRPC procedure at "booking.create"` and does not answer `NOT_FOUND`.
+Results keep their types, dates included. A rejection keeps the error's `code`, `actionCode` and `fields` for the [matchers](#expecting-failures). When the `.input()` schema of the procedure refuses the input, the rejection has `fields` too, so `toHaveValidationErrors` matches it. A `ConflictError` or an action failure with a `field` has `fields` too, with the message under that field. A path that is not a procedure of the router, such as a typo that the types did not catch, throws `No tRPC procedure at "booking.create"` and does not answer `NOT_FOUND`.
 
 The callers reach the app over a control channel at `/_nuxvel/test/*`. Only a build for tests has it. See [Fakes](#fakes).
 
@@ -817,7 +817,7 @@ await expect(
 | `toBeUnrecoverable()` | a `runJob` rejection that the worker fails at once, without a retry |
 | `toBeRetryable()` | a `runJob` rejection that the worker retries with the job's backoff |
 
-`toHaveValidationErrors` accepts a `ValidationFailedError`, or any error with a `fields` map and the code `VALIDATION_ERROR` or `BAD_REQUEST`. It fails when the error has no fields at all. It ignores fields that you do not name. The error of a REST 400 that `actingAs(user).$fetch()` rejects with works too.
+`toHaveValidationErrors` accepts a `ValidationFailedError`, or any error with a `fields` map and the code `VALIDATION_ERROR`, `BAD_REQUEST`, `CONFLICT` or `UNPROCESSABLE_CONTENT`. It fails when the error has no fields at all. It ignores fields that you do not name. The error of a REST 400 that `actingAs(user).$fetch()` rejects with works too.
 
 To check the messages, pass one object. Each value is a string, a `RegExp` or an asymmetric matcher. A field passes when one of its messages matches. A failed check prints the expected and the received message of each field.
 

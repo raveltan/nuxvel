@@ -1751,7 +1751,7 @@ useSeo(() => ({ title: course.data?.title ?? "Course" }));
 
 ### The instructor pages
 
-`/teach` lists the courses of the instructor and creates a new one. The form uses `useActionForm()` with the same Zod schema as the action, so the browser and the server check the same rules:
+`/teach` lists the courses of the instructor and creates a new one. The form uses `useActionForm($api.courses.course.create)`, which takes the same Zod schema as the action, so the browser and the server check the same rules:
 
 ```vue
 <!-- app/pages/teach/index.vue -->
@@ -1760,7 +1760,7 @@ definePageMeta({ layout: "app", middleware: "auth" });
 useSeo({ title: "Teach" });
 
 const courses = $api.courses.course.list.useQuery({});
-const form = useActionForm(createCourseInput, $api.courses.course.create.mutationOptions(), {
+const form = useActionForm($api.courses.course.create, {
   defaults: { title: "", summary: "" },
   onSuccess: (course) => navigateTo({ name: "teach-id", params: { id: course.id } }),
 });
@@ -1810,7 +1810,7 @@ The lesson form uploads the file with `<UploadField>`. The field sends the file 
 <script setup lang="ts">
 const props = defineProps<{ courseId: number }>();
 
-const form = useActionForm(newLessonInput, $api.courses.lesson.create.mutationOptions(), {
+const form = useActionForm($api.courses.lesson.create, {
   defaults: { courseId: props.courseId, title: "", body: "", fileKey: "" },
   onSuccess: () => {
     form.state.title = "";

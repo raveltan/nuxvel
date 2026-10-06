@@ -229,7 +229,17 @@ Write `return fail(...)`, not `fail(...)` alone. The return type of `fail()` is 
 - It is not reported to error tracking.
 - Its `actionCode` is the declared code. Through tRPC, the client gets it as `error.data.actionCode`, next to the message.
 
-[`useActionForm()`](./frontend.md#forms) shows the message in `formError`, or under a field when you [map the code to that field](./frontend.md#typed-failures-on-a-field).
+### A failure on a field
+
+```ts
+errors: {
+  "post.body-empty": { message: "Body cannot be empty after trimming", field: "body" },
+},
+```
+
+A failure that belongs to one input field declares `{ message, field }` in place of the message. The field must be a key of the input schema. Through tRPC, the client also gets the message as the error of that field, in `error.data.fields`, as for a validation error. The string form and the object form can be mixed in one `errors` map.
+
+[`useActionForm()`](./frontend.md#forms) shows the message under that field. A failure without a field goes to `formError`, unless the form [maps the code to a field](./frontend.md#typed-failures-on-a-field).
 
 A field message from the server whose field is not a key of the form state, for example the `key` field of `promoteUpload()` in a form with `imageKey`, goes to `formError`. It is never shown in both places.
 

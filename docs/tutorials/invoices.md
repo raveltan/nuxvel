@@ -575,7 +575,7 @@ import { userTable, membershipTable, teamTable } from "#nuxvel/schema";
 export const addMemberAction = defineAction({
   input: addMemberInput,
   errors: {
-    "team.unknown-email": "Nobody with this email has signed up",
+    "team.unknown-email": { message: "Nobody with this email has signed up", field: "email" },
   },
   handler: async (input, ctx, fail) => {
     const team = await findTeamFor(userIdOf(ctx.actor), input.teamId);
@@ -1058,9 +1058,9 @@ const roles = addMemberInput.shape.role.options;
 
 const { mutate: changeRole, error: roleError } = $api.team.changeRole.useMutation();
 
-const form = useActionForm(addMemberInput, $api.team.addMember.mutationOptions({ toast: "Member added" }), {
+const form = useActionForm($api.team.addMember, {
+  toast: "Member added",
   defaults: { teamId: props.teamId, email: "", role: "member" },
-  failures: { "team.unknown-email": "email" },
 });
 </script>
 
@@ -1108,7 +1108,7 @@ const form = useActionForm(addMemberInput, $api.team.addMember.mutationOptions({
 ```
 
 - `addMemberInput.shape.role.options` is the list of roles from the shared schema, so the page and the server cannot disagree.
-- `useActionForm()` checks the input in the browser with `addMemberInput`, then calls the mutation. `failures` shows the typed failure `team.unknown-email` under the email field. Any other refusal, such as `CONFLICT` or a rate limit, shows in `form.formError`.
+- `useActionForm($api.team.addMember)` checks the input in the browser with `addMemberInput`, then calls the mutation. The `field` of the typed failure `team.unknown-email` shows it under the email field. Any other refusal, such as `CONFLICT` or a rate limit, shows in `form.formError`.
 - The page hides the forms from a member and a viewer. The hidden form is only for the user: the actions still call `authorize()`.
 
 The starter's header has no links to these pages. In `app/layouts/default.vue`, add two links after `<AppLogo />`, and the user menu after `<NotificationBell />`:
@@ -1209,7 +1209,7 @@ export const UnknownEmail: StoryObj<typeof meta> = {
           members: () => members,
           abilities: asAdmin,
           addMember: () => {
-            throw new ActionError("team.unknown-email", "Nobody with this email has signed up");
+            throw new ActionError("team.unknown-email", "Nobody with this email has signed up", "team.add-member", "email");
           },
         },
       }),
@@ -1330,42 +1330,34 @@ const { user } = useUser();
 const setup = ref<{ totpURI: string; backupCodes: string[] }>();
 const setupKey = computed(() => (setup.value ? new URL(setup.value.totpURI).searchParams.get("secret") : null));
 
-const enable = useActionForm(
-  passwordInput,
-  {
-    mutation: async ({ password }) => {
-      const { data, error } = await authClient.twoFactor.enable({ password });
-      if (error || !data || !("totpURI" in data)) throw new Error(error?.message ?? "Could not turn on two-factor sign-in");
-      setup.value = data;
-      return data;
-    },
-  },
-  { defaults: { password: "" } },
-);
+const enableErrors = useFormErrors();
+const enableState = reactive({ password: "" });
 
-const confirm = useActionForm(
-  totpCodeInput,
-  {
-    mutation: async ({ code }) => {
-      const { data, error } = await authClient.twoFactor.verifyTotp({ code });
-      if (error) throw new Error(error.message ?? "Could not check the code");
-      return data;
-    },
-  },
-  { defaults: { code: "" } },
-);
+async function enable() {
+  enableErrors.clear();
+  const { data, error } = await authClient.twoFactor.enable(enableState);
+  if (error || !data || !("totpURI" in data)) return enableErrors.set(new Error(error?.message ?? "Could not turn on two-factor sign-in"));
+  setup.value = data;
+}
 
-const disable = useActionForm(
-  passwordInput,
-  {
-    mutation: async ({ password }) => {
-      const { data, error } = await authClient.twoFactor.disable({ password });
-      if (error) throw new Error(error.message ?? "Could not turn off two-factor sign-in");
-      return data;
-    },
-  },
-  { defaults: { password: "" }, onSuccess: () => (setup.value = undefined) },
-);
+const confirmErrors = useFormErrors();
+const confirmState = reactive({ code: "" });
+
+async function confirm() {
+  confirmErrors.clear();
+  const { error } = await authClient.twoFactor.verifyTotp(confirmState);
+  if (error) confirmErrors.set(new Error(error.message ?? "Could not check the code"));
+}
+
+const disableErrors = useFormErrors();
+const disableState = reactive({ password: "" });
+
+async function disable() {
+  disableErrors.clear();
+  const { error } = await authClient.twoFactor.disable(disableState);
+  if (error) return disableErrors.set(new Error(error.message ?? "Could not turn off two-factor sign-in"));
+  setup.value = undefined;
+}
 </script>
 
 <template>
@@ -1379,42 +1371,42 @@ const disable = useActionForm(
           <li v-for="code in setup.backupCodes" :key="code">{{ code }}</li>
         </ul>
       </div>
-      <UForm :ref="disable.ref" :schema="disable.schema" :state="disable.state" class="flex items-start gap-2" @submit="disable.submit">
+      <UForm :schema="passwordInput" :state="disableState" class="flex items-start gap-2" @submit="disable">
         <UFormField name="password" label="Password" class="w-64">
-          <UInput v-model="disable.state.password" type="password" autocomplete="current-password" class="w-full" />
+          <UInput v-model="disableState.password" type="password" autocomplete="current-password" class="w-full" />
         </UFormField>
-        <UButton type="submit" class="mt-6" color="neutral" variant="outline" :loading="disable.pending" label="Turn off" />
+        <UButton type="submit" class="mt-6" color="neutral" variant="outline" label="Turn off" />
       </UForm>
-      <UAlert v-if="disable.formError" role="alert" color="error" variant="subtle" :title="disable.formError" />
+      <UAlert v-if="disableErrors.formError" role="alert" color="error" variant="subtle" :title="disableErrors.formError" />
     </template>
     <template v-else-if="setup">
       <p class="text-sm">Add this key to your authenticator app, then enter the code that the app shows.</p>
       <UFormField label="Setup key" class="w-80">
         <UInput :model-value="setupKey ?? ''" readonly class="w-full font-mono" />
       </UFormField>
-      <UForm :ref="confirm.ref" :schema="confirm.schema" :state="confirm.state" class="flex items-start gap-2" @submit="confirm.submit">
+      <UForm :schema="totpCodeInput" :state="confirmState" class="flex items-start gap-2" @submit="confirm">
         <UFormField name="code" label="Authentication code" class="w-64">
-          <UInput v-model="confirm.state.code" autocomplete="one-time-code" class="w-full" />
+          <UInput v-model="confirmState.code" autocomplete="one-time-code" class="w-full" />
         </UFormField>
-        <UButton type="submit" class="mt-6" :loading="confirm.pending" label="Confirm" />
+        <UButton type="submit" class="mt-6" label="Confirm" />
       </UForm>
-      <UAlert v-if="confirm.formError" role="alert" color="error" variant="subtle" :title="confirm.formError" />
+      <UAlert v-if="confirmErrors.formError" role="alert" color="error" variant="subtle" :title="confirmErrors.formError" />
     </template>
     <template v-else>
       <p class="text-sm">Ask for a code from an authenticator app at each sign-in.</p>
-      <UForm :ref="enable.ref" :schema="enable.schema" :state="enable.state" class="flex items-start gap-2" @submit="enable.submit">
+      <UForm :schema="passwordInput" :state="enableState" class="flex items-start gap-2" @submit="enable">
         <UFormField name="password" label="Password" class="w-64">
-          <UInput v-model="enable.state.password" type="password" autocomplete="current-password" class="w-full" />
+          <UInput v-model="enableState.password" type="password" autocomplete="current-password" class="w-full" />
         </UFormField>
-        <UButton type="submit" class="mt-6" :loading="enable.pending" label="Turn on" />
+        <UButton type="submit" class="mt-6" label="Turn on" />
       </UForm>
-      <UAlert v-if="enable.formError" role="alert" color="error" variant="subtle" :title="enable.formError" />
+      <UAlert v-if="enableErrors.formError" role="alert" color="error" variant="subtle" :title="enableErrors.formError" />
     </template>
   </section>
 </template>
 ```
 
-A call of `authClient` that changes the session refreshes `useUser()`. So after the confirmation, `user.twoFactorEnabled` is `true`, and the component shows the backup codes. The mutations give `useActionForm()` the refusal of Better Auth as an `Error`, as `<AuthForm>` does. See [Authentication: two-factor sign-in](../auth.md#two-factor-sign-in).
+A call of `authClient` that changes the session refreshes `useUser()`. So after the confirmation, `user.twoFactorEnabled` is `true`, and the component shows the backup codes. `useFormErrors()` shows the refusal of Better Auth above the button, as `<AuthForm>` does. See [Authentication: two-factor sign-in](../auth.md#two-factor-sign-in).
 
 Put the component on a page. Chapter 13 adds the API keys to the same page:
 
@@ -2025,7 +2017,7 @@ Add a component for the keys to the security page of chapter 8:
 const keys = $api.apiKeys.list.useQuery();
 const newKey = ref<string>();
 
-const form = useActionForm(createApiKeyInput, $api.apiKeys.create.mutationOptions(), {
+const form = useActionForm($api.apiKeys.create, {
   defaults: { name: "" },
   onSuccess: (created) => {
     newKey.value = created.key;

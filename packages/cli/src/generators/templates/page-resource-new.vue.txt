@@ -3,7 +3,7 @@ definePageMeta({ middleware: "auth" });
 
 const queryCache = useQueryCache();
 {{referenceQueries}}
-const form = useActionForm(create{{tablePascalName}}Input, $api.{{tableCamelName}}.create.mutationOptions(), {
+const form = useActionForm($api.{{tableCamelName}}.create, {
   defaults: {{createDefaults}},
   onSuccess: async (created) => {
     queryCache.setQueriesData<RouterOutputs["{{tableCamelName}}"]["list"] | undefined>(

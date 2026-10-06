@@ -24,6 +24,7 @@ import { createDiscovery } from "./setup/discovery";
 import { applyRuntimeConfig } from "./setup/runtime-config";
 import { warnServerlessPreset } from "./setup/serverless-warning";
 import { generatedModules } from "./setup/generated-modules";
+import { addProcedureInputs } from "./setup/procedure-inputs";
 import { registerNamespaces } from "./setup/namespaces";
 import { addRouteTypes } from "./setup/route-types";
 import { registerServerOnlyModules } from "./setup/server-only-modules";
@@ -574,6 +575,7 @@ export default defineNuxtModule<ModuleOptions>().with({
     const { namespaces, namespaceModules } = await registerNamespaces(discovery);
     addRouteTypes(nitroScan, runtimeFile);
     registerServerOnlyModules(nuxt, { ...modules, ...namespaceModules });
+    addProcedureInputs(nuxt, discovery);
     reloadOnDefinitionChanges(nuxt, discovery, namespaces);
     configureNitro(nuxt, runtimeFile);
     if (options.ui) allowUiThemeStyle(nuxt);

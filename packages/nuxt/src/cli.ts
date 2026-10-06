@@ -18,3 +18,4 @@ export { maintainAuditLog } from "./runtime/release/maintenance";
 export { buildInputs } from "./build-cache/build-key";
 export { alive, cachedBuild } from "./build-cache/cached-build";
 export { recordEnvReads } from "./build-cache/env-reads";
+export { procedureInputs } from "./procedure-inputs";

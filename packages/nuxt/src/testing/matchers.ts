@@ -29,7 +29,7 @@ expect.extend({
 
     if (
       !isValidationErrorShape(received) ||
-      !["VALIDATION_ERROR", "BAD_REQUEST", "CONFLICT"].includes(received.code)
+      !["VALIDATION_ERROR", "BAD_REQUEST", "CONFLICT", "UNPROCESSABLE_CONTENT"].includes(received.code)
     ) {
       return {
         pass: false,
@@ -196,7 +196,7 @@ expect.extend({
 interface CustomMatchers<R = unknown> {
   /**
    * Passes for a `ValidationFailedError`, a `{ code, fields }` validation
-   * error, a `ConflictError` that has a `field`, or the ofetch `FetchError` of a REST 400, with messages on every
+   * error, a `ConflictError` or an action failure that has a `field` (from a procedure), or the ofetch `FetchError` of a REST 400, with messages on every
    * field named. Fields that you do not name are ignored.
    *
    * Pass field names, or one object that maps each field to the message it

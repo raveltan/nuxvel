@@ -338,7 +338,7 @@ import { userTable, roomMemberTable, roomTable } from "#nuxvel/schema";
 export const addMemberAction = defineAction({
   input: addMemberInput,
   errors: {
-    "room.member-unknown": "Nobody with this email has signed up",
+    "room.member-unknown": { message: "Nobody with this email has signed up", field: "email" },
   },
   handler: async (input, ctx, fail) => {
     const room = await findOrFail(roomTable, input.roomId);
@@ -906,9 +906,9 @@ const { members, setState } = usePresence("room", { roomId: id });
 const others = computed(() => members.value.filter((member) => member.userId !== user.value?.id));
 const { status } = useChannel("room", { params: { roomId: id } });
 
-const memberForm = useActionForm(addMemberInput, $api.room.addMember.mutationOptions({ toast: "Member added" }), {
+const memberForm = useActionForm($api.room.addMember, {
+  toast: "Member added",
   defaults: { roomId: id, email: "" },
-  failures: { "room.member-unknown": "email" },
   onSuccess: () => {
     memberForm.state.email = "";
   },
@@ -961,7 +961,7 @@ Each realtime part of the page does one job:
 
 All of these share one connection to the server, an `EventSource` on `/api/channels`. They join the room when the page mounts, and leave it when the page unmounts. They do nothing during server rendering.
 
-The add form shows only to the owner. That is only for the user: the action calls `authorize()`, so a direct call by another member fails. The `toast` option shows the toast "Member added". `failures` puts the message of `room.member-unknown` under the email field.
+The add form shows only to the owner. That is only for the user: the action calls `authorize()`, so a direct call by another member fails. The `toast` option shows the toast "Member added". The `field` of `room.member-unknown` puts its message under the email field.
 
 ### When the connection drops
 

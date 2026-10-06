@@ -11,6 +11,7 @@ import { noRawVHtml } from "./rules/no-raw-v-html";
 import { routeWrites } from "./rules/route-writes";
 import { routerDbWrites } from "./rules/router-db-writes";
 import { routerOutput } from "./rules/router-output";
+import { sharedImports } from "./rules/shared-imports";
 import { syncListenerNetwork } from "./rules/sync-listener-network";
 import { testAuth } from "./rules/test-auth";
 import { testClient } from "./rules/test-client";
@@ -74,7 +75,10 @@ const IMPORT_FILES = ["server", "app", "shared", "tests"].flatMap((root) => [`${
  * for an import that climbs with `../` out of its kind folder into another
  * one, and fixes it, and removes an import of `shared/schemas/` from
  * `app/` and `server/`, which auto-import it; its `allow` option lists
- * globs of targets a relative import may reach. Use the plugin through
+ * globs of targets a relative import may reach. `nuxvel/shared-imports`
+ * stops a file under `shared/`, which runs in the browser, importing
+ * server code: `server/`, `#server/*`, `#nuxvel/*`, `drizzle-orm` or
+ * `@nuxvel/nuxt/database`. Use the plugin through
  * {@link architecture}.
  */
 export const nuxvelPlugin: ESLint.Plugin = {
@@ -92,6 +96,7 @@ export const nuxvelPlugin: ESLint.Plugin = {
     "route-writes": routeWrites,
     "router-db-writes": routerDbWrites,
     "router-output": routerOutput,
+    "shared-imports": sharedImports,
     "sync-listener-network": syncListenerNetwork,
     "test-auth": testAuth,
     "test-client": testClient,
@@ -113,7 +118,8 @@ export const nuxvelPlugin: ESLint.Plugin = {
  * files under `layers/<name>/`, and the audit and billing rules on every
  * `.ts` file under `server/` and `layers/<name>/server/`, and the import
  * rule on the `.ts` and `.vue` files under `server/`, `app/`, `shared/`
- * and `tests/`, also in `layers/<name>/`. The test configs apply to
+ * and `tests/`, also in `layers/<name>/`, and the shared rule on the `.ts`
+ * files under `shared/` and `layers/<name>/shared/`. The test configs apply to
  * the `.ts` files under `tests/`, the `.test.ts` files under `server/` and
  * the `.stories.ts` files under `app/`, and to the same paths in
  * `layers/<name>/`: the built-in `no-restricted-imports`
@@ -131,7 +137,7 @@ export const nuxvelPlugin: ESLint.Plugin = {
  * the tables, and test files. The billing rule skips test files. The user data rule skips Better Auth's `session` and `account`
  * tables and the `audit_subjects` table. The configs are named `nuxvel/actions`, `nuxvel/routers`,
  * `nuxvel/listeners`, `nuxvel/routes`, `nuxvel/schema`,
- * `nuxvel/templates`, `nuxvel/modules`, `nuxvel/audit`, `nuxvel/billing`, `nuxvel/imports`, `nuxvel/tests`
+ * `nuxvel/templates`, `nuxvel/modules`, `nuxvel/audit`, `nuxvel/billing`, `nuxvel/imports`, `nuxvel/shared`, `nuxvel/tests`
  * and `nuxvel/functional-tests`. TypeScript files need a TypeScript parser, e.g.
  * `@typescript-eslint/parser`. Vue files need `vue-eslint-parser`,
  * which the accessibility preset of `@nuxvel/nuxt/eslint` sets.
@@ -218,6 +224,12 @@ export const architecture: Linter.Config[] = [
     files: IMPORT_FILES,
     plugins: { nuxvel: nuxvelPlugin },
     rules: { "nuxvel/no-parent-imports": "error" },
+  },
+  {
+    name: "nuxvel/shared",
+    files: ["shared/**/*.ts", "layers/*/shared/**/*.ts"],
+    plugins: { nuxvel: nuxvelPlugin },
+    rules: { "nuxvel/shared-imports": "error" },
   },
   {
     name: "nuxvel/tests",

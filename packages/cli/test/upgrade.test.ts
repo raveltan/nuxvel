@@ -721,4 +721,60 @@ describe("nuxvel upgrade", () => {
       expect(again.stdout).not.toContain("report");
     }, 60000);
   });
+  describe("action-form", () => {
+    it("passes the $api procedure to useActionForm() with one options object, keeps a schema that is not the procedure's, and leaves any other shape as a manual step", async () => {
+      const appDir = scratchPlayground("upgrade-action-form");
+      const page = join(appDir, "app", "pages", "report-forms.vue");
+      writeFileSync(
+        page,
+        [
+          '<script setup lang="ts">',
+          "const strictPostInput = createPostInput.extend({ title: z.string().min(5) });",
+          "const trpc = useNuxtApp().$trpc;",
+          'const create = useActionForm(createPostInput, $api.post.create.mutationOptions(), { defaults: { title: "", body: "" } });',
+          "const update = useActionForm(updatePostInput, $api.post.update.mutationOptions({ toast: (post) => `Saved ${post.title}` }), {",
+          '  defaults: { id: 1, title: "", body: "" },',
+          "  onSuccess: () => navigateTo(\"/\"),",
+          "});",
+          "const strict = useActionForm(strictPostInput, trpc.post.create.mutationOptions());",
+          "const tag = useActionForm(createTagInput, trpc.tag.create.mutationOptions(), {",
+          '  defaults: { name: "" },',
+          "});",
+          "const raw = useActionForm(createTagInput, { mutation: async (input) => input }, { defaults: { name: \"\" } });",
+          "const twice = useActionForm(createPostInput, $api.post.create.mutationOptions({ onSuccess: () => {} }), { defaults: {} });",
+          'const current = useActionForm($api.post.create, { toast: "Created" });',
+          "</script>",
+          "",
+        ].join("\n"),
+      );
+
+      const applied = await runCliAt(appDir, "upgrade", "--only", "action-form");
+
+      expect(applied.exitCode, applied.stderr).toBe(0);
+      expect(applied.stdout).toContain("updated: app/pages/report-forms.vue\n");
+      const manual = "useActionForm(schema, mutationOptions, options) is removed: write useActionForm($api.<path>, { ...options }) with the options of mutationOptions() among them, and schema only when it is not the procedure's input schema from shared/schemas/";
+      expect(stripAnsi(applied.stderr)).toContain(`▲ app/pages/report-forms.vue:8: ${manual}`);
+      expect(stripAnsi(applied.stderr)).toContain(`▲ app/pages/report-forms.vue:9: ${manual}`);
+      expect(readFileSync(page, "utf8")).toBe(
+        [
+          '<script setup lang="ts">',
+          "const strictPostInput = createPostInput.extend({ title: z.string().min(5) });",
+          "const trpc = useNuxtApp().$trpc;",
+          'const create = useActionForm($api.post.create, { defaults: { title: "", body: "" } });',
+          "const update = useActionForm($api.post.update, { toast: (post) => `Saved ${post.title}`, defaults: { id: 1, title: \"\", body: \"\" }, onSuccess: () => navigateTo(\"/\") });",
+          "const strict = useActionForm($api.post.create, { schema: strictPostInput });",
+          'const tag = useActionForm($api.tag.create, { defaults: { name: "" } });',
+          "const raw = useActionForm(createTagInput, { mutation: async (input) => input }, { defaults: { name: \"\" } });",
+          "const twice = useActionForm(createPostInput, $api.post.create.mutationOptions({ onSuccess: () => {} }), { defaults: {} });",
+          'const current = useActionForm($api.post.create, { toast: "Created" });',
+          "</script>",
+          "",
+        ].join("\n"),
+      );
+
+      const again = await runCliAt(appDir, "upgrade", "--only", "action-form");
+
+      expect(again.stdout).not.toContain("report-forms");
+    }, 60000);
+  });
 });

@@ -6,7 +6,7 @@ export const updatePostAction = defineAction({
   audit: { name: "post.updated", target: postsTable },
   invalidates: ["post"],
   errors: {
-    "post.body-empty": "Body cannot be empty after trimming",
+    "post.body-empty": { message: "Body cannot be empty after trimming", field: "body" },
   },
   handler: async (input, ctx, fail) => {
     const post = await findOrFail(postsTable, input.id);

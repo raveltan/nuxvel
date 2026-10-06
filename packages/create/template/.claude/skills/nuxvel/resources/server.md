@@ -44,7 +44,7 @@ export const updatePostAction = defineAction({
 |---|---|
 | `input` | Zod schema. Parsed on each call. Fail → `ValidationFailedError` |
 | `handler(input, ctx, fail)` | `ctx.actor`. `return fail(code, message?)` → `ActionError`, HTTP 422, `error.data.actionCode` |
-| `errors` | `{ code: defaultMessage }`. Only these codes compile in `fail` |
+| `errors` | `{ code: defaultMessage }`, or `{ code: { message, field } }` for a failure on one input field (sent in `error.data.fields`, shown under that field by `useActionForm`). Only these codes compile in `fail` |
 | `transaction: false` | no transaction (reads) |
 | `rateLimit` | options of `rateLimit()` |
 | `audit` | `"post.created"` audits the returned row. `{ name: "post.updated", target: postTable }` audits the row of `input.id` with the changed columns |

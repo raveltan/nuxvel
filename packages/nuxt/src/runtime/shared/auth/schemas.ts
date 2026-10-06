@@ -5,7 +5,7 @@ import { z } from "zod";
  * password of at least 12 characters.
  *
  * Auto-imported in the app. `<AuthForm mode="sign-up">` validates with
- * it. Use it for a sign-up form of your own with `useActionForm()`.
+ * it. Use it as the `schema` of a sign-up `<UForm>` of your own.
  */
 export const signUpSchema = z.object({
   name: z.string().min(1),
@@ -17,7 +17,7 @@ export const signUpSchema = z.object({
  * The fields of the sign-in form: an email address and a password.
  *
  * Auto-imported in the app. `<AuthForm mode="sign-in">` validates with
- * it. Use it for a sign-in form of your own with `useActionForm()`.
+ * it. Use it as the `schema` of a sign-in `<UForm>` of your own.
  */
 export const signInSchema = z.object({
   email: z.email(),

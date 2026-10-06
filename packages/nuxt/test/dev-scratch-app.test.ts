@@ -1,6 +1,7 @@
 import { afterAll, beforeAll } from "vitest";
 import { addWatchedAction } from "./dev-scratch-app/action-mount-watch";
 import { addExtraLocales } from "./dev-scratch-app/extra-locales";
+import { addGreetingsRouter } from "./dev-scratch-app/procedure-inputs-watch";
 import { addRoutersDir } from "./dev-scratch-app/router-watch";
 import { addSharedSchema } from "./dev-scratch-app/shared-schemas-watch";
 // the namespace suite restarts the dev server, and a file written while the new watcher still scans is never seen, so it runs last
@@ -17,6 +18,7 @@ beforeAll(() => {
   addRoutersDir(appDir);
   addSharedSchema(appDir);
   addWatchedAction(appDir);
+  addGreetingsRouter(appDir);
 });
 afterAll(() => removeScratchApp(appDir));
 

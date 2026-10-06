@@ -139,7 +139,7 @@ create: authedProcedure
 
 `idempotent()` is auto-imported on the server. It runs a mutation once for each idempotency key, and answers each repeat with the first result. Use it on a mutation that must not run twice when the browser sends it twice, for example a create.
 
-The client sends the key in the `Idempotency-Key` header. `.useMutation()` and `mutationOptions()` of `$api` pick one key and send it with each call. Thus `useActionForm()` sends it too. Each mutation goes in its own request, not in a batch.
+The client sends the key in the `Idempotency-Key` header. `.useMutation()` and `mutationOptions()` of `$api` pick one key and send it with each call. Thus `useActionForm($api.x)` sends it too. Each mutation goes in its own request, not in a batch.
 
 - The first result stays in Redis for 24 hours. The key includes the user, the procedure path, the client's key and the input. A repeat with other input runs again.
 - A repeat while the first call still runs gets a `ConflictError`.
@@ -414,7 +414,7 @@ nuxvel installs Pinia Colada. `useQuery`, `useMutation` and `useQueryCache` are 
 | `$api.post.byId.key(input?)` | `["trpc", "post", "byId", input]` | cache reads and writes |
 | `$api.post.key()` | `["trpc", "post"]` | invalidating a whole namespace |
 
-`queryOptions()` with Pinia Colada's own `useQuery()` is the step below `.useQuery()`, and `mutationOptions()` with `useMutation()` the step below `.useMutation()`: use them to build the options yourself, for example to pass them to `useLiveQuery()` or `useActionForm()`. The `query` function passes the abort signal of Pinia Colada to tRPC, so a query that Pinia Colada cancels also cancels its request.
+`queryOptions()` with Pinia Colada's own `useQuery()` is the step below `.useQuery()`, and `mutationOptions()` with `useMutation()` the step below `.useMutation()`: use them to build the options yourself, for example to pass them to `useLiveQuery()` or `useActionForm($api.x)`. The `query` function passes the abort signal of Pinia Colada to tRPC, so a query that Pinia Colada cancels also cancels its request.
 
 A key is `"trpc"`, then the router path, then the input:
 

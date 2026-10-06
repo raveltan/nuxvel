@@ -1,34 +1,27 @@
 import { defineComponent, h } from "vue";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, onTestFinished, vi } from "vitest";
 import { z } from "zod";
 import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
-import { getRequestHeader } from "h3";
-import { createPostInput } from "../../../playground/shared/schemas/post";
+import { getRequestHeader, readBody } from "h3";
 import { $api, useActionForm } from "#imports";
 
-async function mountCreatePostForm(onSuccess: (post: unknown) => void) {
-  let form: ReturnType<typeof createForm> | undefined;
-
-  function createForm() {
-    return useActionForm(
-      createPostInput,
-      $api.post.create.mutationOptions(),
-      { defaults: { title: "", body: "" }, onSuccess },
-    );
-  }
-
-  await mountSuspended(
+async function mounted<T>(setup: () => T) {
+  let result: T | undefined;
+  const wrapper = await mountSuspended(
     defineComponent({
       setup() {
-        form = createForm();
+        result = setup();
         return () => h("div");
       },
     }),
   );
+  onTestFinished(() => wrapper.unmount());
+  if (!result) throw new Error("the form component did not mount");
+  return result;
+}
 
-  if (!form) throw new Error("the form component did not mount");
-
-  return form;
+function mountCreatePostForm(onSuccess: (post: unknown) => void, failures?: { "post.body-empty": "title" }) {
+  return mounted(() => useActionForm($api.post.create, { defaults: { title: "", body: "" }, onSuccess, failures }));
 }
 
 describe("useActionForm()", () => {
@@ -134,6 +127,36 @@ describe("useActionForm()", () => {
     expect(form.formError).toBeUndefined();
   });
 
+  it("puts an action failure under the field the server names, or the one failures maps it to", async () => {
+    registerEndpoint("/api/trpc/post.create", {
+      method: "POST",
+      handler: () => ({
+        error: {
+          json: {
+            message: "Body cannot be empty after trimming",
+            code: -32022,
+            data: {
+              code: "UNPROCESSABLE_CONTENT",
+              httpStatus: 422,
+              actionCode: "post.body-empty",
+              fields: { body: ["Body cannot be empty after trimming"] },
+            },
+          },
+        },
+      }),
+    });
+    const serverMapped = await mountCreatePostForm(() => {});
+    const clientMapped = await mountCreatePostForm(() => {}, { "post.body-empty": "title" });
+
+    serverMapped.state.title = "Hello";
+    clientMapped.state.title = "Hello";
+    await serverMapped.submit();
+    await clientMapped.submit();
+
+    expect(serverMapped.errors).toEqual({ body: ["Body cannot be empty after trimming"] });
+    expect(clientMapped.errors).toEqual({ title: ["Body cannot be empty after trimming"] });
+  });
+
   it("puts a server field message that no form field shows in formError, once", async () => {
     registerEndpoint("/api/trpc/post.create", {
       method: "POST",
@@ -160,30 +183,60 @@ describe("useActionForm()", () => {
     expect(form.formError).toBe("Upload expired");
   });
 
-  it("sends the state unparsed, so a transforming schema is parsed once on the server", async () => {
-    const tagsSchema = z.object({
-      tags: z.string().min(1).transform((tags) => tags.split(",")),
-    });
-    const mutation = vi.fn(async (input: z.input<typeof tagsSchema>) => input);
-    let form: ReturnType<typeof createForm> | undefined;
+  it("takes the procedure's schema from shared/schemas/, keeps only its keys of defaults, and starts a missing key at its .default() or undefined", async () => {
+    const row = { id: 3, title: "Hello", status: undefined, createdAt: new Date() };
+    const form = await mounted(() => useActionForm($api._formCheck.save, { defaults: row }));
 
-    function createForm() {
-      return useActionForm(tagsSchema, { mutation }, { defaults: { tags: "news,tech" } });
-    }
-
-    await mountSuspended(
-      defineComponent({
-        setup() {
-          form = createForm();
-          return () => h("div");
-        },
-      }),
-    );
-
-    if (!form) throw new Error("the form component did not mount");
+    expect(Object.entries(form.state)).toEqual([
+      ["title", "Hello"],
+      ["status", "draft"],
+      ["note", undefined],
+    ]);
 
     await form.submit();
 
-    expect(mutation.mock.calls[0]?.[0]).toEqual({ tags: "news,tech" });
+    expect(Object.keys(form.errors)).toEqual(["note"]);
+  });
+
+  it("starts the state of a schema that is not an object as undefined, and submits what the user sets", async () => {
+    const bodies: unknown[] = [];
+    registerEndpoint("/api/trpc/health.echo", {
+      method: "POST",
+      handler: async (event) => {
+        bodies.push(await readBody(event));
+        return { result: { data: { json: "hi" } } };
+      },
+    });
+    const form = await mounted(() => useActionForm($api.health.echo, { schema: z.string().min(1) }));
+
+    expect(form.state).toBeUndefined();
+
+    form.state = "hi";
+    await form.submit();
+
+    expect(bodies).toEqual([{ json: "hi" }]);
+  });
+
+  it("checks the state with the schema option, and sends the state unparsed, so a transforming schema is parsed once on the server", async () => {
+    const bodies: unknown[] = [];
+    registerEndpoint("/api/trpc/post.create", {
+      method: "POST",
+      handler: async (event) => {
+        bodies.push(await readBody(event));
+        return { result: { data: { json: { id: 7, title: "Hello" } } } };
+      },
+    });
+    const form = await mounted(() =>
+      useActionForm($api.post.create, {
+        schema: z.object({ title: z.string().min(3).transform((title) => title.toUpperCase()), body: z.string() }),
+        defaults: { title: "Hi", body: "" },
+      }),
+    );
+
+    await form.submit();
+    form.state.title = "Hello";
+    await form.submit();
+
+    expect(bodies).toEqual([{ json: { title: "Hello", body: "" } }]);
   });
 });

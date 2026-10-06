@@ -620,7 +620,7 @@ describe("nuxvel make:* output running in an app", () => {
     expect(source("app/pages/article/index.vue")).toContain("<DataTable");
     expect(source("app/pages/article/index.vue")).toContain("const remove = $api.article.delete.useMutation({");
     expect(source("app/pages/article/index.vue")).toContain("<UModal");
-    expect(source("app/components/ArticleForm.vue")).toContain("useActionForm(updateArticleInput");
+    expect(source("app/components/ArticleForm.vue")).toContain("useActionForm($api.article.update");
     expectAppTestPassed("server/trpc/routers/article.router.test.ts");
     expect(typecheck.exitCode, `${typecheck.stdout}${typecheck.stderr}`).toBe(0);
   });

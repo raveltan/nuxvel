@@ -1,7 +1,7 @@
 <script setup lang="ts">
 definePageMeta({ middleware: "auth", layout: "app" });
 
-const form = useActionForm(createPostInput, $api.post.create.mutationOptions(), {
+const form = useActionForm($api.post.create, {
   defaults: { title: "", body: "" },
   onSuccess: async () => {
     await navigateTo({ name: "posts" });

@@ -29,6 +29,19 @@ const archivePost = defineAction({
   handler: (_input, _ctx, fail) => fail("post.archived"),
 });
 
+export const failureOnAField = defineAction({
+  input: z.object({ id: z.number() }),
+  errors: { "post.missing": { message: "No such post", field: "id" } },
+  handler: (_input, _ctx, fail) => fail("post.missing"),
+});
+
+export const failureOnAnUnknownField = defineAction({
+  input: z.object({ id: z.number() }),
+  // @ts-expect-error the field of a failure is a key of the input schema
+  errors: { "post.missing": { message: "No such post", field: "slug" } },
+  handler: (_input, _ctx, fail) => fail("post.missing"),
+});
+
 export const noErrorsDeclared = defineAction({
   // @ts-expect-error an action that declares no errors cannot fail() with a code
   handler: (_input, _ctx, fail) => fail("anything"),

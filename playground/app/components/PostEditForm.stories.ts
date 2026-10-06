@@ -14,7 +14,7 @@ export const BodyEmpty: StoryObj<typeof meta> = {
       mockTrpc({
         post: {
           update: () => {
-            throw new ActionError("post.body-empty", "Body cannot be empty after trimming");
+            throw new ActionError("post.body-empty", "Body cannot be empty after trimming", "posts.update-post", "body");
           },
         },
       }),

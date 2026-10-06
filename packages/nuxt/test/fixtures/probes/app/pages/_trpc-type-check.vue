@@ -97,17 +97,46 @@ const optimisticIsTyped: Parameters<typeof renamePost>[0] extends {
   ? true
   : never = true;
 
-const createPostForm = useActionForm(
-  createPostInput,
-  trpc.post.create.mutationOptions(),
-  {
-    defaults: { title: "", body: "" },
-    onSuccess: (post) => typed(post).title,
-  },
-);
+const createPostForm = useActionForm(trpc.post.create, {
+  defaults: { title: "" },
+  onSuccess: (post) => typed(post).title,
+});
 
-useActionForm(createPostInput, trpc.post.create.mutationOptions(), {
-  defaults: { title: "", body: "" },
+const bareForm = useActionForm($api.post.create);
+const bareFormIsTyped: IsAny<typeof bareForm.state> extends true
+  ? never
+  : typeof bareForm.state extends { title: string; body: string }
+    ? true
+    : never = true;
+
+const postById = $api.post.byId.useQuery({ id: 1 });
+const editForm = useActionForm($api.post.update, {
+  defaults: postById.data ?? {},
+  toast: (post) => typed(post).title,
+  confirm: (input) => ({ title: `Save ${typed(input).title}?` }),
+  invalidate: ["post"],
+});
+const actionRouterFormIsTyped: typeof editForm.state extends { id: number; title: string; body: string }
+  ? true
+  : never = true;
+
+const mountedActionForm = useActionForm($api.healthChecks.updateHealthCheck);
+const mountedActionFormIsTyped: IsAny<typeof mountedActionForm.state> extends true ? never : true = true;
+
+// @ts-expect-error health.echo takes z.string() written in place, not a schema of shared/schemas/
+useActionForm($api.health.echo);
+
+const echoForm = useActionForm($api.health.echo, { schema: z.string().min(1) });
+// @ts-expect-error the schema's input must be the procedure's input
+useActionForm($api.health.echo, { schema: z.number() });
+const explicitSchemaFormIsTyped: typeof echoForm.state extends string ? true : never = true;
+
+useActionForm($api.post.create, {
+  // @ts-expect-error defaults hold only keys of the schema's input
+  defaults: { title: 1 },
+});
+
+useActionForm(trpc.post.create, {
   failures: {
     "post.body-empty": "body",
     // @ts-expect-error
@@ -115,8 +144,7 @@ useActionForm(createPostInput, trpc.post.create.mutationOptions(), {
   },
 });
 
-useActionForm(createPostInput, trpc.post.create.mutationOptions(), {
-  defaults: { title: "", body: "" },
+useActionForm(trpc.post.create, {
   failures: {
     // @ts-expect-error no action declares post.nope
     "post.nope": "body",
@@ -131,13 +159,11 @@ trpc.post.delete.useMutation({ confirm: (input) => ({ title: `Delete ${typed(inp
 // @ts-expect-error a confirm dialog needs a title
 trpc.post.delete.mutationOptions({ confirm: {} });
 
-const tagsSchema = z.object({ tags: z.string().transform((tags) => tags.split(",")) });
-const tagsForm = useActionForm(
-  tagsSchema,
-  { mutation: async (input: { tags: string }) => input.tags.length },
-  { defaults: { tags: "" }, onSuccess: (count) => typed(count).toFixed() },
-);
-const transformFormIsTyped: typeof tagsForm.state extends { tags: string }
+const tagsForm = useActionForm($api.post.create, {
+  schema: z.object({ title: z.string().trim(), body: z.string() }),
+  onSuccess: (post) => typed(post).id.toFixed(),
+});
+const transformFormIsTyped: typeof tagsForm.state extends { title: string; body: string }
   ? true
   : never = true;
 const actionFormIsTyped: IsAny<typeof createPostForm.state> extends true

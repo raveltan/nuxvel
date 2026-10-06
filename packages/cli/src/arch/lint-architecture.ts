@@ -134,6 +134,17 @@ export async function lintArchitecture(cwd: string, layout: AppLayout) {
     await lint(cwd, importFiles, [tsConfig(imports), vueConfig(imports)], findings);
   }
 
+  const shared = architecture.find((candidate) => candidate.name === "nuxvel/shared");
+  const sharedFiles = await glob(["shared/**/*.ts", "layers/*/shared/**/*.ts"], {
+    cwd,
+    absolute: true,
+    ignore: ["**/node_modules/**", "**/*.d.ts"],
+  });
+
+  if (shared && sharedFiles.length > 0) {
+    await lint(cwd, sharedFiles, tsConfig(shared), findings);
+  }
+
   for (const finding of translations.findings) findings.add(finding);
 
   return { findings: [...findings], warnings: suffixWarnings(cwd, layout) };

@@ -5,7 +5,7 @@ import { UAlert, UButton, UForm, UFormField, UInput } from "#components";
 import { ref } from "vue";
 import { z } from "zod";
 import { authClient } from "../auth/client";
-import { useActionForm } from "../composables/use-action-form";
+import { bindActionForm } from "../forms/action-form";
 import { forgotPasswordSchema, resetPasswordSchema, signInSchema, signUpSchema } from "../../shared/auth/schemas";
 import SocialSignIn from "./SocialSignIn.vue";
 
@@ -16,7 +16,8 @@ import SocialSignIn from "./SocialSignIn.vue";
  * Auto-registered as a component unless the app sets `nuxvel.ui:
  * false`. It validates with the schema of its mode (`signInSchema`,
  * `signUpSchema`, `forgotPasswordSchema` or `resetPasswordSchema`) and
- * calls {@link authClient} through `useActionForm()`. A field error
+ * calls {@link authClient} with the same form behaviour as
+ * `useActionForm()`. A field error
  * shows under its field. A refusal from Better Auth, such as a wrong
  * password, shows above the button. Put it on a page with the `guest`
  * middleware.
@@ -60,7 +61,7 @@ function unwrap<T>(
   return result.data;
 }
 
-const signIn = useActionForm(
+const signIn = bindActionForm(
   signInSchema,
   {
     mutation: async (input) => {
@@ -74,7 +75,7 @@ const signIn = useActionForm(
   { defaults: { email: "", password: "" }, onSuccess: () => (needsCode.value ? undefined : navigateTo(localePath("/"))) },
 );
 
-const twoFactor = useActionForm(
+const twoFactor = bindActionForm(
   z.object({ code: z.string().trim().min(1) }),
   {
     mutation: async ({ code }) =>
@@ -88,7 +89,7 @@ const twoFactor = useActionForm(
   { defaults: { code: "" }, onSuccess: () => navigateTo(localePath("/")) },
 );
 
-const signUp = useActionForm(
+const signUp = bindActionForm(
   signUpSchema,
   {
     mutation: async (input) => unwrap(await authClient.signUp.email(input), "nuxvel.authForm.signUpFailed"),
@@ -102,7 +103,7 @@ const signUp = useActionForm(
 
 const resetLinkSent = ref(false);
 
-const forgotPassword = useActionForm(
+const forgotPassword = bindActionForm(
   forgotPasswordSchema,
   {
     mutation: async ({ email }) =>
@@ -116,7 +117,7 @@ const forgotPassword = useActionForm(
 
 const resetToken = typeof route.query.token === "string" ? route.query.token : "";
 
-const resetPassword = useActionForm(
+const resetPassword = bindActionForm(
   resetPasswordSchema,
   {
     mutation: async ({ password }) =>

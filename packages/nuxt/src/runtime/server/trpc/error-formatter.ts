@@ -13,7 +13,8 @@ import type { NETWORK_ERROR } from "../../shared/trpc/network-error";
  * The error shape every procedure sends: tRPC's default, plus
  * `data.fields` — messages per input field, in the {@link ValidationError}
  * shape — when the error belongs to specific fields, and
- * `data.actionCode` — the declared code — when an action `fail()`ed, and
+ * `data.actionCode` — the declared code — when an action `fail()`ed
+ * (with `data.fields` too when the failure has a `field`), and
  * `data.retryAfter` — seconds until the next attempt fits — when a
  * {@link RateLimitedError} carries one, and `data.maintenance` with
  * `data.retryAfter` when the app is in maintenance mode (`nuxvel down`),
@@ -49,7 +50,9 @@ export function isRemovedProcedure(error: TRPCError) {
  * Input validation failures — a procedure's `.input()` schema or a
  * {@link ValidationFailedError} — and single-column conflicts carry
  * `data.fields`, in production too; an {@link ActionError} carries
- * `data.actionCode`, a {@link RateLimitedError} `data.retryAfter`. Errors are recognised by their taxonomy code and
+ * `data.actionCode`, and also `data.fields` with its message under its
+ * `field` when the action declares one; a {@link RateLimitedError}
+ * carries `data.retryAfter`. Errors are recognised by their taxonomy code and
  * Zod's own error check, not `instanceof`, so a second copy of a module
  * cannot hide one.
  */

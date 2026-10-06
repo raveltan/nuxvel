@@ -57,7 +57,7 @@ definePageMeta({ layout: "auth", middleware: "guest" });
 | `"reset-password"` | new password | `authClient.resetPassword()` with the `token` query parameter | opens `/sign-in` |
 
 - Each page in the table opens in the locale of the form's page. On `/zh/sign-in`, a sign-in opens `/zh`. The text of the form is in the locale of the page. See [Internationalization: the nuxvel components](./i18n.md#the-nuxvel-components).
-- The form uses [`useActionForm()`](./frontend.md#forms). It gets field validation, a pending state and the server's error message, like any other form.
+- The form has the same behaviour as a [`useActionForm()`](./frontend.md#forms) form. It gets field validation, a pending state and the server's error message.
 - A field error shows under its field. A refusal from Better Auth, such as a wrong password or an email that is taken, shows above the button.
 - The password field has `autocomplete="current-password"` in sign-in mode and `autocomplete="new-password"` in sign-up mode.
 - In sign-in mode, a user with [two-factor sign-in](#two-factor-sign-in) on then gets an "Authentication code" field. It takes a 6-digit code from an authenticator app or a backup code.
@@ -89,25 +89,35 @@ export const resetPasswordSchema = z.object({
 
 The starter's `app/pages/verify-email.vue` tells a new user to open the link in the mail. Its button sends the link again with `authClient.sendVerificationEmail()`.
 
-To build a form of your own, give `authClient` to `useActionForm()` as the mutation:
+To build a form of your own, use a `<UForm>` with the shared schema, call `authClient` in `submit`, and show the errors with [`useFormErrors()`](./frontend.md#form-errors-without-useactionform):
 
-```ts
-const form = useActionForm(
-  signInSchema,
-  {
-    mutation: async (input) => {
-      const { data, error } = await authClient.signIn.email(input);
+```vue
+<script setup lang="ts">
+const errors = useFormErrors();
+const state = reactive({ email: "", password: "" });
 
-      if (error) throw new Error(error.message ?? "Could not sign in");
+async function submit() {
+  errors.clear();
+  const { error } = await authClient.signIn.email(state);
 
-      return data;
-    },
-  },
-  {
-    defaults: { email: "", password: "" },
-    onSuccess: () => navigateTo({ name: "index" }),
-  },
-);
+  if (error) return errors.set(new Error(error.message ?? "Could not sign in"));
+
+  await navigateTo({ name: "index" });
+}
+</script>
+
+<template>
+  <UForm :schema="signInSchema" :state="state" @submit="submit">
+    <UFormField name="email" label="Email">
+      <UInput v-model="state.email" type="email" />
+    </UFormField>
+    <UFormField name="password" label="Password">
+      <UInput v-model="state.password" type="password" />
+    </UFormField>
+    <p v-if="errors.formError" role="alert">{{ errors.formError }}</p>
+    <UButton type="submit">Sign in</UButton>
+  </UForm>
+</template>
 ```
 
 Set `nuxvel.auth.signInPath` to the sign-in page, so that the `auth` middleware sends signed-out visitors there. See [Protecting pages](#protecting-pages).

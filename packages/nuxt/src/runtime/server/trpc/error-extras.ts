@@ -12,7 +12,7 @@ export function errorFields(error: TRPCError): ValidationError["fields"] | undef
 
   if (isTaxonomyError(error, "BAD_REQUEST")) return error.fields;
 
-  if (isTaxonomyError(error, "CONFLICT") && error.field) {
+  if ((isTaxonomyError(error, "CONFLICT") || isTaxonomyError(error, "UNPROCESSABLE_CONTENT")) && error.field) {
     return { [error.field]: [error.message] };
   }
 
@@ -22,7 +22,10 @@ export function errorFields(error: TRPCError): ValidationError["fields"] | undef
 export function errorExtras(
   error: TRPCError,
 ): Pick<NuxvelErrorShape["data"], "fields" | "actionCode" | "retryAfter" | "maintenance"> | undefined {
-  if (isTaxonomyError(error, "UNPROCESSABLE_CONTENT")) return { actionCode: error.actionCode };
+  if (isTaxonomyError(error, "UNPROCESSABLE_CONTENT")) {
+    const fields = errorFields(error);
+    return { actionCode: error.actionCode, ...(fields && { fields }) };
+  }
 
   if (isTaxonomyError(error, "TOO_MANY_REQUESTS") && error.retryAfter !== undefined) {
     return { retryAfter: error.retryAfter };

@@ -436,8 +436,8 @@ import { bookingTable, roomTable } from "#nuxvel/schema";
 export const createBookingAction = defineAction({
   input: createBookingInput,
   errors: {
-    "booking.over-capacity": "The room is too small for this many guests",
-    "booking.overlap": "The room is booked at this time",
+    "booking.over-capacity": { message: "The room is too small for this many guests", field: "guests" },
+    "booking.overlap": { message: "The room is booked at this time", field: "startsAt" },
   },
   handler: async (input, ctx, fail) => {
     const room = await findOrFail(roomTable, input.roomId);
@@ -578,9 +578,9 @@ Add the past rule to the create action. `now()` is auto-imported on the server:
 ```ts
 // server/actions/booking/create-booking.action.ts
   errors: {
-    "booking.over-capacity": "The room is too small for this many guests",
-    "booking.overlap": "The room is booked at this time",
-    "booking.in-the-past": "Choose a start time in the future",
+    "booking.over-capacity": { message: "The room is too small for this many guests", field: "guests" },
+    "booking.overlap": { message: "The room is booked at this time", field: "startsAt" },
+    "booking.in-the-past": { message: "Choose a start time in the future", field: "startsAt" },
   },
   handler: async (input, ctx, fail) => {
     if (input.startsAt <= now()) fail("booking.in-the-past");
@@ -1209,7 +1209,7 @@ export const RoomTooSmall: StoryObj<typeof meta> = {
       mockTrpc({
         booking: {
           create: () => {
-            throw new ActionError("booking.over-capacity", "Hopper holds 4 people");
+            throw new ActionError("booking.over-capacity", "Hopper holds 4 people", "booking.create-booking", "guests");
           },
         },
       }),
@@ -1272,13 +1272,9 @@ While one story file cannot load, the stories of the starter fail too, with an a
 <script setup lang="ts">
 const props = defineProps<{ rooms: { id: number; name: string; capacity: number }[] }>();
 
-const form = useActionForm(createBookingInput, $api.booking.create.mutationOptions({ toast: "Room booked" }), {
+const form = useActionForm($api.booking.create, {
+  toast: "Room booked",
   defaults: { title: "", roomId: undefined, startsAt: undefined, endsAt: undefined, guests: 1 },
-  failures: {
-    "booking.over-capacity": "guests",
-    "booking.overlap": "startsAt",
-    "booking.in-the-past": "startsAt",
-  },
   onSuccess: () => navigateTo({ name: "bookings" }),
 });
 
@@ -1323,7 +1319,7 @@ function localTime(date: Date | undefined) {
 ```
 
 - `useActionForm` checks the state with `createBookingInput` in the browser first, so the schema messages of chapter 4 show here with no more code.
-- `failures` puts the message of each action failure under its field. A failure that is not in the map, such as `UNAUTHORIZED`, goes to `form.formError`.
+- The `field` of each failure in the action puts its message under that field. A failure with no field, such as `UNAUTHORIZED`, goes to `form.formError`.
 - A `datetime-local` input holds a local time string, and the schema takes a `Date`. `localTime` converts the `Date` for the input, and `new Date($event)` converts it back.
 
 ```bash

@@ -9,9 +9,9 @@ Auto-imported: composables, components, `shared/schemas/*`, `RouterInputs`, `Rou
 definePageMeta({ middleware: "auth" });
 const { ts, localeRoute } = useI18n();
 const posts = $api.post.list.useQuery({ page: 1 });
-const form = useActionForm(createPostInput, $api.post.create.mutationOptions(), {
-  defaults: { title: "", body: "" },
-  failures: { "post.locked": "title" },
+const form = useActionForm($api.post.create, {
+  defaults: { body: "" },
+  toast: "Post created",
   onSuccess: () => navigateTo(localeRoute({ name: "post" })),
 });
 useSeo(() => ({ title: ts("post.title") }));
@@ -51,7 +51,7 @@ const remove = $api.post.delete.useMutation({
 | `useQueryCache()` | `setQueriesData`, `invalidateQueries({ key })` for a refetch no mutation causes. A mutation already refetches its router's queries and the tags its actions declare in `invalidates` |
 | `{ optimistic: { key, apply } }` in `.useMutation()` or `.mutationOptions()` | change the cache first, roll back on error. `apply` can be `removeRow()`, `prependRow()` or `replaceRow()` on a paginated list |
 | `useLiveQuery(options, { channel, on \| refetch })` | query patched by channel events |
-| `useActionForm(schema, mutationOptions, { defaults, onSuccess, failures, warnUnsaved })` | `form.ref/schema/state/submit/errors/formError/pending` |
+| `useActionForm($api.post.create, { defaults, onSuccess, failures, warnUnsaved, schema, toast, confirm, invalidate })` | `form.ref/schema/state/submit/errors/formError/pending`. Schema: the procedure's input from `shared/schemas/` (else pass `schema`). `defaults` is partial: `defaults: props.post` keeps the schema's keys, a missing key starts at its `.default()` or `undefined`. A failure with `field` on the action shows under that field; `failures: { code: "field" }` overrides |
 | `RouterOutputs["post"]["byId"]` | procedure type, never hand-written |
 
 SSR: `NOT_FOUND`/`FORBIDDEN`/`UNAUTHORIZED` render the `error` slot with 404/403/401. `ssrCatchError: true` on a query for expected errors.

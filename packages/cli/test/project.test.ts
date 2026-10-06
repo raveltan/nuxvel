@@ -953,6 +953,24 @@ export default defineDeploy({
     ]);
   }, 60000);
 
+  it("test:arch flags server code imported under shared/, and passes a schema that imports zod", async () => {
+    const fixtureCwd = scratchDir("arch-shared-imports");
+
+    buildNuxtFixture(fixtureCwd);
+    mkdirSync(join(fixtureCwd, "shared", "schemas"), { recursive: true });
+    writeFileSync(join(fixtureCwd, "shared", "schemas", "post.ts"), 'import { z } from "zod";\n\nexport const postInput = z.object({ title: z.string() });\n');
+    writeFileSync(join(fixtureCwd, "shared", "schemas", "report.ts"), 'import { postsTable } from "#nuxvel/schema";\n\nexport const reportTable = postsTable;\n');
+
+    const { stdout, stderr, exitCode } = await runCliAt(fixtureCwd, "test:arch");
+
+    expect(exitCode).toBe(1);
+    expect(stdout).toBe("");
+    expect(violationLines(stderr)).toEqual([
+      "✖ shared/schemas/report.ts: #nuxvel/schema is server code: shared/ runs in the browser and may not import it",
+      "✖ 1 architecture violation",
+    ]);
+  }, 60000);
+
   it("test:arch flags v-html in an app component, and passes one that renders <SafeHtml>", async () => {
     const fixtureCwd = scratchDir("arch-v-html");
 
@@ -1148,7 +1166,7 @@ export default defineDeploy({
     expect(exitCode).toBe(1);
     expect(stdout).toBe("");
     expect(violationLines(stderr).sort()).toEqual([
-      "✖ 5 architecture violations",
+      "✖ 4 architecture violations",
       "✖ layers/shop/app/pages/cart.vue: layers/shop/ may import from layers/billing/ only under layers/billing/shared/",
       "✖ layers/shop/server/utils/checkout.ts: ../../../billing/server/utils/total leaves layers/shop/server/utils/ for layers/billing/server/utils/: import it from #layers/billing/server/utils/total",
       "✖ layers/shop/server/utils/checkout.ts: layers/shop/ may import from layers/billing/ only under layers/billing/shared/",
@@ -1179,7 +1197,7 @@ export default defineDeploy({
     expect(exitCode).toBe(1);
     expect(stdout).toBe("");
     expect(violationLines(stderr).sort()).toEqual([
-      "✖ 5 architecture violations",
+      "✖ 4 architecture violations",
       "✖ app/components/ReportCard.vue: ../../server/utils/slug leaves app/components/ for server/utils/: app/ does not import server code",
       "✖ server/jobs/report.job.ts: ../database/schema/auth.schema leaves server/jobs/ for server/database/schema/: import it from #nuxvel/schema",
       "✖ server/utils/report.ts: #shared/schemas/post is in shared/schemas/, whose exports server/ auto-imports: remove the import",

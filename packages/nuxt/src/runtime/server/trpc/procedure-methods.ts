@@ -1,7 +1,7 @@
 import type { AnyProcedureBuilder, AnyRouter, MutationProcedure, UnsetMarker } from "@trpc/server/unstable-core-do-not-import";
 import type { OpenApiMeta } from "trpc-to-openapi";
 import { actorContext } from "../actions/context";
-import type { Action } from "../actions/define-action";
+import type { Action, ActionFailure } from "../actions/define-action";
 import { guestActor } from "../actions/guest-actor";
 
 /**
@@ -33,7 +33,7 @@ declare module "@trpc/server/unstable-core-do-not-import" {
      * ```
      */
     action<Input, Output, Served>(
-      action: Action<Input, Output, Record<string, string>, string, Served>,
+      action: Action<Input, Output, Record<string, ActionFailure>, string, Served>,
     ): MutationProcedure<{
       input: TInputIn extends UnsetMarker ? Input : TInputIn & Input;
       output: TOutputOut extends UnsetMarker ? Served : TOutputOut;
@@ -71,7 +71,7 @@ const CHAINED = ["input", "output", "meta", "use", "concat", "unstable_concat", 
 
 type ChainedMethods = Record<(typeof CHAINED)[number], (...args: unknown[]) => AnyProcedureBuilder>;
 
-function runAction(action: Action<unknown, unknown, Record<string, string>>, input: unknown) {
+function runAction(action: Action<unknown, unknown, Record<string, ActionFailure>>, input: unknown) {
   return actorContext.getStore() ? action(input) : action(input, { actor: guestActor });
 }
 
@@ -82,7 +82,7 @@ export function withProcedureMethods<B extends AnyProcedureBuilder>(builder: B):
 
   for (const key of CHAINED) extended[key] = (...args: unknown[]) => withProcedureMethods(chained[key](...args));
   extended.openapi = (options: OpenapiOptions) => withProcedureMethods(builder.meta({ openapiOptions: options }));
-  extended.action = (action: Action<unknown, unknown, Record<string, string>>) =>
+  extended.action = (action: Action<unknown, unknown, Record<string, ActionFailure>>) =>
     (action.output && !builder._def.output ? builder.output(action.output) : builder)
       .input(action.input)
       .use(async ({ getRawInput, next }) => next({ ctx: { rawInput: await getRawInput() } }))

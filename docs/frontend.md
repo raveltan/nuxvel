@@ -2,7 +2,7 @@
 
 ## Introduction
 
-nuxvel pages read and write data through the typed API, [`$api`](./api.md#calling-from-the-client). Forms use `useActionForm()`, which binds a shared schema and a mutation to a Nuxt UI `<UForm>`. Pages show the loading, error and empty states of a query with `<QueryState>`. Lists stay current with `useLiveQuery()` and optimistic updates.
+nuxvel pages read and write data through the typed API, [`$api`](./api.md#calling-from-the-client). Forms use `useActionForm()`, which binds a mutation of `$api` and its shared input schema to a Nuxt UI `<UForm>`. Pages show the loading, error and empty states of a query with `<QueryState>`. Lists stay current with `useLiveQuery()` and optimistic updates.
 
 ## Nuxt UI
 
@@ -149,7 +149,7 @@ definePageMeta({ middleware: "auth" });
 
 const queryCache = useQueryCache();
 
-const form = useActionForm(createPostInput, $api.post.create.mutationOptions(), {
+const form = useActionForm($api.post.create, {
   defaults: { title: "", body: "" },
   onSuccess: async (created) => {
     queryCache.setQueriesData<RouterOutputs["post"]["list"] | undefined>(
@@ -182,12 +182,16 @@ useSeo({ title: "New post" });
 
 `onSuccess` puts the new row into the cached lists at once, then refetches them, and opens the list. For a form that no resource has, write the same code by hand.
 
-`useActionForm(schema, mutationOptions, options)` is auto-imported. Call it inside `setup()`. Pass the action's input schema from `shared/schemas/` and the options of a tRPC mutation. Bind `ref`, `schema`, `state` and `submit` to `<UForm>`.
+`useActionForm($api.<path>, options?)` is auto-imported. Call it inside `setup()`. Pass a mutation of [`$api`](./api.md#calling-from-the-client). Bind `ref`, `schema`, `state` and `submit` to `<UForm>`.
+
+The form checks its state with the input schema of the procedure. It finds the schema in `shared/schemas/`: the schema that the procedure names in `.input()`, or the `input` of the action that `.action()` or the action's `procedure` serves. A procedure whose input schema is not a named export of `shared/schemas/`, for example `.input(z.string())`, does not compile, and so does an auto-imported name that two files of `shared/schemas/` export. Move the schema to `shared/schemas/`, or pass it: `useActionForm($api.health.echo, { schema: echoInput })`. Every page with a form loads the input schemas of all mutations from `shared/schemas/`, so keep those files small and free of server code; `nuxvel test:arch` reports a server import there.
 
 | Option | Description |
 |---|---|
-| `defaults` | The initial form state. `v-model` binds to `form.state`. A field can start as `undefined`, for example a required select. The schema then stops the submit until the user sets a value. |
+| `defaults` | The initial form state. `v-model` binds to `form.state`. See [Defaults](#defaults). |
 | `onSuccess` | Runs with the mutation's result after a successful submit. |
+| `toast`, `confirm`, `invalidate`, `optimistic` | Pass to the mutation, as the [options of `.mutationOptions()`](./api.md#caching-queries-pinia-colada). So do Pinia Colada's `onMutate`, `onError` and `onSettled`. A cancelled `confirm` sends nothing and shows no error. |
+| `schema` | Checks the state in place of the procedure's input schema. Its input must be the input of the procedure. |
 | `failures` | Maps a typed failure code to a field. See [Typed failures on a field](#typed-failures-on-a-field). |
 | `warnUnsaved` | Asks before the user leaves the page with unsaved changes. The default is `true` when `defaults` has an `id`, as in an edit form, and `false` otherwise. See [Unsaved changes](#unsaved-changes). |
 
@@ -201,6 +205,16 @@ useSeo({ title: "New post" });
 A submit while the mutation runs does nothing. Each submit sends the same idempotency key. When the procedure uses [`idempotent()`](./api.md#idempotent-mutations), a second submit of the same state gets the first result, and the mutation does not run again. A changed field gives new input, so the mutation runs.
 
 The mutation receives `form.state` as typed (`z.input`), not the schema's parsed output. The schema only checks the state in the browser. The procedure on the server parses the input once, so a schema that coerces or transforms works as expected.
+
+### Defaults
+
+```ts
+const props = defineProps<{ post: RouterOutputs["post"]["byId"] }>();
+
+const form = useActionForm($api.post.update, { defaults: props.post, toast: "Post saved" });
+```
+
+`defaults` is partial. The form keeps only the keys of the schema, so a whole row works: `form.state` above is `{ id, title, body }`. A key that `defaults` leaves out starts at the schema's `.default()`, or as `undefined`, for example a required select. The schema then stops the submit until the user sets a value. Without `defaults`, every key starts that way.
 
 ### Validation errors
 
@@ -221,27 +235,25 @@ When the server cannot be reached, they show "Can't reach the server. Check your
 ### Unsaved changes
 
 ```ts
-const form = useActionForm(updatePostInput, $api.post.update.mutationOptions(), {
-  defaults: { id: post.id, title: post.title, body: post.body },
-});
+const form = useActionForm($api.post.update, { defaults: post });
 ```
 
-An edit form asks "You have unsaved changes. Leave this page?", in the page locale (see [i18n: the nuxvel components](./i18n.md#the-nuxvel-components)), when the user follows a link away while `form.state` differs from the saved state. The browser shows its own prompt when the user closes or reloads the tab. The saved state is `defaults`, and then the state of the last successful submit, so the `navigateTo()` in `onSuccess` goes through with no prompt.
+An edit form asks "You have unsaved changes. Leave this page?", in the page locale (see [i18n: the nuxvel components](./i18n.md#the-nuxvel-components)), when the user follows a link away while `form.state` differs from the saved state. The browser shows its own prompt when the user closes or reloads the tab. The saved state is the initial state, and then the state of the last successful submit, so the `navigateTo()` in `onSuccess` goes through with no prompt.
 
 A form whose `defaults` has an `id` counts as an edit form. Set `warnUnsaved: true` to ask on another form, or `warnUnsaved: false` to never ask.
 
 ### Typed failures on a field
 
 ```ts
-const form = useActionForm(updatePostInput, $api.post.update.mutationOptions(), {
-  defaults: { id: post.id, title: post.title, body: post.body },
-  failures: { "post.body-empty": "body" },
+const form = useActionForm($api.post.update, {
+  defaults: post,
+  failures: { "post.body-empty": "title" },
 });
 ```
 
-Some [typed failures](./actions.md#typed-failures) belong to one field. Map the failure code to the field name with `failures`. When the action calls `fail("post.body-empty")`, the declared message shows under the `body` field. It stays there until the value of `body` changes.
+Some [typed failures](./actions.md#typed-failures) belong to one field. Declare the field on the action, [`{ message, field }`](./actions.md#a-failure-on-a-field), and the message shows under that field with no form option. To put it under another field, or to place a failure the action declares without a field, map the failure code to the field name with `failures`: it wins over the field of the action. Above, when the action calls `fail("post.body-empty")`, the declared message shows under the `title` field. It stays there until the value of `title` changes.
 
-A code that is not in the map goes into `form.formError`. The field names are type-checked against the top-level keys of the schema input. The failure codes are type-checked against the codes that the actions under `server/actions/` declare in `errors`. A code that no action declares does not compile. The check does not know which action the procedure calls, so a code of another action still compiles.
+A code with no field goes into `form.formError`. The field names are type-checked against the top-level keys of the schema input. The failure codes are type-checked against the codes that the actions under `server/actions/` declare in `errors`. A code that no action declares does not compile. The check does not know which action the procedure calls, so a code of another action still compiles.
 
 ### Forms without Nuxt UI
 
@@ -301,15 +313,16 @@ async function save() {
 ## Success toasts
 
 ```ts
-const form = useActionForm(updatePostInput, $api.post.update.mutationOptions({ toast: "Post saved" }), {
-  defaults: { id: post.id, title: post.title, body: post.body },
+const form = useActionForm($api.post.update, {
+  defaults: post,
+  toast: "Post saved",
   onSuccess: () => navigateTo({ name: "posts" }),
 });
 
 const publish = $api.post.publish.useMutation({ toast: (post) => `Published ${post.title}` });
 ```
 
-`toast` on `.useMutation()` or `.mutationOptions()` shows a Nuxt UI success toast each time the mutation succeeds. Call either inside `setup()`.
+`toast` on `useActionForm()`, `.useMutation()` or `.mutationOptions()` shows a Nuxt UI success toast each time the mutation succeeds. Call them inside `setup()`.
 
 - `toast` is the title, the [toast props](https://ui.nuxt.com/docs/components/toast) such as `{ title, description, icon }`, or a function of the result that returns either. The colour is `"success"` unless the props set one.
 - A failure shows no toast. Show the error on the page, as `form.formError` does. A toast closes after some seconds, but an error must stay until the user acts.
@@ -335,7 +348,7 @@ export const postRouter = {
 
 ```ts
 // app/pages/posts/new.vue
-const form = useActionForm(createPostInput, $api.post.create.mutationOptions(), {
+const form = useActionForm($api.post.create, {
   defaults: { title: "", body: "" },
   onSuccess: () => navigateTo({ name: "posts" }),
 });
@@ -386,7 +399,7 @@ const deletePost = $api.post.delete.useMutation({
 });
 ```
 
-`confirm` on `.useMutation()` or `.mutationOptions()` opens a dialog before the mutation runs. It takes the options in the table below, or a function of the input that returns them: `` confirm: ({ id }) => ({ title: `Delete post ${id}?` }) ``. When the user cancels, neither the procedure nor any callback runs, and `status` and `error` stay as they were. `mutate()` does nothing more, `mutateAsync()` rejects with a `MutationCancelledError`, and a form of `useActionForm()` stays as it is, without `onSuccess`. Like `useConfirm()`, it needs Nuxt UI and `<UApp>`.
+`confirm` on `useActionForm()`, `.useMutation()` or `.mutationOptions()` opens a dialog before the mutation runs. It takes the options in the table below, or a function of the input that returns them: `` confirm: ({ id }) => ({ title: `Delete post ${id}?` }) ``. When the user cancels, neither the procedure nor any callback runs, and `status` and `error` stay as they were. `mutate()` does nothing more, `mutateAsync()` rejects with a `MutationCancelledError`, and a form of `useActionForm()` stays as it is, without `onSuccess`. Like `useConfirm()`, it needs Nuxt UI and `<UApp>`.
 
 To ask in your own code, call `useConfirm()`:
 
@@ -487,7 +500,7 @@ To change a row from a cell, pass the same input to the key of the [`optimistic`
 ```vue
 <!-- app/pages/profile.vue -->
 <script setup lang="ts">
-const form = useActionForm(setAvatarInput, $api.profile.setAvatar.mutationOptions(), {
+const form = useActionForm($api.profile.setAvatar, {
   defaults: { key: "" },
   onSuccess: () => navigateTo({ name: "index" }),
 });
@@ -840,7 +853,7 @@ const rename = $api.post.update.useMutation({ invalidate: (post) => [["post", "b
 const ping = $api.health.echo.useMutation({ invalidate: false });
 ```
 
-`invalidate` on `.useMutation()` or `.mutationOptions()` replaces what the call invalidates: the tags that you list, the tags that a function of the result and the input returns, or nothing with `false`. The response's tags and the namespace then do not count. A tag is a string or an array, as in `invalidates`: `"post:byId"` is `["post", "byId"]`. `useActionForm()` keeps the `invalidate` of the `mutationOptions()` that you pass it.
+`invalidate` on `.useMutation()` or `.mutationOptions()` replaces what the call invalidates: the tags that you list, the tags that a function of the result and the input returns, or nothing with `false`. The response's tags and the namespace then do not count. A tag is a string or an array, as in `invalidates`: `"post:byId"` is `["post", "byId"]`. `useActionForm()` takes `invalidate` too, and passes it to the mutation.
 
 ## Optimistic updates
 
@@ -852,7 +865,7 @@ const deletePost = $api.post.delete.useMutation({
 
 `optimistic` changes a cached query before the server answers. Here the post leaves the list at once, and [`removeRow()`](#patching-a-paginated-list) keeps `total` right. If the server refuses the delete, the post comes back, and `deletePost.error` holds the error. When the mutation settles, the query is fetched again, so the server's answer wins.
 
-`.mutationOptions()` takes the same `optimistic`, so a form of `useActionForm()` works the same way. See [API: optimistic updates](./api.md#optimistic-updates) for the full reference.
+`.mutationOptions()` and `useActionForm()` take the same `optimistic`. See [API: optimistic updates](./api.md#optimistic-updates) for the full reference.
 
 ## Layouts
 

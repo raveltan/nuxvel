@@ -2,7 +2,7 @@ import { defineComponent, h } from "vue";
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { useQueryCache } from "@pinia/colada";
-import { $api, createPostInput, useActionForm, useNuxtApp } from "#imports";
+import { $api, useActionForm, useNuxtApp } from "#imports";
 
 async function mounted<T>(setup: () => T) {
   let result: T | undefined;
@@ -90,10 +90,7 @@ describe("the options of .useMutation()", () => {
     vi.spyOn(mutationUi(), "confirm").mockResolvedValue(false);
     const onSuccess = vi.fn();
     const form = await mounted(() =>
-      useActionForm(createPostInput, $api.post.create.mutationOptions({ confirm: { title: "Create post?" } }), {
-        defaults: { title: "Hello", body: "" },
-        onSuccess,
-      }),
+      useActionForm($api.post.create, { confirm: { title: "Create post?" }, defaults: { title: "Hello", body: "" }, onSuccess }),
     );
 
     await form.submit();
@@ -101,6 +98,21 @@ describe("the options of .useMutation()", () => {
     expect(onSuccess).not.toHaveBeenCalled();
     expect(form.formError).toBeUndefined();
     expect(form.pending).toBe(false);
+  });
+
+  it("passes the toast and invalidate options of useActionForm() to the mutation", async () => {
+    registerEndpoint("/api/trpc/post.create", { method: "POST", handler: () => ({ result: { data: { json: { id: 7, title: "Hello" } } } }) });
+    const toast = vi.spyOn(mutationUi(), "toast").mockImplementation(() => {});
+    const invalidate = vi.spyOn(useQueryCache(), "invalidateQueries");
+    const form = await mounted(() =>
+      useActionForm($api.post.create, { toast: (post) => `Created ${post.title}`, invalidate: ["tag"], defaults: { title: "Hello", body: "" } }),
+    );
+
+    await form.submit();
+
+    expect(toast).toHaveBeenCalledWith({ color: "success", title: "Created Hello" });
+    await vi.waitFor(() => expect(invalidate).toHaveBeenCalled());
+    expect(invalidate.mock.calls.map(([filters]) => filters?.key)).toEqual([["trpc", "tag"]]);
   });
 
   it("keeps status and error as they were after a cancel", async () => {

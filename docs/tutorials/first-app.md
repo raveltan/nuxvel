@@ -374,14 +374,15 @@ The file name gives the namespace, so the procedure is `rsvp.send`. `rsvpSchema`
 
 ### The answer form
 
-`useActionForm()` connects a Nuxt UI form to a mutation. It validates in the browser with the same schema, and it shows the server's errors under the fields. Write the form as a component:
+`useActionForm($api.rsvp.send)` connects a Nuxt UI form to a mutation. It validates in the browser with the schema of the action, and it shows the server's errors under the fields. Write the form as a component:
 
 ```vue
 <!-- app/components/RsvpForm.vue -->
 <script setup lang="ts">
 const props = defineProps<{ eventId: number }>();
 
-const form = useActionForm(sendRsvpInput, $api.rsvp.send.mutationOptions({ toast: "RSVP sent" }), {
+const form = useActionForm($api.rsvp.send, {
+  toast: "RSVP sent",
   defaults: { eventId: props.eventId, answer: undefined },
 });
 </script>
@@ -617,7 +618,8 @@ Add the procedure to the event router, after `guests`:
 <script setup lang="ts">
 const props = defineProps<{ eventId: number }>();
 
-const form = useActionForm(inviteGuestInput, $api.event.invite.mutationOptions({ toast: "Invitation sent" }), {
+const form = useActionForm($api.event.invite, {
+  toast: "Invitation sent",
   defaults: { eventId: props.eventId, email: "" },
   onSuccess: () => {
     form.state.email = "";

@@ -63,6 +63,17 @@ applies each step below that names a codemod.
   that calls no action writes the row with `await audit("post.updated",
   { type: getTableName(postTable), id: input.id })` in its handler.
   Codemod: `audit`.
+- `useActionForm(schema, mutationOptions, options)` is removed: it takes
+  the mutation of `$api` and one options object, and finds the input
+  schema in `shared/schemas/`. By hand: write
+  `useActionForm($api.post.update, { toast: "Saved", defaults, onSuccess })`
+  in place of `useActionForm(updatePostInput,
+  $api.post.update.mutationOptions({ toast: "Saved" }), { defaults,
+  onSuccess })`. Move an `onSuccess` of `.mutationOptions()` into the
+  `onSuccess` of the form. A procedure whose input schema is not a named
+  export of `shared/schemas/` does not compile: move the schema there,
+  or pass it as `schema`. A form of another client, such as Better Auth,
+  calls the client in a `<UForm>` of its own. Codemod: `action-form`.
 - `nuxvel test:arch` reports an `.action()` without `.output()` before
   it, and an action with `procedure` and no `output`, in the rule
   `nuxvel/router-output`. By hand: add `.output(schema)` before
@@ -185,6 +196,26 @@ applies each step below that names a codemod.
   patches for a page of `paginated()` data, for `useLiveQuery()` and
   optimistic updates. They keep `total` and `lastPage` right and skip a
   duplicate row.
+- An action's `errors` takes `{ message, field }` for a failure that
+  belongs to one input field: the procedure also sends the message in
+  `data.fields`, and `useActionForm()` shows it under that field. The
+  `failures` option of `useActionForm()` wins over it.
+- `useActionForm($api.<path>, options?)` takes its schema from the
+  generated `#nuxvel/procedure-inputs`, and passes `toast`, `confirm`,
+  `invalidate`, `optimistic` and Pinia Colada's callbacks to the
+  mutation. `defaults` is partial: it keeps only the keys of the schema,
+  and a key it leaves out starts at the schema's `.default()` or
+  `undefined`. `schema` replaces the procedure's schema.
+- `nuxvel upgrade --only action-form` rewrites
+  `useActionForm(schema, $api.<path>.mutationOptions(options), formOptions)`
+  to `useActionForm($api.<path>, { ...options, ...formOptions })`.
+- The forms that `make:resource --ui` writes pass the `$api` mutation to
+  `useActionForm()`.
+- `toHaveValidationErrors` passes for an action failure with a `field`.
+- `nuxvel test:arch` and the `architecture` preset report an import of
+  server code under `shared/` (`server/`, `#server/*`, `#nuxvel/*`,
+  `drizzle-orm`, `@nuxvel/nuxt/database`), in the rule
+  `nuxvel/shared-imports`.
 - `make:action` writes an action without `input` when you give no fields,
   and `make:router --crud` writes `.openapi()` for `GET` and `POST`
   procedures and mutations that do not pass the actor.

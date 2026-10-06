@@ -208,13 +208,26 @@ interface DecoratedQuery<
   ): TRPCQueryKey<TRouter, TProcedure>;
 }
 
-interface DecoratedMutation<
+/**
+ * The key under which every mutation of `$api` holds its dotted path,
+ * such as `"post.create"`. `useActionForm()` reads it.
+ */
+export const PROCEDURE_PATH = Symbol("nuxvel.procedurePath");
+
+/**
+ * A mutation procedure of `$api`: its Pinia Colada helpers and its
+ * dotted path under {@link PROCEDURE_PATH}. Pass it to `useActionForm()`.
+ */
+export interface DecoratedMutation<
   TRouter extends AnyTRPCRouter,
   TProcedure extends AnyTRPCMutationProcedure,
+  TPath extends string = string,
 > {
+  /** The procedure's dotted path, such as `"post.create"`. */
+  readonly [PROCEDURE_PATH]: TPath;
   /**
    * Builds the options of Pinia Colada's `useMutation()` for this
-   * procedure, for `useActionForm()` or a plain `useMutation()`. Each
+   * procedure, for a plain `useMutation()`. Each
    * call picks one idempotency key and sends it with every mutation, so
    * a procedure with `idempotent()` runs the same input once. It takes
    * the options of {@link DecoratedMutation.useMutation}; call it in
@@ -224,7 +237,7 @@ interface DecoratedMutation<
    *
    * @example
    * ```ts
-   * const form = useActionForm(createPostInput, $api.post.create.mutationOptions({ invalidate: ["post", "tag"] }));
+   * const createPost = useMutation($api.post.create.mutationOptions({ invalidate: ["post", "tag"] }));
    * ```
    */
   mutationOptions<TContext extends Record<any, any> = _EmptyObject, TData = unknown>(
@@ -281,13 +294,14 @@ interface DecoratedMutation<
 type DecorateRecord<
   TRouter extends AnyTRPCRouter,
   TRecord extends TRPCRouterRecord,
+  Prefix extends string = "",
 > = {
   [K in keyof TRecord]: TRecord[K] extends AnyTRPCQueryProcedure
     ? DecoratedQuery<TRouter, TRecord[K]>
     : TRecord[K] extends AnyTRPCMutationProcedure
-      ? DecoratedMutation<TRouter, TRecord[K]>
+      ? DecoratedMutation<TRouter, TRecord[K], `${Prefix}${K & string}`>
       : TRecord[K] extends TRPCRouterRecord
-        ? DecorateRecord<TRouter, TRecord[K]> & {
+        ? DecorateRecord<TRouter, TRecord[K], `${Prefix}${K & string}.`> & {
             /** The cache key prefix shared by every query in this namespace. */
             key(): EntryKey;
           }
@@ -488,8 +502,10 @@ function useProcedureMutation(client: object, procedurePath: string[], options: 
 
 function pathProxy(client: object, path: string[]): unknown {
   return new Proxy(() => {}, {
-    get: (_target, prop) =>
-      typeof prop === "string" && prop !== "then" ? pathProxy(client, [...path, prop]) : undefined,
+    get: (_target, prop) => {
+      if (prop === PROCEDURE_PATH) return path.join(".");
+      return typeof prop === "string" && prop !== "then" ? pathProxy(client, [...path, prop]) : undefined;
+    },
     apply: (_target, _this, args: unknown[]) => {
       const procedurePath = path.slice(0, -1);
       const method = path.at(-1);

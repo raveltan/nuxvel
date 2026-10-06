@@ -1,11 +1,11 @@
-import type { Action } from "../actions/define-action";
+import type { Action, ActionFailure } from "../actions/define-action";
 import { type Named, named } from "./definition-name";
 import { isRenamed } from "./renamed";
 
 type ValuesOf<Module> = Module extends unknown ? Module[keyof Module] : never;
 
 /** Any action from {@link defineAction}, whatever its input, output and errors. */
-export type AnyAction = Action<never, unknown, Record<string, string>>;
+export type AnyAction = Action<never, unknown, Record<string, ActionFailure>>;
 
 type ActionOf<Module> = Extract<ValuesOf<Module>, AnyAction>;
 

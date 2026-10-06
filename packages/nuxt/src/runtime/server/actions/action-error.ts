@@ -7,23 +7,27 @@ import { TaxonomyError, isTaxonomyError } from "../errors/taxonomy";
  * `actionCode` is one of the keys declared in the action's `errors` map;
  * a procedure sends it to the client as `data.actionCode`, and its
  * message survives production. `action` is the failing action's name
- * when `fail()` threw it. Branch on it with {@link isActionError}.
+ * when `fail()` threw it. `field` is the input field the failure
+ * belongs to: a procedure also sends the message as that field's
+ * error in `data.fields`. Branch on it with {@link isActionError}.
  */
 export class ActionError extends TaxonomyError {
   declare readonly code: "UNPROCESSABLE_CONTENT";
   readonly actionCode: string;
   readonly action: string | undefined;
+  readonly field: string | undefined;
 
-  constructor(actionCode: string, message: string, action?: string) {
+  constructor(actionCode: string, message: string, action?: string, field?: string) {
     super("UNPROCESSABLE_CONTENT", message);
     this.actionCode = actionCode;
     this.action = action;
+    this.field = field;
   }
 }
 
 interface ActionWithErrors {
   readonly actionName: string;
-  readonly errors: Partial<Record<string, string>>;
+  readonly errors: Partial<Record<string, unknown>>;
 }
 
 /** The error codes an action from `defineAction` declares, as a union. */

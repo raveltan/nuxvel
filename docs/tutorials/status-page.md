@@ -787,7 +787,7 @@ A form opens an incident:
 ```vue
 <!-- app/components/OpenIncidentForm.vue -->
 <script setup lang="ts">
-const form = useActionForm(openIncidentInput, $api.incident.open.mutationOptions(), {
+const form = useActionForm($api.incident.open, {
   defaults: { title: "", body: "" },
   onSuccess: () => navigateTo({ name: "admin" }),
 });
@@ -807,7 +807,7 @@ const form = useActionForm(openIncidentInput, $api.incident.open.mutationOptions
 </template>
 ```
 
-`useActionForm()` checks the input in the browser with the same schema as the server, then calls the mutation. After a success, it goes to the list of open incidents, which shows the flash message. A second form posts an update:
+`useActionForm($api.incident.open)` checks the input in the browser with the same schema as the server, then calls the mutation. After a success, it goes to the list of open incidents, which shows the flash message. A second form posts an update:
 
 ```vue
 <!-- app/components/PostUpdateForm.vue -->
@@ -816,7 +816,8 @@ const props = defineProps<{ incident: RouterOutputs["status"]["current"][number]
 
 const statuses = Object.entries(statusLabels).map(([value, { label }]) => ({ value, label }));
 
-const form = useActionForm(postIncidentUpdateInput, $api.incident.postUpdate.mutationOptions({ toast: "Update posted" }), {
+const form = useActionForm($api.incident.postUpdate, {
+  toast: "Update posted",
   defaults: { incidentId: props.incident.id, status: props.incident.status, body: "" },
 });
 </script>
@@ -1169,7 +1170,8 @@ The form goes on the status page:
 ```vue
 <!-- app/components/SubscribeForm.vue -->
 <script setup lang="ts">
-const form = useActionForm(subscribeInput, $api.subscriber.subscribe.mutationOptions({ toast: "You will get a mail for each update" }), {
+const form = useActionForm($api.subscriber.subscribe, {
+  toast: "You will get a mail for each update",
   defaults: { email: "" },
 });
 </script>

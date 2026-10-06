@@ -1147,7 +1147,8 @@ The buy form places an order for one product. A `ConflictError` with a `field` s
 <script setup lang="ts">
 const props = defineProps<{ productId: number }>();
 
-const form = useActionForm(placeOrderInput, $api.order.place.mutationOptions({ toast: "Order placed" }), {
+const form = useActionForm($api.order.place, {
+  toast: "Order placed",
   defaults: { productId: props.productId, quantity: 1 },
 });
 </script>
