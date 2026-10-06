@@ -1644,7 +1644,7 @@ When a recipe is published, its author gets a mail. Generate the mail:
 
 ```
 ✔ Created server/mail/recipe/published.mail.ts
-✔ Created server/mail/recipe/templates/RecipePublished.vue
+✔ Created server/mail/templates/RecipePublished.vue
 ✔ Created server/mail/recipe/published.mail.test.ts
 ◇ Updated types (nuxt prepare) (2.8s)
 ```
@@ -1652,7 +1652,7 @@ When a recipe is published, its author gets a mail. Generate the mail:
 The template translates with `$t`, from the same global files as the pages:
 
 ```vue
-<!-- server/mail/recipe/templates/RecipePublished.vue -->
+<!-- server/mail/templates/RecipePublished.vue -->
 <script setup lang="ts">
 defineProps<{ title: string }>();
 </script>
@@ -1669,14 +1669,12 @@ The `subject` gets `t` in its second argument:
 
 ```ts
 // server/mail/recipe/published.mail.ts
-import { h } from "vue";
 import { z } from "zod";
-import RecipePublished from "./templates/RecipePublished.vue";
 
 export const recipePublishedMail = defineMail({
   input: z.object({ to: z.email(), title: z.string() }),
   subject: ({ title }, { t }) => t("mail.recipePublished.subject", { title }),
-  render: (props) => h(RecipePublished, props),
+  template: "RecipePublished",
 });
 ```
 

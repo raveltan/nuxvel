@@ -11,18 +11,14 @@ A notification is a short message to one user, such as "Your post is live". You 
 import { z } from "zod";
 
 export const postPublishedNotification = defineNotification({
-  schema: z.object({ postId: z.number(), title: z.string() }),
-  via: ["database", "mail"],
-  toDatabase: ({ postId, title }) => ({
+  input: z.object({ postId: z.number(), title: z.string() }),
+  via: ["database", "mail", "push"],
+  message: ({ postId, title }) => ({
     title: "Your post is live",
     body: title,
     url: `/posts/${postId}`,
-    icon: "i-lucide-newspaper",
   }),
-  toMail: ({ postId, title }) => ({
-    mail: "post.published",
-    data: { title, url: `https://blog.example.com/posts/${postId}` },
-  }),
+  mail: $mails.notification,
 });
 ```
 
@@ -34,13 +30,22 @@ The auto-imported `$notifications` namespace holds each notification under its p
 
 | Option | Use |
 |---|---|
-| `schema` | A Zod schema for the data that `notify()` takes. |
+| `input` | A Zod schema for the data that `notify()` takes. |
 | `via` | The channels that the notification goes through: `"database"`, `"mail"`, `"push"`. |
-| `toDatabase` | Makes the row that the bell shows. Required when `via` has `"database"`. |
-| `toMail` | Picks the mail to send and its input. Required when `via` has `"mail"`. |
-| `toPush` | Makes the web push to send. Required when `via` has `"push"`. |
+| `message` | Makes one message for every channel: the row that the bell shows, the web push, and the input of `mail`. |
+| `mail` | The mail that the mail channel sends, as its `$mails` definition. Its input is the message. Needs `message`. |
+| `toDatabase` | Makes the row that the bell shows, in place of `message`. |
+| `toMail` | Picks the mail to send and its input, in place of `mail`. |
+| `toPush` | Makes the web push to send, in place of `message`. |
 
-Each builder gets the data after the schema parsed it. A builder for a channel that `via` does not list fails `nuxt typecheck`. A missing builder for a listed channel also fails it.
+`message` returns a `title` and a `body`, and optionally a `url` and an `icon`. Without `message`, each channel in `via` needs its own builder: `toDatabase`, `toMail` or `toPush`. With `message`, a builder replaces it for one channel, for example when the push needs another text:
+
+```ts
+message: ({ postId, title }) => ({ title: "Your post is live", body: title, url: `/posts/${postId}` }),
+toPush: ({ title }) => ({ title: "Live!", body: title }),
+```
+
+Each builder gets the data after `input` parsed it, so `message` gets the typed input. A builder for a channel that `via` does not list fails `nuxt typecheck`. A missing builder for a listed channel also fails it.
 
 ### Generating a notification
 
@@ -72,9 +77,9 @@ export const publishPostAction = defineAction({
 
 `$notifications.<name>.notify(userIds, data)` sends the notification to one user or to several. Pass one user ID, or a list of user IDs. `$notifications` holds every notification of `server/notifications/`, keyed by its path in camelCase, and is auto-imported on the server.
 
-`notify()` validates `data` against the schema first. Async refinements and transforms also run. Invalid data throws `ValidationFailedError`, the same error a failed action throws.
+`notify()` validates `data` against `input` first. Async refinements and transforms also run. Invalid data throws `ValidationFailedError`, the same error a failed action throws.
 
-`data` has the input type of the notification's schema, so wrong data fails `nuxt typecheck`. Go to definition on `published` opens the notification file.
+`data` has the input type of the notification's `input` schema, so wrong data fails `nuxt typecheck`. Go to definition on `published` opens the notification file.
 
 Inside a transaction, such as in an action, the rows of the database channel are written in the transaction, and everything else waits for the commit. When the transaction rolls back, nobody is notified. Outside a transaction, all of it happens immediately.
 
@@ -91,7 +96,7 @@ toDatabase: ({ postId, title }) => ({
 }),
 ```
 
-`toDatabase` returns a `title` and a `body`. The `url` and the `icon` are optional. The `icon` is a Nuxt UI icon name.
+The row holds what `message` returns, or what `toDatabase` returns when the notification has it. It has a `title` and a `body`. The `url` and the `icon` are optional. The `icon` is a Nuxt UI icon name.
 
 `notify()` inserts one `notifications` row for each user. It writes the rows immediately, in the active transaction. When the transaction rolls back, the rows go too.
 
@@ -100,7 +105,7 @@ toDatabase: ({ postId, title }) => ({
 | `id` | A UUID. |
 | `user_id` | The user that got the notification. |
 | `name` | The name of the notification, such as `post.published`. |
-| `data` | What `toDatabase` returned, as JSON. |
+| `data` | The message, as JSON. |
 | `read_at` | When the user read it, or `null`. |
 | `created_at` | When `notify()` wrote the row. |
 
@@ -131,15 +136,32 @@ The rows are personal data. A new app declares the table in `server/privacy/noti
 ### The mail channel
 
 ```ts
+mail: $mails.notification,
+```
+
+With `mail`, the mail channel sends that [mail](./mail.md), as its `$mails` definition, with the message as its input. The input of the mail must take the message: a `title` and a `body`, and an optional `url` and `icon`. Another mail fails `nuxt typecheck`:
+
+```ts
+// server/mail/notification.mail.ts
+export const notificationMail = defineMail({
+  input: z.object({ to: z.email(), title: z.string(), body: z.string(), url: z.string().optional() }),
+  subject: ({ title }) => title,
+  template: "Notification",
+});
+```
+
+`toMail` sends another mail, or the same mail with other input:
+
+```ts
 toMail: ({ postId, title }) => ({
-  mail: "post.published",
-  data: { title, url: `https://blog.example.com/posts/${postId}` },
+  mail: $mails.post.published,
+  input: { title, url: `https://blog.example.com/posts/${postId}` },
 }),
 ```
 
-`toMail` returns the name of a [mail](./mail.md) and the input of that mail without `to`. The mail goes to the email address of each user. `mail` is a `MailName`, and `data` is typed by that mail's schema.
+`toMail` returns a [mail](./mail.md), as its `$mails` definition, and the input of that mail without `to`. The mail goes to the email address of each user. `input` is typed by that mail's schema, so a wrong input fails `nuxt typecheck`, and go to definition on `published` opens the mail file.
 
-`notify()` calls `toMail` immediately. After the commit, it dispatches the built-in `nuxvel.notification` job on the `mail` queue. `nuxvel queue:work` runs the job. The job reads the email address and the [locale](./auth.md#the-locale-of-the-user) of each user from the `user` table, and sends the mail to each one in that locale. The rules of [`send()`](./mail.md#sending-a-mail) then apply: the mail input is validated, and a suppressed address gets nothing. When the transaction rolls back, no job runs.
+`notify()` builds the mail input immediately. After the commit, it dispatches the built-in `nuxvel.notification` job on the `mail` queue. `nuxvel queue:work` runs the job. The job reads the email address and the [locale](./auth.md#the-locale-of-the-user) of each user from the `user` table, and sends the mail to each one in that locale. The rules of [`send()`](./mail.md#sending-a-mail) then apply: the mail input is validated, and a suppressed address gets nothing. When the transaction rolls back, no job runs.
 
 ### The push channel
 
@@ -151,9 +173,9 @@ toPush: ({ postId, title }) => ({
 }),
 ```
 
-`toPush` returns the `title` and the `body` of a web push. The `url` and the `icon` are optional. A click opens the `url`, which defaults to `/`. The `icon` is the URL of an image.
+The push holds what `message` returns, or what `toPush` returns when the notification has it. It has the `title` and the `body` of a web push. The `url` and the `icon` are optional. A click opens the `url`, which defaults to `/`. The `icon` is the URL of an image.
 
-`notify()` calls `sendPush()` with the users and the value of `toPush`. After the commit, `sendPush()` dispatches the built-in `nuxvel.push` job. The job sends the push to each device that a user subscribed with `usePush()`. A user with no subscribed device gets nothing, and the job does not fail. When the transaction rolls back, no job runs.
+`notify()` calls `sendPush()` with the users and the push. After the commit, `sendPush()` dispatches the built-in `nuxvel.push` job. The job sends the push to each device that a user subscribed with `usePush()`. A user with no subscribed device gets nothing, and the job does not fail. When the transaction rolls back, no job runs.
 
 The push channel needs `nuxvel.pwa` in `nuxt.config.ts` and the VAPID keys. See [Push notifications](./pwa.md#push-notifications).
 
@@ -218,7 +240,7 @@ const { notifications, unreadCount, markRead, markAllRead } = useNotifications()
 | `markRead(id)` | Marks one notification as read. |
 | `markAllRead()` | Marks every notification of the user as read. |
 
-Each entry is a `NotificationEntry`: `id`, `name`, `data`, `readAt` and `createdAt`. `data` is what `toDatabase` returned. `readAt` and `createdAt` are ISO strings, and `readAt` is `null` while unread.
+Each entry is a `NotificationEntry`: `id`, `name`, `data`, `readAt` and `createdAt`. `data` is the message of the row. `readAt` and `createdAt` are ISO strings, and `readAt` is `null` while unread.
 
 The composable reads the list in the browser only, never during SSR. It reads nothing while the user is signed out. While the component is mounted, it listens on the channel of the user. A `notify()`, or a mark-read in another tab, then updates the list without a reload.
 
@@ -272,7 +294,7 @@ describe("posts.publish-post", () => {
 
 | Fixture | Use |
 |---|---|
-| `expectNotified(user, name, match?)` | Fails unless the notification reached the user. `match` holds fields of the `toDatabase` message, such as `title`. |
+| `expectNotified(user, name, match?)` | Fails unless the notification reached the user. `match` holds fields of the message of the row, such as `title`. |
 | `expectNotNotified(user, name)` | Fails when the notification reached the user. |
 | `sendNotification(users, name, data)` | Runs `notify()` in the app, in a transaction, as an action would. |
 

@@ -7,9 +7,9 @@ type Discovered = (typeof notifications)[number];
 /** The name of every notification defined under `server/notifications/`: what {@link Notification.notify} takes. */
 export type NotificationName = Discovered["name"];
 
-/** What the notification named `Name` is sent with: its `schema`'s input type. */
+/** What the notification named `Name` is sent with: its `input` schema's input type. */
 export type NotificationData<Name extends NotificationName> = z.input<
-  Extract<Discovered, Notification<Name>>["schema"]
+  Extract<Discovered, Notification<Name>>["input"]
 >;
 
 function definitions(): readonly Notification[] {

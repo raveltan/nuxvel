@@ -11,7 +11,7 @@ import { callApp } from "./settled";
  * The `database` rows are written and the send is recorded once it
  * resolves, so {@link expectNotified} and {@link expectRow} see them. The
  * `mail` channel's `nuxvel.notification` job is dispatched to the queue
- * fake, not run. `data` is parsed by the notification's schema,
+ * fake, not run. `data` is parsed by the notification's `input`,
  * rejecting with a `BAD_REQUEST` validation error.
  *
  * @param users The user to notify, or a list of users.

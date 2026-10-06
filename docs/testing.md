@@ -757,7 +757,7 @@ A `$jobs.x.dispatch()` in the handler runs with no transaction, as under `nuxvel
 
 `renderMail` also takes a mail definition or its stub from `$mails` in place of the name. Then `input` has the input type of that definition's schema.
 
-`sendNotification` writes the `database` rows and records the send before it resolves. The `nuxvel.notification` job goes to the queue fake. The notification's schema parses `data`. Invalid data rejects with a `BAD_REQUEST` validation error. Assert with `expectNotified`. `sendNotification` also takes a notification definition or its stub from `$notifications` in place of the name. Then `data` has the input type of that definition's schema.
+`sendNotification` writes the `database` rows and records the send before it resolves. The `nuxvel.notification` job goes to the queue fake. The `input` of the notification parses `data`. Invalid data rejects with a `BAD_REQUEST` validation error. Assert with `expectNotified`. `sendNotification` also takes a notification definition or its stub from `$notifications` in place of the name. Then `data` has the input type of that definition.
 
 `runBackfill` rejects with the handler's error when a batch throws. That batch rolls back first. `runBackfill` also takes a backfill definition or its stub from `$backfills` in place of the name.
 

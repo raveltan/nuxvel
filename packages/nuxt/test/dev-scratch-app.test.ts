@@ -1,6 +1,7 @@
 import { afterAll, beforeAll } from "vitest";
 import { addWatchedAction } from "./dev-scratch-app/action-mount-watch";
 import { addExtraLocales } from "./dev-scratch-app/extra-locales";
+import { addMailWithoutTemplate } from "./dev-scratch-app/mail-template-watch";
 import { addGreetingsRouter } from "./dev-scratch-app/procedure-inputs-watch";
 import { addRoutersDir } from "./dev-scratch-app/router-watch";
 import { addSharedSchema } from "./dev-scratch-app/shared-schemas-watch";
@@ -19,6 +20,7 @@ beforeAll(() => {
   addSharedSchema(appDir);
   addWatchedAction(appDir);
   addGreetingsRouter(appDir);
+  addMailWithoutTemplate(appDir);
 });
 afterAll(() => removeScratchApp(appDir));
 

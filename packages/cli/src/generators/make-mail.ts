@@ -1,4 +1,4 @@
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { type AppPaths, rootPathFrom } from "../app-layout/app-paths.ts";
 import type { GeneratedFile } from "../generated/write-generated.ts";
 import { toPascalCase, toSentenceCase } from "./case.ts";
@@ -8,6 +8,7 @@ export function mailFiles(name: string, paths: AppPaths, domain?: string): Gener
   name = domainName(dottedName(name, "order-shipped"), domain);
 
   const file = definitionFile(paths.serverDir, "mail", name, "mail", domain);
+  const mailDir = domain ? join(paths.serverDir, "domains", domain, "mail") : join(paths.serverDir, "mail");
   const values = {
     name,
     exportName: definitionExport(name, "mail"),
@@ -18,7 +19,7 @@ export function mailFiles(name: string, paths: AppPaths, domain?: string): Gener
 
   return [
     { path: `${file}.ts`, template: "mail.ts.txt", values },
-    { path: join(dirname(file), "templates", `${values.pascalName}.vue`), template: "mail-template.vue.txt", values },
+    { path: join(mailDir, "templates", `${values.pascalName}.vue`), template: "mail-template.vue.txt", values },
     { path: `${file}.test.ts`, template: "mail-test.ts.txt", values },
   ];
 }

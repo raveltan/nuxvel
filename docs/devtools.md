@@ -202,7 +202,7 @@ Pick a mail under **Preview with sample input** and press **Preview**. The secti
 export const postPublishedMail = defineMail({
   input: z.object({ to: z.email(), title: z.string(), url: z.url() }),
   subject: ({ title }) => `New post: ${title}`,
-  render: (props) => h(PostPublished, props),
+  template: "PostPublished",
   preview: () => ({
     to: "ada@example.com",
     title: "Hello",

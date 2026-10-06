@@ -24,7 +24,7 @@ const REMOVED: Record<string, Removed> = {
 
 const SEGMENT = /^[a-z_$][\w$-]*$/i;
 
-function namespacePath(namespace: string, name: string) {
+export function namespacePath(namespace: string, name: string) {
   const segments = name.split(".");
   if (!segments.every((segment) => SEGMENT.test(segment) && !segment.endsWith("-"))) return undefined;
 

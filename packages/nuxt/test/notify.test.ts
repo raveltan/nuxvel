@@ -33,6 +33,22 @@ describe("notify()", async () => {
     await expectMailSent("welcome", { to: ada.email, name: "Ada" });
   });
 
+  it("feeds the database row, the push and the mail's input from one message", async () => {
+    const ada = await userFactory({ name: "Ada" });
+    const message = { title: "Hello, Ada", body: "One message for every channel.", url: "/profile" };
+
+    await sendNotification(ada, $notifications._update, { name: "Ada" });
+
+    const row = await expectRow(notificationsTable, { userId: ada.id, name: "_update" });
+    expect(row.data).toEqual(message);
+    await expectPushSent(ada, message);
+    await expectQueued("nuxvel.notification", { userIds: [ada.id], mail: { mail: "_update", data: message } });
+
+    await runJob("nuxvel.notification", { userIds: [ada.id], mail: { mail: "_update", data: message } });
+
+    await expectMailSent("_update", { to: ada.email, ...message });
+  });
+
   it("sends the push through sendPush, and the nuxvel.push job skips a user with no subscribed device", async () => {
     const ada = await userFactory({ name: "Ada" });
 

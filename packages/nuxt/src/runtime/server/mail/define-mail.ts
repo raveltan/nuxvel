@@ -1,5 +1,6 @@
-import type { VNode } from "vue";
+import { type Component, type VNode, h } from "vue";
 import type { z } from "zod";
+import templates from "#nuxvel/mail-templates";
 import { awaitingName } from "../discovery/definition-name";
 import { currentLocale } from "../i18n/current-locale";
 import { type Translate, translator } from "../i18n/translator";
@@ -24,6 +25,34 @@ export interface MailI18n {
   t: Translate;
   locale: string;
 }
+
+type Templates = typeof templates;
+
+/** The name of every mail template under `server/mail/templates/`: what {@link defineMail}'s `template` takes. */
+export type MailTemplateName = keyof Templates & string;
+
+/** The props the mail template named `Name` declares. */
+export type MailTemplateProps<Name extends MailTemplateName> = Templates[Name] extends new (...args: never[]) => { $props: infer Props }
+  ? Props
+  : never;
+
+type Fitting<Props> = {
+  [Name in MailTemplateName]: Props extends MailTemplateProps<Name> ? Name : never;
+}[MailTemplateName];
+
+type TemplateFor<Props> = [Fitting<Props>] extends [never] ? "no mail template takes this input" : Fitting<Props>;
+
+const registered: Readonly<Record<string, Component>> = templates;
+
+function templateVNode(name: string | undefined, props: object) {
+  const template = name && registered[name];
+
+  if (!template) throw new Error(`No mail template is named "${name}"`);
+
+  return h(template, props);
+}
+
+type Body<Props> = { template: TemplateFor<Props>; render?: never } | { render: (props: Props) => VNode; template?: never };
 
 /**
  * A mail definition: its name, input schema, subject and the message it
@@ -62,12 +91,18 @@ export interface Mail<Name extends string = string, Schema extends MailSchema = 
 /**
  * Defines a mail: a Vue template rendered to HTML on the server.
  *
- * `defineMail` is auto-imported. One mail per file, under `server/mail/`,
- * with its Vue templates alongside it; the file is discovered, so nothing
- * registers it, and its path is the mail's name
- * (`server/mail/order/shipped.mail.ts` is `"order.shipped"`). Send it
- * with {@link Mail.send} through the `$mails` namespace:
+ * `defineMail` is auto-imported. One mail per file, under `server/mail/`;
+ * the file is discovered, so nothing registers it, and its path is the
+ * mail's name (`server/mail/order/shipped.mail.ts` is `"order.shipped"`).
+ * Send it with {@link Mail.send} through the `$mails` namespace:
  * `$mails.order.shipped.send(input)`.
+ *
+ * `template` names a file under `server/mail/templates/` (or
+ * `server/domains/<domain>/mail/templates/`) without `.vue`:
+ * `"Welcome"` is `server/mail/templates/Welcome.vue`. The input without
+ * `to` is its props, and a template whose props the input does not
+ * satisfy fails to compile. `render` replaces `template` when the vnode
+ * needs building by hand.
  *
  * Templates use the MJML components (`<EButton>`, `<EText>`, ...) and
  * {@link MailLayout} without importing them; they are registered for
@@ -88,9 +123,11 @@ export interface Mail<Name extends string = string, Schema extends MailSchema = 
  * `to` field is the recipient.
  * @param config.subject Builds the subject line from the input, with
  * `t` and `locale` of the mail ({@link MailI18n}).
- * @param config.render Builds the template's vnode from the input
- * without `to`, usually `h(Template, props)`. The template does not get
+ * @param config.template The {@link MailTemplateName} the mail renders,
+ * with the input without `to` as its props. The template does not get
  * the recipient, so the address does not show in the HTML as an attribute.
+ * @param config.render In place of `template`: builds the vnode from the
+ * input without `to`, for example `h(Template, props)`.
  * @param config.preview Optional. Returns the input that the DevTools
  * mail preview starts with. Without it, the preview starts with a sample
  * made from `input`.
@@ -98,29 +135,27 @@ export interface Mail<Name extends string = string, Schema extends MailSchema = 
  * @example
  * ```ts
  * // server/mail/welcome.mail.ts
- * import { h } from "vue";
- * import Welcome from "./templates/Welcome.vue";
- *
  * export const welcomeMail = defineMail({
  *   input: z.object({ to: z.email(), name: z.string() }),
  *   subject: ({ name }, { t }) => t("mail.welcome.subject", { name }),
- *   render: (props) => h(Welcome, props),
- *   preview: () => ({ to: "ada@example.com", name: "Ada" }),
+ *   template: "Welcome",
  * });
  * ```
  */
-export function defineMail<Schema extends MailSchema, const Preview extends z.input<Schema> = z.input<Schema>>(config: {
-  input: Schema;
-  subject: (input: z.infer<Schema>, i18n: MailI18n) => string;
-  render: (props: Omit<z.infer<Schema>, "to">) => VNode;
-  preview?: () => Preview;
-}): Mail<string, Schema> {
+export function defineMail<Schema extends MailSchema, const Preview extends z.input<Schema> = z.input<Schema>>(
+  config: {
+    input: Schema;
+    subject: (input: z.infer<Schema>, i18n: MailI18n) => string;
+    preview?: () => Preview;
+  } & Body<Omit<z.infer<Schema>, "to">>,
+): Mail<string, Schema> {
+  const vnode = (props: Omit<z.infer<Schema>, "to">) => (config.render ? config.render(props) : templateVNode(config.template, props));
   const mail: Mail<string, Schema> = awaitingName(
     {
       name: "",
       input: config.input,
       subject: (input: z.infer<Schema>, locale = currentLocale()) => config.subject(input, { t: translator(locale), locale }),
-      render: ({ to: _to, ...props }: z.infer<Schema>, locale = currentLocale()) => renderEmail(config.render(props), translator(locale)),
+      render: async ({ to: _to, ...props }: z.infer<Schema>, locale = currentLocale()) => renderEmail(vnode(props), translator(locale)),
       preview: config.preview,
       async send(input: z.input<Schema>, options?: SendMailOptions) {
         // a static import cycles through the #nuxvel/mails registry, which holds this mail

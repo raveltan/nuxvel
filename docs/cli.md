@@ -1365,10 +1365,10 @@ nuxvel make:job post.notify-subscribers   # server/jobs/post/notify-subscribers.
 ### `nuxvel make:mail <name>`
 
 ```sh
-nuxvel make:mail order.shipped   # server/mail/order/shipped.mail.ts + server/mail/order/templates/OrderShipped.vue
+nuxvel make:mail order.shipped   # server/mail/order/shipped.mail.ts + server/mail/templates/OrderShipped.vue
 ```
 
-`nuxvel make:mail` writes a mail definition, its Vue template and its test. The template wraps a heading, a paragraph, a button and a link in `<MailLayout>`. It uses the MJML mail components (`<EHeading>`, `<EText>`, `<EButton>`, `<ELink>` inside an `<EText>`) and sets styles with MJML attributes, for example `background-color="#4f46e5"`. The title of the mail is also the preview line that the inbox shows. The test renders the mail and checks its HTML, its Outlook markup and its text version. See [Mail](./mail.md).
+`nuxvel make:mail` writes a mail definition, its Vue template and its test. The mail names its template with `template: "OrderShipped"`. With `--domain parcel`, the template goes in `server/domains/parcel/mail/templates/`. The template wraps a heading, a paragraph, a button and a link in `<MailLayout>`. It uses the MJML mail components (`<EHeading>`, `<EText>`, `<EButton>`, `<ELink>` inside an `<EText>`) and sets styles with MJML attributes, for example `background-color="#4f46e5"`. The title of the mail is also the preview line that the inbox shows. The test renders the mail and checks its HTML, its Outlook markup and its text version. See [Mail](./mail.md).
 
 ### `nuxvel make:notification <name>`
 
@@ -1376,7 +1376,7 @@ nuxvel make:mail order.shipped   # server/mail/order/shipped.mail.ts + server/ma
 nuxvel make:notification post.published   # server/notifications/post/published.notification.ts
 ```
 
-`nuxvel make:notification` writes a notification and its test. The notification goes through the `database` channel. Its data is a `message`, which becomes the body. The test sends it to a new user with `sendNotification` and checks it with `expectNotified`. See [Notifications](./notifications.md).
+`nuxvel make:notification` writes a notification and its test. The notification goes through the `database` channel. Its input is a `body`, and its `message` builds the row from it. The test sends it to a new user with `sendNotification` and checks it with `expectNotified`. See [Notifications](./notifications.md).
 
 ### `nuxvel make:webhook <name>`
 
@@ -1512,6 +1512,7 @@ updated: package.json
 | `definition-methods` | 0.3.0 | Rewrites `dispatchAfterCommit(job, input, options?)`, `broadcast(channel, event, payload, params?)`, `broadcastAfterCommit(...)`, `sendMail(mail, input, options?)`, `emit(event, payload)` and `notify(userIds, notification, data)` to the method of the definition: `$jobs.<path>.dispatch(input, options?)`, `$channels.<path>.broadcast(event, payload, params?)`, `$mails.<path>.send(input, options?)`, `$events.<path>.emit(payload)` and `$notifications.<path>.notify(userIds, data)`. A string name becomes its `$` path in camelCase (`"post.notify-followers"` is `$jobs.post.notifyFollowers`). A definition reached through its `$<kind>` namespace, an import whose name ends with the kind (`postPublishedEvent`) or a `define*()` in the file gets the method. It leaves a call whose name it cannot map, such as a variable, an imported string constant, `event.name` or a template string, and a string name of a `renamed()` job, which has no `$jobs` key, as a manual step, and skips a function of the same name that the file declares or imports, such as the `emit` of `defineEmits()` |
 | `durations` | 0.3.0 | Rewrites a [duration](./cache.md#durations) given as a number to an object, with the largest unit that fits: the `ttl` of `remember()`, `cachePut()` and `withLock()` and the `expiresIn` of `signedUrl()` from seconds (`7 * 24 * 60 * 60` becomes `{ days: 7 }`), and the `timeout` and `backoff` of `defineJob()` and the `delay` of `$jobs.<path>.dispatch()` from milliseconds (`30_000` becomes `{ seconds: 30 }`). It computes a number literal and `*`, `+`, `-` and `/` of number literals. It leaves any other value, such as a variable, and a value of zero or less, as a manual step |
 | `presence-params` | 0.3.0 | Wraps an object literal room of `usePresence(channel, room)` in its `params` option: `usePresence(channel, { params: room })`, as [`useChannel()`](./realtime.md#listening-from-a-component) takes it. It leaves a call that already passes `{ params }`, and prints any other second argument, such as a variable or a call, as a manual step |
+| `notification-input` | 0.3.0 | Renames `schema` to `input` in [`defineNotification()`](./notifications.md#defining-a-notification), and in each object that its `toMail` returns, `data` to `input` and a mail name to its `$mails` definition (`"post.published"` becomes `$mails.post.published`). It leaves a `toMail` that does not return object literals, such as a variable, a mail name it cannot map, a `mail` that is a variable, a shorthand or a template literal, a config that is not an object literal, and a config with a spread, as manual steps |
 
 The command runs every codemod, oldest first. A codemod changes only the code that still needs it, so a second run changes nothing and prints `✔ No codemod changed a file`. `--only <codemod>` runs one codemod. An unknown name exits `2` and lists the codemods.
 

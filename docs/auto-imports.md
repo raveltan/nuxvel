@@ -312,6 +312,8 @@ Guide: [Mail](./mail.md).
 | `SendMailOptions` | type | The options of `$mails.<name>.send()` and `sendMailNow()`: `locale`. |
 | `MailName` | type | The name of every mail under `server/mail/`. |
 | `MailInput` | type | The input a mail is sent with. |
+| `MailTemplateName` | type | The name of every mail template under `server/mail/templates/`. |
+| `MailTemplateProps` | type | The props a mail template declares. |
 | `MailSuppressionReason` | type | Why an address stopped receiving mail. |
 | `MailWebhookProvider` | type | A provider name that `defineMailWebhook()` takes. |
 
@@ -326,7 +328,7 @@ Guide: [Notifications](./notifications.md).
 | `Notification` | type | A notification definition. |
 | `NotificationChannel` | type | A channel a notification goes through: `database`, `mail` or `push`. |
 | `NotificationMessage` | type | What `toDatabase` returns: the title, body, URL and icon of the row. |
-| `NotificationMail` | type | What `toMail` returns: a mail name and its input without `to`. |
+| `NotificationMail` | type | What `toMail` returns: a mail definition and its input without `to`. |
 | `NotificationName` | type | The name of every notification under `server/notifications/`. |
 | `NotificationData` | type | The data a notification is sent with. |
 

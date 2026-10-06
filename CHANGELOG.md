@@ -148,9 +148,31 @@ applies each step below that names a codemod.
   `usePresence("posts", { params: { id } })`. Codemod: `presence-params`
   (it wraps an object literal, and prints a variable or a call as a
   manual step).
+- `defineNotification()` takes `input` in place of `schema`, like
+  `defineAction()`, `defineJob()` and `defineMail()`, and `toMail` returns
+  `{ mail, input }` in place of `{ mail, data }`, with the mail as its
+  `$mails` definition in place of its name. By hand: rename `schema:` to
+  `input:`, and change `toMail: ({ title }) => ({ mail: "post.published",
+  data: { title } })` to `toMail: ({ title }) => ({ mail:
+  $mails.post.published, input: { title } })`. Codemod:
+  `notification-input` (it prints a `toMail` that does not return an
+  object literal, a `mail` that is a variable or a template literal, a
+  config that is not an object literal, and a config with a spread, as
+  manual steps). The `nuxvel.notification` job keeps its `{ mail, data }`
+  payload, so a job queued before the deploy still runs.
 
 ### Changes
 
+- `defineNotification({ message })` builds one message for the
+  database row, the web push and the mail: `mail: $mails.<path>` sends
+  that mail with the message as its input. `toDatabase`, `toPush` and
+  `toMail` replace it for one channel. `make:notification` writes
+  `message`.
+- `defineMail({ template: "Welcome" })` renders
+  `server/mail/templates/Welcome.vue` with the input as its props, and
+  `nuxt typecheck` fails when the input does not fit the props. `render`
+  stays for a vnode built by hand. `make:mail` writes `template` and puts
+  the template in `server/mail/templates/`.
 - `defineUpload({ maxSize })` takes a size with a unit beside bytes:
   `"500 KB"`, `"2 MB"`. A unit is a power of 1024.
 - `authorize` is optional on `defineChannel()`, `defineUpload()` and

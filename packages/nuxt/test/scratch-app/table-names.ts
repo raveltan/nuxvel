@@ -115,10 +115,10 @@ export const tableNamesMail = defineMail({
     `import { z } from "zod";
 
 export const tableNamesNotification = defineNotification({
-  schema: z.object({}),
+  input: z.object({}),
   via: ["database", "mail", "push"],
   toDatabase: () => ({ title: "Table names", body: "Found by SQL name." }),
-  toMail: () => ({ mail: "table-names", data: {} }),
+  toMail: () => ({ mail: $mails.tableNames, input: {} }),
   toPush: () => ({ title: "Table names", body: "Found by SQL name." }),
 });
 `,

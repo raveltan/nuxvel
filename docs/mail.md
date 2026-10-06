@@ -38,7 +38,7 @@ Before you send from a real domain, run `nuxvel doctor`. Its `mail dns` row chec
 ## Defining a mail
 
 ```vue
-<!-- server/mail/post/templates/PostPublished.vue -->
+<!-- server/mail/templates/PostPublished.vue -->
 <script setup lang="ts">
 defineProps<{ title: string; url: string }>();
 </script>
@@ -54,18 +54,18 @@ defineProps<{ title: string; url: string }>();
 
 ```ts
 // server/mail/post/published.mail.ts
-import { h } from "vue";
 import { z } from "zod";
-import PostPublished from "./templates/PostPublished.vue";
 
 export const postPublishedMail = defineMail({
   input: z.object({ to: z.email(), title: z.string(), url: z.url() }),
   subject: ({ title }) => `New post: ${title}`,
-  render: (props) => h(PostPublished, props),
+  template: "PostPublished",
 });
 ```
 
-Put one mail in each file under `server/mail/`. Keep its Vue templates next to it. nuxvel finds the file. You do not register it.
+Put one mail in each file under `server/mail/`, and its Vue templates in `server/mail/templates/`. nuxvel finds both. You do not register or import them.
+
+`template: "PostPublished"` is the file `server/mail/templates/PostPublished.vue`. A template in a subfolder has the folder in its name: `"order/Shipped"`. A mail in a [domain folder](./auto-imports.md#domain-folders) can keep its templates in `server/domains/<domain>/mail/templates/`. The input of the mail without `to` is the props of the template. When the input does not give a prop of the template, or gives it with another type, `nuxt typecheck` fails. When `server/mail/templates/` and a domain folder have a template with the same name, the one of `server/mail/templates/` is used, and two domain folders with the same name stop the build. A template with the same name in the app and in a [layer](./modules.md) is the one of the app.
 
 The path of the file is the name of the mail. The file above is `post.published`, and `server/mail/welcome.mail.ts` is `welcome`. A name may only hold `a-z`, `0-9`, `.`, `_` and `-`.
 
@@ -77,7 +77,8 @@ The auto-imported `$mails` namespace holds each mail under its path. Each path s
 |---|---|
 | `input` | A Zod schema for the data the mail needs. Its `to` field is the recipient. |
 | `subject` | Makes the subject line from the input. The second argument has `t` and `locale`. See [Mail in a locale](#mail-in-a-locale). |
-| `render` | Makes the template's vnode from the input without `to`, usually `h(Template, props)`. The template does not get the recipient, so the address does not show in the HTML as an attribute. |
+| `template` | The name of the template under `server/mail/templates/`. It gets the input without `to` as its props, so the address does not show in the HTML as an attribute. |
+| `render` | In place of `template`: makes the vnode from the input without `to`, for example `h(Template, props)`. Use it when the mail builds its vnode by hand. |
 | `preview` | Optional. Returns the input that the [DevTools](./devtools.md#previewing-a-mail) preview starts with. TypeScript checks it against the schema. A value such as `"identified"` keeps its literal type, so an enum field does not need `as const`. |
 
 ### Components
@@ -151,7 +152,7 @@ Each mail has a plain-text version. nuxvel makes it from the HTML and sends it w
 export const postPublishedMail = defineMail({
   input: z.object({ to: z.email(), title: z.string(), url: z.url() }),
   subject: ({ title }) => `New post: ${title}`,
-  render: (props) => h(PostPublished, props),
+  template: "PostPublished",
   preview: () => ({
     to: "ada@example.com",
     title: "Hello",
@@ -170,7 +171,7 @@ The preview exists on the dev server only. A production build does not have it.
 nuxvel make:mail post.published
 ```
 
-The command writes three files: the mail `postPublishedMail` at `server/mail/post/published.mail.ts`, its template at `server/mail/post/templates/PostPublished.vue`, and a functional test at `server/mail/post/published.mail.test.ts`. The template has a heading, a paragraph, a button and a link in `<MailLayout>`, styled with MJML attributes. The test renders the mail and checks its HTML, its Outlook markup and its text. See the [CLI reference](./cli.md#generators).
+The command writes three files: the mail `postPublishedMail` at `server/mail/post/published.mail.ts`, its template at `server/mail/templates/PostPublished.vue`, and a functional test at `server/mail/post/published.mail.test.ts`. The template has a heading, a paragraph, a button and a link in `<MailLayout>`, styled with MJML attributes. The test renders the mail and checks its HTML, its Outlook markup and its text. See the [CLI reference](./cli.md#generators).
 
 ### Rendering a mail
 
@@ -269,7 +270,7 @@ defineProps<{ name: string }>();
 export const welcomeMail = defineMail({
   input: z.object({ to: z.email(), name: z.string() }),
   subject: ({ name }, { t }) => t("mail.welcome.subject", { name }),
-  render: (props) => h(Welcome, props),
+  template: "Welcome",
 });
 ```
 

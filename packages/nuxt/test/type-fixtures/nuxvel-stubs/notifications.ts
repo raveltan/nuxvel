@@ -5,7 +5,7 @@ import { defineNotification } from "../../../src/runtime/server/notifications/de
 export default [
   named(
     defineNotification({
-      schema: z.object({ name: z.string() }),
+      input: z.object({ name: z.string() }),
       via: ["database"],
       toDatabase: ({ name }) => ({ title: `Welcome, ${name}`, body: "" }),
     }),

@@ -5,6 +5,7 @@ import type { NamedFile } from "../named-files";
 import { buildNitroRoutesModuleCode } from "../nitro-routes";
 import { buildTaskNamesModuleCode } from "../task-names";
 import { buildDiscoveredModuleCode } from "../discovered-module";
+import { buildMailTemplatesModuleCode, discoverMailTemplates } from "../mail-templates";
 import { buildActionsModuleCode } from "../actions";
 import { buildEventsModuleCode } from "../events";
 import { buildPoliciesModuleCode } from "../policies";
@@ -43,7 +44,7 @@ function translationFiles() {
 
 export function generatedModules(
   options: ResolvedOptions,
-  { discover, discoverLayers, discoverNamed }: Discovery,
+  { discover, discoverLayers, discoverNamed, layerDirectories }: Discovery,
   nitroScan: NitroScan,
   socialProviders: SocialProviderId[],
   runtimeFile: RuntimeFile,
@@ -96,6 +97,8 @@ export function generatedModules(
     "#nuxvel/seeders": async () => buildDiscoveredModuleCode("seeders", await discoverNamed("seeder", "seeders"), "seeder"),
     "#nuxvel/flags": async () => buildDiscoveredModuleCode("flags", await discoverNamed("flag or experiment", "flags")),
     "#nuxvel/mails": async () => buildDiscoveredModuleCode("mail", await discoverNamed("mail", "mail", builtInMails), "mail"),
+    "#nuxvel/mail-templates": async () =>
+      buildMailTemplatesModuleCode(await discoverMailTemplates(layerDirectories.map((dirs) => dirs.server))),
     "#nuxvel/notifications": async () =>
       buildDiscoveredModuleCode("notifications", await discoverNamed("notification", "notifications"), "notification"),
     "#nuxvel/uploads": async () => buildDiscoveredModuleCode("uploads", await discoverNamed("upload", "uploads"), "upload"),

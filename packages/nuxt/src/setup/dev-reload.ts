@@ -43,7 +43,7 @@ export function reloadOnDefinitionChanges(nuxt: Nuxt, { layerDirectories, layerF
         return;
       }
 
-      if (!path.endsWith(".ts")) return;
+      if (!path.endsWith(".ts") && !path.endsWith(".vue")) return;
       if (!watchedFolders.some((folder) => path.startsWith(`${folder}/`))) return;
 
       await nitro.hooks.callHook("rollup:reload");

@@ -484,14 +484,12 @@ The command writes the mail, its template and a test. Give the mail its data:
 
 ```ts
 // server/mail/event/invitation.mail.ts
-import { h } from "vue";
 import { z } from "zod";
-import EventInvitation from "./templates/EventInvitation.vue";
 
 export const eventInvitationMail = defineMail({
   input: z.object({ to: z.email(), title: z.string(), startsOn: z.string(), place: z.string(), url: z.url() }),
   subject: ({ title }) => `You are invited: ${title}`,
-  render: (props) => h(EventInvitation, props),
+  template: "EventInvitation",
   preview: () => ({
     to: "ada@example.com",
     title: "Summer picnic",
@@ -503,7 +501,7 @@ export const eventInvitationMail = defineMail({
 ```
 
 ```vue
-<!-- server/mail/event/templates/EventInvitation.vue -->
+<!-- server/mail/templates/EventInvitation.vue -->
 <script setup lang="ts">
 defineProps<{ title: string; startsOn: string; place: string; url: string }>();
 </script>

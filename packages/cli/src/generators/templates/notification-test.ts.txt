@@ -9,7 +9,7 @@ describe("{{name}} notification", () => {
   it("reaches the user through the database channel", async () => {
     const recipient = await userFactory();
 
-    await sendNotification(recipient, "{{name}}", { message: "Hello" });
+    await sendNotification(recipient, "{{name}}", { body: "Hello" });
 
     await expectNotified(recipient, "{{name}}", { title: "{{title}}", body: "Hello" });
   });

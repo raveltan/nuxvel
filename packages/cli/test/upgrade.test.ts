@@ -1179,4 +1179,124 @@ describe("nuxvel upgrade", () => {
       expect(again.stdout).not.toContain("PostEditors.vue");
     }, 60000);
   });
+
+  describe("notification-input", () => {
+    it("renames schema to input, and data to input and a mail name to its $mails definition in toMail, leaves a migrated notification, and prints what it cannot rewrite as a manual step", async () => {
+      const appDir = scratchPlayground("upgrade-notification-input");
+      const file = join(appDir, "server", "notifications", "post", "published.notification.ts");
+      mkdirSync(join(appDir, "server", "notifications", "post"), { recursive: true });
+      const before = [
+        'import { z } from "zod";',
+        "",
+        "const schema = z.object({ title: z.string() });",
+        "",
+        "export const postPublishedNotification = defineNotification({",
+        "  schema: z.object({ postId: z.number(), title: z.string() }),",
+        '  via: ["database", "mail"],',
+        '  toDatabase: ({ title }) => ({ title: "Your post is live", body: title }),',
+        '  toMail: ({ postId, title }) => ({ mail: "post.published", data: { title, url: `/posts/${postId}` } }),',
+        "});",
+        "",
+        "export const blockBody = defineNotification({",
+        "  schema,",
+        '  via: ["mail"],',
+        "  toMail(input) {",
+        "    const data = { title: input.title };",
+        '    if (!input.title) return { mail: "order.shipped-late", data };',
+        '    return { mail: "welcome", data };',
+        "  },",
+        "});",
+        "",
+        "export const fromVariable = defineNotification({",
+        "  schema,",
+        '  via: ["mail"],',
+        "  toMail: buildMail,",
+        "});",
+        "",
+        "export const fromConfig = defineNotification(config);",
+        "",
+        "export const migrated = defineNotification({",
+        "  input: schema,",
+        '  via: ["mail"],',
+        "  toMail: ({ title }) => ({ mail: $mails.welcome, input: { title } }),",
+        "});",
+        "",
+      ];
+      writeFileSync(file, before.join("\n"));
+
+      const applied = await runCliAt(appDir, "upgrade", "--only", "notification-input");
+      const stderr = stripAnsi(applied.stderr);
+      const path = "server/notifications/post/published.notification.ts";
+
+      expect(applied.exitCode, applied.stderr).toBe(0);
+      expect(applied.stdout).toContain(`updated: ${path}\n`);
+      expect(stderr).toContain(
+        `▲ ${path}:25: toMail returns { mail, input }: return the mail's $mails definition as mail, such as $mails.post.published, and its input as input in place of data`,
+      );
+      expect(stderr).toContain(`▲ ${path}:28: defineNotification() takes input in place of schema: rename the schema key of this notification to input`);
+      expect(stderr.match(/▲ /g)).toHaveLength(2);
+      expect(readFileSync(file, "utf8")).toBe(
+        before
+          .map((line) =>
+            line
+              .replace("  schema: z.object", "  input: z.object")
+              .replace("  schema,", "  input: schema,")
+              .replace('({ mail: "post.published", data: {', "({ mail: $mails.post.published, input: {")
+              .replace('{ mail: "order.shipped-late", data }', "{ mail: $mails.order.shippedLate, input: data }")
+              .replace('{ mail: "welcome", data }', "{ mail: $mails.welcome, input: data }"),
+          )
+          .join("\n"),
+      );
+
+      const again = await runCliAt(appDir, "upgrade", "--only", "notification-input");
+
+      expect(again.stdout).not.toContain("published.notification.ts");
+    }, 60000);
+
+    it("prints a manual step for a mail that is a variable, a shorthand or a template literal, and for each config with a spread", async () => {
+      const appDir = scratchPlayground("upgrade-notification-input-manual");
+      const file = join(appDir, "server", "notifications", "order", "shipped.notification.ts");
+      mkdirSync(join(appDir, "server", "notifications", "order"), { recursive: true });
+      const before = [
+        'import { z } from "zod";',
+        "",
+        'const mailName = "order.shipped";',
+        "",
+        "export const orderShippedNotification = defineNotification({",
+        "  schema: z.object({ id: z.number() }),",
+        '  via: ["mail"],',
+        "  toMail({ id }) {",
+        "    const mail = mailName;",
+        "    if (id === 1) return { mail: mailName, data: { id } };",
+        "    if (id === 2) return { mail, data: { id } };",
+        "    return { mail: `order.${id}`, data: { id } };",
+        "  },",
+        "});",
+        "",
+        "export const spread = defineNotification({ ...base, schema: z.object({}) });",
+        "",
+        "export const migrated = defineNotification({ ...base, input: z.object({}) });",
+        "",
+      ];
+      writeFileSync(file, before.join("\n"));
+
+      const applied = await runCliAt(appDir, "upgrade", "--only", "notification-input");
+      const stderr = stripAnsi(applied.stderr);
+      const path = "server/notifications/order/shipped.notification.ts";
+      const manualMail = "toMail returns the mail as its $mails definition: make this mail a $mails path, such as $mails.post.published, when it is a name";
+
+      expect(applied.exitCode, applied.stderr).toBe(0);
+      expect(stderr).toContain(`▲ ${path}:10: ${manualMail}`);
+      expect(stderr).toContain(`▲ ${path}:11: ${manualMail}`);
+      expect(stderr).toContain(`▲ ${path}:12: ${manualMail}`);
+      expect(stderr).toContain(
+        `▲ ${path}:16: defineNotification() takes input in place of schema, and toMail returns { mail, input }: check what this spread adds to the notification by hand`,
+      );
+      expect(stderr).toContain(`▲ ${path}:18: defineNotification() takes input in place of schema`);
+      expect(stderr.match(/▲ /g)).toHaveLength(5);
+      expect(readFileSync(file, "utf8")).toBe(
+        before.map((line) => line.replace("schema: z.object", "input: z.object").replace("data: { id }", "input: { id }")).join("\n"),
+      );
+    }, 60000);
+  });
 });

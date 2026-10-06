@@ -11,7 +11,7 @@ import { NOTIFICATION_JOB_NAME } from "./jobs/notification-job-name";
 
 export async function notify(userIds: string | readonly string[], notification: Notification, data: unknown): Promise<void> {
   const { name } = notification;
-  const result = await notification.schema.safeParseAsync(data);
+  const result = await notification.input.safeParseAsync(data);
 
   if (!result.success) throw new ValidationFailedError(result.error);
 
@@ -34,7 +34,7 @@ export async function notify(userIds: string | readonly string[], notification: 
 
   const mail = notification.toMail?.(result.data);
 
-  if (mail) await dispatchJob(NOTIFICATION_JOB_NAME, { userIds: recipients, mail });
+  if (mail) await dispatchJob(NOTIFICATION_JOB_NAME, { userIds: recipients, mail: { mail: mail.mail.name, data: mail.input } });
 
   const push = notification.toPush?.(result.data);
 

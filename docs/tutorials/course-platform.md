@@ -1062,9 +1062,9 @@ A notification in the `database` channel is a row that the bell of the starter l
 import { z } from "zod";
 
 export const learningNewStudentNotification = defineNotification({
-  schema: z.object({ courseId: z.number(), courseTitle: z.string(), studentName: z.string() }),
+  input: z.object({ courseId: z.number(), courseTitle: z.string(), studentName: z.string() }),
   via: ["database"],
-  toDatabase: ({ courseId, courseTitle, studentName }) => ({
+  message: ({ courseId, courseTitle, studentName }) => ({
     title: "New student",
     body: `${studentName} joined ${courseTitle}`,
     url: `/teach/${courseId}`,
@@ -1078,9 +1078,9 @@ export const learningNewStudentNotification = defineNotification({
 import { z } from "zod";
 
 export const learningCourseFinishedNotification = defineNotification({
-  schema: z.object({ courseId: z.number(), courseTitle: z.string() }),
+  input: z.object({ courseId: z.number(), courseTitle: z.string() }),
   via: ["database"],
-  toDatabase: ({ courseId, courseTitle }) => ({
+  message: ({ courseId, courseTitle }) => ({
     title: "Course finished",
     body: `You finished ${courseTitle}. Your certificate is on its way.`,
     url: `/courses/${courseId}`,
@@ -1381,14 +1381,12 @@ export const certificateMailCertificateJob = defineJob({
 
 ```ts
 // layers/certificates/server/domains/certificate/mail/issued.mail.ts
-import { h } from "vue";
 import { z } from "zod";
-import CertificateIssued from "./templates/CertificateIssued.vue";
 
 export const certificateIssuedMail = defineMail({
   input: z.object({ to: z.email(), name: z.string(), courseTitle: z.string(), url: z.url() }),
   subject: ({ courseTitle }) => `Your certificate for ${courseTitle}`,
-  render: (props) => h(CertificateIssued, props),
+  template: "CertificateIssued",
   preview: () => ({ to: "ada@example.com", name: "Ada Lovelace", courseTitle: "Postgres in practice", url: "https://academy.example.com/certificates/1" }),
 });
 ```

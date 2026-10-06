@@ -105,6 +105,35 @@ export const invoicePolicy = definePolicy(invoicesTable, {
   );
   write(
     appDir,
+    "server/domains/order/mail/templates/OrderShipped.vue",
+    `<script setup lang="ts">
+defineProps<{ item: string }>();
+</script>
+
+<template>
+  <MailLayout><EText>Shipped {{ item }}</EText></MailLayout>
+</template>
+`,
+  );
+  write(
+    appDir,
+    "server/domains/order/mail/shipped.mail.ts",
+    `import { z } from "zod";
+
+export const shippedMail = defineMail({
+  input: z.object({ to: z.email(), item: z.string() }),
+  subject: () => "Shipped",
+  template: "OrderShipped",
+});
+`,
+  );
+  write(
+    appDir,
+    "server/api/_domain-mail-check.get.ts",
+    'export default defineEventHandler(() => $mails.order.shipped.render({ to: "ada@example.com", item: "lamp" }));\n',
+  );
+  write(
+    appDir,
     "server/api/_domain-kinds-check.get.ts",
     `import * as factories from "#nuxvel/factories";
 import * as schema from "#nuxvel/schema";
@@ -162,6 +191,12 @@ describe("definitions in server/domains/<domain>/<kind folder>/", () => {
     expect(body.tables).toContain("shipmentsTable");
     expect(body.factories).toContain("shipmentFactory");
     expect(body).toMatchObject({ canView: true, otherCanView: false });
+  });
+
+  it("renders a domain mail with the template of the domain's mail/templates/ folder", async () => {
+    const { text } = await guest().$fetch<{ text: string }>("/api/_domain-mail-check");
+
+    expect(text).toContain("Shipped lamp");
   });
 
   it("serves a router from a domain folder under the domain's tRPC namespace", async () => {

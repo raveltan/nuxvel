@@ -29,35 +29,35 @@ export async function notifiesOnlyDefinedNotifications() {
 }
 
 export const databaseOnly = defineNotification({
-  schema: z.object({ title: z.string() }),
+  input: z.object({ title: z.string() }),
   via: ["database"],
   toDatabase: ({ title }) => ({ title, body: "" }),
   // @ts-expect-error mail is not in via
-  toMail: () => ({ mail: "welcome", data: { name: "Ada" } }),
+  toMail: () => ({ mail: $mails.welcome, input: { name: "Ada" } }),
 });
 
 // @ts-expect-error database is in via, so toDatabase is required
 export const missingBuilder = defineNotification({
-  schema: z.object({ title: z.string() }),
+  input: z.object({ title: z.string() }),
   via: ["database"],
 });
 
 export const typedMail = defineNotification({
-  schema: z.object({ name: z.string() }),
+  input: z.object({ name: z.string() }),
   via: ["mail"],
-  // @ts-expect-error no mail is named goodbye
-  toMail: ({ name }) => ({ mail: "goodbye", data: { name } }),
+  // @ts-expect-error a mail is its $mails definition, not its name
+  toMail: ({ name }) => ({ mail: "welcome", input: { name } }),
 });
 
 export const typedMailData = defineNotification({
-  schema: z.object({ name: z.string() }),
+  input: z.object({ name: z.string() }),
   via: ["mail"],
   // @ts-expect-error welcome's name is a string
-  toMail: () => ({ mail: "welcome", data: { name: 1 } }),
+  toMail: () => ({ mail: $mails.welcome, input: { name: 1 } }),
 });
 
 export const pushOnly = defineNotification({
-  schema: z.object({ name: z.string() }),
+  input: z.object({ name: z.string() }),
   via: ["push"],
   toPush: ({ name }) => ({ title: `Welcome, ${name}`, body: "" }),
   // @ts-expect-error database is not in via
@@ -65,7 +65,7 @@ export const pushOnly = defineNotification({
 });
 
 export const typedPush = defineNotification({
-  schema: z.object({ name: z.string() }),
+  input: z.object({ name: z.string() }),
   via: ["push"],
   // @ts-expect-error a push needs a body
   toPush: ({ name }) => ({ title: name }),
@@ -76,6 +76,66 @@ type NamespacedNotification = typeof $notifications.welcome;
 export const notificationsNamespaceIsTyped: IsAny<NamespacedNotification> extends true
   ? never
   : NamespacedNotification extends { readonly name: string; via: readonly string[] }
+    ? true
+    : never = true;
+
+export const typedMailInputMissing = defineNotification({
+  input: z.object({ title: z.string() }),
+  via: ["mail"],
+  // @ts-expect-error welcome needs a name
+  toMail: () => ({ mail: $mails.welcome, input: {} }),
+});
+
+export const messageGetsTypedInput = defineNotification({
+  input: z.object({ name: z.string() }),
+  via: ["database", "push"],
+  message: (input) => {
+    const typed: IsAny<typeof input> extends true ? never : typeof input extends { name: string } ? true : never = true;
+
+    return { title: input.name, body: String(typed) };
+  },
+});
+
+export const messageFeedsMail = defineNotification({
+  input: z.object({ name: z.string() }),
+  via: ["mail"],
+  message: ({ name }) => ({ title: name, body: "" }),
+  mail: $mails._update,
+});
+
+export const messageMailNeedsMessageInput = defineNotification({
+  input: z.object({ name: z.string() }),
+  via: ["mail"],
+  message: ({ name }) => ({ title: name, body: "" }),
+  // @ts-expect-error welcome takes a name, not the message
+  mail: $mails.welcome,
+});
+
+// @ts-expect-error mail is in via, so message needs mail or toMail
+export const messageWithoutMail = defineNotification({
+  input: z.object({ name: z.string() }),
+  via: ["mail"],
+  message: ({ name }) => ({ title: name, body: "" }),
+});
+
+export const mailNeedsMessage = defineNotification({
+  input: z.object({ name: z.string() }),
+  via: ["mail"],
+  mail: $mails._update,
+  // @ts-expect-error mail sends the message, so it takes message, not toMail
+  toMail: ({ name }) => ({ mail: $mails.welcome, input: { name } }),
+});
+
+const welcomeMailInput = z.object({ to: z.email(), name: z.string() });
+
+type WelcomeAsMessageMail = Extract<
+  Parameters<typeof defineNotification<typeof welcomeMailInput, ["mail"], typeof welcomeMailInput>>[0],
+  { message: unknown; mail: unknown }
+>["mail"];
+
+export const unfedMailNamesTheProblem: [WelcomeAsMessageMail] extends [never]
+  ? never
+  : WelcomeAsMessageMail extends { "the mail input must accept title, body, url and icon": never }
     ? true
     : never = true;
 

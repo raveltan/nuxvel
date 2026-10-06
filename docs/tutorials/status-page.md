@@ -1225,7 +1225,7 @@ export const RefusesAnInvalidEmail: StoryObj<typeof meta> = {
 The command writes the mail, a template in `<MailLayout>` and a test. `<MailLayout>` gives one white card. This mail shows the status in a colored band above the card, so it uses the MJML sections itself. Replace the template:
 
 ```vue
-<!-- server/mail/incident/templates/IncidentUpdate.vue -->
+<!-- server/mail/templates/IncidentUpdate.vue -->
 <script setup lang="ts">
 defineProps<{ title: string; status: "investigating" | "identified" | "monitoring" | "resolved"; body: string; url: string }>();
 
@@ -1269,14 +1269,12 @@ Many mail clients do not show a `<div>` layout correctly. Each `E` component ren
 
 ```ts
 // server/mail/incident/update.mail.ts
-import { h } from "vue";
 import { z } from "zod";
-import IncidentUpdate from "./templates/IncidentUpdate.vue";
 
 export const incidentUpdateMail = defineMail({
   input: z.object({ to: z.email(), title: z.string(), status: incidentStatus, body: z.string(), url: z.url() }),
   subject: ({ title, status }) => (status === "resolved" ? `Resolved: ${title}` : `Incident: ${title}`),
-  render: (props) => h(IncidentUpdate, props),
+  template: "IncidentUpdate",
   preview: () => ({
     to: "reader@example.com",
     title: "API is slow",
@@ -1528,13 +1526,13 @@ When an incident opens, the rest of the team must know at once. A notification g
 import { z } from "zod";
 
 export const incidentOpenedNotification = defineNotification({
-  schema: z.object({ title: z.string() }),
+  input: z.object({ title: z.string() }),
   via: ["database"],
-  toDatabase: ({ title }) => ({ title: "Incident opened", body: title, url: "/admin", icon: "i-lucide-siren" }),
+  message: ({ title }) => ({ title: "Incident opened", body: title, url: "/admin", icon: "i-lucide-siren" }),
 });
 ```
 
-`via: ["database"]` writes one row to the `notifications` table for each user. `toDatabase` gives the text of the row and the page that a click opens. The `<NotificationBell>` of the starter layouts shows the rows without a reload. Send the notification from the open action:
+`via: ["database"]` writes one row to the `notifications` table for each user. `message` gives the text of the row and the page that a click opens. The `<NotificationBell>` of the starter layouts shows the rows without a reload. Send the notification from the open action:
 
 ```ts
 // server/actions/incidents/open-incident.action.ts
@@ -1877,9 +1875,9 @@ Visitors lose trust when an open incident has no news for a long time. A schedul
 import { z } from "zod";
 
 export const incidentStaleNotification = defineNotification({
-  schema: z.object({ title: z.string() }),
+  input: z.object({ title: z.string() }),
   via: ["database"],
-  toDatabase: ({ title }) => ({ title: "No update for an hour", body: title, url: "/admin", icon: "i-lucide-clock-alert" }),
+  message: ({ title }) => ({ title: "No update for an hour", body: title, url: "/admin", icon: "i-lucide-clock-alert" }),
 });
 ```
 

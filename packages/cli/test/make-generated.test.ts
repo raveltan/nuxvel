@@ -484,7 +484,7 @@ describe("nuxvel make:* output running in an app", () => {
       "export const shipmentDeliveredNotification = defineNotification({",
     );
     expect(source("server/mail/shipment/shipped.mail.ts")).toContain(
-      'import ShipmentShipped from "./templates/ShipmentShipped.vue";',
+      'template: "ShipmentShipped",',
     );
     expect(source("server/webhooks/shipment/carrier.webhook.ts")).toContain('secret: "NUXT_SHIPMENT_CARRIER_WEBHOOK_SECRET"');
     expect(source("server/webhooks/shipment/carrier.webhook.test.ts")).toContain('deliverWebhook("shipment.carrier"');

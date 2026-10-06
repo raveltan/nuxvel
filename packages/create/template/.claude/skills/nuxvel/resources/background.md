@@ -55,30 +55,29 @@ export const postsPruneDraftsSchedule = defineSchedule({ at: { hour: 3 }, async 
 ## Mail
 
 ```ts
-import PostPublished from "./templates/PostPublished.vue";
 export const postPublishedMail = defineMail({
   input: z.object({ to: z.email(), title: z.string(), url: z.url() }),
   subject: ({ title }) => `New post: ${title}`,
-  render: (props) => h(PostPublished, props),
+  template: "PostPublished",
 });
 await $mails.post.published.send({ to: user.email, title, url });
 ```
 
-Template: Vue + MJML. `preview` option feeds DevTools. Mailpit shows dev mail.
+`template: "PostPublished"` is `server/mail/templates/PostPublished.vue` (Vue + MJML: `<MailLayout>`, `<EText>`, `<EButton>`). Its props are the input without `to`, checked by the typecheck. `render: (props) => h(…)` only for a vnode built by hand. `preview` feeds DevTools, default: a sample of `input`. Mailpit shows dev mail.
 
 ## Notifications
 
 ```ts
 export const postPublishedNotification = defineNotification({
-  schema: z.object({ postId: z.number(), title: z.string() }),
-  via: ["database", "mail"],
-  toDatabase: ({ title }) => ({ title: "Your post is live", body: title, url: "/posts", icon: "i-lucide-newspaper" }),
-  toMail: ({ postId, title }) => ({ mail: "post.published", data: { title, url: `/posts/${postId}` } }),
+  input: z.object({ postId: z.number(), title: z.string() }),
+  via: ["database", "mail", "push"],
+  message: ({ postId, title }) => ({ title: "Your post is live", body: title, url: `/posts/${postId}` }),
+  mail: $mails.notification,
 });
 await $notifications.post.published.notify(userId, { postId, title });
 ```
 
-`via`: `"database"` (needs `toDatabase`), `"mail"` (`toMail`), `"push"` (`toPush`). `notify` takes one user id or a list.
+`message` feeds every channel in `via`: the row, the push, and the input of `mail` (a mail whose input takes `title`, `body`, `url?`, `icon?`). Per channel override: `toDatabase`, `toPush`, `toMail: (input) => ({ mail: $mails.post.published, input: { title } })`. Without `message`, each channel in `via` needs its `to*`. `notify` takes one user id or a list.
 
 ## Channels (server-sent events)
 

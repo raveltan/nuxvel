@@ -251,13 +251,22 @@ describe("nuxvel make:* generators", () => {
 
     expect((await runCliAt(fixtureCwd, "make:mail", "order.shipped")).exitCode).toBe(0);
 
-    const template = readFileSync(join(fixtureCwd, "server", "mail", "order", "templates", "OrderShipped.vue"), "utf-8");
+    const template = readFileSync(join(fixtureCwd, "server", "mail", "templates", "OrderShipped.vue"), "utf-8");
 
     expect(template).toContain('<MailLayout preview="Order shipped">');
     expect(template).toContain("<EHeading>Order shipped</EHeading>");
     expect(template).toContain('<EButton href="https://example.com" background-color="#4f46e5">Open the app</EButton>');
     expect(template).toMatch(/<EText[^>]*>[^<]*<ELink /);
     expect(template).not.toContain("class=");
+    expect(readFileSync(join(fixtureCwd, "server", "mail", "order", "shipped.mail.ts"), "utf-8")).toContain('template: "OrderShipped",');
+
+    expect((await runCliAt(fixtureCwd, "make:mail", "packed", "--domain", "parcel")).exitCode).toBe(0);
+
+    const domainTemplate = join(fixtureCwd, "server", "domains", "parcel", "mail", "templates", "ParcelPacked.vue");
+
+    expect(existsSync(domainTemplate)).toBe(true);
+    expect(readFileSync(join(fixtureCwd, "server", "domains", "parcel", "mail", "packed.mail.ts"), "utf-8")).toContain('template: "ParcelPacked",');
+    expect(readFileSync(join(fixtureCwd, ".nuxt", "nuxvel", "mail-templates.ts"), "utf-8")).toContain(domainTemplate);
   });
 
   it("make:flag and make:experiment write typed definitions under server/flags", async () => {
@@ -1222,9 +1231,9 @@ export default defineDeploy({
     expect(created.exitCode, created.stderr).toBe(0);
     expect(definition).toContain("export const postPublishedNotification = defineNotification({");
     expect(definition).toContain('via: ["database"],');
-    expect(definition).toContain('toDatabase: ({ message }) => ({ title: "Post published", body: message }),');
+    expect(definition).toContain('message: ({ body }) => ({ title: "Post published", body }),');
     expect(test).toContain('import { userTable } from "#nuxvel/schema";');
-    expect(test).toContain('await sendNotification(recipient, "post.published", { message: "Hello" });');
+    expect(test).toContain('await sendNotification(recipient, "post.published", { body: "Hello" });');
 
     const rejected = await runCliAt(fixtureCwd, "make:notification", "Post.published");
 

@@ -740,19 +740,17 @@ The third test passes already: nothing is queued yet. `-t` runs only the tests w
 
 ```ts
 // server/mail/booking/confirmed.mail.ts
-import { h } from "vue";
 import { z } from "zod";
-import BookingConfirmed from "./templates/BookingConfirmed.vue";
 
 export const bookingConfirmedMail = defineMail({
   input: z.object({ to: z.email(), title: z.string(), room: z.string(), startsAt: z.date() }),
   subject: ({ room, title }) => `${room} is booked: ${title}`,
-  render: (props) => h(BookingConfirmed, props),
+  template: "BookingConfirmed",
 });
 ```
 
 ```vue
-<!-- server/mail/booking/templates/BookingConfirmed.vue -->
+<!-- server/mail/templates/BookingConfirmed.vue -->
 <script setup lang="ts">
 defineProps<{ title: string; room: string; startsAt: Date }>();
 </script>

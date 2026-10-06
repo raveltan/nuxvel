@@ -136,7 +136,7 @@
     "jobs/define-schedule": ["Schedule"],
     "jobs/schedule-registry": ["ScheduleName"],
     "jobs/registry": ["JobName", "JobInput", "JobChannelName", "JobMessage"],
-    "mail/define-mail": ["Mail", "MailSchema", "RenderedMail", "MailI18n"],
+    "mail/define-mail": ["Mail", "MailSchema", "RenderedMail", "MailI18n", "MailTemplateName", "MailTemplateProps"],
     "mail/send-mail": ["SendMailOptions"],
     "mail/registry": ["MailName", "MailInput"],
     "mail/suppress-mail": ["MailSuppressionReason"],

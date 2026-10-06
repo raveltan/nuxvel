@@ -8,6 +8,7 @@
       "#nuxvel/error-classifiers": ["./nuxvel-stubs/error-classifiers.ts"],
       "#nuxvel/jobs": ["./nuxvel-stubs/jobs.ts"],
       "#nuxvel/mails": ["./nuxvel-stubs/mails.ts"],
+      "#nuxvel/mail-templates": ["./nuxvel-stubs/mail-templates.ts"],
       "#nuxvel/notifications": ["./nuxvel-stubs/notifications.ts"],
       "#nuxvel/events": ["./nuxvel-stubs/events.ts"],
       "#nuxvel/listeners": ["./nuxvel-stubs/listeners.ts"],

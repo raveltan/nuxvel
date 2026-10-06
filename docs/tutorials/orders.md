@@ -570,19 +570,17 @@ Write the mail:
 
 ```ts
 // server/mail/order/confirmation.mail.ts
-import { h } from "vue";
 import { z } from "zod";
-import OrderConfirmation from "./templates/OrderConfirmation.vue";
 
 export const orderConfirmationMail = defineMail({
   input: z.object({ to: z.email(), orderId: z.number(), productName: z.string(), quantity: z.number(), total: z.string() }),
   subject: ({ orderId }) => `Order #${orderId} is confirmed`,
-  render: (props) => h(OrderConfirmation, props),
+  template: "OrderConfirmation",
 });
 ```
 
 ```vue
-<!-- server/mail/order/templates/OrderConfirmation.vue -->
+<!-- server/mail/templates/OrderConfirmation.vue -->
 <script setup lang="ts">
 defineProps<{ orderId: number; productName: string; quantity: number; total: string }>();
 </script>
