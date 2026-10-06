@@ -1282,8 +1282,6 @@ While one story file cannot load, the stories of the starter fail too, with an a
 <script setup lang="ts">
 const props = defineProps<{ rooms: { id: number; name: string; capacity: number }[] }>();
 
-const queryCache = useQueryCache();
-
 const form = useActionForm(createBookingInput, toasted($api.booking.create.mutationOptions(), "Room booked"), {
   defaults: { title: "", roomId: undefined, startsAt: undefined, endsAt: undefined, guests: 1 },
   failures: {
@@ -1291,10 +1289,7 @@ const form = useActionForm(createBookingInput, toasted($api.booking.create.mutat
     "booking.overlap": "startsAt",
     "booking.in-the-past": "startsAt",
   },
-  onSuccess: async () => {
-    await queryCache.invalidateQueries({ key: $api.booking.key() });
-    await navigateTo({ name: "bookings" });
-  },
+  onSuccess: () => navigateTo({ name: "bookings" }),
 });
 
 const roomItems = computed(() => props.rooms.map((room) => ({ label: room.name, value: room.id })));
@@ -1426,17 +1421,7 @@ A first version of the component, as an icon button often starts:
 <script setup lang="ts">
 const props = defineProps<{ booking: { id: number; title: string; room: string; booker: string; startsAt: Date } }>();
 
-const queryCache = useQueryCache();
-
-const cancel = useMutation(
-  toasted(
-    {
-      ...$api.booking.cancel.mutationOptions(),
-      onSuccess: () => queryCache.invalidateQueries({ key: $api.booking.key() }),
-    },
-    "Booking cancelled",
-  ),
-);
+const cancel = useMutation(toasted($api.booking.cancel.mutationOptions(), "Booking cancelled"));
 </script>
 
 <template>

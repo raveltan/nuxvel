@@ -350,6 +350,7 @@ import { orderTable, productTable } from "#nuxvel/schema";
 
 export const placeOrderAction = defineAction({
   input: placeOrderInput,
+  invalidates: ["product"],
   handler: async ({ productId, quantity }, ctx) => {
     const product = await findOrFail(productTable, productId);
 
@@ -1146,14 +1147,8 @@ The buy form places an order for one product. A `ConflictError` with a `field` s
 <script setup lang="ts">
 const props = defineProps<{ productId: number }>();
 
-const queryCache = useQueryCache();
-
 const form = useActionForm(placeOrderInput, toasted($api.order.place.mutationOptions(), "Order placed"), {
   defaults: { productId: props.productId, quantity: 1 },
-  onSuccess: async () => {
-    await queryCache.invalidateQueries({ key: $api.product.key() });
-    await queryCache.invalidateQueries({ key: $api.order.key() });
-  },
 });
 </script>
 
@@ -1167,7 +1162,7 @@ const form = useActionForm(placeOrderInput, toasted($api.order.place.mutationOpt
 </template>
 ```
 
-After an order, the form loads the products and the orders again, so the page shows the new stock and the new order.
+After an order, the client loads the `order` queries again, and the `product` queries too, because the action declares `invalidates: ["product"]`. So the page shows the new stock and the new order. See [Actions: invalidates](../actions.md#invalidating-cached-values).
 
 The order list shows the invoice number, or "Invoice pending" while the job has not run:
 

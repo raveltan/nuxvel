@@ -1663,13 +1663,9 @@ The course page shows the summary and the lesson titles to everyone. A signed-in
 <script setup lang="ts">
 const props = defineProps<{ courseId: number }>();
 
-const queryCache = useQueryCache();
 const lessons = $api.courses.lesson.forCourse.useQuery(() => ({ courseId: props.courseId }));
 const progress = $api.learning.progress.useQuery(() => ({ courseId: props.courseId }));
-const { mutate: complete } = useMutation({
-  ...$api.learning.completeLesson.mutationOptions(),
-  onSettled: () => queryCache.invalidateQueries({ key: $api.learning.key() }),
-});
+const { mutate: complete } = $api.learning.completeLesson.useMutation();
 
 const done = computed(() => new Set(progress.data?.completedLessonIds));
 </script>
@@ -1712,7 +1708,7 @@ const done = computed(() => new Set(progress.data?.completedLessonIds));
 </template>
 ```
 
-Each button names its lesson, so a screen reader user knows which lesson it completes. After each mutation, the component invalidates the `learning` queries, and the progress loads again.
+Each button names its lesson, so a screen reader user knows which lesson it completes. After a mutation succeeds, the client refetches the queries of the same router, so the `learning` queries run again and the progress loads again. See [Frontend: invalidation](../frontend.md#invalidation).
 
 ```vue
 <!-- app/pages/courses/[id].vue -->
@@ -1721,14 +1717,10 @@ definePageMeta({ layout: "app" });
 
 const route = useRoute("courses-id");
 const courseId = computed(() => Number(route.params.id));
-const queryCache = useQueryCache();
 const { user } = useUser();
 const course = $api.courses.course.show.useQuery(() => ({ id: courseId.value }));
 const progress = $api.learning.progress.useQuery(() => ({ courseId: courseId.value }), { enabled: () => Boolean(user.value) });
-const { mutate: enroll } = useMutation({
-  ...$api.learning.enroll.mutationOptions(),
-  onSettled: () => queryCache.invalidateQueries({ key: $api.learning.key() }),
-});
+const { mutate: enroll } = $api.learning.enroll.useMutation();
 
 useSeo(() => ({ title: course.data?.title ?? "Course" }));
 </script>
@@ -1818,14 +1810,12 @@ The lesson form uploads the file with `<UploadField>`. The field sends the file 
 <script setup lang="ts">
 const props = defineProps<{ courseId: number }>();
 
-const queryCache = useQueryCache();
 const form = useActionForm(newLessonInput, $api.courses.lesson.create.mutationOptions(), {
   defaults: { courseId: props.courseId, title: "", body: "", fileKey: "" },
-  onSuccess: async () => {
+  onSuccess: () => {
     form.state.title = "";
     form.state.body = "";
     form.state.fileKey = "";
-    await queryCache.invalidateQueries({ key: $api.courses.lesson.key() });
   },
 });
 </script>
@@ -1861,13 +1851,9 @@ definePageMeta({ layout: "app", middleware: "auth" });
 
 const route = useRoute("teach-id");
 const courseId = computed(() => Number(route.params.id));
-const queryCache = useQueryCache();
 const course = $api.courses.course.byId.useQuery(() => ({ id: courseId.value }));
 const lessons = $api.courses.lesson.forCourse.useQuery(() => ({ courseId: courseId.value }));
-const { mutate: update } = useMutation({
-  ...$api.courses.course.update.mutationOptions(),
-  onSettled: () => queryCache.invalidateQueries({ key: $api.courses.course.key() }),
-});
+const { mutate: update } = $api.courses.course.update.useMutation();
 
 useSeo(() => ({ title: course.data?.title ?? "Course" }));
 </script>
@@ -2063,7 +2049,7 @@ export const RefusedByTheServer: StoryObj<typeof meta> = {
 
 - `fillForm()` finds each control by its label, as the end-to-end `fillForm()` does.
 - `expect(create).toHaveBeenCalledWith(...)` checks the input that the form sent. The argument has the input type of the procedure.
-- `forCourse: () => []` answers the query that the form invalidates after the save.
+- `forCourse: () => []` answers the query that the client refetches after the save.
 - The second story throws as the real procedure does. The form shows the message in `formError`.
 
 ```ts

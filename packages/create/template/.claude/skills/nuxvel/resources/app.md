@@ -7,16 +7,12 @@ Auto-imported: composables, components, `shared/schemas/*`, `RouterInputs`, `Rou
 ```vue
 <script setup lang="ts">
 definePageMeta({ middleware: "auth" });
-const queryCache = useQueryCache();
 const { ts, localeRoute } = useI18n();
 const posts = $api.post.list.useQuery({ page: 1 });
 const form = useActionForm(createPostInput, $api.post.create.mutationOptions(), {
   defaults: { title: "", body: "" },
   failures: { "post.locked": "title" },
-  onSuccess: async () => {
-    queryCache.invalidateQueries({ key: $api.post.key() });
-    await navigateTo(localeRoute({ name: "post" }));
-  },
+  onSuccess: () => navigateTo(localeRoute({ name: "post" })),
 });
 useSeo(() => ({ title: ts("post.title") }));
 </script>
@@ -41,7 +37,7 @@ useSeo(() => ({ title: ts("post.title") }));
 | `$api` | typed API, also in templates. `$api.post.list.useQuery(input \| () => input, options?)` (cached query, Pinia Colada, no `.value`), `$api.post.create.useMutation(options?)` (`{ mutate, error, … }`), `.key()`, `.queryOptions(input)`, `.mutationOptions()`. One-off: `await $api.post.list.query()` |
 | `useQuery(options \| () => options)` | Pinia Colada's own query, for `queryOptions()` |
 | `useMutation(options)` | Pinia Colada's own mutation, for `mutationOptions()` |
-| `useQueryCache()` | `invalidateQueries({ key })`, `setQueriesData` |
+| `useQueryCache()` | `setQueriesData`, `invalidateQueries({ key })` for a refetch no mutation causes. A mutation already refetches its router's queries and the tags its actions declare in `invalidates` |
 | `optimistic(mutationOptions, { key, apply })` | change the cache first, roll back on error |
 | `useLiveQuery(options, { channel, on \| refetch })` | query patched by channel events |
 | `useActionForm(schema, mutationOptions, { defaults, onSuccess, failures, warnUnsaved })` | `form.ref/schema/state/submit/errors/formError/pending` |

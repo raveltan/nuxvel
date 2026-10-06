@@ -1056,21 +1056,15 @@ When `team.byId` answers `NOT_FOUND` while the server renders the page, nuxvel a
 <script setup lang="ts">
 const props = defineProps<{ teamId: number }>();
 
-const queryCache = useQueryCache();
 const members = $api.team.members.useQuery({ id: props.teamId });
 const abilities = $api.team.abilities.useQuery({ id: props.teamId });
 const roles = addMemberInput.shape.role.options;
-const refresh = () => queryCache.invalidateQueries({ key: $api.team.members.key() });
 
-const { mutate: changeRole, error: roleError } = useMutation({
-  ...$api.team.changeRole.mutationOptions(),
-  onSettled: refresh,
-});
+const { mutate: changeRole, error: roleError } = $api.team.changeRole.useMutation();
 
 const form = useActionForm(addMemberInput, toasted($api.team.addMember.mutationOptions(), "Member added"), {
   defaults: { teamId: props.teamId, email: "", role: "member" },
   failures: { "team.unknown-email": "email" },
-  onSuccess: refresh,
 });
 </script>
 
@@ -2041,20 +2035,17 @@ Add a component for the keys to the security page of chapter 8:
 ```vue
 <!-- app/components/ApiKeys.vue -->
 <script setup lang="ts">
-const queryCache = useQueryCache();
 const keys = $api.apiKeys.list.useQuery();
 const newKey = ref<string>();
-const refresh = () => queryCache.invalidateQueries({ key: $api.apiKeys.key() });
 
 const form = useActionForm(createApiKeyInput, $api.apiKeys.create.mutationOptions(), {
   defaults: { name: "" },
   onSuccess: (created) => {
     newKey.value = created.key;
-    return refresh();
   },
 });
 
-const { mutate: revoke } = useMutation({ ...$api.apiKeys.revoke.mutationOptions(), onSettled: refresh });
+const { mutate: revoke } = $api.apiKeys.revoke.useMutation();
 </script>
 
 <template>

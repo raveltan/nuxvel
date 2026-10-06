@@ -245,7 +245,7 @@ import { z } from "zod";
 
 export const recipeRouter = {
   latest: publicProcedure.output(z.array(recipeCardSchema)).query(() =>
-    remember("recipes:latest", { minutes: 10 }, () =>
+    remember(["recipe", "latest"], { minutes: 10 }, () =>
       useDb()
         .select({ slug: recipeTable.slug, title: recipeTable.title, summary: recipeTable.summary, publishedAt: recipeTable.publishedAt })
         .from(recipeTable)
@@ -258,7 +258,7 @@ export const recipeRouter = {
     .input(recipeSlugInput)
     .output(publishedRecipeSchema)
     .query(({ input }) =>
-      remember(`recipes:by-slug:${input.slug}`, { hours: 1 }, () =>
+      remember(["recipe", "by-slug", input.slug], { hours: 1 }, () =>
         useDb()
           .select()
           .from(recipeTable)
@@ -745,21 +745,21 @@ The third test calls `recipe.publish`, which chapter 7 adds. Run this file after
 
 The page cache keeps HTML. The data cache keeps the results of the queries in Redis, so that a render runs no SQL query when the data did not change. `latest` and `bySlug` read their results with `remember()`:
 
-- `remember("recipes:latest", { minutes: 10 }, fn)` returns the value of the key `recipes:latest`. When the key is missing or expired, it runs `fn`, stores the result for 10 minutes and returns it.
-- The key of `bySlug` has the slug in it: `recipes:by-slug:tomato-soup`. Each recipe has its own value. A slug cannot contain `:`, so a recipe with the slug `latest` does not collide with the list.
+- `remember(["recipe", "latest"], { minutes: 10 }, fn)` returns the value of the key `recipe:latest`. When the key is missing or expired, it runs `fn`, stores the result for 10 minutes and returns it.
+- The key of `bySlug` has the slug in it: `recipe:by-slug:tomato-soup`. Each recipe has its own value. A slug cannot contain `:`, so a recipe with the slug `latest` does not collide with the list.
 - When `fn` throws, `remember()` stores nothing. A `NOT_FOUND` for a draft thus does not stay in the cache.
 
-A change to a recipe must remove the old values. Give each action that changes a recipe the `invalidates` option:
+A change to a recipe must remove the old values. Give each action that changes a recipe the `invalidates` option, with the tag `recipe`, the name of the router, which starts each key:
 
 ```ts
 // server/actions/recipe/create-recipe.action.ts
 export const createRecipeAction = defineAction({
   input: createRecipeInput,
-  invalidates: ["recipes:*"],
+  invalidates: ["recipe"],
   handler: async (input, ctx) => {
 ```
 
-Add the same line to `update-recipe.action.ts` and `delete-recipe.action.ts`. After the transaction of the action commits, the action removes each key that matches the glob `recipes:*`, with `cacheForget()`. When the handler throws, the transaction rolls back and the cache keeps its values. See [Cache: invalidating from an action](../cache.md#invalidating-from-an-action).
+Add the same line to `update-recipe.action.ts` and `delete-recipe.action.ts`. After the transaction of the action commits, the action removes each value under `recipe` with `cacheForget()`, and the browser loads the `recipe` queries again. When the handler throws, the transaction rolls back and the cache keeps its values. See [Cache: invalidating from an action](../cache.md#invalidating-from-an-action).
 
 The two caches work together. The page cache keeps a page for one minute. When the copy is old, the server renders the page again, and the render calls `latest` and `bySlug`. After an action, the data cache has no value, so the render reads the new rows.
 
@@ -779,7 +779,7 @@ describe("the recipe cache", () => {
 
     await guest().trpc.recipe.bySlug({ slug: "tomato-soup" });
 
-    const cached = await expectCached("recipes:by-slug:tomato-soup");
+    const cached = await expectCached("recipe:by-slug:tomato-soup");
     expect(cached).toMatchObject({ title: "Tomato soup" });
   });
 
@@ -790,13 +790,13 @@ describe("the recipe cache", () => {
     await guest().trpc.recipe.latest();
     await guest().trpc.recipe.latest();
 
-    await expectCacheMiss("recipes:latest", { times: 1 });
-    await expectCacheHit("recipes:latest", { times: 1 });
+    await expectCacheMiss("recipe:latest", { times: 1 });
+    await expectCacheHit("recipe:latest", { times: 1 });
 
     await actingAs(author).trpc.recipe.publish({ id: draft.id });
     const latest = await guest().trpc.recipe.latest();
 
-    await expectCacheMiss("recipes:latest", { times: 2 });
+    await expectCacheMiss("recipe:latest", { times: 2 });
     expect(latest.map((recipe) => recipe.slug)).toEqual(["lentil-stew"]);
   });
 
@@ -861,7 +861,7 @@ import { pushSubscriptionsTable, recipeTable } from "#nuxvel/schema";
 
 export const publishRecipeAction = defineAction({
   input: recipeIdInput,
-  invalidates: ["recipes:*"],
+  invalidates: ["recipe"],
   handler: async ({ id }, ctx) => {
     const row = await findOrFail(recipeTable, id);
     await authorize(ctx.actor, "update", recipeTable, row);
@@ -914,12 +914,7 @@ The generated list at `/recipe` shows the recipes of the author. Show the public
 
 ```ts
 // app/pages/recipe/index.vue
-const queryCache = useQueryCache();
-
-const { mutate: publish } = useMutation({
-  ...toasted(trpc.recipe.publish.mutationOptions(), "Recipe published"),
-  onSettled: () => queryCache.invalidateQueries({ key: trpc.recipe.list.key() }),
-});
+const { mutate: publish } = useMutation(toasted($api.recipe.publish.mutationOptions(), "Recipe published"));
 ```
 
 In the `columns` of the `<DataTable>`, replace `{ accessorKey: 'body', header: 'Body' }` with `{ accessorKey: 'publishedAt', header: 'Published' }`. Then add a cell for the column, above the `#actions-cell` template:

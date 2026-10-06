@@ -789,14 +789,9 @@ A form opens an incident:
 ```vue
 <!-- app/components/OpenIncidentForm.vue -->
 <script setup lang="ts">
-const queryCache = useQueryCache();
-
 const form = useActionForm(openIncidentInput, $api.incident.open.mutationOptions(), {
   defaults: { title: "", body: "" },
-  onSuccess: async () => {
-    await queryCache.invalidateQueries({ key: $api.status.key() });
-    await navigateTo({ name: "admin" });
-  },
+  onSuccess: () => navigateTo({ name: "admin" }),
 });
 </script>
 
@@ -814,19 +809,17 @@ const form = useActionForm(openIncidentInput, $api.incident.open.mutationOptions
 </template>
 ```
 
-`useActionForm()` checks the input in the browser with the same schema as the server, then calls the mutation. After a success, it reloads the status queries and goes to the list of open incidents, which shows the flash message. A second form posts an update:
+`useActionForm()` checks the input in the browser with the same schema as the server, then calls the mutation. After a success, it goes to the list of open incidents, which shows the flash message. A second form posts an update:
 
 ```vue
 <!-- app/components/PostUpdateForm.vue -->
 <script setup lang="ts">
 const props = defineProps<{ incident: RouterOutputs["status"]["current"][number] }>();
 
-const queryCache = useQueryCache();
 const statuses = Object.entries(statusLabels).map(([value, { label }]) => ({ value, label }));
 
 const form = useActionForm(postIncidentUpdateInput, toasted($api.incident.postUpdate.mutationOptions(), "Update posted"), {
   defaults: { incidentId: props.incident.id, status: props.incident.status, body: "" },
-  onSuccess: () => queryCache.invalidateQueries({ key: $api.status.key() }),
 });
 </script>
 
@@ -1054,17 +1047,17 @@ A new update must reach the pages at once. Add `invalidates` to the two actions:
 // server/actions/incidents/open-incident.action.ts
 export const openIncidentAction = defineAction({
   input: openIncidentInput.extend({ monitor: z.string().max(255).optional() }),
-  invalidates: ["status:*"],
+  invalidates: ["status"],
 ```
 
 ```ts
 // server/actions/incidents/post-update.action.ts
 export const postUpdateAction = defineAction({
   input: postIncidentUpdateInput,
-  invalidates: ["status:*"],
+  invalidates: ["status"],
 ```
 
-After the transaction commits, the action removes every key that matches the glob `status:*`. When the action fails, it removes nothing. Test the cache:
+After the transaction commits, the action removes every cached value under `status`, and the client loads the `status` queries again, so the page shows the new update. When the action fails, it removes nothing. Test the cache:
 
 ```ts
 // tests/functional/status-cache.test.ts
@@ -1406,7 +1399,7 @@ import { incidentTable, incidentUpdateTable } from "#nuxvel/schema";
 
 export const postUpdateAction = defineAction({
   input: postIncidentUpdateInput,
-  invalidates: ["status:*"],
+  invalidates: ["status"],
   errors: {
     "incident.resolved": "This incident is already resolved",
   },
@@ -1574,7 +1567,7 @@ import { userTable, incidentTable, incidentUpdateTable } from "#nuxvel/schema";
 
 export const openIncidentAction = defineAction({
   input: openIncidentInput.extend({ monitor: z.string().max(255).optional() }),
-  invalidates: ["status:*"],
+  invalidates: ["status"],
   handler: async ({ title, body, monitor }, ctx) => {
     const incident = await useDb().insert(incidentTable).values({ title, monitor }).returning().then(firstOrFail);
     const update = await useDb()
