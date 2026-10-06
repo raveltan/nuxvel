@@ -240,13 +240,13 @@ describe("nuxvel upgrade", () => {
         '<script setup lang="ts">',
         "const trpc = useTRPC();",
         "",
-        "const posts = useQuery(trpc.post.list.queryOptions());",
+        "const { data: posts } = useQuery(trpc.post.list.queryOptions());",
         "const keys = { trpc, list: trpc.post.list.key() };",
         "</script>",
         "",
         "<template>",
         '  <p v-for="trpc in [1, 2]" :key="trpc">{{ trpc }}</p>',
-        "  <p>{{ trpc.post.key().join() }} {{ posts.data.value?.total }} {{ keys.list }}</p>",
+        "  <p>{{ trpc.post.key().join() }} {{ posts?.total }} {{ keys.list }}</p>",
         "</template>",
         "",
       ].join("\n");
@@ -287,13 +287,13 @@ describe("nuxvel upgrade", () => {
       expect(readFileSync(component, "utf8")).toBe(
         [
           '<script setup lang="ts">',
-          "const posts = useQuery($api.post.list.queryOptions());",
+          "const { data: posts } = useQuery($api.post.list.queryOptions());",
           "const keys = { trpc: $api, list: $api.post.list.key() };",
           "</script>",
           "",
           "<template>",
           '  <p v-for="trpc in [1, 2]" :key="trpc">{{ trpc }}</p>',
-          "  <p>{{ $api.post.key().join() }} {{ posts.data.value?.total }} {{ keys.list }}</p>",
+          "  <p>{{ $api.post.key().join() }} {{ posts?.total }} {{ keys.list }}</p>",
           "</template>",
           "",
         ].join("\n"),
@@ -340,6 +340,76 @@ describe("nuxvel upgrade", () => {
       expect(stripAnsi(stderr)).toContain("▲ app/utils/report-client.ts:1: useTRPC is imported as useClient: use $api in place of useClient()\n");
       expect(readFileSync(taken, "utf8")).toBe(oldTaken);
       expect(readFileSync(renamed, "utf8")).toBe(oldRenamed);
+    }, 60000);
+
+    it("turns useQuery() and useMutation() of the procedure options into .useQuery() and .useMutation() when every use reads .value, and leaves any other shape", async () => {
+      const appDir = scratchPlayground("upgrade-use-trpc-composables");
+      const page = join(appDir, "app", "pages", "report-posts.vue");
+      const kept = join(appDir, "app", "components", "report", "ReportDraft.vue");
+      const oldPage = [
+        '<script setup lang="ts">',
+        "const trpc = useTRPC();",
+        "const route = useRoute();",
+        "",
+        "const post = useQuery(() => trpc.post.byId.queryOptions({ id: Number(route.params.id) }));",
+        "const posts = useQuery(trpc.post.list.queryOptions());",
+        "const remove = useMutation(trpc.post.delete.mutationOptions());",
+        "",
+        "watch(() => post.error.value, () => posts.refetch());",
+        "</script>",
+        "",
+        "<template>",
+        '  <h1 v-if="post.data.value">{{ post.data.value.title }}</h1>',
+        '  <QueryState :query="posts" />',
+        '  <UButton :loading="remove.isLoading.value" @click="remove.mutate({ id: 1 })" />',
+        "</template>",
+        "",
+      ].join("\n");
+      const oldKept = [
+        '<script setup lang="ts">',
+        "const { data: draft } = useQuery($api.post.byId.queryOptions({ id: 1 }));",
+        "const posts = useQuery(() => ({ ...$api.post.list.queryOptions(), enabled: false }));",
+        "const latest = useQuery($api.post.list.queryOptions());",
+        "const create = useMutation({ ...$api.post.create.mutationOptions(), onSuccess: () => latest.refetch() });",
+        "",
+        "watch(latest.data, () => {});",
+        "</script>",
+        "",
+        "<template>",
+        "  <p>{{ draft?.title }} {{ posts.data.value?.total }} {{ create.status.value }}</p>",
+        "</template>",
+        "",
+      ].join("\n");
+      mkdirSync(join(appDir, "app", "components", "report"), { recursive: true });
+      writeFileSync(page, oldPage);
+      writeFileSync(kept, oldKept);
+
+      const { stdout, stderr, exitCode } = await runCliAt(appDir, "upgrade", "--only", "use-trpc");
+
+      expect(exitCode, stderr).toBe(0);
+      expect(stdout).toContain("updated: app/pages/report-posts.vue\n");
+      expect(stdout).not.toContain("ReportDraft.vue");
+      expect(readFileSync(page, "utf8")).toBe(
+        [
+          '<script setup lang="ts">',
+          "const route = useRoute();",
+          "",
+          "const post = $api.post.byId.useQuery(() => ({ id: Number(route.params.id) }));",
+          "const posts = $api.post.list.useQuery();",
+          "const remove = $api.post.delete.useMutation();",
+          "",
+          "watch(() => post.error, () => posts.refetch());",
+          "</script>",
+          "",
+          "<template>",
+          '  <h1 v-if="post.data">{{ post.data.title }}</h1>',
+          '  <QueryState :query="posts" />',
+          '  <UButton :loading="remove.isLoading" @click="remove.mutate({ id: 1 })" />',
+          "</template>",
+          "",
+        ].join("\n"),
+      );
+      expect(readFileSync(kept, "utf8")).toBe(oldKept);
     }, 60000);
   });
 });

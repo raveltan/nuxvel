@@ -1,4 +1,5 @@
 import type { AST, Rule, Scope, SourceCode } from "eslint";
+import { type ProcedureTemplateContainer, procedureComposables } from "./procedure-composables.ts";
 
 type IdentifierNode = Extract<Rule.Node, { type: "Identifier" }>;
 
@@ -7,10 +8,6 @@ type EstreeNode = Parameters<SourceCode["getAncestors"]>[0];
 type ScriptIdentifier = Extract<Scope.Reference["identifier"], { type: "Identifier" }>;
 
 type ImportSpecifierNode = Extract<Rule.Node, { type: "ImportSpecifier" }>;
-
-type TemplateReference = { id: IdentifierNode; variable: object | null };
-
-type TemplateContainer = { references: TemplateReference[] };
 
 type TemplateServices = {
   defineTemplateBodyVisitor?: (
@@ -65,15 +62,16 @@ export const useTrpc: Rule.RuleModule = {
       value: "useTRPC is replaced by $api: use $api in place of what useTRPC() returned",
       imported: "useTRPC is imported from {{source}}: import $api from #imports in its place",
       named: '"useTRPC" names useTRPC(), which $api replaces: mock "$api" instead',
+      composable: "{{composable}}() of the procedure's options is replaced by its .{{composable}}()",
     },
     schema: [],
   },
   create(context) {
     const { sourceCode } = context;
 
-    if (!sourceCode.text.includes("useTRPC")) return {};
+    if (!sourceCode.text.includes("useTRPC") && !sourceCode.text.includes(API)) return {};
 
-    const containers: TemplateContainer[] = [];
+    const containers: ProcedureTemplateContainer[] = [];
     const identifiers: IdentifierNode[] = [];
     const literals: Rule.Node[] = [];
 
@@ -179,6 +177,7 @@ export const useTrpc: Rule.RuleModule = {
     }
 
     const script: Rule.RuleListener = {
+      CallExpression: procedureComposables(context, containers),
       "Identifier[name='useTRPC']"(node: IdentifierNode) {
         const { parent } = node;
         if (parent.type !== "ImportSpecifier" || !identifiers.some((other) => other.parent === parent)) identifiers.push(node);
@@ -196,7 +195,7 @@ export const useTrpc: Rule.RuleModule = {
 
     return services.defineTemplateBodyVisitor(
       {
-        VExpressionContainer(node: TemplateContainer) {
+        VExpressionContainer(node: ProcedureTemplateContainer) {
           containers.push(node);
         },
       },
