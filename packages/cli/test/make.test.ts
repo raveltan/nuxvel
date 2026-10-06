@@ -1554,6 +1554,47 @@ export default defineDeploy({
     expect(stripAnsi(missing.stderr)).toContain('No factory named "gizmo"');
   });
 
+  it("factory:sync finds the table a factory imports from #nuxvel/schema among the schema files", async () => {
+    const fixtureCwd = scratchDir("factory-sync-alias");
+
+    buildNuxtFixture(fixtureCwd);
+    mkdirSync(join(fixtureCwd, "server", "database", "schema"), { recursive: true });
+    mkdirSync(join(fixtureCwd, "server", "factories"), { recursive: true });
+
+    for (const table of ["gadget", "widget"]) {
+      writeFileSync(
+        join(fixtureCwd, "server", "database", "schema", `${table}.schema.ts`),
+        [
+          'import { pgTable, serial, text } from "drizzle-orm/pg-core";',
+          "",
+          `export const ${table} = pgTable("${table}", {`,
+          '  id: serial("id").primaryKey(),',
+          '  slug: text("slug").notNull(),',
+          "});",
+          "",
+        ].join("\n"),
+      );
+    }
+
+    const factoryPath = join(fixtureCwd, "server", "factories", "widget.factory.ts");
+    writeFileSync(
+      factoryPath,
+      [
+        'import { defineFactory } from "@nuxvel/nuxt/factories";',
+        'import { widget } from "#nuxvel/schema";',
+        "",
+        "export const widgetFactory = defineFactory(widget);",
+        "",
+      ].join("\n"),
+    );
+
+    const { stdout, exitCode } = await runCliAt(fixtureCwd, "factory:sync", "widget");
+
+    expect(exitCode).toBe(0);
+    expect(stdout).toBe("widget.factory.ts: added slug\n");
+    expect(readFileSync(factoryPath, "utf-8")).toContain("  slug: () => faker.lorem.slug(),");
+  });
+
   it("factory:sync writes sanitizeHtml for a SanitizedHtml column and the scratch app typechecks", async () => {
     const fixtureCwd = scratchDir("factory-sync-sanitized");
 

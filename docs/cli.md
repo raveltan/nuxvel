@@ -1419,7 +1419,7 @@ nuxvel factory:sync         # every factory
 nuxvel factory:sync post   # the factory file post.factory.ts only, or post.ts
 ```
 
-`nuxvel factory:sync` adds values to the factories under `server/factories/` and `server/domains/<domain>/factories/`, in the app and in each module for the columns that became required after you wrote the factory. A column needs a value when it is `NOT NULL`, has no database default, and the factory does not cover it.
+`nuxvel factory:sync` adds values to the factories under `server/factories/` and `server/domains/<domain>/factories/`, in the app and in each module for the columns that became required after you wrote the factory. A column needs a value when it is `NOT NULL`, has no database default, and the factory does not cover it. The factory may import its table from `#nuxvel/schema` or from the schema file by a relative path.
 
 The command prints one line on stdout for each factory that it changes, for example `post.factory.ts: added slug, rank`. When no factory needs a change, stderr shows `✔ All factories are up to date`. A name that matches no factory file stops the command with exit code `1`.
 

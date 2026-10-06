@@ -23,5 +23,7 @@ applies each step below that names a codemod.
 
 ### Changes
 
+- `nuxvel factory:sync` finds the table of a factory that imports it from
+  `#nuxvel/schema`.
 - `nuxvel upgrade` applies the codemods of the installed nuxvel;
   `--dry-run` prints them as a diff and `--only <codemod>` runs one.
