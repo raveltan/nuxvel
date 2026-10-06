@@ -161,7 +161,7 @@ Give the recipe factory realistic values, a slug that is valid in a URL, and a s
 import { faker } from "@faker-js/faker";
 import { userFactory } from "./users.factory";
 import { defineFactory, sequence } from "@nuxvel/nuxt/factories";
-import { recipeTable } from "../database/schema/recipe.schema";
+import { recipeTable } from "#nuxvel/schema";
 
 export const recipeFactory = defineFactory(recipeTable, {
   ownerId: async () => (await userFactory()).id,
@@ -189,8 +189,7 @@ Give the demo user some recipes. One recipe has a fixed slug, so you can open it
 
 ```ts
 // server/seeders/database.seeder.ts
-import { publishedRecipeFactory, recipeFactory } from "../factories/recipe.factory";
-import { userFactory } from "../factories/users.factory";
+import { publishedRecipeFactory, recipeFactory, userFactory } from "#nuxvel/factories";
 
 const DEMO_EMAIL = "demo@example.com";
 const DEMO_PASSWORD = "demo-password";
@@ -243,20 +242,10 @@ export const recipeCardSchema = recipeSchema.pick({ slug: true, title: true, sum
 import { and, desc, eq, isNotNull } from "drizzle-orm";
 import { z } from "zod";
 // ...the imports of the generated router...
-import {
-  recipeIdInput,
-  recipeListInput,
-  createRecipeInput,
-  updateRecipeInput,
-  recipeSchema,
-  recipeSlugInput,
-  publishedRecipeSchema,
-  recipeCardSchema,
-} from "#shared/schemas/recipe";
 
 export const recipeRouter = {
   latest: publicProcedure.output(z.array(recipeCardSchema)).query(() =>
-    remember("recipes:latest", { minutes: 10 }, () =>
+    remember(["recipe", "latest"], { minutes: 10 }, () =>
       useDb()
         .select({ slug: recipeTable.slug, title: recipeTable.title, summary: recipeTable.summary, publishedAt: recipeTable.publishedAt })
         .from(recipeTable)
@@ -269,7 +258,7 @@ export const recipeRouter = {
     .input(recipeSlugInput)
     .output(publishedRecipeSchema)
     .query(({ input }) =>
-      remember(`recipes:by-slug:${input.slug}`, { hours: 1 }, () =>
+      remember(["recipe", "by-slug", input.slug], { hours: 1 }, () =>
         useDb()
           .select()
           .from(recipeTable)
@@ -420,7 +409,7 @@ Replace the starter's home page:
 <!-- app/pages/index.vue -->
 <script setup lang="ts">
 definePageMeta({ layout: "home" });
-const recipes = useQuery(useTRPC().recipe.latest.queryOptions());
+const recipes = $api.recipe.latest.useQuery();
 
 useSeo({ title: "Recipes for a weeknight" });
 </script>
@@ -449,7 +438,7 @@ Add the page of one recipe. Chapter 4 adds its head tags:
 <script setup lang="ts">
 definePageMeta({ layout: "home" });
 const route = useRoute("recipes-slug");
-const recipe = useQuery(useTRPC().recipe.bySlug.queryOptions({ slug: route.params.slug }));
+const recipe = $api.recipe.bySlug.useQuery({ slug: route.params.slug });
 </script>
 
 <template>
@@ -545,25 +534,25 @@ Give the recipe page its title, description and type. The data loads in a query,
 <script setup lang="ts">
 definePageMeta({ layout: "home" });
 const route = useRoute("recipes-slug");
-const recipe = useQuery(useTRPC().recipe.bySlug.queryOptions({ slug: route.params.slug }));
+const recipe = $api.recipe.bySlug.useQuery({ slug: route.params.slug });
 
 useSeo(() => ({
-  title: recipe.data.value?.title ?? "Recipe",
-  description: recipe.data.value?.summary,
+  title: recipe.data?.title ?? "Recipe",
+  description: recipe.data?.summary,
   type: "article",
 }));
 
 useHead(() => ({
-  script: recipe.data.value
+  script: recipe.data
     ? [
         {
           type: "application/ld+json",
           innerHTML: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "Recipe",
-            name: recipe.data.value.title,
-            description: recipe.data.value.summary,
-            datePublished: recipe.data.value.publishedAt?.toISOString(),
+            name: recipe.data.title,
+            description: recipe.data.summary,
+            datePublished: recipe.data.publishedAt?.toISOString(),
           }),
         },
       ]
@@ -589,7 +578,7 @@ The recipe pages have the parameter `slug`, so add them from a source. A source 
 ```ts
 // server/api/__sitemap__/recipes.ts
 import { isNotNull } from "drizzle-orm";
-import { recipeTable } from "../../database/schema/recipe.schema";
+import { recipeTable } from "#nuxvel/schema";
 
 export default defineSitemapEventHandler(async () => {
   const recipes = await useDb()
@@ -621,7 +610,7 @@ A functional test reads the head tags with `getMeta()`, and fetches the English 
 import { url } from "@nuxt/test-utils/e2e";
 import { expect, getMeta, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { publishedRecipeFactory, recipeFactory } from "../../server/factories/recipe.factory";
+import { publishedRecipeFactory, recipeFactory } from "#nuxvel/factories";
 
 describe("SEO", () => {
   it("renders the head tags of a recipe", async () => {
@@ -718,8 +707,7 @@ The `client` preset renders a whole page only in the browser: the server sends a
 // tests/functional/rendering.test.ts
 import { actingAs, expect, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { publishedRecipeFactory, recipeFactory } from "../../server/factories/recipe.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { publishedRecipeFactory, recipeFactory, userFactory } from "#nuxvel/factories";
 
 describe("rendering", () => {
   it("caches the public pages for every visitor", async () => {
@@ -757,21 +745,21 @@ The third test calls `recipe.publish`, which chapter 7 adds. Run this file after
 
 The page cache keeps HTML. The data cache keeps the results of the queries in Redis, so that a render runs no SQL query when the data did not change. `latest` and `bySlug` read their results with `remember()`:
 
-- `remember("recipes:latest", { minutes: 10 }, fn)` returns the value of the key `recipes:latest`. When the key is missing or expired, it runs `fn`, stores the result for 10 minutes and returns it.
-- The key of `bySlug` has the slug in it: `recipes:by-slug:tomato-soup`. Each recipe has its own value. A slug cannot contain `:`, so a recipe with the slug `latest` does not collide with the list.
+- `remember(["recipe", "latest"], { minutes: 10 }, fn)` returns the value of the key `recipe:latest`. When the key is missing or expired, it runs `fn`, stores the result for 10 minutes and returns it.
+- The key of `bySlug` has the slug in it: `recipe:by-slug:tomato-soup`. Each recipe has its own value. A slug cannot contain `:`, so a recipe with the slug `latest` does not collide with the list.
 - When `fn` throws, `remember()` stores nothing. A `NOT_FOUND` for a draft thus does not stay in the cache.
 
-A change to a recipe must remove the old values. Give each action that changes a recipe the `invalidates` option:
+A change to a recipe must remove the old values. Give each action that changes a recipe the `invalidates` option, with the tag `recipe`, the name of the router, which starts each key:
 
 ```ts
 // server/actions/recipe/create-recipe.action.ts
 export const createRecipeAction = defineAction({
   input: createRecipeInput,
-  invalidates: ["recipes:*"],
+  invalidates: ["recipe"],
   handler: async (input, ctx) => {
 ```
 
-Add the same line to `update-recipe.action.ts` and `delete-recipe.action.ts`. After the transaction of the action commits, the action removes each key that matches the glob `recipes:*`, with `cacheForget()`. When the handler throws, the transaction rolls back and the cache keeps its values. See [Cache: invalidating from an action](../cache.md#invalidating-from-an-action).
+Add the same line to `update-recipe.action.ts` and `delete-recipe.action.ts`. After the transaction of the action commits, the action removes each value under `recipe` with `cacheForget()`, and the browser loads the `recipe` queries again. When the handler throws, the transaction rolls back and the cache keeps its values. See [Cache: invalidating from an action](../cache.md#invalidating-from-an-action).
 
 The two caches work together. The page cache keeps a page for one minute. When the copy is old, the server renders the page again, and the render calls `latest` and `bySlug`. After an action, the data cache has no value, so the render reads the new rows.
 
@@ -783,8 +771,7 @@ The two caches work together. The page cache keeps a page for one minute. When t
 // tests/functional/recipe-cache.test.ts
 import { actingAs, expect, expectCached, expectCacheHit, expectCacheMiss, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { publishedRecipeFactory, recipeFactory } from "../../server/factories/recipe.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { publishedRecipeFactory, recipeFactory, userFactory } from "#nuxvel/factories";
 
 describe("the recipe cache", () => {
   it("keeps one value for each recipe", async () => {
@@ -792,7 +779,7 @@ describe("the recipe cache", () => {
 
     await guest().trpc.recipe.bySlug({ slug: "tomato-soup" });
 
-    const cached = await expectCached("recipes:by-slug:tomato-soup");
+    const cached = await expectCached("recipe:by-slug:tomato-soup");
     expect(cached).toMatchObject({ title: "Tomato soup" });
   });
 
@@ -803,13 +790,13 @@ describe("the recipe cache", () => {
     await guest().trpc.recipe.latest();
     await guest().trpc.recipe.latest();
 
-    await expectCacheMiss("recipes:latest", { times: 1 });
-    await expectCacheHit("recipes:latest", { times: 1 });
+    await expectCacheMiss("recipe:latest", { times: 1 });
+    await expectCacheHit("recipe:latest", { times: 1 });
 
     await actingAs(author).trpc.recipe.publish({ id: draft.id });
     const latest = await guest().trpc.recipe.latest();
 
-    await expectCacheMiss("recipes:latest", { times: 2 });
+    await expectCacheMiss("recipe:latest", { times: 2 });
     expect(latest.map((recipe) => recipe.slug)).toEqual(["lentil-stew"]);
   });
 
@@ -870,13 +857,11 @@ Replace the action:
 ```ts
 // server/actions/recipe/publish-recipe.action.ts
 import { eq } from "drizzle-orm";
-import { pushSubscriptionsTable } from "../../database/schema/push-subscriptions.schema";
-import { recipeTable } from "../../database/schema/recipe.schema";
-import { recipeIdInput } from "#shared/schemas/recipe";
+import { pushSubscriptionsTable, recipeTable } from "#nuxvel/schema";
 
 export const publishRecipeAction = defineAction({
   input: recipeIdInput,
-  invalidates: ["recipes:*"],
+  invalidates: ["recipe"],
   handler: async ({ id }, ctx) => {
     const row = await findOrFail(recipeTable, id);
     await authorize(ctx.actor, "update", recipeTable, row);
@@ -912,7 +897,7 @@ Add the procedure to the router, next to the generated ones:
 
 ```ts
 // server/trpc/routers/recipe.router.ts
-import { publishRecipeAction } from "../../actions/recipe/publish-recipe.action";
+import { publishRecipeAction } from "#server/actions/recipe/publish-recipe.action";
 ```
 
 ```ts
@@ -929,12 +914,7 @@ The generated list at `/recipe` shows the recipes of the author. Show the public
 
 ```ts
 // app/pages/recipe/index.vue
-const queryCache = useQueryCache();
-
-const { mutate: publish } = useMutation({
-  ...toasted(trpc.recipe.publish.mutationOptions(), "Recipe published"),
-  onSettled: () => queryCache.invalidateQueries({ key: trpc.recipe.list.key() }),
-});
+const { mutate: publish } = useMutation(toasted($api.recipe.publish.mutationOptions(), "Recipe published"));
 ```
 
 In the `columns` of the `<DataTable>`, replace `{ accessorKey: 'body', header: 'Body' }` with `{ accessorKey: 'publishedAt', header: 'Published' }`. Then add a cell for the column, above the `#actions-cell` template:
@@ -989,9 +969,7 @@ The generated test of the action checks nothing useful now. Replace it:
 // server/actions/recipe/publish-recipe.action.test.ts
 import { expect, expectNoPushSent, expectPushSent, runAction } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { pushSubscriptionsFactory } from "../../factories/push-subscriptions.factory";
-import { publishedRecipeFactory, recipeFactory } from "../../factories/recipe.factory";
-import { userFactory } from "../../factories/users.factory";
+import { pushSubscriptionsFactory, publishedRecipeFactory, recipeFactory, userFactory } from "#nuxvel/factories";
 
 describe("recipe/publish-recipe action", () => {
   it("publishes the recipe and notifies each reader with notifications on", async () => {
@@ -1283,9 +1261,8 @@ In the 404 test, the **Go home** button now opens a page with the heading "Recip
 // tests/e2e/site.test.ts
 import { actingAs, button, expect, expectAccessible, expectPushSent, expectRow, heading, link, text, toast, visit } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { pushSubscriptionsTable } from "../../server/database/schema/push-subscriptions.schema";
-import { publishedRecipeFactory, recipeFactory } from "../../server/factories/recipe.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { pushSubscriptionsTable } from "#nuxvel/schema";
+import { publishedRecipeFactory, recipeFactory, userFactory } from "#nuxvel/factories";
 
 describe("the public site", () => {
   it("reads a recipe and saves it for later", async () => {
@@ -1372,7 +1349,7 @@ The first and the third test open the pages as a guest. The fourth opens two pag
 import { createPage, url } from "@nuxt/test-utils/e2e";
 import { expect, heading } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { publishedRecipeFactory } from "../../server/factories/recipe.factory";
+import { publishedRecipeFactory } from "#nuxvel/factories";
 
 describe("offline", () => {
   it("shows a recipe read before, and the offline page for any other", async () => {
@@ -1539,7 +1516,7 @@ The title of a page is in the locale of the page too. Give `useSeo()` a getter, 
 <!-- app/pages/index.vue -->
 <script setup lang="ts">
 definePageMeta({ layout: "home" });
-const recipes = useQuery(useTRPC().recipe.latest.queryOptions());
+const recipes = $api.recipe.latest.useQuery();
 const { ts } = useI18n();
 
 useSeo(() => ({ title: ts("recipes.title") }));
@@ -1609,7 +1586,7 @@ In `app/pages/recipes/[slug].vue`, add `const { ts } = useI18n();` below the que
 
 ```ts
 // app/pages/recipes/[slug].vue
-  title: recipe.data.value?.title ?? ts("recipes.recipe"),
+  title: recipe.data?.title ?? ts("recipes.recipe"),
 ```
 
 ```vue
@@ -1741,7 +1718,7 @@ A functional test checks the head tags of a Chinese page, the sitemaps, the cach
 import { url } from "@nuxt/test-utils/e2e";
 import { expect, getMeta, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { publishedRecipeFactory } from "../../server/factories/recipe.factory";
+import { publishedRecipeFactory } from "#nuxvel/factories";
 
 describe("English and Chinese", () => {
   it("renders the head tags of a page in Chinese", async () => {
@@ -1844,7 +1821,7 @@ The **Locale** menu in the toolbar of Storybook shows each story in the locale t
 import { url } from "@nuxt/test-utils/e2e";
 import { button, expect, expectAccessible, fillForm, heading, link, visit } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { publishedRecipeFactory } from "../../server/factories/recipe.factory";
+import { publishedRecipeFactory } from "#nuxvel/factories";
 
 describe("the site in Chinese", () => {
   it("reads a recipe in Chinese and saves it", async () => {

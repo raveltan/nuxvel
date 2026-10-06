@@ -398,7 +398,7 @@ nuxvel make:factory post
 import { faker } from "@faker-js/faker";
 import { userFactory } from "./users.factory";
 import { defineFactory } from "@nuxvel/nuxt/factories";
-import { postTable } from "../database/schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 export const postFactory = defineFactory(postTable, {
   title: () => faker.lorem.sentence(),
@@ -474,7 +474,7 @@ Two functions with a parameter run in the order of `definition`. Thus a function
 import { randomUUID } from "node:crypto";
 import { faker } from "@faker-js/faker";
 import { defineFactory, sequence } from "@nuxvel/nuxt/factories";
-import { userTable } from "../database/schema/auth.schema";
+import { userTable } from "#nuxvel/schema";
 
 export const userFactory = defineFactory(userTable, {
   id: () => randomUUID(),
@@ -615,8 +615,7 @@ When a migration makes a column required, `nuxvel factory:sync` adds a value for
 
 ```ts
 // tests/scenarios/blog.ts
-import { postFactory } from "../../server/factories/post.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { postFactory, userFactory } from "#nuxvel/factories";
 
 export async function blog({ posts = 1 }: { posts?: number } = {}) {
   const author = await userFactory();
@@ -1096,10 +1095,10 @@ A call through `actingAs().trpc` or `guest().trpc` reports an unexpected error a
 
 ```ts
 await expectBroadcast("posts", "updated", { id: post.id });
-await expectCacheMiss("posts:list:[null,null,null]");
+await expectCacheMiss(["post", "list", null]);
 ```
 
-`expectBroadcast(channel, event, match?, { times?, params? })` checks that the app broadcast the event on the channel, with a payload that has the `match` fields. `expectNotBroadcast(channel, event?, { params? })` checks that it did not. `params` limits both to one room of the channel. `expectCacheHit(key, { times? })` and `expectCacheMiss(key, { times? })` check that the app read the cache key and found it, or found nothing. `key` is the exact key that `remember()` or `cacheGet()` got. Each assertion returns the latest matching record. See [Realtime](./realtime.md#testing-broadcasts) and [Cache](./cache.md#testing).
+`expectBroadcast(channel, event, match?, { times?, params? })` checks that the app broadcast the event on the channel, with a payload that has the `match` fields. `expectNotBroadcast(channel, event?, { params? })` checks that it did not. `params` limits both to one room of the channel. `expectCacheHit(key, { times? })` and `expectCacheMiss(key, { times? })` check that the app read the cache key and found it, or found nothing. `key` is the exact key that `remember()` or `cacheGet()` got, a string or an array of parts. Each assertion returns the latest matching record. See [Realtime](./realtime.md#testing-broadcasts) and [Cache](./cache.md#testing).
 
 ### Faking outbound requests
 
@@ -1359,7 +1358,7 @@ The stories of `nuxvelStories()` live in `node_modules`, and Vitest does not col
 ```ts
 import { actingAs, expect, heading } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../server/factories/users.factory";
+import { userFactory } from "#nuxvel/factories";
 
 describe("the new post page", () => {
   it("opens for a signed-in author", async () => {
@@ -1693,7 +1692,7 @@ At the end of the test, `visit` fails the test with each recorded error. When th
 ```ts
 import { expectNoSmoke } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { postFactory } from "../../server/factories/post.factory";
+import { postFactory } from "#nuxvel/factories";
 
 describe("the app", () => {
   it("opens each page without errors", async () => {
@@ -1720,7 +1719,7 @@ A page fails when:
 // eslint-disable-next-line nuxvel/test-client -- login() signs in a page from createPage()
 import { createPage, url } from "@nuxt/test-utils/e2e";
 import { actingAs } from "@nuxvel/nuxt/testing";
-import { userFactory } from "../../server/factories/users.factory";
+import { userFactory } from "#nuxvel/factories";
 
 const page = await createPage();
 await actingAs(await userFactory()).login(page);

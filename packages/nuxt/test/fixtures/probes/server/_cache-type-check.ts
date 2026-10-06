@@ -5,10 +5,16 @@ export async function rememberInfersTheValue() {
   const inferred: IsAny<typeof value> extends true ? never : typeof value extends { at: Date; count: number } ? true : never =
     true;
 
+  const fromArray = await remember(["probe", { page: 1 }], 60, () => [1, 2]);
+  const arrayInferred: IsAny<typeof fromArray> extends true ? never : typeof fromArray extends number[] ? true : never = true;
+
+  // @ts-expect-error a key is a string or an array of parts
+  await remember(1, 60, () => 1);
+
   // @ts-expect-error a duration takes seconds, minutes, hours or days
   await remember("probe", { weeks: 1 }, () => 1);
 
-  return inferred;
+  return [inferred, arrayInferred];
 }
 
 export async function withLockInfersTheResult() {

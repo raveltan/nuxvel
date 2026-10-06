@@ -1,4 +1,4 @@
-import { expect, guest, text, visit } from "@nuxvel/nuxt/testing";
+import { expect, guest, text, trpcSpy, visit } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
 import { url } from "@nuxt/test-utils/e2e";
 import { setupPlayground } from "./helpers/playground";
@@ -10,6 +10,23 @@ describe("tRPC during SSR", async () => {
     const page = await visit("/_trpc-ssr", { extraHTTPHeaders: { "x-request-id": "trpc-ssr-request-id" } });
 
     await expect(text(page, "request-id:trpc-ssr-request-id")).toBeVisible();
+  });
+
+  it("renders a page that reaches the API through $api in its script and its template", async () => {
+    const page = await visit("/_api", { extraHTTPHeaders: { "x-request-id": "api-request-id" } });
+
+    await expect(text(page, "api-request-id:api-request-id")).toBeVisible();
+    await expect(text(page, "api-key:trpc.post.byId")).toBeVisible();
+  });
+
+  it("renders a .useQuery() result on the server and does not fetch it again when the page hydrates", async () => {
+    const page = await visit("/_api");
+    const now = trpcSpy(page, "health.now");
+
+    await page.goto(url("/_api"), { waitUntil: "hydration" });
+
+    await expect(text(page, "api-use-query:true")).toBeVisible();
+    await expect(now).not.toHaveBeenCalled();
   });
 
   it("renders the error state of a query with ssrCatchError, and keeps the tRPC error in the payload", async () => {

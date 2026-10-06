@@ -1,6 +1,5 @@
 import { eq } from "drizzle-orm";
-import { healthChecksTable } from "../../database/schema/health-check.schema";
-import { updateHealthCheckInput } from "../../../shared/schemas/health-check";
+import { healthChecksTable } from "#nuxvel/schema";
 
 export const updateHealthCheckAction = defineAction({
   input: updateHealthCheckInput,

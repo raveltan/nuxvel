@@ -139,7 +139,7 @@ The command writes `server/factories/event.factory.ts` and a test. It selects a 
 import { faker } from "@faker-js/faker";
 import { userFactory } from "./users.factory";
 import { defineFactory } from "@nuxvel/nuxt/factories";
-import { eventTable } from "../database/schema/event.schema";
+import { eventTable } from "#nuxvel/schema";
 
 export const eventFactory = defineFactory(eventTable, {
   ownerId: async () => (await userFactory()).id,
@@ -197,7 +197,7 @@ import { index, integer, pgTable, serial, text, unique } from "drizzle-orm/pg-co
 
 ```ts
 // server/privacy/rsvp.user-data.ts
-import { rsvpTable } from "../database/schema/rsvp.schema";
+import { rsvpTable } from "#nuxvel/schema";
 
 export const rsvpUserData = defineUserData(rsvpTable, rsvpTable.guestId);
 ```
@@ -215,7 +215,7 @@ A policy says who may do what to a row. Add a rule `host` to the policy of the e
 
 ```ts
 // server/policies/event.policy.ts
-import { eventTable } from "../database/schema/event.schema";
+import { eventTable } from "#nuxvel/schema";
 
 export const eventPolicy = definePolicy(eventTable, {
   update: (actor, row) => row.ownerId === (actor.userId ?? actor.id) || actor.role === "admin",
@@ -262,8 +262,7 @@ Write the page. The file name `[id].vue` gives the route `event-id`, with the pa
 definePageMeta({ middleware: "auth" });
 
 const route = useRoute("event-id");
-const trpc = useTRPC();
-const event = useQuery(() => trpc.event.show.queryOptions({ id: Number(route.params.id) }));
+const event = $api.event.show.useQuery(() => ({ id: Number(route.params.id) }));
 
 useSeo({ title: "Event" });
 </script>
@@ -283,7 +282,7 @@ useSeo({ title: "Event" });
 </template>
 ```
 
-`useTRPC()` gives the typed procedures in the browser. `data` has the type of the `.output()` schema, so `data.isHost` is a `boolean`, and a typo does not compile. `<QueryState>` shows a loading state, an error state, or the `default` slot with the data.
+`$api` gives the typed procedures in the browser. `data` has the type of the `.output()` schema, so `data.isHost` is a `boolean`, and a typo does not compile. `<QueryState>` shows a loading state, an error state, or the `default` slot with the data.
 
 Link the title of each event in the list to this page. In `app/pages/event/index.vue`, add a slot for the `title` column in the `<DataTable>`, before the `actions-cell` slot:
 
@@ -324,8 +323,7 @@ The `error` option is the message that the form shows under the field.
 
 ```ts
 // server/actions/rsvp/send-rsvp.action.ts
-import { eventTable } from "../../database/schema/event.schema";
-import { rsvpTable } from "../../database/schema/rsvp.schema";
+import { eventTable, rsvpTable } from "#nuxvel/schema";
 
 export const sendRsvpAction = defineAction({
   input: sendRsvpInput,
@@ -362,7 +360,7 @@ A router reads, and calls an action to write. Add a router for the answers:
 
 ```ts
 // server/trpc/routers/rsvp.router.ts
-import { sendRsvpAction } from "../../actions/rsvp/send-rsvp.action";
+import { sendRsvpAction } from "#server/actions/rsvp/send-rsvp.action";
 
 export const rsvpRouter = {
   send: authedProcedure
@@ -385,8 +383,7 @@ The file name gives the namespace, so the procedure is `rsvp.send`. `rsvpSchema`
 <script setup lang="ts">
 const props = defineProps<{ eventId: number }>();
 
-const trpc = useTRPC();
-const form = useActionForm(sendRsvpInput, toasted(trpc.rsvp.send.mutationOptions(), "RSVP sent"), {
+const form = useActionForm(sendRsvpInput, toasted($api.rsvp.send.mutationOptions(), "RSVP sent"), {
   defaults: { eventId: props.eventId, answer: undefined },
 });
 </script>
@@ -415,8 +412,7 @@ The host sees the answers in a table. Add a procedure `guests` to the event rout
 
 ```ts
 // server/trpc/routers/event.router.ts
-import { userTable } from "../../database/schema/auth.schema";
-import { rsvpTable } from "../../database/schema/rsvp.schema";
+import { rsvpTable, userTable } from "#nuxvel/schema";
 
   guests: authedProcedure
     .input(paginationSchema.extend({ id: eventIdInput.shape.id }))
@@ -447,11 +443,8 @@ import { rsvpTable } from "../../database/schema/rsvp.schema";
 <script setup lang="ts">
 const props = defineProps<{ eventId: number }>();
 
-const trpc = useTRPC();
 const route = useRoute();
-const guests = useQuery(() =>
-  trpc.event.guests.queryOptions({ id: props.eventId, ...paginationSchema.catch({}).parse(route.query) }),
-);
+const guests = $api.event.guests.useQuery(() => ({ id: props.eventId, ...paginationSchema.catch({}).parse(route.query) }));
 </script>
 
 <template>
@@ -588,7 +581,7 @@ Delete the generated test, `server/actions/event/invite-guest.action.test.ts`, a
 
 ```ts
 // server/actions/event/invite-guest.action.ts
-import { eventTable } from "../../database/schema/event.schema";
+import { eventTable } from "#nuxvel/schema";
 
 export const inviteGuestAction = defineAction({
   input: inviteGuestInput,
@@ -613,7 +606,7 @@ Add the procedure to the event router, after `guests`:
 
 ```ts
 // server/trpc/routers/event.router.ts
-import { inviteGuestAction } from "../../actions/event/invite-guest.action";
+import { inviteGuestAction } from "#server/actions/event/invite-guest.action";
 
   invite: authedProcedure
     .input(inviteGuestInput)
@@ -628,8 +621,7 @@ import { inviteGuestAction } from "../../actions/event/invite-guest.action";
 <script setup lang="ts">
 const props = defineProps<{ eventId: number }>();
 
-const trpc = useTRPC();
-const form = useActionForm(inviteGuestInput, toasted(trpc.event.invite.mutationOptions(), "Invitation sent"), {
+const form = useActionForm(inviteGuestInput, toasted($api.event.invite.mutationOptions(), "Invitation sent"), {
   defaults: { eventId: props.eventId, email: "" },
   onSuccess: () => {
     form.state.email = "";
@@ -677,9 +669,8 @@ Each test gets a clean database. A factory inserts the rows that it needs. `acti
 // tests/functional/rsvp.test.ts
 import { actingAs, expect, expectRow, runAction } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { rsvpTable } from "../../server/database/schema/rsvp.schema";
-import { eventFactory } from "../../server/factories/event.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { rsvpTable } from "#nuxvel/schema";
+import { eventFactory, userFactory } from "#nuxvel/factories";
 
 describe("RSVPs", () => {
   it("keeps the last answer of a guest", async () => {
@@ -731,8 +722,7 @@ The invitation tests check the mail, the validation and the policy:
 // tests/functional/invite.test.ts
 import { actingAs, expect, expectMailSent, expectNoMailSent } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { eventFactory } from "../../server/factories/event.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { eventFactory, userFactory } from "#nuxvel/factories";
 
 describe("invitations", () => {
   it("mails the invitation with a link to the event", async () => {
@@ -841,7 +831,7 @@ An end-to-end test follows a user across pages in a real browser, with the real 
 // tests/e2e/rsvp.test.ts
 import { actingAs, button, cell, expect, expectMailSent, fillForm, heading, link, toast } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../server/factories/users.factory";
+import { userFactory } from "#nuxvel/factories";
 
 describe("an event", () => {
   it("goes from the invitation to the guest list", async () => {

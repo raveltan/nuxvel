@@ -226,7 +226,7 @@ The service worker shows each notification with its title, body and icon. A clic
 
 ```ts
 // server/listeners/comment/notify-author.listener.ts
-import { commentCreatedEvent } from "../../events/comment/created.event";
+import { commentCreatedEvent } from "#server/events/comment/created.event";
 
 export const commentNotifyAuthorListener = defineListener({
   event: commentCreatedEvent,
@@ -283,8 +283,7 @@ The test app is a production build, so it registers the service worker. The firs
 ```ts
 import { expectPushSent, runAction } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { postFactory } from "../../server/factories/post.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { postFactory, userFactory } from "#nuxvel/factories";
 
 describe("comment notifications", () => {
   it("notifies the author of the post", async () => {

@@ -29,11 +29,11 @@ export interface SeoMeta {
  *
  * @example
  * ```ts
- * const post = useQuery(useTRPC().post.byId.queryOptions({ id }));
+ * const post = $api.post.byId.useQuery({ id });
  *
  * useSeo(() => ({
- *   title: post.data.value?.title ?? "Post",
- *   description: post.data.value?.body.slice(0, 160),
+ *   title: post.data?.title ?? "Post",
+ *   description: post.data?.body.slice(0, 160),
  *   type: "article",
  * }));
  * ```

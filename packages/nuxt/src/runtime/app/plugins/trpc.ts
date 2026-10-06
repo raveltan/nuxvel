@@ -1,8 +1,10 @@
+import { useQueryCache } from "@pinia/colada";
 import { createTRPCClient, TRPCClientError, type TRPCLink } from "@trpc/client";
 import { observable } from "@trpc/server/observable";
 import { defineNuxtPlugin, useRequestEvent, useRuntimeConfig } from "#app";
 import { createTrpcClientLink } from "../../shared/trpc/client-link";
 import type { AppTRPC } from "../trpc/app-trpc";
+import { createInvalidateLink } from "../trpc/invalidate-link";
 import { createTrpcOptionsProxy } from "../trpc/options-proxy";
 import type { AppRouter } from "../../server/trpc/router";
 import { trpcEndpoint } from "../../shared/trpc/trpc-path";
@@ -22,8 +24,8 @@ function liveBuildId(error: unknown) {
  * the server answers `CLIENT_OUTDATED`, the plugin calls Nuxt's
  * `app:manifest:update` hook, so the next navigation reloads the page, as
  * after Nuxt's own outdated-build check. Every call also carries the
- * locale of the current page for {@link currentLocale}. Prefer the
- * `useTRPC()` composable for reading it. Named `nuxvel:trpc`, so an app
+ * locale of the current page for {@link currentLocale}. Read it
+ * through the auto-imported `$api`. Named `nuxvel:trpc`, so an app
  * plugin can `dependsOn` it.
  */
 export default defineNuxtPlugin({
@@ -46,9 +48,10 @@ export default defineNuxtPlugin({
         }),
       );
 
-    const { app } = useRuntimeConfig();
+    const { app, public: publicConfig } = useRuntimeConfig();
+    const invalidate = createInvalidateLink<AppRouter>(() => useQueryCache(nuxtApp.$pinia), () => publicConfig.invalidateFallback);
     const client = createTRPCClient<AppRouter>({
-      links: [watchOutdated, createTrpcClientLink<AppRouter>(trpcEndpoint(app.baseURL), useRequestEvent()?.fetch, app.buildId, () => nuxtApp.$getLocale?.())],
+      links: [watchOutdated, ...(import.meta.client ? [invalidate] : []), createTrpcClientLink<AppRouter>(trpcEndpoint(app.baseURL), useRequestEvent()?.fetch, app.buildId, () => nuxtApp.$getLocale?.())],
     });
 
     return {

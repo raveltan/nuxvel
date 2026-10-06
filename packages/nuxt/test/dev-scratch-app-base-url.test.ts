@@ -16,10 +16,9 @@ beforeAll(() => {
     `<script setup lang="ts">
 import { TRPCClientError } from "@trpc/client";
 
-const trpc = useTRPC();
 const { data: code } = await useAsyncData("keys", async () => {
   try {
-    await trpc.apiKeys.list.query();
+    await $api.apiKeys.list.query();
     return "none";
   } catch (error) {
     return error instanceof TRPCClientError ? error.data?.code : "other";

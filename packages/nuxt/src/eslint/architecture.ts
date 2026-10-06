@@ -20,6 +20,7 @@ import { typedRoutes } from "./rules/typed-routes";
 import { userDataDeclared } from "./rules/user-data-declared";
 
 const TEST_FILES = ["tests/**/*.ts", "server/**/*.test.ts", "app/**/*.stories.ts"].flatMap((path) => [path, `layers/*/${path}`]);
+const IMPORT_FILES = ["server", "app", "shared", "tests"].flatMap((root) => [`${root}/**/*.ts`, `${root}/**/*.vue`]).flatMap((path) => [path, `layers/*/${path}`]);
 
 /**
  * The `nuxvel` ESLint plugin: the architecture rules `nuxvel test:arch`
@@ -70,9 +71,10 @@ const TEST_FILES = ["tests/**/*.ts", "server/**/*.test.ts", "app/**/*.stories.ts
  * `nuxvel/no-parent-imports` wants an alias (`#nuxvel/schema`,
  * `#nuxvel/factories`, `#server/*`, `#shared/*`, `~/*`, `#layers/<name>/*`)
  * for an import that climbs with `../` out of its kind folder into another
- * one, and fixes it; its `allow` option lists globs of targets a relative
- * import may reach. {@link architecture} leaves it out for now. Use the
- * plugin through {@link architecture}.
+ * one, and fixes it, and removes an import of `shared/schemas/` from
+ * `app/` and `server/`, which auto-import it; its `allow` option lists
+ * globs of targets a relative import may reach. Use the plugin through
+ * {@link architecture}.
  */
 export const nuxvelPlugin: ESLint.Plugin = {
   meta: { name: "nuxvel" },
@@ -108,7 +110,9 @@ export const nuxvelPlugin: ESLint.Plugin = {
  * `.vue` files under `app/` and the route name rule on the `.vue` and `.ts`
  * files under `app/`, and the module rule on the `.ts` and `.vue`
  * files under `layers/<name>/`, and the audit and billing rules on every
- * `.ts` file under `server/` and `layers/<name>/server/`. The test configs apply to
+ * `.ts` file under `server/` and `layers/<name>/server/`, and the import
+ * rule on the `.ts` and `.vue` files under `server/`, `app/`, `shared/`
+ * and `tests/`, also in `layers/<name>/`. The test configs apply to
  * the `.ts` files under `tests/`, the `.test.ts` files under `server/` and
  * the `.stories.ts` files under `app/`, and to the same paths in
  * `layers/<name>/`: the built-in `no-restricted-imports`
@@ -126,7 +130,7 @@ export const nuxvelPlugin: ESLint.Plugin = {
  * the tables, and test files. The billing rule skips test files. The user data rule skips Better Auth's `session` and `account`
  * tables and the `audit_subjects` table. The configs are named `nuxvel/actions`, `nuxvel/routers`,
  * `nuxvel/listeners`, `nuxvel/routes`, `nuxvel/schema`,
- * `nuxvel/templates`, `nuxvel/modules`, `nuxvel/audit`, `nuxvel/billing`, `nuxvel/tests`
+ * `nuxvel/templates`, `nuxvel/modules`, `nuxvel/audit`, `nuxvel/billing`, `nuxvel/imports`, `nuxvel/tests`
  * and `nuxvel/functional-tests`. TypeScript files need a TypeScript parser, e.g.
  * `@typescript-eslint/parser`. Vue files need `vue-eslint-parser`,
  * which the accessibility preset of `@nuxvel/nuxt/eslint` sets.
@@ -207,6 +211,12 @@ export const architecture: Linter.Config[] = [
     ignores: ["**/*.test.ts", "**/tests/**", "**/test/**"],
     plugins: { nuxvel: nuxvelPlugin },
     rules: { "nuxvel/billing-writes": "error" },
+  },
+  {
+    name: "nuxvel/imports",
+    files: IMPORT_FILES,
+    plugins: { nuxvel: nuxvelPlugin },
+    rules: { "nuxvel/no-parent-imports": "error" },
   },
   {
     name: "nuxvel/tests",

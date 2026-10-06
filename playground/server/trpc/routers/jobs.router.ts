@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { startCountdownAction } from "../../actions/jobs/start-countdown.action";
-import { countdownInput } from "../../../shared/schemas/countdown";
+import { startCountdownAction } from "#server/actions/jobs/start-countdown.action";
 
 export const jobsRouter = {
   startCountdown: authedProcedure

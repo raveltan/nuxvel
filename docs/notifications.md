@@ -56,7 +56,7 @@ The command writes the notification `postPublishedNotification` at `server/notif
 // server/actions/posts/publish-post.action.ts
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { postTable } from "../../database/schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 export const publishPostAction = defineAction({
   input: z.object({ id: z.number() }),
@@ -267,8 +267,7 @@ The channel sends a `changed` event with an empty payload after each change:
 ```ts
 import { expectNotified, runAction } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { postFactory } from "../../server/factories/post.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { postFactory, userFactory } from "#nuxvel/factories";
 
 describe("posts.publish-post", () => {
   it("tells the author that the post is live", async () => {

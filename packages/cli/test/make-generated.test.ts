@@ -299,7 +299,7 @@ describe("nuxvel make:* output running in an app", () => {
     mkdirSync(join(appDir, "server", "privacy"), { recursive: true });
     writeFileSync(
       join(appDir, "server", "privacy", "shelf.user-data.ts"),
-      'import { shelfTable } from "../database/schema/shelf.schema";\n\nexport const shelfUserData = defineUserData(shelfTable, shelfTable.keeperId);\n',
+      'import { shelfTable } from "#nuxvel/schema";\n\nexport const shelfUserData = defineUserData(shelfTable, shelfTable.keeperId);\n',
     );
     arch = await runCliWithEnv(appDir, { ...process.env, PLAYGROUND_TEST_PROBES: "" }, "test:arch");
 
@@ -584,7 +584,7 @@ describe("nuxvel make:* output running in an app", () => {
     expect(source("server/trpc/routers/ledger.router.test.ts")).toContain('balance: "1.5"');
     expect(source("server/trpc/routers/ledger.router.test.ts")).toContain("  invoiceId: async () => (await invoiceFactory()).id,\n");
     expectAppTestPassed("server/trpc/routers/ledger.router.test.ts");
-    expect(source("app/components/LedgerForm.vue")).toContain('<USelect v-model="form.state.invoiceId" :items="invoiceRows?.rows" value-key="id" label-key="id" class="w-full" />');
+    expect(source("app/components/LedgerForm.vue")).toContain('<USelect v-model="form.state.invoiceId" :items="invoiceList.data?.rows" value-key="id" label-key="id" class="w-full" />');
     expect(source("app/components/LedgerForm.vue")).toContain('<UInputNumber v-model="form.state.widgetId" class="w-full" />');
     expect(source("app/pages/ledger/new.vue")).toContain("widgetId: undefined, invoiceId: undefined, keeperId: null");
     expect(typecheck.exitCode, `${typecheck.stdout}${typecheck.stderr}`).toBe(0);
@@ -618,7 +618,7 @@ describe("nuxvel make:* output running in an app", () => {
       '.where(and(eq(articleTable.ownerId, ctx.user.id), listWhere(articleTable, input.filters), search(articleTable, input.q ?? ""), notTrashed(articleTable)))',
     );
     expect(source("app/pages/article/index.vue")).toContain("<DataTable");
-    expect(source("app/pages/article/index.vue")).toContain("optimistic(trpc.article.delete.mutationOptions()");
+    expect(source("app/pages/article/index.vue")).toContain("optimistic($api.article.delete.mutationOptions()");
     expect(source("app/pages/article/index.vue")).toContain("<UModal");
     expect(source("app/components/ArticleForm.vue")).toContain("useActionForm(updateArticleInput");
     expectAppTestPassed("server/trpc/routers/article.router.test.ts");

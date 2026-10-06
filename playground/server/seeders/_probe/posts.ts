@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
-import { userTable } from "../../database/schema/auth.schema";
-import { postsTable } from "../../database/schema/posts.schema";
-import { postFactory } from "../../factories/posts.factory";
+import { userTable } from "#nuxvel/schema";
+import { postsTable } from "#nuxvel/schema";
+import { postFactory } from "#nuxvel/factories";
 
 export default defineSeeder(async ({ call }) => {
   await call("_probe.author", $seeders._probe.author);

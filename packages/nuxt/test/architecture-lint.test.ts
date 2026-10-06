@@ -106,13 +106,18 @@ describe("architecture lint preset", () => {
       output: `import { postTable } from "#nuxvel/schema";\n`,
     },
     {
-      name: "a table from another schema file, which #nuxvel/schema re-exports",
+      name: "nothing for a table file that imports a table file of another folder",
       file: "server/domains/post/schema/posts.schema.ts",
       source: `import { userTable } from "../../../database/schema/auth.schema";\n`,
-      messages: [
-        "../../../database/schema/auth.schema leaves server/domains/post/schema/ for server/database/schema/: import it from #server/database/schema/auth.schema",
-      ],
-      output: `import { userTable } from "#server/database/schema/auth.schema";\n`,
+      messages: [],
+      output: `import { userTable } from "../../../database/schema/auth.schema";\n`,
+    },
+    {
+      name: "nothing for a factory file that imports a factory file of another folder",
+      file: "server/domains/post/factories/posts.factory.ts",
+      source: `import { userFactory } from "../../../factories/users.factory";\n`,
+      messages: [],
+      output: `import { userFactory } from "../../../factories/users.factory";\n`,
     },
     {
       name: "a namespace import of a table, which only named imports fix",
@@ -180,6 +185,41 @@ describe("architecture lint preset", () => {
       allow: ["server/utils/**"],
       messages: [],
       output: `import { slugify } from "../utils/slug";\n`,
+    },
+    {
+      name: "an import of shared/schemas/ in server/, which auto-imports it",
+      file: "server/trpc/routers/post.router.ts",
+      source: `import { createPostInput, postSchema } from "../../../shared/schemas/post";\nexport const postRouter = { createPostInput, postSchema };\n`,
+      messages: ["../../../shared/schemas/post is in shared/schemas/, whose exports server/ auto-imports: remove the import"],
+      output: `export const postRouter = { createPostInput, postSchema };\n`,
+    },
+    {
+      name: "an import of shared/schemas/ through #shared in an app .vue file",
+      file: "app/pages/posts/new.vue",
+      source: `<script setup lang="ts">\nimport { createPostInput } from "#shared/schemas/post";\nconst schema = createPostInput;\n</script>\n`,
+      messages: ["#shared/schemas/post is in shared/schemas/, whose exports app/ auto-imports: remove the import"],
+      output: `<script setup lang="ts">\nconst schema = createPostInput;\n</script>\n`,
+    },
+    {
+      name: "a renamed import of shared/schemas/, which only an import under the same names fixes",
+      file: "server/actions/posts/create-post.action.ts",
+      source: `import { createPostInput as input } from "~~/shared/schemas/post";\n`,
+      messages: ["~~/shared/schemas/post is in shared/schemas/, whose exports server/ auto-imports: remove the import"],
+      output: `import { createPostInput as input } from "~~/shared/schemas/post";\n`,
+    },
+    {
+      name: "an import of shared/schemas/ in a server test, which has no auto-imports",
+      file: "server/trpc/routers/post.test.ts",
+      source: `import { createPostInput } from "../../../shared/schemas/post";\n`,
+      messages: ["../../../shared/schemas/post leaves server/trpc/routers/ for shared/schemas/: import it from #shared/schemas/post"],
+      output: `import { createPostInput } from "#shared/schemas/post";\n`,
+    },
+    {
+      name: "nothing for an import of shared/schemas/ in a factory or of a nested folder of shared/schemas/",
+      file: "server/factories/posts.factory.ts",
+      source: `import { createPostInput } from "#shared/schemas/post";\nimport { postForm } from "#shared/schemas/forms/post";\n`,
+      messages: [],
+      output: `import { createPostInput } from "#shared/schemas/post";\nimport { postForm } from "#shared/schemas/forms/post";\n`,
     },
   ])("nuxvel/no-parent-imports reports $name", async ({ file, source, allow, messages, output }) => {
     const result = await parentImports(file, source, allow);

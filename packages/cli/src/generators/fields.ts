@@ -16,7 +16,7 @@ type Reference = {
   owned: boolean;
   factory?: { file: string; name: string };
   requiredReferences: string[];
-  list?: { rows: string; trpcPath: string; label: string };
+  list?: { query: string; trpcPath: string; label: string };
 };
 type AppFactories = ReturnType<typeof indexAppFactories>;
 
@@ -263,7 +263,7 @@ async function resolveReference(paths: AppPaths, target: string, domain: string 
     list:
       existsSync(router) && /\blist:/.test(readFileSync(router, "utf-8"))
         ? {
-            rows: `${toCamelCase(target)}Rows`,
+            query: `${toCamelCase(target)}List`,
             trpcPath: registeredName(target, routerDomain).split(".").map(toCamelCase).join("."),
             label: label ?? "id",
           }
@@ -323,7 +323,7 @@ export function fieldControl(field: Field, model: string) {
   const { reference } = field;
 
   if (reference?.list) {
-    return `<USelect ${vModel(model, field.nullable)} :items="${reference.list.rows}?.rows" value-key="id" label-key="${reference.list.label}" class="w-full" />`;
+    return `<USelect ${vModel(model, field.nullable)} :items="${reference.list.query}.data?.rows" value-key="id" label-key="${reference.list.label}" class="w-full" />`;
   }
   if (reference) return (reference.id === "integer" ? number : input())(model, [], field.nullable);
 

@@ -1,10 +1,10 @@
-import { type Component, defineComponent, h, ref } from "vue";
+import { type Component, defineComponent, h, reactive, ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { useQuery, useQueryCache } from "@pinia/colada";
 import { QueryState } from "#components";
 import PlainQueryState from "../src/runtime/app/query-state/QueryState.vue";
-import { useTRPC } from "#imports";
+import { $api } from "#imports";
 
 const customSlots = {
   loading: () => "loading",
@@ -14,11 +14,11 @@ const customSlots = {
     `titles: ${data.map((post) => post.title).join(", ")}`,
 };
 
-function mountPostList() {
+function mountPostList({ wrap = (query: object) => query } = {}) {
   return mountSuspended(
     defineComponent({
       setup() {
-        const posts = useQuery(useTRPC().post.list.queryOptions());
+        const posts = wrap(useQuery($api.post.list.queryOptions()));
 
         return () => h(QueryState, { query: posts }, customSlots);
       },
@@ -110,6 +110,14 @@ describe("<QueryState>", () => {
       await vi.waitFor(() =>
         expect(wrapper.text()).toBe("titles: First, Second"),
       );
+    });
+
+    it("renders the default slot with the data of a reactive useQuery() result", async () => {
+      respondWithPosts([{ title: "First" }]);
+
+      const wrapper = await mountPostList({ wrap: reactive });
+
+      await vi.waitFor(() => expect(wrapper.text()).toBe("titles: First"));
     });
   });
 

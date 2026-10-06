@@ -27,7 +27,7 @@ export default defineNuxtConfig({
 ```ts
 // server/trpc/routers/post.router.ts
 import { desc } from "drizzle-orm";
-import { postTable } from "../../database/schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 export const postRouter = {
   list: publicProcedure
@@ -161,18 +161,12 @@ An unknown, revoked or expired key gets HTTP 401. The request does not fall back
 
 ```vue
 <script setup lang="ts">
-const trpc = useTRPC();
-const queryCache = useQueryCache();
-
-const { data: keys } = useQuery(trpc.apiKeys.list.queryOptions());
-const { mutateAsync: createKey } = useMutation({
-  ...trpc.apiKeys.create.mutationOptions(),
-  onSettled: () => queryCache.invalidateQueries({ key: trpc.apiKeys.key() }),
-});
+const keys = $api.apiKeys.list.useQuery();
+const createKey = $api.apiKeys.create.useMutation();
 const newKey = ref<string>();
 
 async function create() {
-  newKey.value = (await createKey({ name: "ci" })).key;
+  newKey.value = (await createKey.mutateAsync({ name: "ci" })).key;
 }
 </script>
 ```
@@ -201,7 +195,7 @@ nuxvel key:issue 5b1c… --name ci
 
 ```ts
 // server/policies/posts.policy.ts
-import { postTable } from "../database/schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 export const postsPolicy = definePolicy(postTable, {
   update: (actor, post) =>
@@ -252,8 +246,7 @@ A `create-nuxvel` app has this table. In an existing app, add the file, then run
 ```ts
 import { actingAs, expect, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { postFactory } from "../../server/factories/post.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { postFactory, userFactory } from "#nuxvel/factories";
 
 describe("posts over REST", () => {
   it("returns a post as JSON", async () => {

@@ -132,7 +132,7 @@ Targeting without a deploy: `setFlagTargeting(name, { percentage, roles })`, `./
 
 ## Cache and locks
 
-- `remember("posts:list", { minutes: 5 }, fn, { tags: ["posts"] })`, `cacheGet`, `cachePut`, `cacheForget(key)`, `cacheFlush("posts")`.
+- `remember(["posts", "list", input], { minutes: 5 }, fn, { tags: ["posts"] })`, `cacheGet`, `cachePut`, `cacheForget(key)` (`["posts"]` also forgets every key under it), `cacheFlush("posts")`. A key is a string or an array of parts joined with `:`.
 - `withLock(key, seconds, fn)`: `ConflictError` when another caller holds it.
 - `useRedis(purpose)`, `redisKey(key)`.
 

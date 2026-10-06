@@ -27,11 +27,11 @@ function insideProject(cwd: string, file: string) {
   return !isAbsolute(path) && path !== ".." && !path.startsWith(`..${sep}`);
 }
 
-function tsConfig(config: Linter.Config): Linter.Config {
+export function tsConfig(config: Linter.Config): Linter.Config {
   return { ...config, files: ["**/*.ts"], languageOptions: { parser: typescriptParser } };
 }
 
-function vueConfig(config: Linter.Config): Linter.Config {
+export function vueConfig(config: Linter.Config): Linter.Config {
   return { ...config, files: ["**/*.vue"], languageOptions: { parser: vueParser, parserOptions: { parser: typescriptParser } } };
 }
 
@@ -122,6 +122,16 @@ export async function lintArchitecture(cwd: string, layout: AppLayout) {
 
   if (testFiles.length > 0) {
     await lint(cwd, testFiles, [{ files: ["**/*.ts"], languageOptions: { parser: typescriptParser } }, ...testConfigs], findings);
+  }
+
+  const imports = architecture.find((candidate) => candidate.name === "nuxvel/imports");
+  const importFiles = await glob(
+    ["server", "app", "shared", "tests"].flatMap((root) => [`${root}/**/*.{ts,vue}`, `layers/*/${root}/**/*.{ts,vue}`]),
+    { cwd, absolute: true, ignore: ["**/node_modules/**", "**/.nuxt/**", "**/.output/**", "**/*.d.ts"] },
+  );
+
+  if (imports && importFiles.length > 0) {
+    await lint(cwd, importFiles, [tsConfig(imports), vueConfig(imports)], findings);
   }
 
   for (const finding of translations.findings) findings.add(finding);

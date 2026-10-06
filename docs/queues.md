@@ -33,7 +33,7 @@ Replace the `console.log` with the work of the job:
 ```ts
 // server/jobs/post/notify-followers.job.ts
 import { z } from "zod";
-import { postTable } from "../../database/schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 export const postNotifyFollowersJob = defineJob({
   input: z.object({
@@ -95,7 +95,7 @@ A job without a `channel` broadcasts nothing, and `reportProgress` does nothing.
 // server/actions/posts/publish-post.action.ts
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { postTable } from "../../database/schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 export const publishPostAction = defineAction({
   input: z.object({ id: z.number() }),
@@ -610,8 +610,7 @@ A production build does not have this route. Like the [DevTools tab](./devtools.
 // server/jobs/post/notify-followers.job.test.ts
 import { expectQueued, runAction, runJob } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { postFactory } from "../../factories/post.factory";
-import { userFactory } from "../../factories/users.factory";
+import { postFactory, userFactory } from "#nuxvel/factories";
 
 describe("post.notify-followers job", () => {
   it("is queued when a post is published", async () => {

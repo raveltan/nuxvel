@@ -11,6 +11,7 @@ import { type PwaIcon, type PwaOptions, vitePwaOptions } from "./pwa";
 import type { RenderingPreset } from "./rendering";
 import type { I18nLocalesRuntimeConfig, NuxvelRuntimeConfig } from "./runtime/server/utils/nuxvel-runtime-config";
 import type { AuthRuntimeConfig, SocialProviderId } from "./runtime/shared/auth/social-provider-id";
+import type { InvalidateFallback } from "./runtime/shared/trpc/invalidates-header";
 import { moduleDefaults } from "./setup/resolved-options";
 import { applyRouteRules } from "./setup/route-rules";
 import { trackNitroScan } from "./setup/nitro-scan";
@@ -222,8 +223,9 @@ export interface ModuleOptions extends NuxvelRuntimeConfig {
     blockDisposableEmails?: boolean;
   };
   /**
-   * The REST side of the tRPC API: the prefix of the REST handler, the
-   * OpenAPI document and its Scalar reference page.
+   * The tRPC API: the prefix of the REST handler, the OpenAPI document
+   * and its Scalar reference page, and what a mutation invalidates in
+   * the client.
    */
   api?: NonNullable<NuxvelRuntimeConfig["api"]> & {
     /**
@@ -241,6 +243,20 @@ export interface ModuleOptions extends NuxvelRuntimeConfig {
      * ```
      */
     docs?: boolean;
+    /**
+     * What a successful mutation invalidates in the client cache besides
+     * the tags its response names: `"namespace"` adds the queries of its
+     * router namespace (`post.delete` refetches `$api.post`), `false`
+     * only the declared tags.
+     *
+     * @defaultValue `"namespace"`
+     *
+     * @example
+     * ```ts
+     * nuxvel: { api: { invalidateFallback: false } }
+     * ```
+     */
+    invalidateFallback?: InvalidateFallback;
   };
 }
 
@@ -382,6 +398,8 @@ declare module "@nuxt/schema" {
     signInPath: string;
     /** The providers `nuxvel.auth.social` turns on, which `<SocialSignIn>` shows. */
     socialProviders: SocialProviderId[];
+    /** What a mutation invalidates besides its declared tags, from `nuxvel.api.invalidateFallback`. */
+    invalidateFallback: InvalidateFallback;
   }
 }
 
@@ -413,6 +431,7 @@ declare module "nuxt/schema" {
     sentryDsn: string;
     signInPath: string;
     socialProviders: SocialProviderId[];
+    invalidateFallback: InvalidateFallback;
   }
 }
 

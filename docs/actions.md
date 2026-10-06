@@ -26,7 +26,7 @@ Fill in the input schema and the handler. The input of this action is `createPos
 
 ```ts
 // server/actions/posts/create-post.action.ts
-import { postTable } from "../../database/schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 export const createPostAction = defineAction({
   input: createPostInput,
@@ -80,7 +80,7 @@ A file that exports more than one action fails at boot. An action defined outsid
 
 ```ts
 // server/trpc/routers/post.router.ts
-import { createPostAction } from "../../actions/posts/create-post.action";
+import { createPostAction } from "#server/actions/posts/create-post.action";
 
 export const postRouter = {
   create: authedProcedure
@@ -157,7 +157,7 @@ if (actor?.type === SYSTEM_ACTOR_TYPE) {
 ```ts
 // server/actions/posts/update-post.action.ts
 import { eq } from "drizzle-orm";
-import { postTable } from "../../database/schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 export const updatePostAction = defineAction({
   input: updatePostInput,
@@ -268,14 +268,26 @@ For a channel event, use [`broadcastAfterCommit()`](./realtime.md#broadcasting-a
 ```ts
 export const createPostAction = defineAction({
   input: createPostInput,
-  invalidates: ["posts:*"],
+  invalidates: ["posts"],
   handler: async (input, ctx) => {
     // ...
   },
 });
 ```
 
-`invalidates` lists cache keys or globs. After the transaction commits, the action removes them with `cacheForget()`. When the handler throws, the action removes nothing. See [Cache](./cache.md#invalidation).
+`invalidates` lists tags. A tag is a string or a [key array](./cache.md#keys). After the transaction commits, the action removes the value of each tag and every value under it: `"posts"` removes `posts`, `posts:list` and `posts:list:{"page":2}`. A string with `*`, `?` or `[` is a glob, such as `"posts:*"`. When the handler throws, the action removes nothing. See [Cache](./cache.md#invalidation).
+
+```ts
+export const updatePostAction = defineAction({
+  input: updatePostInput,
+  handler: async (input, ctx) => {
+    // ...
+  },
+  invalidates: (post) => [["posts", "list"], ["posts", post.id]],
+});
+```
+
+A function gets the result of the handler and the parsed input, and returns the tags. Write it after `handler`: TypeScript reads the result type of the handler first. A mutation that runs the action names its tags in its response, see [API](./api.md#what-a-mutation-invalidates).
 
 ## Action rules
 
@@ -291,7 +303,7 @@ export const createPostAction = defineAction({
 ```ts
 import { expect, runAction } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../server/factories/users.factory";
+import { userFactory } from "#nuxvel/factories";
 
 describe("update post", () => {
   it("rejects an empty body", async () => {

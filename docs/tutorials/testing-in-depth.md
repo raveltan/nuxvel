@@ -129,7 +129,7 @@ Each command writes a factory in `server/factories/` and a test next to it. The 
 ```ts
 // server/factories/room.factory.ts
 import { defineFactory, sequence } from "@nuxvel/nuxt/factories";
-import { roomTable } from "../database/schema/room.schema";
+import { roomTable } from "#nuxvel/schema";
 
 export const roomFactory = defineFactory(roomTable, {
   name: sequence((n) => `Room ${n}`),
@@ -142,7 +142,7 @@ export const roomFactory = defineFactory(roomTable, {
 import { faker } from "@faker-js/faker";
 import { now } from "@nuxvel/nuxt/database";
 import { defineFactory } from "@nuxvel/nuxt/factories";
-import { bookingTable } from "../database/schema/booking.schema";
+import { bookingTable } from "#nuxvel/schema";
 import { roomFactory } from "./room.factory";
 import { userFactory } from "./users.factory";
 
@@ -183,9 +183,7 @@ Several tests need a room that is already booked. Put that set-up in a scenario,
 
 ```ts
 // tests/scenarios/booked-room.ts
-import { bookingFactory } from "../../server/factories/booking.factory";
-import { roomFactory } from "../../server/factories/room.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { bookingFactory, roomFactory, userFactory } from "#nuxvel/factories";
 
 export async function bookedRoom(at: { startsAt: Date; endsAt: Date }) {
   const booker = await userFactory();
@@ -206,9 +204,8 @@ Start with the test. A signed-in user books a room, and a guest cannot:
 // tests/functional/bookings.test.ts
 import { actingAs, expect, expectRow, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { bookingTable } from "../../server/database/schema/booking.schema";
-import { roomFactory } from "../../server/factories/room.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { bookingTable } from "#nuxvel/schema";
+import { roomFactory, userFactory } from "#nuxvel/factories";
 
 function sprintPlanning(roomId: number) {
   return {
@@ -268,7 +265,7 @@ Generate the action and the router:
 
 ```ts
 // server/actions/booking/create-booking.action.ts
-import { bookingTable } from "../../database/schema/booking.schema";
+import { bookingTable } from "#nuxvel/schema";
 
 export const createBookingAction = defineAction({
   input: createBookingInput,
@@ -284,7 +281,7 @@ export const createBookingAction = defineAction({
 
 ```ts
 // server/trpc/routers/booking.router.ts
-import { createBookingAction } from "../../actions/booking/create-booking.action";
+import { createBookingAction } from "#server/actions/booking/create-booking.action";
 
 export const bookingRouter = {
   create: authedProcedure
@@ -436,8 +433,7 @@ export const createBookingInput = z
 ```ts
 // server/actions/booking/create-booking.action.ts
 import { and, eq, gt, lt } from "drizzle-orm";
-import { bookingTable } from "../../database/schema/booking.schema";
-import { roomTable } from "../../database/schema/room.schema";
+import { bookingTable, roomTable } from "#nuxvel/schema";
 
 export const createBookingAction = defineAction({
   input: createBookingInput,
@@ -603,7 +599,7 @@ Delete the generated `cancel-booking.action.test.ts`, as in chapter 3.
 
 ```ts
 // server/policies/booking.policy.ts
-import { bookingTable } from "../database/schema/booking.schema";
+import { bookingTable } from "#nuxvel/schema";
 
 export const bookingPolicy = definePolicy(bookingTable, {
   cancel: (actor, booking) => booking.bookerId === actor.id,
@@ -613,7 +609,7 @@ export const bookingPolicy = definePolicy(bookingTable, {
 ```ts
 // server/actions/booking/cancel-booking.action.ts
 import { eq } from "drizzle-orm";
-import { bookingTable } from "../../database/schema/booking.schema";
+import { bookingTable } from "#nuxvel/schema";
 
 const day = 24 * 60 * 60 * 1000;
 
@@ -638,8 +634,8 @@ export const cancelBookingAction = defineAction({
 ```ts
 // server/trpc/routers/booking.router.ts
 import { z } from "zod";
-import { cancelBookingAction } from "../../actions/booking/cancel-booking.action";
-import { createBookingAction } from "../../actions/booking/create-booking.action";
+import { cancelBookingAction } from "#server/actions/booking/cancel-booking.action";
+import { createBookingAction } from "#server/actions/booking/create-booking.action";
 
 export const bookingRouter = {
   create: authedProcedure
@@ -668,7 +664,7 @@ The factory reads `now()`, so its rows follow the test clock too. Show it in the
 // server/factories/booking.factory.test.ts
 import { describe, it } from "vitest";
 import { expect, expectRow, freezeTime } from "@nuxvel/nuxt/testing";
-import { bookingTable } from "../database/schema/booking.schema";
+import { bookingTable } from "#nuxvel/schema";
 import { bookingFactory } from "./booking.factory";
 
 describe("booking factory", () => {
@@ -791,9 +787,7 @@ defineProps<{ title: string; room: string; startsAt: Date }>();
 ```ts
 // server/jobs/booking/send-confirmation.job.ts
 import { z } from "zod";
-import { userTable } from "../../database/schema/auth.schema";
-import { bookingTable } from "../../database/schema/booking.schema";
-import { roomTable } from "../../database/schema/room.schema";
+import { userTable, bookingTable, roomTable } from "#nuxvel/schema";
 
 export const bookingSendConfirmationJob = defineJob({
   input: z.object({
@@ -837,8 +831,7 @@ The two generated tests next to the job and the mail send the old input. Replace
 // server/jobs/booking/send-confirmation.job.test.ts
 import { expect, expectMailSent, runJob } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { bookingFactory } from "../../factories/booking.factory";
-import { userFactory } from "../../factories/users.factory";
+import { bookingFactory, userFactory } from "#nuxvel/factories";
 
 describe("booking.send-confirmation job", () => {
   it("mails the booker", async () => {
@@ -893,9 +886,7 @@ The list page shows each booking with its room and its booker, and a search by t
 // tests/functional/booking-list.test.ts
 import { actingAs, expect, expectConstantQueries, expectQueryCount } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { bookingFactory } from "../../server/factories/booking.factory";
-import { roomFactory } from "../../server/factories/room.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { bookingFactory, roomFactory, userFactory } from "#nuxvel/factories";
 
 describe("the booking list", () => {
   it("finds bookings by title, with the room and the booker", async () => {
@@ -1070,11 +1061,9 @@ Move the select of the list into a function, so that `byId` uses the same column
 // server/trpc/routers/booking.router.ts
 import { eq, ilike } from "drizzle-orm";
 import { z } from "zod";
-import { cancelBookingAction } from "../../actions/booking/cancel-booking.action";
-import { createBookingAction } from "../../actions/booking/create-booking.action";
-import { userTable } from "../../database/schema/auth.schema";
-import { bookingTable } from "../../database/schema/booking.schema";
-import { roomTable } from "../../database/schema/room.schema";
+import { cancelBookingAction } from "#server/actions/booking/cancel-booking.action";
+import { createBookingAction } from "#server/actions/booking/create-booking.action";
+import { userTable, bookingTable, roomTable } from "#nuxvel/schema";
 
 function bookingRows() {
   return useDb()
@@ -1131,7 +1120,7 @@ export const bookingRouter = {
 ```ts
 // server/trpc/routers/room.router.ts
 import { z } from "zod";
-import { roomTable } from "../../database/schema/room.schema";
+import { roomTable } from "#nuxvel/schema";
 
 export const roomRouter = {
   list: authedProcedure
@@ -1293,20 +1282,14 @@ While one story file cannot load, the stories of the starter fail too, with an a
 <script setup lang="ts">
 const props = defineProps<{ rooms: { id: number; name: string; capacity: number }[] }>();
 
-const trpc = useTRPC();
-const queryCache = useQueryCache();
-
-const form = useActionForm(createBookingInput, toasted(trpc.booking.create.mutationOptions(), "Room booked"), {
+const form = useActionForm(createBookingInput, toasted($api.booking.create.mutationOptions(), "Room booked"), {
   defaults: { title: "", roomId: undefined, startsAt: undefined, endsAt: undefined, guests: 1 },
   failures: {
     "booking.over-capacity": "guests",
     "booking.overlap": "startsAt",
     "booking.in-the-past": "startsAt",
   },
-  onSuccess: async () => {
-    await queryCache.invalidateQueries({ key: trpc.booking.key() });
-    await navigateTo({ name: "bookings" });
-  },
+  onSuccess: () => navigateTo({ name: "bookings" }),
 });
 
 const roomItems = computed(() => props.rooms.map((room) => ({ label: room.name, value: room.id })));
@@ -1438,18 +1421,7 @@ A first version of the component, as an icon button often starts:
 <script setup lang="ts">
 const props = defineProps<{ booking: { id: number; title: string; room: string; booker: string; startsAt: Date } }>();
 
-const trpc = useTRPC();
-const queryCache = useQueryCache();
-
-const cancel = useMutation(
-  toasted(
-    {
-      ...trpc.booking.cancel.mutationOptions(),
-      onSuccess: () => queryCache.invalidateQueries({ key: trpc.booking.key() }),
-    },
-    "Booking cancelled",
-  ),
-);
+const cancel = useMutation(toasted($api.booking.cancel.mutationOptions(), "Booking cancelled"));
 </script>
 
 <template>
@@ -1555,10 +1527,8 @@ import {
   trpcSpy,
 } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { bookingTable } from "../../server/database/schema/booking.schema";
-import { bookingFactory } from "../../server/factories/booking.factory";
-import { roomFactory } from "../../server/factories/room.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { bookingTable } from "#nuxvel/schema";
+import { bookingFactory, roomFactory, userFactory } from "#nuxvel/factories";
 
 describe("the booking pages", () => {
   it("books a room from the form and lists it", async () => {
@@ -1676,8 +1646,7 @@ The pages do not exist, so the router of the app cannot resolve the route names.
 definePageMeta({ layout: "app", middleware: "auth" });
 
 const q = ref("");
-const trpc = useTRPC();
-const bookings = useQuery(() => trpc.booking.list.queryOptions({ q: q.value }));
+const bookings = $api.booking.list.useQuery(() => ({ q: q.value }));
 
 useSeo({ title: "Bookings" });
 </script>
@@ -1710,7 +1679,7 @@ useSeo({ title: "Bookings" });
 <script setup lang="ts">
 definePageMeta({ layout: "app", middleware: "auth" });
 
-const rooms = useQuery(useTRPC().room.list.queryOptions());
+const rooms = $api.room.list.useQuery();
 
 useSeo({ title: "Book a room" });
 </script>
@@ -1733,9 +1702,9 @@ useSeo({ title: "Book a room" });
 definePageMeta({ layout: "app", middleware: "auth" });
 
 const route = useRoute("bookings-id");
-const booking = useQuery(useTRPC().booking.byId.queryOptions({ id: Number(route.params.id) }));
+const booking = $api.booking.byId.useQuery({ id: Number(route.params.id) });
 
-useSeo(() => ({ title: booking.data.value?.title ?? "Booking" }));
+useSeo(() => ({ title: booking.data?.title ?? "Booking" }));
 </script>
 
 <template>

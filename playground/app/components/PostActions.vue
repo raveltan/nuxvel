@@ -2,13 +2,13 @@
 const props = defineProps<{ post: Pick<RouterOutputs["post"]["byId"], "id" | "title"> }>();
 const emit = defineEmits<{ delete: [] }>();
 
-const abilities = useQuery(useTRPC().post.abilities.queryOptions({ id: props.post.id }));
+const abilities = $api.post.abilities.useQuery({ id: props.post.id });
 </script>
 
 <template>
   <div class="flex gap-2">
     <UButton
-      v-if="abilities.data.value?.update"
+      v-if="abilities.data?.update"
       :to="{ name: 'posts-id-edit', params: { id: post.id } }"
       color="neutral"
       variant="outline"
@@ -17,7 +17,7 @@ const abilities = useQuery(useTRPC().post.abilities.queryOptions({ id: props.pos
       :aria-label="`Edit ${post.title}`"
     />
     <UButton
-      v-if="abilities.data.value?.delete"
+      v-if="abilities.data?.delete"
       color="error"
       variant="outline"
       icon="i-lucide-trash"

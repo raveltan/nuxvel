@@ -214,7 +214,7 @@ The role decides who may use a procedure. The policy decides which rows. The gen
 
 ```ts
 // server/domains/courses/policies/course.policy.ts
-import { courseTable } from "../schema/course.schema";
+import { courseTable } from "#nuxvel/schema";
 
 export const coursesCoursePolicy = definePolicy(courseTable, {
   update: (actor, row) => row.ownerId === (actor.userId ?? actor.id) || actor.role === "admin",
@@ -231,20 +231,11 @@ Visitors browse the published courses. Add two public procedures to the course r
 ```ts
 // server/domains/courses/routers/course.router.ts
 import { and, desc, eq } from "drizzle-orm";
-import { createCourseAction } from "../actions/create-course.action";
-import { updateCourseAction } from "../actions/update-course.action";
-import { deleteCourseAction } from "../actions/delete-course.action";
+import { createCourseAction } from "#server/domains/courses/actions/create-course.action";
+import { updateCourseAction } from "#server/domains/courses/actions/update-course.action";
+import { deleteCourseAction } from "#server/domains/courses/actions/delete-course.action";
 import { z } from "zod";
-import { courseTable } from "../schema/course.schema";
-import { lessonTable } from "../schema/lesson.schema";
-import {
-  courseIdInput,
-  courseListInput,
-  createCourseInput,
-  updateCourseInput,
-  courseSchema,
-  publicCourseSchema,
-} from "#shared/schemas/course";
+import { courseTable, lessonTable } from "#nuxvel/schema";
 
 export const coursesCourseRouter = {
   catalogue: publicProcedure
@@ -372,9 +363,7 @@ Change the create action. It checks that the course belongs to the instructor, p
 // server/domains/courses/actions/create-lesson.action.ts
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { lessonTable } from "../schema/lesson.schema";
-import { courseTable } from "../schema/course.schema";
-import { newLessonInput } from "#shared/schemas/lesson";
+import { lessonTable, courseTable } from "#nuxvel/schema";
 
 export const createLessonAction = defineAction({
   input: newLessonInput,
@@ -408,15 +397,9 @@ The lesson router keeps the three mutations on `instructorProcedure`. Remove the
 
 ```ts
 // server/domains/courses/routers/lesson.router.ts
-import { createLessonAction } from "../actions/create-lesson.action";
-import { updateLessonAction } from "../actions/update-lesson.action";
-import { deleteLessonAction } from "../actions/delete-lesson.action";
-import {
-  lessonIdInput,
-  newLessonInput,
-  updateLessonInput,
-  lessonSchema,
-} from "#shared/schemas/lesson";
+import { createLessonAction } from "#server/domains/courses/actions/create-lesson.action";
+import { updateLessonAction } from "#server/domains/courses/actions/update-lesson.action";
+import { deleteLessonAction } from "#server/domains/courses/actions/delete-lesson.action";
 
 export const coursesLessonRouter = {
   create: instructorProcedure
@@ -454,9 +437,8 @@ Replace the generated router test. The first test is an authorization table: one
 // server/domains/courses/routers/course.router.test.ts
 import { actingAs, expect, expectConstantQueries, guest, type TestCaller } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../../factories/users.factory";
-import { courseFactory } from "../factories/course.factory";
-import type { CourseRow } from "../schema/course.schema";
+import { userFactory, courseFactory } from "#nuxvel/factories";
+import type { CourseRow } from "#nuxvel/schema";
 
 const instructorFactory = userFactory.state({ role: "instructor" });
 
@@ -527,9 +509,8 @@ The lesson test uploads a real file. `upload()` asks for the upload URL as that 
 // server/domains/courses/routers/lesson.router.test.ts
 import { actingAs, expect, expectRow, expectStored } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../../factories/users.factory";
-import { courseFactory } from "../factories/course.factory";
-import { lessonTable } from "../schema/lesson.schema";
+import { userFactory, courseFactory } from "#nuxvel/factories";
+import { lessonTable } from "#nuxvel/schema";
 
 const pdf = new File(["%PDF-1.4\n% lesson notes\n"], "notes.pdf", { type: "application/pdf" });
 
@@ -665,7 +646,7 @@ An enrollment is personal data of the student. `nuxvel user:export` and `nuxvel 
 
 ```ts
 // server/privacy/enrollment.user-data.ts
-import { enrollmentTable } from "../domains/learning/schema/enrollment.schema";
+import { enrollmentTable } from "#nuxvel/schema";
 
 export const enrollmentUserData = defineUserData(enrollmentTable, enrollmentTable.studentId);
 ```
@@ -737,8 +718,7 @@ A student enrolls only in a published course, one time:
 // server/domains/learning/actions/enroll.action.ts
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
-import { courseTable } from "../../courses/schema/course.schema";
-import { enrollmentTable } from "../schema/enrollment.schema";
+import { courseTable, enrollmentTable } from "#nuxvel/schema";
 
 export const enrollAction = defineAction({
   input: z.object({
@@ -779,9 +759,7 @@ The second action records a lesson. When the student has completed every lesson 
 // server/domains/learning/actions/complete-lesson.action.ts
 import { and, count, eq } from "drizzle-orm";
 import { z } from "zod";
-import { lessonTable } from "../../courses/schema/lesson.schema";
-import { enrollmentTable } from "../schema/enrollment.schema";
-import { lessonProgressTable } from "../schema/lesson-progress.schema";
+import { lessonTable, enrollmentTable, lessonProgressTable } from "#nuxvel/schema";
 
 export const completeLessonAction = defineAction({
   input: z.object({
@@ -827,8 +805,7 @@ The catalogue shows the titles of the lessons to everyone. The body and the file
 ```ts
 // server/domains/courses/policies/course.policy.ts
 import { and, eq, inArray } from "drizzle-orm";
-import { enrollmentTable } from "../../learning/schema/enrollment.schema";
-import { courseTable } from "../schema/course.schema";
+import { enrollmentTable, courseTable } from "#nuxvel/schema";
 
 export const coursesCoursePolicy = definePolicy(courseTable, {
   preload: async (actor, rows) => {
@@ -854,18 +831,10 @@ See [Preloading data for rules](../authorization.md#preloading-data-for-rules). 
 // server/domains/courses/routers/lesson.router.ts
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { createLessonAction } from "../actions/create-lesson.action";
-import { updateLessonAction } from "../actions/update-lesson.action";
-import { deleteLessonAction } from "../actions/delete-lesson.action";
-import { courseTable } from "../schema/course.schema";
-import { lessonTable } from "../schema/lesson.schema";
-import {
-  lessonIdInput,
-  newLessonInput,
-  updateLessonInput,
-  lessonSchema,
-  lessonWithFileSchema,
-} from "#shared/schemas/lesson";
+import { createLessonAction } from "#server/domains/courses/actions/create-lesson.action";
+import { updateLessonAction } from "#server/domains/courses/actions/update-lesson.action";
+import { deleteLessonAction } from "#server/domains/courses/actions/delete-lesson.action";
+import { courseTable, lessonTable } from "#nuxvel/schema";
 
 export const coursesLessonRouter = {
   forCourse: authedProcedure
@@ -902,11 +871,9 @@ The router file has the name of its domain, so it is `trpc.learning`. Each proce
 // server/domains/learning/routers/learning.router.ts
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { courseTable } from "../../courses/schema/course.schema";
-import { completeLessonAction } from "../actions/complete-lesson.action";
-import { enrollAction } from "../actions/enroll.action";
-import { enrollmentTable } from "../schema/enrollment.schema";
-import { lessonProgressTable } from "../schema/lesson-progress.schema";
+import { courseTable, enrollmentTable, lessonProgressTable } from "#nuxvel/schema";
+import { completeLessonAction } from "#server/domains/learning/actions/complete-lesson.action";
+import { enrollAction } from "#server/domains/learning/actions/enroll.action";
 
 const courseIdInput = z.object({ courseId: z.number().int().positive() });
 
@@ -965,9 +932,8 @@ Replace the two generated action tests:
 // server/domains/learning/actions/enroll.action.test.ts
 import { actingAs, expect, expectEmitted, expectListenerQueued, expectRow, runAction } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../../factories/users.factory";
-import { courseFactory } from "../../courses/factories/course.factory";
-import { enrollmentTable } from "../schema/enrollment.schema";
+import { userFactory, courseFactory } from "#nuxvel/factories";
+import { enrollmentTable } from "#nuxvel/schema";
 
 describe("learning/enroll action", () => {
   it("enrolls a student in a published course and tells the instructor", async () => {
@@ -1005,10 +971,7 @@ The first test names the listener `learning.notify-instructor`, which chapter 5 
 // server/domains/learning/actions/complete-lesson.action.test.ts
 import { actingAs, expect, expectEmitted, expectNotEmitted, runAction } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../../factories/users.factory";
-import { courseFactory } from "../../courses/factories/course.factory";
-import { lessonFactory } from "../../courses/factories/lesson.factory";
-import { enrollmentFactory } from "../factories/enrollment.factory";
+import { userFactory, courseFactory, lessonFactory, enrollmentFactory } from "#nuxvel/factories";
 
 describe("learning/complete-lesson action", () => {
   it("finishes the course with its last lesson", async () => {
@@ -1042,12 +1005,9 @@ The `learn` rule gets its own authorization table. Add it to the lesson router t
 // server/domains/courses/routers/lesson.router.test.ts
 import { actingAs, expect, expectRow, expectStored, type TestCaller } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../../factories/users.factory";
-import { enrollmentFactory } from "../../learning/factories/enrollment.factory";
-import { courseFactory } from "../factories/course.factory";
-import { lessonFactory } from "../factories/lesson.factory";
-import type { CourseRow } from "../schema/course.schema";
-import { lessonTable } from "../schema/lesson.schema";
+import { userFactory, enrollmentFactory, courseFactory, lessonFactory } from "#nuxvel/factories";
+import type { CourseRow } from "#nuxvel/schema";
+import { lessonTable } from "#nuxvel/schema";
 ```
 
 ```ts
@@ -1146,10 +1106,8 @@ A listener is queued by default. The emit writes an outbox row in the transactio
 ```ts
 // server/domains/learning/listeners/notify-instructor.listener.ts
 import { eq } from "drizzle-orm";
-import { userTable } from "../../../database/schema/auth.schema";
-import { courseTable } from "../../courses/schema/course.schema";
-import { learningEnrolledEvent } from "../events/enrolled.event";
-import { enrollmentTable } from "../schema/enrollment.schema";
+import { userTable, courseTable, enrollmentTable } from "#nuxvel/schema";
+import { learningEnrolledEvent } from "#server/domains/learning/events/enrolled.event";
 
 export const learningNotifyInstructorListener = defineListener({
   event: learningEnrolledEvent,
@@ -1174,10 +1132,8 @@ export const learningNotifyInstructorListener = defineListener({
 ```ts
 // server/domains/learning/listeners/announce-finish.listener.ts
 import { eq } from "drizzle-orm";
-import { userTable } from "../../../database/schema/auth.schema";
-import { courseTable } from "../../courses/schema/course.schema";
-import { learningCourseFinishedEvent } from "../events/course-finished.event";
-import { enrollmentTable } from "../schema/enrollment.schema";
+import { userTable, courseTable, enrollmentTable } from "#nuxvel/schema";
+import { learningCourseFinishedEvent } from "#server/domains/learning/events/course-finished.event";
 
 export const learningAnnounceFinishListener = defineListener({
   event: learningCourseFinishedEvent,
@@ -1209,9 +1165,7 @@ A queued listener runs in the worker, not in the app under test. Test what it do
 // server/domains/learning/listeners/notify-instructor.listener.test.ts
 import { expectNotified, runListener } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../../factories/users.factory";
-import { courseFactory } from "../../courses/factories/course.factory";
-import { enrollmentFactory } from "../factories/enrollment.factory";
+import { userFactory, courseFactory, enrollmentFactory } from "#nuxvel/factories";
 
 describe("learning.notify-instructor listener", () => {
   it("tells the instructor who joined the course", async () => {
@@ -1230,9 +1184,7 @@ describe("learning.notify-instructor listener", () => {
 // server/domains/learning/listeners/announce-finish.listener.test.ts
 import { expectNotified, runListener } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../../factories/users.factory";
-import { courseFactory } from "../../courses/factories/course.factory";
-import { enrollmentFactory } from "../factories/enrollment.factory";
+import { userFactory, courseFactory, enrollmentFactory } from "#nuxvel/factories";
 
 describe("learning.announce-finish listener", () => {
   it("tells the student that the course is finished", async () => {
@@ -1340,9 +1292,9 @@ The command writes the two files. Its last step, `factory:sync`, finds the table
 
 ```ts
 // layers/certificates/server/domains/certificate/factories/certificate.factory.ts
-import { enrollmentFactory } from "../../../../../../server/domains/learning/factories/enrollment.factory";
+import { enrollmentFactory } from "#server/domains/learning/factories/enrollment.factory";
 import { defineFactory } from "@nuxvel/nuxt/factories";
-import { certificateTable } from "../schema/certificate.schema";
+import { certificateTable } from "#nuxvel/schema";
 
 export const certificateFactory = defineFactory(certificateTable, {
   enrollmentId: async () => (await enrollmentFactory()).id,
@@ -1367,8 +1319,8 @@ The generated listener logs the payload. Replace the handler, and add `sync: tru
 
 ```ts
 // layers/certificates/server/domains/certificate/listeners/issue.listener.ts
-import { learningCourseFinishedEvent } from "../../../../../../server/domains/learning/events/course-finished.event";
-import { certificateTable } from "../schema/certificate.schema";
+import { learningCourseFinishedEvent } from "#server/domains/learning/events/course-finished.event";
+import { certificateTable } from "#nuxvel/schema";
 
 export const certificateIssueListener = defineListener({
   event: learningCourseFinishedEvent,
@@ -1409,8 +1361,7 @@ The job loads the student and the course, and sends the mail. The module reads t
 // layers/certificates/server/domains/certificate/jobs/mail-certificate.job.ts
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { courseTable, enrollmentTable, userTable } from "#nuxvel/schema";
-import { certificateTable } from "../schema/certificate.schema";
+import { courseTable, enrollmentTable, userTable, certificateTable } from "#nuxvel/schema";
 
 export const certificateMailCertificateJob = defineJob({
   input: z.object({
@@ -1488,8 +1439,7 @@ Put the path of the page in quotes. Without them, zsh reads `[code]` as a patter
 // layers/certificates/server/domains/certificate/routers/certificate.router.ts
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { courseTable, enrollmentTable, userTable } from "#nuxvel/schema";
-import { certificateTable } from "../schema/certificate.schema";
+import { courseTable, enrollmentTable, userTable, certificateTable } from "#nuxvel/schema";
 
 export const certificateRouter = {
   verify: publicProcedure
@@ -1516,7 +1466,7 @@ The output lists only the name, the course and the date. The email of the studen
 definePageMeta({ layout: "app" });
 
 const route = useRoute("certificates-code");
-const certificate = useQuery(() => useTRPC().certificate.verify.queryOptions({ code: route.params.code }));
+const certificate = $api.certificate.verify.useQuery(() => ({ code: route.params.code }));
 
 useSeo({ title: "Certificate" });
 </script>
@@ -1545,8 +1495,8 @@ Keep each test next to its file. Vitest finds the tests in `layers/` too. Replac
 // layers/certificates/server/domains/certificate/listeners/issue.listener.test.ts
 import { emit, expectQueued, expectRow } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { enrollmentFactory } from "../../../../../../server/domains/learning/factories/enrollment.factory";
-import { certificateTable } from "../schema/certificate.schema";
+import { enrollmentFactory } from "#nuxvel/factories";
+import { certificateTable } from "#nuxvel/schema";
 
 describe("certificate.issue listener", () => {
   it("issues one certificate and mails it after the commit", async () => {
@@ -1567,10 +1517,7 @@ describe("certificate.issue listener", () => {
 // layers/certificates/server/domains/certificate/jobs/mail-certificate.job.test.ts
 import { expect, expectMailSent, runJob } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../../../../../server/factories/users.factory";
-import { courseFactory } from "../../../../../../server/domains/courses/factories/course.factory";
-import { enrollmentFactory } from "../../../../../../server/domains/learning/factories/enrollment.factory";
-import { certificateFactory } from "../factories/certificate.factory";
+import { userFactory, courseFactory, enrollmentFactory, certificateFactory } from "#nuxvel/factories";
 
 describe("certificate.mail-certificate job", () => {
   it("mails the student a link to the certificate", async () => {
@@ -1613,9 +1560,7 @@ describe("certificate.issued mail", () => {
 import { randomUUID } from "node:crypto";
 import { expect, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../../../../../server/factories/users.factory";
-import { enrollmentFactory } from "../../../../../../server/domains/learning/factories/enrollment.factory";
-import { certificateFactory } from "../factories/certificate.factory";
+import { userFactory, enrollmentFactory, certificateFactory } from "#nuxvel/factories";
 
 describe("certificate router", () => {
   it("shows who earned a certificate, to anyone with its code", async () => {
@@ -1680,10 +1625,9 @@ A check in a page only hides a link. The procedures enforce the roles. Each link
 definePageMeta({ layout: "app" });
 useSeo({ title: "Courses" });
 
-const trpc = useTRPC();
 const route = useRoute();
 const input = computed(() => paginationSchema.catch({}).parse(route.query));
-const courses = useQuery(() => trpc.courses.course.catalogue.queryOptions(input.value));
+const courses = $api.courses.course.catalogue.useQuery(input);
 </script>
 
 <template>
@@ -1719,23 +1663,18 @@ The course page shows the summary and the lesson titles to everyone. A signed-in
 <script setup lang="ts">
 const props = defineProps<{ courseId: number }>();
 
-const trpc = useTRPC();
-const queryCache = useQueryCache();
-const lessons = useQuery(() => trpc.courses.lesson.forCourse.queryOptions({ courseId: props.courseId }));
-const progress = useQuery(() => trpc.learning.progress.queryOptions({ courseId: props.courseId }));
-const { mutate: complete } = useMutation({
-  ...trpc.learning.completeLesson.mutationOptions(),
-  onSettled: () => queryCache.invalidateQueries({ key: trpc.learning.key() }),
-});
+const lessons = $api.courses.lesson.forCourse.useQuery(() => ({ courseId: props.courseId }));
+const progress = $api.learning.progress.useQuery(() => ({ courseId: props.courseId }));
+const { mutate: complete } = $api.learning.completeLesson.useMutation();
 
-const done = computed(() => new Set(progress.data.value?.completedLessonIds));
+const done = computed(() => new Set(progress.data?.completedLessonIds));
 </script>
 
 <template>
   <section aria-labelledby="lessons" class="space-y-4">
     <h2 id="lessons" class="text-lg font-semibold">Lessons</h2>
     <UAlert
-      v-if="progress.data.value?.finished"
+      v-if="progress.data?.finished"
       color="success"
       icon="i-lucide-graduation-cap"
       title="You finished this course"
@@ -1769,7 +1708,7 @@ const done = computed(() => new Set(progress.data.value?.completedLessonIds));
 </template>
 ```
 
-Each button names its lesson, so a screen reader user knows which lesson it completes. After each mutation, the component invalidates the `learning` queries, and the progress loads again.
+Each button names its lesson, so a screen reader user knows which lesson it completes. After a mutation succeeds, the client refetches the queries of the same router, so the `learning` queries run again and the progress loads again. See [Frontend: invalidation](../frontend.md#invalidation).
 
 ```vue
 <!-- app/pages/courses/[id].vue -->
@@ -1778,17 +1717,12 @@ definePageMeta({ layout: "app" });
 
 const route = useRoute("courses-id");
 const courseId = computed(() => Number(route.params.id));
-const trpc = useTRPC();
-const queryCache = useQueryCache();
 const { user } = useUser();
-const course = useQuery(() => trpc.courses.course.show.queryOptions({ id: courseId.value }));
-const progress = useQuery(() => ({ ...trpc.learning.progress.queryOptions({ courseId: courseId.value }), enabled: Boolean(user.value) }));
-const { mutate: enroll } = useMutation({
-  ...trpc.learning.enroll.mutationOptions(),
-  onSettled: () => queryCache.invalidateQueries({ key: trpc.learning.key() }),
-});
+const course = $api.courses.course.show.useQuery(() => ({ id: courseId.value }));
+const progress = $api.learning.progress.useQuery(() => ({ courseId: courseId.value }), { enabled: () => Boolean(user.value) });
+const { mutate: enroll } = $api.learning.enroll.useMutation();
 
-useSeo(() => ({ title: course.data.value?.title ?? "Course" }));
+useSeo(() => ({ title: course.data?.title ?? "Course" }));
 </script>
 
 <template>
@@ -1799,7 +1733,7 @@ useSeo(() => ({ title: course.data.value?.title ?? "Course" }));
           <h1 class="text-2xl font-semibold">{{ data.title }}</h1>
           <p class="text-muted">{{ data.summary }}</p>
         </header>
-        <LessonList v-if="progress.data.value?.enrolled" :course-id="data.id" />
+        <LessonList v-if="progress.data?.enrolled" :course-id="data.id" />
         <template v-else>
           <ol class="list-decimal space-y-1 pl-6">
             <li v-for="lesson in data.lessons" :key="lesson.id">{{ lesson.title }}</li>
@@ -1825,9 +1759,8 @@ useSeo(() => ({ title: course.data.value?.title ?? "Course" }));
 definePageMeta({ layout: "app", middleware: "auth" });
 useSeo({ title: "Teach" });
 
-const trpc = useTRPC();
-const courses = useQuery(trpc.courses.course.list.queryOptions({}));
-const form = useActionForm(createCourseInput, trpc.courses.course.create.mutationOptions(), {
+const courses = $api.courses.course.list.useQuery({});
+const form = useActionForm(createCourseInput, $api.courses.course.create.mutationOptions(), {
   defaults: { title: "", summary: "" },
   onSuccess: (course) => navigateTo({ name: "teach-id", params: { id: course.id } }),
 });
@@ -1877,15 +1810,12 @@ The lesson form uploads the file with `<UploadField>`. The field sends the file 
 <script setup lang="ts">
 const props = defineProps<{ courseId: number }>();
 
-const trpc = useTRPC();
-const queryCache = useQueryCache();
-const form = useActionForm(newLessonInput, trpc.courses.lesson.create.mutationOptions(), {
+const form = useActionForm(newLessonInput, $api.courses.lesson.create.mutationOptions(), {
   defaults: { courseId: props.courseId, title: "", body: "", fileKey: "" },
-  onSuccess: async () => {
+  onSuccess: () => {
     form.state.title = "";
     form.state.body = "";
     form.state.fileKey = "";
-    await queryCache.invalidateQueries({ key: trpc.courses.lesson.key() });
   },
 });
 </script>
@@ -1921,16 +1851,11 @@ definePageMeta({ layout: "app", middleware: "auth" });
 
 const route = useRoute("teach-id");
 const courseId = computed(() => Number(route.params.id));
-const trpc = useTRPC();
-const queryCache = useQueryCache();
-const course = useQuery(() => trpc.courses.course.byId.queryOptions({ id: courseId.value }));
-const lessons = useQuery(() => trpc.courses.lesson.forCourse.queryOptions({ courseId: courseId.value }));
-const { mutate: update } = useMutation({
-  ...trpc.courses.course.update.mutationOptions(),
-  onSettled: () => queryCache.invalidateQueries({ key: trpc.courses.course.key() }),
-});
+const course = $api.courses.course.byId.useQuery(() => ({ id: courseId.value }));
+const lessons = $api.courses.lesson.forCourse.useQuery(() => ({ courseId: courseId.value }));
+const { mutate: update } = $api.courses.course.update.useMutation();
 
-useSeo(() => ({ title: course.data.value?.title ?? "Course" }));
+useSeo(() => ({ title: course.data?.title ?? "Course" }));
 </script>
 
 <template>
@@ -1976,7 +1901,7 @@ useSeo(() => ({ title: course.data.value?.title ?? "Course" }));
 definePageMeta({ layout: "app", middleware: "auth" });
 useSeo({ title: "My learning" });
 
-const courses = useQuery(useTRPC().learning.dashboard.queryOptions());
+const courses = $api.learning.dashboard.useQuery();
 </script>
 
 <template>
@@ -2005,9 +1930,7 @@ The starter's seeder creates a demo student. Add an instructor with a published 
 
 ```ts
 // server/seeders/database.seeder.ts
-import { userFactory } from "../factories/users.factory";
-import { courseFactory } from "../domains/courses/factories/course.factory";
-import { lessonFactory } from "../domains/courses/factories/lesson.factory";
+import { userFactory, courseFactory, lessonFactory } from "#nuxvel/factories";
 
 const DEMO_EMAIL = "demo@example.com";
 const TEACHER_EMAIL = "teacher@example.com";
@@ -2039,8 +1962,7 @@ Change its test to match:
 // tests/functional/seeders.test.ts
 import { expectCount, expectRow, runSeeder, signIn } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userTable } from "../../server/database/schema/auth.schema";
-import { lessonTable } from "../../server/domains/courses/schema/lesson.schema";
+import { userTable, lessonTable } from "#nuxvel/schema";
 
 describe("the database seeder", () => {
   it("creates a student, an instructor and a published course with two lessons", async () => {
@@ -2127,7 +2049,7 @@ export const RefusedByTheServer: StoryObj<typeof meta> = {
 
 - `fillForm()` finds each control by its label, as the end-to-end `fillForm()` does.
 - `expect(create).toHaveBeenCalledWith(...)` checks the input that the form sent. The argument has the input type of the procedure.
-- `forCourse: () => []` answers the query that the form invalidates after the save.
+- `forCourse: () => []` answers the query that the client refetches after the save.
 - The second story throws as the real procedure does. The form shows the message in `formError`.
 
 ```ts
@@ -2246,19 +2168,18 @@ const week = 7 * 24 * 60 * 60 * 1000;
 
 ```vue
 <!-- app/pages/learning.vue, the script -->
-const trpc = useTRPC();
-const courses = useQuery(trpc.learning.dashboard.queryOptions());
+const courses = $api.learning.dashboard.useQuery();
 const weeklyGoal = useFlag($flags.learning.weeklyGoal);
-const lessonsThisWeek = useQuery(() => ({ ...trpc.learning.weeklyGoal.queryOptions(), enabled: weeklyGoal.value }));
+const lessonsThisWeek = $api.learning.weeklyGoal.useQuery(undefined, { enabled: weeklyGoal });
 ```
 
 ```vue
 <!-- app/pages/learning.vue, under the heading -->
     <UAlert
-      v-if="weeklyGoal && lessonsThisWeek.data.value !== undefined"
+      v-if="weeklyGoal && lessonsThisWeek.data !== undefined"
       icon="i-lucide-target"
       title="Weekly goal: 3 lessons"
-      :description="`You completed ${lessonsThisWeek.data.value} lessons in the last 7 days.`"
+      :description="`You completed ${lessonsThisWeek.data} lessons in the last 7 days.`"
     >
       <template #actions>
         <UBadge label="Beta" variant="subtle" />
@@ -2272,9 +2193,7 @@ Test both states of the flag. `enableFlag()` turns the flag on for every user in
 // server/domains/learning/routers/learning.router.test.ts
 import { actingAs, enableFlag, expect } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../../factories/users.factory";
-import { enrollmentFactory } from "../factories/enrollment.factory";
-import { lessonProgressFactory } from "../factories/lesson-progress.factory";
+import { userFactory, enrollmentFactory, lessonProgressFactory } from "#nuxvel/factories";
 
 describe("learning router", () => {
   it("counts the lessons of the last 7 days while the weekly goal is on", async () => {
@@ -2361,7 +2280,7 @@ Add the imports and the procedure builder at the top of the file:
 // server/domains/learning/routers/learning.router.ts
 import { and, count, desc, eq, gte, isNotNull } from "drizzle-orm";
 import { z } from "zod";
-import { userTable } from "../../../database/schema/auth.schema";
+import { userTable } from "#nuxvel/schema";
 ```
 
 ```ts
@@ -2451,9 +2370,7 @@ Give the secret to the LMS team one time: nuxvel does not show it again. Then se
 // tests/functional/lms-api.test.ts
 import { actingAs, expect, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { courseFactory } from "../../server/domains/courses/factories/course.factory";
-import { enrollmentFactory } from "../../server/domains/learning/factories/enrollment.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { courseFactory, enrollmentFactory, userFactory } from "#nuxvel/factories";
 
 describe("the LMS API", () => {
   it("lists the students who finished a course of the key's instructor", async () => {
@@ -2500,10 +2417,8 @@ The webhook goes to each endpoint row, so the listener test adds one with a fact
 import { defineFactory } from "@nuxvel/nuxt/factories";
 import { expectNotified, expectWebhookSent, runListener } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { webhookEndpointsTable } from "../../../database/schema/webhook-endpoints.schema";
-import { userFactory } from "../../../factories/users.factory";
-import { courseFactory } from "../../courses/factories/course.factory";
-import { enrollmentFactory } from "../factories/enrollment.factory";
+import { webhookEndpointsTable } from "#nuxvel/schema";
+import { userFactory, courseFactory, enrollmentFactory } from "#nuxvel/factories";
 
 const endpointFactory = defineFactory(webhookEndpointsTable, { url: "https://lms.example.com/hooks", secret: "whsec_dGVzdA" });
 
@@ -2541,8 +2456,7 @@ An end-to-end test drives the real app in a browser, through several pages. Keep
 // tests/e2e/catalogue.test.ts
 import { expect, field, heading, link, visit } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { courseFactory } from "../../server/domains/courses/factories/course.factory";
-import { lessonFactory } from "../../server/domains/courses/factories/lesson.factory";
+import { courseFactory, lessonFactory } from "#nuxvel/factories";
 
 describe("the catalogue in a browser", () => {
   it("finds a course by a word of its summary and opens it", async () => {
@@ -2567,9 +2481,7 @@ The student journey crosses the two domains and the module. `workQueue()` runs t
 // tests/e2e/learning.test.ts
 import { actingAs, button, expect, expectMailSent, heading, text, visit, workQueue } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { courseFactory } from "../../server/domains/courses/factories/course.factory";
-import { lessonFactory } from "../../server/domains/courses/factories/lesson.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { courseFactory, lessonFactory, userFactory } from "#nuxvel/factories";
 
 describe("a student in a browser", () => {
   it("enrolls, finishes the course and opens the certificate from the mail", async () => {
@@ -2598,8 +2510,8 @@ The instructor journey uploads a real file. `setInputFiles` is the Playwright me
 // tests/e2e/teach.test.ts
 import { actingAs, button, expect, expectRow, fillForm, heading, text } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { lessonTable } from "../../server/domains/courses/schema/lesson.schema";
-import { userFactory } from "../../server/factories/users.factory";
+import { lessonTable } from "#nuxvel/schema";
+import { userFactory } from "#nuxvel/factories";
 
 describe("an instructor in a browser", () => {
   it("creates a course, adds a lesson with a file and publishes the course", async () => {

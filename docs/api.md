@@ -15,8 +15,8 @@ nuxvel make:router post
 ```ts
 // server/trpc/routers/post.router.ts
 import { z } from "zod";
-import { createPostAction } from "../../actions/posts/create-post.action";
-import { postTable } from "../../database/schema/post.schema";
+import { createPostAction } from "#server/actions/posts/create-post.action";
+import { postTable } from "#nuxvel/schema";
 
 export const postRouter = {
   list: publicProcedure
@@ -124,7 +124,7 @@ create: authedProcedure
 
 `idempotent()` is auto-imported on the server. It runs a mutation once for each idempotency key, and answers each repeat with the first result. Use it on a mutation that must not run twice when the browser sends it twice, for example a create.
 
-The client sends the key in the `Idempotency-Key` header. `mutationOptions()` from `useTRPC()` picks one key and sends it with each call. Thus `useActionForm()` sends it too. A mutation with a key goes in its own request, not in a batch.
+The client sends the key in the `Idempotency-Key` header. `.useMutation()` and `mutationOptions()` of `$api` pick one key and send it with each call. Thus `useActionForm()` sends it too. Each mutation goes in its own request, not in a batch.
 
 - The first result stays in Redis for 24 hours. The key includes the user, the procedure path, the client's key and the input. A repeat with other input runs again.
 - A repeat while the first call still runs gets a `ConflictError`.
@@ -288,7 +288,7 @@ No error response has a stack, also in development. To find the real error in de
 
 ### When the server cannot be reached
 
-Sometimes a call gets no tRPC answer. For example, the network is down, or a proxy in front of the app answers with an HTML error page during a deploy. `useTRPC()` then gives a `TRPCClientError` with this message and code:
+Sometimes a call gets no tRPC answer. For example, the network is down, or a proxy in front of the app answers with an HTML error page during a deploy. `$api` then gives a `TRPCClientError` with this message and code:
 
 ```json
 { "message": "Can't reach the server. Check your connection and try again.", "data": { "code": "NETWORK_ERROR", "httpStatus": 0 } }
@@ -311,7 +311,7 @@ An error that the server sends as tRPC JSON keeps its own code and message, also
 { "message": "No procedure found on path \"post.publish\"", "data": { "code": "CLIENT_OUTDATED", "httpStatus": 404, "buildId": "b3c1…" } }
 ```
 
-A browser tab can stay open across a deploy. Its app then calls the API of the new build. `useTRPC()` sends the app's build ID with each call in the `x-nuxvel-build` header. When the tab calls a procedure that the new build does not have, and the build ID is not the current one, the error has the code `CLIENT_OUTDATED`, and `data.buildId` holds the live build. On the next navigation, the app reloads the page, so the tab gets the new build. This is the same reload that Nuxt does after its own check for a newer build, see [Open tabs after a deploy](./build.md#open-tabs-after-a-deploy).
+A browser tab can stay open across a deploy. Its app then calls the API of the new build. `$api` sends the app's build ID with each call in the `x-nuxvel-build` header. When the tab calls a procedure that the new build does not have, and the build ID is not the current one, the error has the code `CLIENT_OUTDATED`, and `data.buildId` holds the live build. On the next navigation, the app reloads the page, so the tab gets the new build. This is the same reload that Nuxt does after its own check for a newer build, see [Open tabs after a deploy](./build.md#open-tabs-after-a-deploy).
 
 The call itself still fails, so `form.formError` or the error state of the query shows the message until the user moves on. A call with no build ID, or with the current one, gets `NOT_FOUND` as usual.
 
@@ -332,14 +332,13 @@ const post = await useCaller().post.byId({ id: 1 });
 
 ```vue
 <script setup lang="ts">
-const trpc = useTRPC();
-const { data: posts } = useQuery(trpc.post.list.queryOptions());
+const posts = $api.post.list.useQuery();
 </script>
 ```
 
-`useTRPC()` is an auto-imported composable. It sends calls through an `httpBatchLink` with the same superjson transformer. One batch carries at most 10 calls. The client sends more calls in more requests. The server refuses a bigger batch from any other client with `BAD_REQUEST`. During SSR it calls procedures in the same process, with the visitor's request headers. Thus an `authedProcedure` query renders signed in on the first load. A query that fails with `NOT_FOUND`, `FORBIDDEN` or `UNAUTHORIZED` during SSR renders its error state with HTTP 404, 403 or 401, see [Errors during server rendering](./frontend.md#errors-during-server-rendering).
+`$api` is the typed API of the app. It is auto-imported in components, pages, composables and plugins, and you can use it in templates. It finds the tRPC client of the current Nuxt app when you call a procedure, so call it where a composable can run: in `setup`, in a plugin or in route middleware. The client sends queries through an `httpBatchLink` with the same superjson transformer. One batch carries at most 10 queries. The client sends more queries in more requests. Each mutation goes in a request of its own, so that its response [names what it invalidated](#what-a-mutation-invalidates). The server refuses a bigger batch from any other client with `BAD_REQUEST`. During SSR it calls procedures in the same process, with the visitor's request headers. Thus an `authedProcedure` query renders signed in on the first load. A query that fails with `NOT_FOUND`, `FORBIDDEN` or `UNAUTHORIZED` during SSR renders its error state with HTTP 404, 403 or 401, see [Errors during server rendering](./frontend.md#errors-during-server-rendering).
 
-Read data through `useQuery()`, so that the result is cached. See [Caching queries](#caching-queries-pinia-colada). For a one-off call, `await trpc.post.list.query()` also works.
+Read data through `.useQuery()`, so that the result is cached. See [Caching queries](#caching-queries-pinia-colada). For a one-off call, `await $api.post.list.query()` also works.
 
 ```vue
 <script setup lang="ts">
@@ -347,35 +346,60 @@ defineProps<{ post: RouterOutputs["post"]["byId"] }>();
 </script>
 ```
 
-To name the type of a procedure, use the auto-imported `RouterInputs` and `RouterOutputs` types. Do not write the shape by hand. `RouterInputs["post"]["update"]` is what `trpc.post.update` takes.
+To name the type of a procedure, use the auto-imported `RouterInputs` and `RouterOutputs` types. Do not write the shape by hand. `RouterInputs["post"]["update"]` is what `$api.post.update` takes.
 
 ## Caching queries (Pinia Colada)
 
 ```vue
 <script setup lang="ts">
-const trpc = useTRPC();
 const route = useRoute();
-
-const { data: post } = useQuery(() =>
-  trpc.post.byId.queryOptions({ id: Number(route.params.id) }),
-);
-
-const queryCache = useQueryCache();
-const { mutate: createPost } = useMutation({
-  ...trpc.post.create.mutationOptions(),
-  onSettled: () => queryCache.invalidateQueries({ key: trpc.post.key() }),
-});
+const post = $api.post.byId.useQuery(() => ({ id: Number(route.params.id) }));
 </script>
+
+<template>
+  <h1 v-if="post.data">{{ post.data.title }}</h1>
+</template>
 ```
 
-nuxvel installs Pinia Colada. `useQuery`, `useMutation` and `useQueryCache` are auto-imported. Each procedure on `useTRPC()` builds their options, so you do not write a key by hand.
+`.useQuery(input, options?)` runs Pinia Colada's `useQuery()` for the procedure and returns its result wrapped in `reactive()`. Read `post.data`, `post.error`, `post.status` and `post.state` without `.value`, in the script and in the template, and call `post.refetch()` to fetch again. Pass the input as a getter or a ref, so that the query fetches again when it changes. A procedure without input takes no argument: `$api.post.list.useQuery()`.
+
+`options` are the options of Pinia Colada's `useQuery()`, without `key` and `query`: `enabled`, `staleTime`, `placeholderData` and the others. To wait until an input is ready, set `enabled`:
+
+```ts
+const results = $api.post.list.useQuery(() => ({ q: q.value }), { enabled: () => q.value !== "" });
+```
+
+Call `.useQuery()` in `setup`, as `useQuery()`. During SSR the query runs on the server, and the page does not fetch it again when it hydrates.
+
+```vue
+<script setup lang="ts">
+const createPost = $api.post.create.useMutation({
+  onSuccess: (post) => navigateTo({ name: "posts-id", params: { id: post.id } }),
+});
+</script>
+
+<template>
+  <UAlert v-if="createPost.error" color="error" :title="createPost.error.message" />
+  <UButton :loading="createPost.isLoading" @click="createPost.mutate({ title: 'Hello', body: 'First post' })">
+    Create
+  </UButton>
+</template>
+```
+
+`.useMutation(options?)` runs Pinia Colada's `useMutation()` for the procedure and returns its result wrapped in `reactive()`: `createPost.mutate()`, `createPost.data`, `createPost.error` and `createPost.isLoading`, without `.value`. `options` are the options of Pinia Colada's `useMutation()`, without `mutation`: `onMutate`, `onSuccess`, `onError`, `onSettled` and the others. Call it in `setup`, as `useMutation()`. After it succeeds, the queries of its namespace and of the tags it names fetch again. The option `invalidate` replaces them for this call, see [Frontend: invalidation](./frontend.md#invalidation).
+
+nuxvel installs Pinia Colada. `useQuery`, `useMutation` and `useQueryCache` are auto-imported. Each procedure on `$api` builds their options, so you do not write a key by hand.
 
 | Helper | Returns | Pass to |
 |---|---|---|
-| `trpc.post.byId.queryOptions(input)` | `{ key, query }` | `useQuery` |
-| `trpc.post.create.mutationOptions()` | `{ mutation }` | `useMutation` |
-| `trpc.post.byId.key(input?)` | `["trpc", "post", "byId", input]` | cache reads and writes |
-| `trpc.post.key()` | `["trpc", "post"]` | invalidating a whole namespace |
+| `$api.post.byId.useQuery(input, options?)` | the result of `useQuery`, in `reactive()` | |
+| `$api.post.byId.queryOptions(input)` | `{ key, query }` | `useQuery` |
+| `$api.post.create.useMutation(options?)` | the result of `useMutation`, in `reactive()` | |
+| `$api.post.create.mutationOptions(options?)` | `{ mutation }` | `useMutation` |
+| `$api.post.byId.key(input?)` | `["trpc", "post", "byId", input]` | cache reads and writes |
+| `$api.post.key()` | `["trpc", "post"]` | invalidating a whole namespace |
+
+`queryOptions()` with Pinia Colada's own `useQuery()` is the step below `.useQuery()`, and `mutationOptions()` with `useMutation()` the step below `.useMutation()`: use them to build the options yourself, for example to pass them to `useLiveQuery()` or `useActionForm()`. The `query` function passes the abort signal of Pinia Colada to tRPC, so a query that Pinia Colada cancels also cancels its request.
 
 A key is `"trpc"`, then the router path, then the input:
 
@@ -383,16 +407,22 @@ A key is `"trpc"`, then the router path, then the input:
 - A shorter key matches all keys under it.
 - No key collides with a key that you write by hand for a query that is not tRPC.
 
-These helpers use the names `key`, `queryOptions`, `mutationOptions` and `then`. A router or procedure with one of these names fails `nuxt typecheck`. Rename it.
+These helpers use the names `key`, `queryOptions`, `useQuery`, `mutationOptions`, `useMutation` and `then`. A router or procedure with one of these names fails `nuxt typecheck`. Rename it.
+
+### What a mutation invalidates
+
+```http
+x-nuxvel-invalidates: %5B%5B%22post%22%2C%22list%22%5D%2C%5B%22posts%22%5D%5D
+```
+
+A mutation response names the tags that its actions invalidated, in the header `x-nuxvel-invalidates`: the [`invalidates`](./actions.md#invalidating-cached-values) of each action that committed, nested actions included, as URL-encoded JSON. Each tag is an array: `"post:list"` is `["post", "list"]`, `["post", { id: 1 }]` stays as it is, and a glob such as `"posts:*"` is the prefix before it, `["posts"]`. The value above is `[["post","list"],["posts"]]`. The header is missing when no action of the mutation declared `invalidates`, when the mutation fails, and on a query. The client of `$api` reads it and refetches the queries under each tag and under the mutation's namespace, see [Frontend: invalidation](./frontend.md#invalidation).
 
 ## Optimistic updates
 
 ```ts
-const trpc = useTRPC();
-
 const { mutate: renamePost } = useMutation(
-  optimistic(trpc.post.update.mutationOptions(), {
-    key: (input) => trpc.post.byId.key({ id: input.id }),
+  optimistic($api.post.update.mutationOptions(), {
+    key: (input) => $api.post.byId.key({ id: input.id }),
     apply: (post, input) => ({ ...post, title: input.title }),
   }),
 );
@@ -409,8 +439,8 @@ If the query is not in the cache yet, `optimistic()` changes nothing.
 To react to a failure, spread the options and add your own `onError`. It runs after the rollback. An `onMutate` or `onSettled` of the options is replaced.
 
 ```ts
-optimistic({ ...trpc.post.update.mutationOptions(), onError: () => toast.add({ title: "Not saved" }) }, {
-  key: (input) => trpc.post.byId.key({ id: input.id }),
+optimistic({ ...$api.post.update.mutationOptions(), onError: () => toast.add({ title: "Not saved" }) }, {
+  key: (input) => $api.post.byId.key({ id: input.id }),
   apply: (post, input) => ({ ...post, title: input.title }),
 });
 ```
@@ -440,7 +470,7 @@ A machine client signs in with an API key in place of a session cookie. An `auth
 ```ts
 import { actingAs, expect, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../server/factories/users.factory";
+import { userFactory } from "#nuxvel/factories";
 
 describe("post router", () => {
   it("creates a post as the signed-in user", async () => {

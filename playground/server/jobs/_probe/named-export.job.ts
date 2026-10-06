@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { healthChecksTable } from "../../database/schema/health-check.schema";
+import { healthChecksTable } from "#nuxvel/schema";
 
 export const namedExportJob = defineJob({
   input: z.object({ name: z.string().min(1) }),

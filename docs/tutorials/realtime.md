@@ -131,21 +131,21 @@ Write the migration, apply it and check it:
 
 ```ts
 // server/privacy/rooms.user-data.ts
-import { roomTable } from "../database/schema/room.schema";
+import { roomTable } from "#nuxvel/schema";
 
 export const roomsUserData = defineUserData(roomTable, roomTable.ownerId);
 ```
 
 ```ts
 // server/privacy/room-members.user-data.ts
-import { roomMemberTable } from "../database/schema/room-member.schema";
+import { roomMemberTable } from "#nuxvel/schema";
 
 export const roomMembersUserData = defineUserData(roomMemberTable, roomMemberTable.userId);
 ```
 
 ```ts
 // server/privacy/messages.user-data.ts
-import { messageTable } from "../database/schema/message.schema";
+import { messageTable } from "#nuxvel/schema";
 
 export const messagesUserData = defineUserData(messageTable, messageTable.authorId);
 ```
@@ -167,7 +167,7 @@ Each command writes a factory and a test that inserts two rows. The generator se
 import { faker } from "@faker-js/faker";
 import { userFactory } from "./users.factory";
 import { defineFactory } from "@nuxvel/nuxt/factories";
-import { roomTable } from "../database/schema/room.schema";
+import { roomTable } from "#nuxvel/schema";
 
 export const roomFactory = defineFactory(roomTable, {
   ownerId: async () => (await userFactory()).id,
@@ -181,7 +181,7 @@ import { faker } from "@faker-js/faker";
 import { roomFactory } from "./room.factory";
 import { userFactory } from "./users.factory";
 import { defineFactory } from "@nuxvel/nuxt/factories";
-import { messageTable } from "../database/schema/message.schema";
+import { messageTable } from "#nuxvel/schema";
 
 export const messageFactory = defineFactory(messageTable, {
   body: () => faker.lorem.sentence(),
@@ -196,10 +196,7 @@ You need two users to see a realtime feature. Replace the seeder. It creates thr
 
 ```ts
 // server/seeders/database.seeder.ts
-import { messageFactory } from "../factories/message.factory";
-import { roomMemberFactory } from "../factories/room-member.factory";
-import { roomFactory } from "../factories/room.factory";
-import { userFactory } from "../factories/users.factory";
+import { messageFactory, roomMemberFactory, roomFactory, userFactory } from "#nuxvel/factories";
 
 const PASSWORD = "demo-password";
 
@@ -234,10 +231,7 @@ Replace the starter's seeder test, so that it checks the room:
 // tests/functional/seeders.test.ts
 import { expectCount, expectRow, runSeeder, signIn } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userTable } from "../../server/database/schema/auth.schema";
-import { messageTable } from "../../server/database/schema/message.schema";
-import { roomMemberTable } from "../../server/database/schema/room-member.schema";
-import { roomTable } from "../../server/database/schema/room.schema";
+import { userTable, messageTable, roomMemberTable, roomTable } from "#nuxvel/schema";
 
 describe("the database seeder", () => {
   it("creates a General room with three members, who sign in with the printed password", async () => {
@@ -267,8 +261,7 @@ The generated policy lets the owner update and delete a room. Add the rules for 
 ```ts
 // server/policies/room.policy.ts
 import { and, eq } from "drizzle-orm";
-import { roomMemberTable } from "../database/schema/room-member.schema";
-import { roomTable } from "../database/schema/room.schema";
+import { roomMemberTable, roomTable } from "#nuxvel/schema";
 
 const isMember = async (userId: string, roomId: number) =>
   (
@@ -295,9 +288,7 @@ The create action must also add the owner to the room. Add the insert to the gen
 
 ```ts
 // server/actions/room/create-room.action.ts
-import { roomMemberTable } from "../../database/schema/room-member.schema";
-import { roomTable } from "../../database/schema/room.schema";
-import { createRoomInput } from "#shared/schemas/room";
+import { roomMemberTable, roomTable } from "#nuxvel/schema";
 
 export const createRoomAction = defineAction({
   input: createRoomInput,
@@ -342,9 +333,7 @@ Then write the handler. `addMemberInput` is auto-imported, as every export of `s
 ```ts
 // server/actions/room/add-member.action.ts
 import { eq } from "drizzle-orm";
-import { userTable } from "../../database/schema/auth.schema";
-import { roomMemberTable } from "../../database/schema/room-member.schema";
-import { roomTable } from "../../database/schema/room.schema";
+import { userTable, roomMemberTable, roomTable } from "#nuxvel/schema";
 
 export const addMemberAction = defineAction({
   input: addMemberInput,
@@ -375,20 +364,11 @@ The generated `list` and `byId` return the rooms that the user owns. In a chat, 
 // server/trpc/routers/room.router.ts
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { addMemberAction } from "../../actions/room/add-member.action";
-import { createRoomAction } from "../../actions/room/create-room.action";
-import { updateRoomAction } from "../../actions/room/update-room.action";
-import { deleteRoomAction } from "../../actions/room/delete-room.action";
-import { roomMemberTable } from "../../database/schema/room-member.schema";
-import { roomTable } from "../../database/schema/room.schema";
-import {
-  roomIdInput,
-  roomListInput,
-  createRoomInput,
-  updateRoomInput,
-  roomSchema,
-  addMemberInput,
-} from "#shared/schemas/room";
+import { addMemberAction } from "#server/actions/room/add-member.action";
+import { createRoomAction } from "#server/actions/room/create-room.action";
+import { updateRoomAction } from "#server/actions/room/update-room.action";
+import { deleteRoomAction } from "#server/actions/room/delete-room.action";
+import { roomMemberTable, roomTable } from "#nuxvel/schema";
 
 const joinedBy = (userId: string) =>
   inArray(
@@ -471,8 +451,7 @@ The generated action test calls the action with sample values. Room `1` does not
 // server/actions/room/add-member.action.test.ts
 import { actingAs, expect, runAction } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { roomFactory } from "../../factories/room.factory";
-import { userFactory } from "../../factories/users.factory";
+import { roomFactory, userFactory } from "#nuxvel/factories";
 
 describe("room/add-member action", () => {
   it("lets the owner add a user by email, who then sees the room", async () => {
@@ -528,7 +507,7 @@ The generated channel lets every signed-in user listen, and carries one event, `
 // server/channels/room.channel.ts
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { roomTable } from "../database/schema/room.schema";
+import { roomTable } from "#nuxvel/schema";
 
 export const roomChannel = defineChannel({
   events: {
@@ -564,9 +543,7 @@ The channel has one room for each chat room. `params: ["roomId"]` names the para
 // server/channels/room.channel.test.ts
 import { actingAs, expect, expectPresent, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { roomMemberFactory } from "../factories/room-member.factory";
-import { roomFactory } from "../factories/room.factory";
-import { userFactory } from "../factories/users.factory";
+import { roomMemberFactory, roomFactory, userFactory } from "#nuxvel/factories";
 
 describe("room channel", () => {
   it("refuses a guest", async () => {
@@ -642,8 +619,7 @@ export const messageSchema = z.object({
 
 ```ts
 // server/actions/message/post-message.action.ts
-import { messageTable } from "../../database/schema/message.schema";
-import { roomTable } from "../../database/schema/room.schema";
+import { messageTable, roomTable } from "#nuxvel/schema";
 
 export const postMessageAction = defineAction({
   input: postMessageInput,
@@ -682,10 +658,8 @@ The command writes an empty router at `server/trpc/routers/message.router.ts`. W
 // server/trpc/routers/message.router.ts
 import { asc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { postMessageAction } from "../../actions/message/post-message.action";
-import { userTable } from "../../database/schema/auth.schema";
-import { messageTable } from "../../database/schema/message.schema";
-import { roomTable } from "../../database/schema/room.schema";
+import { postMessageAction } from "#server/actions/message/post-message.action";
+import { userTable, messageTable, roomTable } from "#nuxvel/schema";
 
 export const messageRouter = {
   forRoom: authedProcedure
@@ -729,10 +703,8 @@ Replace the generated action test:
 // server/actions/message/post-message.action.test.ts
 import { actingAs, expect, expectBroadcast, expectNotBroadcast, expectRow, runAction } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { messageTable } from "../../database/schema/message.schema";
-import { roomMemberFactory } from "../../factories/room-member.factory";
-import { roomFactory } from "../../factories/room.factory";
-import { userFactory } from "../../factories/users.factory";
+import { messageTable } from "#nuxvel/schema";
+import { roomMemberFactory, roomFactory, userFactory } from "#nuxvel/factories";
 
 describe("message/post-message action", () => {
   it("stores the message and broadcasts its id after the commit", async () => {
@@ -784,10 +756,7 @@ Test the router in its own file:
 // server/trpc/routers/message.router.test.ts
 import { actingAs, expect } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { messageFactory } from "../../factories/message.factory";
-import { roomMemberFactory } from "../../factories/room-member.factory";
-import { roomFactory } from "../../factories/room.factory";
-import { userFactory } from "../../factories/users.factory";
+import { messageFactory, roomMemberFactory, roomFactory, userFactory } from "#nuxvel/factories";
 
 describe("message router", () => {
   it("lists the messages of a room oldest first, with the author's name", async () => {
@@ -861,13 +830,12 @@ import type { z } from "zod";
 const props = defineProps<{ roomId: number }>();
 const emit = defineEmits<{ typing: [typing: boolean] }>();
 
-const trpc = useTRPC();
 const { user } = useUser();
 const state = reactive({ roomId: props.roomId, body: "" });
 
 const { mutate, error } = useMutation(
-  optimistic(trpc.message.post.mutationOptions(), {
-    key: ({ roomId }) => trpc.message.forRoom.key({ roomId }),
+  optimistic($api.message.post.mutationOptions(), {
+    key: ({ roomId }) => $api.message.forRoom.key({ roomId }),
     apply: (messages, { roomId, body }) => [
       ...messages,
       { id: -Date.now(), roomId, body, authorId: user.value?.id ?? "", authorName: user.value?.name ?? "", createdAt: new Date() },
@@ -927,12 +895,11 @@ Replace the generated page:
 <script setup lang="ts">
 definePageMeta({ middleware: "auth" });
 
-const trpc = useTRPC();
 const id = Number(useRoute().params.id);
 const { user } = useUser();
-const room = useQuery(trpc.room.byId.queryOptions({ id }));
+const room = $api.room.byId.useQuery({ id });
 
-const messages = useLiveQuery(trpc.message.forRoom.queryOptions({ roomId: id }), {
+const messages = useLiveQuery($api.message.forRoom.queryOptions({ roomId: id }), {
   channel: "room",
   params: { roomId: id },
   refetch: { posted: true },
@@ -941,7 +908,7 @@ const { members, setState } = usePresence("room", { roomId: id });
 const others = computed(() => members.value.filter((member) => member.userId !== user.value?.id));
 const { status } = useChannel("room", { params: { roomId: id } });
 
-const memberForm = useActionForm(addMemberInput, toasted(trpc.room.addMember.mutationOptions(), "Member added"), {
+const memberForm = useActionForm(addMemberInput, toasted($api.room.addMember.mutationOptions(), "Member added"), {
   defaults: { roomId: id, email: "" },
   failures: { "room.member-unknown": "email" },
   onSuccess: () => {
@@ -949,13 +916,13 @@ const memberForm = useActionForm(addMemberInput, toasted(trpc.room.addMember.mut
   },
 });
 
-useSeo(() => ({ title: room.data.value?.name ?? "Room" }));
+useSeo(() => ({ title: room.data?.name ?? "Room" }));
 </script>
 
 <template>
   <div class="max-w-2xl space-y-6">
     <div class="flex items-center justify-between gap-4">
-      <h1 class="text-2xl font-semibold">{{ room.data.value?.name }}</h1>
+      <h1 class="text-2xl font-semibold">{{ room.data?.name }}</h1>
       <div class="flex items-center gap-4">
         <UBadge v-if="status === 'reconnecting'" color="warning" label="Reconnecting" />
         <PresenceAvatars :members="members" />
@@ -969,7 +936,7 @@ useSeo(() => ({ title: room.data.value?.name ?? "Room" }));
     <TypingIndicator :members="others" />
     <MessageComposer :room-id="id" @typing="(typing) => setState({ typing })" />
     <UForm
-      v-if="room.data.value?.ownerId === user?.id"
+      v-if="room.data?.ownerId === user?.id"
       :ref="memberForm.ref"
       :schema="memberForm.schema"
       :state="memberForm.state"
@@ -1143,9 +1110,7 @@ The command writes `tests/e2e/room.test.ts`, which opens `/room`. Replace it:
 // tests/e2e/room.test.ts
 import { actingAs, button, expect, expectPresent, field, heading, text } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { roomMemberFactory } from "../../server/factories/room-member.factory";
-import { roomFactory } from "../../server/factories/room.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { roomMemberFactory, roomFactory, userFactory } from "#nuxvel/factories";
 
 async function roomWithAdaAndGrace() {
   const ada = await userFactory({ name: "Ada Lovelace" });

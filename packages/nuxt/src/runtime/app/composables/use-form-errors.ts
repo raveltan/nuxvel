@@ -19,14 +19,13 @@ import { serverFields } from "../forms/server-fields";
  * @example
  * ```vue
  * <script setup lang="ts">
- * const trpc = useTRPC();
  * const errors = useFormErrors();
  * const title = ref("");
  *
  * async function save() {
  *   errors.clear();
  *   try {
- *     await trpc.post.create.mutate({ title: title.value, body: "" });
+ *     await $api.post.create.mutate({ title: title.value, body: "" });
  *   } catch (error) {
  *     errors.set(error);
  *   }

@@ -1,10 +1,9 @@
 import { eq } from "drizzle-orm";
-import { postsTable } from "../../database/schema/posts.schema";
-import { updatePostInput } from "../../../shared/schemas/post";
+import { postsTable } from "#nuxvel/schema";
 
 export const updatePostAction = defineAction({
   input: updatePostInput,
-  invalidates: ["posts:*"],
+  invalidates: ["post"],
   errors: {
     "post.body-empty": "Body cannot be empty after trimming",
   },

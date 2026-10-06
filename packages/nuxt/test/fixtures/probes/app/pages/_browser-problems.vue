@@ -1,6 +1,4 @@
 <script setup lang="ts">
-const trpc = useTRPC();
-
 if (import.meta.client) inject("browser-problems-probe-missing");
 
 function explode() {
@@ -12,7 +10,7 @@ function reject() {
 }
 
 async function failCall() {
-  await trpc._errorLeakCheck.unknown.query().catch(() => {});
+  await $api._errorLeakCheck.unknown.query().catch(() => {});
 }
 </script>
 

@@ -85,8 +85,7 @@ The option is only for tables with `softDeletes()`. `firstOrFail` takes rows, no
 ```ts
 // server/actions/posts/restore-post.action.ts
 import { eq } from "drizzle-orm";
-import { postTable } from "../../database/schema/post.schema";
-import { postIdInput } from "../../../shared/schemas/post";
+import { postTable } from "#nuxvel/schema";
 
 export const restorePostAction = defineAction({
   input: postIdInput,
@@ -148,9 +147,8 @@ const purged = await purgeTrashed("30 days");
 ```ts
 import { actingAs, expect, expectRow, expectSoftDeleted } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { postTable } from "../../server/database/schema/post.schema";
-import { postFactory } from "../../server/factories/post.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { postTable } from "#nuxvel/schema";
+import { postFactory, userFactory } from "#nuxvel/factories";
 
 describe("post.delete", () => {
   it("trashes a post", async () => {

@@ -24,8 +24,8 @@ function requestIdempotencyKey() {
  * answers every repeat with the first result.
  *
  * Auto-imported on the server. The client sends the key in the
- * `Idempotency-Key` header: `mutationOptions()` from `useTRPC()`, and so
- * {@link useActionForm}, send one for every call. The first result is
+ * `Idempotency-Key` header: `mutationOptions()` and `.useMutation()` of `$api`,
+ * and so {@link useActionForm}, send one for every call. The first result is
  * stored in Redis for 24 hours under the user, the procedure path, the
  * key and the input, so a repeat with other input runs again. A repeat
  * while the first call still runs throws {@link ConflictError}. A call

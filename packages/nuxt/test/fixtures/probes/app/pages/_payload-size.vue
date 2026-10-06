@@ -1,6 +1,5 @@
 <script setup lang="ts">
-const trpc = useTRPC();
-const { data } = useQuery(trpc._payloadCheck.large.queryOptions());
+const { data } = useQuery($api._payloadCheck.large.queryOptions());
 </script>
 
 <template>

@@ -1,3 +1,3 @@
-import { apiKeysTable } from "../database/schema/api-keys.schema";
+import { apiKeysTable } from "#nuxvel/schema";
 
 export const apiKeysUserData = defineUserData(apiKeysTable, apiKeysTable.userId);

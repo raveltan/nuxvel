@@ -22,7 +22,7 @@ This command writes two files:
 ```ts
 // server/database/backfills/posts-content.backfill.ts
 import { eq, isNull } from "drizzle-orm";
-import { postTable } from "../schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 export const postsContentBackfill = defineBackfill({
   table: postTable,
@@ -130,7 +130,7 @@ When you move a backfill file, its name changes, and a new run starts from the b
 // server/database/backfills/posts-content.backfill.test.ts
 import { expect, expectRow, runBackfill } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { backfillsTable } from "../schema/backfills.schema";
+import { backfillsTable } from "#nuxvel/schema";
 
 describe("posts-content backfill", () => {
   it("runs to completion over every matching row", async () => {

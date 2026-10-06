@@ -871,7 +871,8 @@ export default defineDeploy({
     );
     expect(createFile).toContain("export const createWidgetItemAction = defineAction({");
     expect(createFile).toContain('import { widgetItemTable } from "#nuxvel/schema";');
-    expect(createFile).toContain('import { createWidgetItemInput } from "#shared/schemas/widget-item";');
+    expect(createFile).toContain("  input: createWidgetItemInput,");
+    expect(createFile).not.toContain("shared/schemas");
     expect(createFile).toContain('await audit("widget-item.created", row);');
 
     const updateFile = readFileSync(
@@ -949,7 +950,7 @@ export default defineDeploy({
     expect(routerFile).toContain(
       '.orderBy(...listOrderBy(widgetItemTable, input.sort), desc(searchRank(widgetItemTable, input.q ?? "")), desc(widgetItemTable.id))',
     );
-    expect(routerFile).toContain("  updateWidgetItemInput,\n  widgetItemSchema,\n} from \"#shared/schemas/widget-item\";");
+    expect(routerFile).not.toContain("shared/schemas");
     expect(routerFile).toContain("    .input(widgetItemListInput)\n    .output(paginated(widgetItemSchema))\n");
     expect(routerFile).not.toContain('from "zod"');
     expect(routerFile).not.toContain(".extend(");
@@ -1011,10 +1012,11 @@ export default defineDeploy({
 
     const pagesDir = join(fixtureCwd, "pages", "widget-item");
     const list = readFileSync(join(pagesDir, "index.vue"), "utf-8");
-    expect(list.startsWith('<script setup lang="ts">\ndefinePageMeta({ middleware: "auth" });\n\nconst trpc = useTRPC();\n')).toBe(true);
-    expect(list).toContain("trpc.widgetItem.list.queryOptions(input.value)");
+    expect(list.startsWith('<script setup lang="ts">\ndefinePageMeta({ middleware: "auth" });\n\nconst route = useRoute();\n')).toBe(true);
+    expect(list).toContain("const rows = $api.widgetItem.list.useQuery(() => input.value);");
+    expect(list).toContain("const editing = $api.widgetItem.byId.useQuery(() => ({ id: editId.value ?? 0 }), {");
     expect(list).toContain(
-      "  optimistic(trpc.widgetItem.delete.mutationOptions(), {\n    key: () => trpc.widgetItem.list.key(input.value),\n" +
+      "  optimistic($api.widgetItem.delete.mutationOptions(), {\n    key: () => $api.widgetItem.list.key(input.value),\n" +
         "    apply: (list, { id }) => ({ ...list, rows: list.rows.filter((row) => row.id !== id), total: list.total - 1 }),\n",
     );
     expect(list).toContain(':aria-label="`Delete widget item ${row.original.id}`"\n            @click="confirmDelete(row.original.id)"');
@@ -1044,12 +1046,14 @@ export default defineDeploy({
     expect(newPage).toContain('await navigateTo({ name: "widget-item" });');
     expect(list).toContain('<WidgetItemForm :key="data.id" :row="data" @saved="closeEdit" />');
     expect(newPage).toContain("(list) => list && { ...list, rows: [created, ...list.rows], total: list.total + 1 },");
+    expect(newPage).not.toContain("invalidateQueries");
     const form = readFileSync(join(fixtureCwd, "components", "WidgetItemForm.vue"), "utf-8");
     expect(form).toContain(
       "defaults: { id: props.row.id, notes: props.row.notes, done: props.row.done, count: props.row.count, status: props.row.status, dueAt: props.row.dueAt, name: props.row.name },",
     );
     expect(form).toContain("(list) => list && { ...list, rows: list.rows.map((row) => (row.id === saved.id ? saved : row)) },");
     expect(form).not.toContain("navigateTo");
+    expect(form).not.toContain("invalidateQueries");
     expect(readFileSync(join(fixtureCwd, "shared", "schemas", "widget-item.ts"), "utf-8")).toContain(
       "export const widgetItemListColumns = {\n" +
         '  sort: ["id", "notes", "done", "count", "status", "dueAt", "name", "createdAt", "updatedAt"],\n' +
@@ -1080,13 +1084,13 @@ export default defineDeploy({
 
     expect(exitCode, stderr).toBe(0);
     const newPage = readFileSync(join(fixtureCwd, "pages", "task", "new.vue"), "utf-8");
-    const projectRows = "const { data: projectRows } = useQuery(() => trpc.project.list.queryOptions({ perPage: 100 }));\n";
-    expect(newPage).toContain(projectRows);
+    const projectList = "const projectList = $api.project.list.useQuery({ perPage: 100 });\n";
+    expect(newPage).toContain(projectList);
     expect(newPage).toContain('projectId: undefined, reviewerId: null');
-    expect(newPage).toContain('<USelect v-model="form.state.projectId" :items="projectRows?.rows" value-key="id" label-key="name" class="w-full" />');
+    expect(newPage).toContain('<USelect v-model="form.state.projectId" :items="projectList.data?.rows" value-key="id" label-key="name" class="w-full" />');
     expect(newPage).toContain('<UInput v-model.nullable="form.state.reviewerId" class="w-full" />');
     expect(newPage).toContain('@update:model-value="form.state.dueAt = new Date($event)" /></ClientOnly>');
-    expect(readFileSync(join(fixtureCwd, "components", "TaskForm.vue"), "utf-8")).toContain(projectRows);
+    expect(readFileSync(join(fixtureCwd, "components", "TaskForm.vue"), "utf-8")).toContain(projectList);
     expect(readFileSync(join(fixtureCwd, "shared", "schemas", "task.ts"), "utf-8")).toContain(
       '  status: z.enum(["draft", "done"]).optional(),\n',
     );

@@ -30,13 +30,13 @@ list: publicProcedure
     }),
   )
   .query(({ input }) =>
-    remember(`posts:list:${JSON.stringify([input?.page, input?.perPage, input?.q])}`, { minutes: 5 }, () =>
+    remember(["posts", "list", input], { minutes: 5 }, () =>
       paginate(useDb().select().from(postTable).$dynamic(), input),
     ),
   ),
 ```
 
-When the result depends on the input, put the input in the key. Each page and each search then has its own cached value. The glob `posts:*` removes all of them, see [Invalidation](#invalidation).
+When the result depends on the input, put the input in the key. Each page and each search then has its own cached value. `cacheForget(["posts"])` removes all of them, see [Invalidation](#invalidation).
 
 `ttl` is a number of seconds, or a duration with the same units as a [rate limit window](./security.md#rate-limiting): `seconds`, `minutes`, `hours` and `days`. The units add up, so `{ hours: 1, minutes: 30 }` is 90 minutes.
 
@@ -45,14 +45,26 @@ Values go through [superjson](https://github.com/flightcontrolhq/superjson). A `
 ### Reading and writing directly
 
 ```ts
-await cachePut("posts:count", count, { minutes: 5 });
+await cachePut(["posts", "count"], count, { minutes: 5 });
 
-const cached = await cacheGet<number>("posts:count");
+const cached = await cacheGet<number>(["posts", "count"]);
 ```
 
 `cachePut(key, value, ttl)` stores a value and replaces the value that was there. `cacheGet(key)` returns the value, or `undefined` when the key is missing or expired.
 
 ### Keys
+
+A key is a string or an array of parts. nuxvel joins the parts with `:`. A string part stays as it is. Any other part becomes JSON, with the keys of an object in alphabetical order:
+
+| Key | Stored as |
+|---|---|
+| `"posts:list"` | `posts:list` |
+| `["posts", "list"]` | `posts:list` |
+| `["posts", "list", { q: "nuxt", page: 2 }]` | `posts:list:{"page":2,"q":"nuxt"}` |
+| `["posts", 42]` | `posts:42` |
+| `["posts", "list", undefined]` | `posts:list:null` |
+
+The order of the keys of an object does not change the key. `{ page: 2, q: "nuxt" }` and `{ q: "nuxt", page: 2 }` read the same value. `remember()`, `cachePut()`, `cacheGet()`, `cacheForget()` and the test assertions take both forms.
 
 nuxvel adds the prefix `nuxvel:cache:` to each key in Redis, after the [app's key prefix](./redis.md#key-prefix). The key `posts:list` is `nuxvel:cache:posts:list` in Redis. The values use the `cache` connection of [`useRedis()`](./redis.md#connection-purposes). Set `NUXT_REDIS_CACHE_URL` to keep the cache on a separate Redis. See [A separate Redis for the cache](./redis.md#a-separate-redis-for-the-cache).
 
@@ -67,17 +79,23 @@ await cacheForget("posts:list");
 `cacheForget(key)` removes one value. The next `remember()` for that key runs its function again.
 
 ```ts
+await cacheForget(["posts"]);
+```
+
+An array key also removes every key that starts with it: `["posts"]` removes `posts`, `posts:list` and `posts:list:{"page":2}`, but not `postscript`. A `*` in a part is a plain character, not a glob.
+
+```ts
 await cacheForget("posts:*");
 ```
 
-A key with `*`, `?` or `[` is a Redis glob. `cacheForget()` then finds the matching keys with `SCAN` and removes each one.
+A string key with `*`, `?` or `[` is a Redis glob. `cacheForget()` then finds the matching keys with `SCAN` and removes each one.
 
 ### Invalidating from an action
 
 ```ts
 export const createPostAction = defineAction({
   input: createPostInput,
-  invalidates: ["posts:*"],
+  invalidates: ["posts"],
   handler: async (input, ctx) => {
     const post = await useDb()
       .insert(postTable)
@@ -90,12 +108,18 @@ export const createPostAction = defineAction({
 });
 ```
 
-The `invalidates` option of `defineAction()` lists keys or globs. After the transaction of the action commits, the action removes them with `cacheForget()`. When the handler throws, the transaction rolls back and the action removes nothing.
+The `invalidates` option of `defineAction()` lists tags: strings or key arrays. After the transaction of the action commits, the action removes the value of each tag and every value under it, as `cacheForget(["posts"])` does. A string with `*`, `?` or `[` stays a glob: `"posts:*"` removes the keys that match it. When the handler throws, the transaction rolls back and the action removes nothing.
+
+```ts
+invalidates: (post, input) => [["posts", "list"], ["posts", post.id]],
+```
+
+A function gets the result of the handler and the parsed input, and returns the tags. Write it after `handler`, so that TypeScript knows the result type. See [Actions](./actions.md#invalidating-cached-values).
 
 ### Tags
 
 ```ts
-const post = await remember(`posts:${id}`, { hours: 1 }, () => findOrFail(postTable, id), {
+const post = await remember(["posts", id], { hours: 1 }, () => findOrFail(postTable, id), {
   tags: ["posts"],
 });
 
@@ -113,7 +137,7 @@ The `tags` option of `remember()` and `cachePut()` adds the key to one or more t
 ```ts
 export const showPostAction = defineAction({
   input: z.object({ id: z.number() }),
-  handler: ({ id }) => remember(`posts:${id}`, { hours: 1 }, () => findOrFail(postTable, id)),
+  handler: ({ id }) => remember(["posts", id], { hours: 1 }, () => findOrFail(postTable, id)),
 });
 ```
 
@@ -158,11 +182,11 @@ In development, each `remember()` and `cacheGet()` call adds a `cache:lookup` li
 ```ts
 import { actingAs, expectCacheHit, expectCacheMiss, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../server/factories/users.factory";
+import { userFactory } from "#nuxvel/factories";
 
 describe("post list", () => {
   it("reads the posts again after a new post", async () => {
-    const key = `posts:list:${JSON.stringify([undefined, undefined, undefined])}`;
+    const key = ["posts", "list", undefined];
 
     await guest().trpc.post.list();
     await guest().trpc.post.list();
@@ -178,7 +202,7 @@ describe("post list", () => {
 });
 ```
 
-`expectCacheHit(key, { times? })` checks that the app read the key and found it. `expectCacheMiss(key, { times? })` checks that the app read the key and found nothing. A key that nothing read passes neither. `key` is the exact key that `remember()` or `cacheGet()` got, with no prefix. Each returns the latest matching lookup.
+`expectCacheHit(key, { times? })` checks that the app read the key and found it. `expectCacheMiss(key, { times? })` checks that the app read the key and found nothing. A key that nothing read passes neither. `key` is the exact key that `remember()` or `cacheGet()` got, a string or an array, with no prefix. Each returns the latest matching lookup.
 
 To count the queries instead, use `expectConstantQueries(fn, [1])`. A read from the cache runs no query.
 
@@ -186,7 +210,7 @@ To count the queries instead, use `expectConstantQueries(fn, [1])`. A read from 
 
 ```ts
 await guest().trpc.post.list();
-const posts = await expectCached("posts:list:[null,null,null]");
+const posts = await expectCached(["posts", "list", undefined]);
 ```
 
 `@nuxvel/nuxt/testing/setup` removes the values that the test server stored, and the cached pages of routes with the `cached` [rendering preset](./rendering.md). It does this before the first test of a file and after every test. Each test starts with an empty cache, and a test that opens a `cached` page sees the data that the test made.

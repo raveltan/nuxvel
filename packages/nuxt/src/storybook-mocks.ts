@@ -23,7 +23,7 @@ export type { TrpcMocks, TrpcPath, TrpcProcedure } from "./trpc-procedure";
  * Put it in the `parameters.msw` list of a story. The `mswLoader` of
  * `msw-storybook-addon` in `.storybook/preview.ts` starts MSW. The handler
  * answers queries and mutations, batched or not, in the superjson format
- * that `useTRPC()` reads, so a `Date` stays a `Date`. A call to a
+ * that `$api` reads, so a `Date` stays a `Date`. A call to a
  * procedure that `mocks` does not name fails with `NOT_FOUND`. Pair it
  * with {@link mockUser} for a component that needs a signed-in user.
  *

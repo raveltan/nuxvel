@@ -1,3 +1,3 @@
-import { flagConversionsTable } from "../database/schema/flag-conversions.schema";
+import { flagConversionsTable } from "#nuxvel/schema";
 
 export const flagConversionsUserData = defineUserData(flagConversionsTable, flagConversionsTable.unitId);

@@ -154,7 +154,7 @@ alongside the tests.
 - **Never declare a generated module with a shorthand ambient
   declaration.** `declare module '#nuxvel/schema';` with no body types
   every import from it as `any`, and that `any` spreads silently — it is
-  what made `useTRPC()` untyped in `.vue` files. `addTypeTemplate(...,
+  what made `$api` untyped in `.vue` files. `addTypeTemplate(...,
   { nitro: true })` has the same problem from the other side: it reaches
   the nitro program only, so the app program sees nothing at all.
 - **A generated module is registered twice, on purpose.** The same

@@ -67,7 +67,7 @@ Do not put the variable in `.env`. The test setup loads `.env`, so the variable 
 // tests/functional/sign-up.test.ts
 import { expect, expectMailSent, expectRow, guest, signIn } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userTable } from "../../server/database/schema/auth.schema";
+import { userTable } from "#nuxvel/schema";
 
 process.env.NUXT_AUTH_REQUIRE_EMAIL_VERIFICATION = "true";
 
@@ -246,7 +246,7 @@ A membership is the user's personal data, so declare it for `nuxvel user:export`
 
 ```ts
 // server/privacy/membership.user-data.ts
-import { membershipTable } from "../database/schema/membership.schema";
+import { membershipTable } from "#nuxvel/schema";
 
 export const membershipUserData = defineUserData(membershipTable, membershipTable.userId);
 ```
@@ -280,7 +280,7 @@ Write the migration, apply it and check it:
 // server/factories/team.factory.ts
 import { faker } from "@faker-js/faker";
 import { defineFactory } from "@nuxvel/nuxt/factories";
-import { teamTable } from "../database/schema/team.schema";
+import { teamTable } from "#nuxvel/schema";
 
 export const teamFactory = defineFactory(teamTable, {
   name: () => faker.company.name(),
@@ -292,7 +292,7 @@ export const teamFactory = defineFactory(teamTable, {
 import { teamFactory } from "./team.factory";
 import { userFactory } from "./users.factory";
 import { defineFactory } from "@nuxvel/nuxt/factories";
-import { membershipTable } from "../database/schema/membership.schema";
+import { membershipTable } from "#nuxvel/schema";
 
 export const membershipFactory = defineFactory(membershipTable, {
   teamId: async () => (await teamFactory()).id,
@@ -306,7 +306,7 @@ export const membershipFactory = defineFactory(membershipTable, {
 import { faker } from "@faker-js/faker";
 import { teamFactory } from "./team.factory";
 import { defineFactory } from "@nuxvel/nuxt/factories";
-import { invoiceTable } from "../database/schema/invoice.schema";
+import { invoiceTable } from "#nuxvel/schema";
 
 export const invoiceFactory = defineFactory(invoiceTable, {
   customer: () => faker.company.name(),
@@ -319,10 +319,7 @@ Most tests of this tutorial need the same rows. They need one team with an admin
 
 ```ts
 // tests/scenarios/team.ts
-import { invoiceFactory } from "../../server/factories/invoice.factory";
-import { membershipFactory } from "../../server/factories/membership.factory";
-import { teamFactory } from "../../server/factories/team.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { invoiceFactory, membershipFactory, teamFactory, userFactory } from "#nuxvel/factories";
 
 export const everyRole = ["admin", "member", "viewer"] as const;
 
@@ -353,10 +350,7 @@ The demo user is the admin of Acme. Grace is a viewer of Acme and the admin of G
 
 ```ts
 // server/seeders/database.seeder.ts
-import { invoiceFactory } from "../factories/invoice.factory";
-import { membershipFactory } from "../factories/membership.factory";
-import { teamFactory } from "../factories/team.factory";
-import { userFactory } from "../factories/users.factory";
+import { invoiceFactory, membershipFactory, teamFactory, userFactory } from "#nuxvel/factories";
 
 const DEMO_EMAIL = "demo@example.com";
 const DEMO_PASSWORD = "demo-password";
@@ -393,9 +387,7 @@ Replace the starter's seeder test, so that it checks the teams too:
 // tests/functional/seeders.test.ts
 import { expect, expectCount, expectRow, runSeeder, signIn } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userTable } from "../../server/database/schema/auth.schema";
-import { invoiceTable } from "../../server/database/schema/invoice.schema";
-import { teamTable } from "../../server/database/schema/team.schema";
+import { userTable, invoiceTable, teamTable } from "#nuxvel/schema";
 
 describe("the database seeder", () => {
   it("creates a demo admin of Acme, who sees only the invoices of Acme", async () => {
@@ -437,9 +429,7 @@ A policy decides about one row. The generated team policy lets the owner of the 
 ```ts
 // server/utils/teams.ts
 import { and, eq, inArray } from "drizzle-orm";
-import { invoiceTable } from "../database/schema/invoice.schema";
-import { type MembershipRow, membershipTable } from "../database/schema/membership.schema";
-import { teamTable } from "../database/schema/team.schema";
+import { invoiceTable, type MembershipRow, membershipTable, teamTable } from "#nuxvel/schema";
 
 export type TeamRole = MembershipRow["role"];
 
@@ -481,7 +471,7 @@ Replace the two generated policies:
 
 ```ts
 // server/policies/team.policy.ts
-import { teamTable } from "../database/schema/team.schema";
+import { teamTable } from "#nuxvel/schema";
 
 export const teamPolicy = definePolicy(teamTable, {
   preload: async (actor, rows) => ({ roles: await teamRoles(userIdOf(actor), rows.map((row) => row.id)) }),
@@ -495,7 +485,7 @@ export const teamPolicy = definePolicy(teamTable, {
 
 ```ts
 // server/policies/invoice.policy.ts
-import { invoiceTable } from "../database/schema/invoice.schema";
+import { invoiceTable } from "#nuxvel/schema";
 
 export const invoicePolicy = definePolicy(invoiceTable, {
   preload: async (actor, rows) => ({ roles: await teamRoles(userIdOf(actor), rows.map((row) => row.teamId)) }),
@@ -516,9 +506,7 @@ The team actions load the team only from the teams of the user, then enforce the
 
 ```ts
 // server/actions/team/create-team.action.ts
-import { membershipTable } from "../../database/schema/membership.schema";
-import { teamTable } from "../../database/schema/team.schema";
-import { createTeamInput } from "#shared/schemas/team";
+import { membershipTable, teamTable } from "#nuxvel/schema";
 
 export const createTeamAction = defineAction({
   input: createTeamInput,
@@ -582,9 +570,7 @@ Then write the handlers:
 ```ts
 // server/actions/team/add-member.action.ts
 import { eq } from "drizzle-orm";
-import { userTable } from "../../database/schema/auth.schema";
-import { membershipTable } from "../../database/schema/membership.schema";
-import { teamTable } from "../../database/schema/team.schema";
+import { userTable, membershipTable, teamTable } from "#nuxvel/schema";
 
 export const addMemberAction = defineAction({
   input: addMemberInput,
@@ -614,8 +600,7 @@ export const addMemberAction = defineAction({
 ```ts
 // server/actions/team/change-role.action.ts
 import { and, eq } from "drizzle-orm";
-import { membershipTable } from "../../database/schema/membership.schema";
-import { teamTable } from "../../database/schema/team.schema";
+import { membershipTable, teamTable } from "#nuxvel/schema";
 
 export const changeRoleAction = defineAction({
   input: changeRoleInput,
@@ -655,9 +640,7 @@ The invoice actions follow the same steps. The create action loads the team of t
 
 ```ts
 // server/actions/invoice/create-invoice.action.ts
-import { invoiceTable } from "../../database/schema/invoice.schema";
-import { teamTable } from "../../database/schema/team.schema";
-import { createInvoiceInput } from "#shared/schemas/invoice";
+import { invoiceTable, teamTable } from "#nuxvel/schema";
 
 export const createInvoiceAction = defineAction({
   input: createInvoiceInput,
@@ -693,8 +676,7 @@ The update action no longer needs the check of a new team:
 ```ts
 // server/actions/invoice/update-invoice.action.ts
 import { eq } from "drizzle-orm";
-import { invoiceTable } from "../../database/schema/invoice.schema";
-import { updateInvoiceInput } from "#shared/schemas/invoice";
+import { invoiceTable } from "#nuxvel/schema";
 
 export const updateInvoiceAction = defineAction({
   input: updateInvoiceInput,
@@ -765,7 +747,7 @@ describe("team/add-member action", () => {
 import { expect, expectRow, runAction } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
 import { team } from "../../../tests/scenarios/team";
-import { membershipTable } from "../../database/schema/membership.schema";
+import { membershipTable } from "#nuxvel/schema";
 
 describe("team/change-role action", () => {
   it("changes the role of a member", async () => {
@@ -794,7 +776,7 @@ describe("team/change-role action", () => {
 // server/actions/team/create-team.action.test.ts
 import { actingAs, expect } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../factories/users.factory";
+import { userFactory } from "#nuxvel/factories";
 
 describe("team/create-team action", () => {
   it("makes the user who creates a team its admin", async () => {
@@ -833,22 +815,12 @@ Replace the generated team router. `list` and `byId` read only the teams of the 
 // server/trpc/routers/team.router.ts
 import { and, asc, desc, eq, getTableColumns, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { addMemberAction } from "../../actions/team/add-member.action";
-import { changeRoleAction } from "../../actions/team/change-role.action";
-import { createTeamAction } from "../../actions/team/create-team.action";
-import { updateTeamAction } from "../../actions/team/update-team.action";
-import { deleteTeamAction } from "../../actions/team/delete-team.action";
-import { userTable } from "../../database/schema/auth.schema";
-import { membershipTable } from "../../database/schema/membership.schema";
-import { teamTable } from "../../database/schema/team.schema";
-import { addMemberInput, changeRoleInput, memberSchema, membershipSchema } from "#shared/schemas/membership";
-import {
-  teamIdInput,
-  teamListInput,
-  createTeamInput,
-  updateTeamInput,
-  teamSchema,
-} from "#shared/schemas/team";
+import { addMemberAction } from "#server/actions/team/add-member.action";
+import { changeRoleAction } from "#server/actions/team/change-role.action";
+import { createTeamAction } from "#server/actions/team/create-team.action";
+import { updateTeamAction } from "#server/actions/team/update-team.action";
+import { deleteTeamAction } from "#server/actions/team/delete-team.action";
+import { userTable, membershipTable, teamTable } from "#nuxvel/schema";
 
 export const teamRouter = {
   list: authedProcedure
@@ -1059,11 +1031,10 @@ No generator writes a page that shows two tables, so create the page by hand:
 <script setup lang="ts">
 definePageMeta({ middleware: "auth" });
 
-const trpc = useTRPC();
 const id = Number(useRoute().params.id);
-const team = useQuery(trpc.team.byId.queryOptions({ id }));
+const team = $api.team.byId.useQuery({ id });
 
-useSeo(() => ({ title: team.data.value?.name ?? "Team" }));
+useSeo(() => ({ title: team.data?.name ?? "Team" }));
 </script>
 
 <template>
@@ -1085,22 +1056,15 @@ When `team.byId` answers `NOT_FOUND` while the server renders the page, nuxvel a
 <script setup lang="ts">
 const props = defineProps<{ teamId: number }>();
 
-const trpc = useTRPC();
-const queryCache = useQueryCache();
-const members = useQuery(trpc.team.members.queryOptions({ id: props.teamId }));
-const { data: abilities } = useQuery(trpc.team.abilities.queryOptions({ id: props.teamId }));
+const members = $api.team.members.useQuery({ id: props.teamId });
+const abilities = $api.team.abilities.useQuery({ id: props.teamId });
 const roles = addMemberInput.shape.role.options;
-const refresh = () => queryCache.invalidateQueries({ key: trpc.team.members.key() });
 
-const { mutate: changeRole, error: roleError } = useMutation({
-  ...trpc.team.changeRole.mutationOptions(),
-  onSettled: refresh,
-});
+const { mutate: changeRole, error: roleError } = $api.team.changeRole.useMutation();
 
-const form = useActionForm(addMemberInput, toasted(trpc.team.addMember.mutationOptions(), "Member added"), {
+const form = useActionForm(addMemberInput, toasted($api.team.addMember.mutationOptions(), "Member added"), {
   defaults: { teamId: props.teamId, email: "", role: "member" },
   failures: { "team.unknown-email": "email" },
-  onSuccess: refresh,
 });
 </script>
 
@@ -1114,7 +1078,7 @@ const form = useActionForm(addMemberInput, toasted(trpc.team.addMember.mutationO
           <li v-for="member in data" :key="member.id" class="flex items-center justify-between gap-4 py-2">
             <span>{{ member.name }} <span class="text-muted">{{ member.email }}</span></span>
             <USelect
-              v-if="abilities?.manage"
+              v-if="abilities.data?.manage"
               :model-value="member.role"
               :items="roles"
               :aria-label="`Role of ${member.email}`"
@@ -1127,7 +1091,7 @@ const form = useActionForm(addMemberInput, toasted(trpc.team.addMember.mutationO
       </template>
     </QueryState>
     <UForm
-      v-if="abilities?.manage"
+      v-if="abilities.data?.manage"
       :ref="form.ref"
       :schema="form.schema"
       :state="form.state"
@@ -1308,7 +1272,7 @@ The request answers the same for an email without an account, and sends no mail.
 // tests/functional/password-reset.test.ts
 import { expect, expectMailSent, expectNoMailSent, guest, signIn } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../server/factories/users.factory";
+import { userFactory } from "#nuxvel/factories";
 
 const post = (path: string, body: object) =>
   guest().fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
@@ -1516,8 +1480,8 @@ A functional test turns two-factor sign-in on through the same endpoints. It nee
 // tests/functional/two-factor.test.ts
 import { expect, expectMailSent, expectRow, guest, signIn, totpCode } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userTable } from "../../server/database/schema/auth.schema";
-import { userFactory } from "../../server/factories/users.factory";
+import { userTable } from "#nuxvel/schema";
+import { userFactory } from "#nuxvel/factories";
 
 const PASSWORD = "correct-horse-battery";
 
@@ -1654,8 +1618,7 @@ The staff of the app needs a page with every team of every customer. That page r
 // server/trpc/routers/admin.router.ts
 import { count, desc, eq, getTableColumns } from "drizzle-orm";
 import { z } from "zod";
-import { membershipTable } from "../../database/schema/membership.schema";
-import { teamTable } from "../../database/schema/team.schema";
+import { membershipTable, teamTable } from "#nuxvel/schema";
 
 export const adminRouter = {
   teams: adminProcedure
@@ -1679,8 +1642,7 @@ The page shows the teams in a table:
 <script setup lang="ts">
 definePageMeta({ middleware: "auth" });
 
-const trpc = useTRPC();
-const teams = useQuery({ ...trpc.admin.teams.queryOptions(), ssrCatchError: true });
+const teams = useQuery({ ...$api.admin.teams.queryOptions(), ssrCatchError: true });
 
 useSeo({ title: "Admin" });
 </script>
@@ -1724,7 +1686,7 @@ A team admin deletes the team, and its invoices go with it. A stolen session mus
 import { actingAs, expect, expectRefused, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
 import { team } from "../../../tests/scenarios/team";
-import { userFactory } from "../../factories/users.factory";
+import { userFactory } from "#nuxvel/factories";
 
 describe("admin router", () => {
   it("lists every team, with its member count, for an admin with a second factor", async () => {
@@ -1768,10 +1730,8 @@ describe("admin router", () => {
 // tests/functional/fresh-sign-in.test.ts
 import { expect, expectNoRow, signIn, travelBy } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { teamTable } from "../../server/database/schema/team.schema";
-import { membershipFactory } from "../../server/factories/membership.factory";
-import { teamFactory } from "../../server/factories/team.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { teamTable } from "#nuxvel/schema";
+import { membershipFactory, teamFactory, userFactory } from "#nuxvel/factories";
 
 const PASSWORD = "correct-horse-battery";
 
@@ -1842,7 +1802,7 @@ A test cannot sign in at GitHub. It can test the two halves of the flow in the a
 // tests/functional/social-login.test.ts
 import { expect, expectRow, fakeFetch, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { accountTable, userTable } from "../../server/database/schema/auth.schema";
+import { accountTable, userTable } from "#nuxvel/schema";
 
 const github = {
   "https://github.com/login/oauth/access_token": { body: { access_token: "gho_test", token_type: "bearer", scope: "user:email" } },
@@ -1932,7 +1892,7 @@ The log keeps no user ID. It stores a subject ID in place of each user, so `nuxv
 // tests/functional/audit.test.ts
 import { actingAs, expect, expectAudited, expectNotAudited, expectRow, runAction } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { membershipTable } from "../../server/database/schema/membership.schema";
+import { membershipTable } from "#nuxvel/schema";
 import { team } from "../scenarios/team";
 
 describe("the audit log", () => {
@@ -1987,7 +1947,7 @@ The 11th call in an hour gets `TOO_MANY_REQUESTS`, and the form of chapter 6 sho
 // tests/functional/rate-limits.test.ts
 import { actingAs, exhaustRateLimit, expect, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../server/factories/users.factory";
+import { userFactory } from "#nuxvel/factories";
 import { team } from "../scenarios/team";
 
 describe("rate limits", () => {
@@ -2075,21 +2035,17 @@ Add a component for the keys to the security page of chapter 8:
 ```vue
 <!-- app/components/ApiKeys.vue -->
 <script setup lang="ts">
-const trpc = useTRPC();
-const queryCache = useQueryCache();
-const keys = useQuery(trpc.apiKeys.list.queryOptions());
+const keys = $api.apiKeys.list.useQuery();
 const newKey = ref<string>();
-const refresh = () => queryCache.invalidateQueries({ key: trpc.apiKeys.key() });
 
-const form = useActionForm(createApiKeyInput, trpc.apiKeys.create.mutationOptions(), {
+const form = useActionForm(createApiKeyInput, $api.apiKeys.create.mutationOptions(), {
   defaults: { name: "" },
   onSuccess: (created) => {
     newKey.value = created.key;
-    return refresh();
   },
 });
 
-const { mutate: revoke } = useMutation({ ...trpc.apiKeys.revoke.mutationOptions(), onSettled: refresh });
+const { mutate: revoke } = $api.apiKeys.revoke.useMutation();
 </script>
 
 <template>
@@ -2326,7 +2282,7 @@ Two more browser tests check the team page as a team admin, and the admin page a
 // tests/e2e/team.test.ts
 import { actingAs, button, cell, expect, fillForm, heading, text, toast } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../server/factories/users.factory";
+import { userFactory } from "#nuxvel/factories";
 import { team } from "../scenarios/team";
 
 describe("the team pages in a browser", () => {

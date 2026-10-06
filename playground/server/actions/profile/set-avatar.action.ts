@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
-import { userTable } from "../../database/schema/auth.schema";
-import { setAvatarInput } from "../../../shared/schemas/profile";
+import { userTable } from "#nuxvel/schema";
 
 export const setAvatarAction = defineAction({
   input: setAvatarInput,

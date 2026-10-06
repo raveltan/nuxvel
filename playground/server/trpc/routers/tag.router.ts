@@ -1,5 +1,4 @@
-import { createTagAction } from "../../actions/tags/create-tag.action";
-import { createTagInput, tagSchema } from "../../../shared/schemas/tag";
+import { createTagAction } from "#server/actions/tags/create-tag.action";
 
 export const tagRouter = {
   create: publicProcedure

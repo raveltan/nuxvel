@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { postsTable } from "../database/schema/posts.schema";
+import { postsTable } from "#nuxvel/schema";
 
 export default defineEventHandler(async (event) => {
   const { times, allowed } = getQuery(event);

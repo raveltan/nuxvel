@@ -1,5 +1,4 @@
 import { setTimeout as sleep } from "node:timers/promises";
-import { countdownInput } from "../../../shared/schemas/countdown";
 
 const STEP_MS = 250;
 

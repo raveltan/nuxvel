@@ -1,7 +1,6 @@
 import { {{drizzleImports}} } from "drizzle-orm";
 import { {{tableCamelName}}Table } from "{{tableSchemaImport}}";
-{{parentImports}}import { update{{tablePascalName}}Input } from "#shared/schemas/{{tableName}}";
-
+{{parentImports}}
 export const {{exportName}} = defineAction({
   input: update{{tablePascalName}}Input,
   handler: async ({ id, ...fields }, ctx) => {

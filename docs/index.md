@@ -138,7 +138,7 @@ export default defineNuxtConfig({
 
 `perf.bundle.maxInitialKb` is the most gzipped JavaScript and CSS, in KB, that the first load of one page can need. A page over it fails the build. See [Building for production: bundle budget](./build.md#bundle-budget).
 
-`api.restPrefix` is the path that REST endpoints start with. `api.openapi` turns on the OpenAPI document, and `api.docs` serves its reference page in production. See [REST and OpenAPI](./openapi.md#configuration).
+`api.restPrefix` is the path that REST endpoints start with. `api.openapi` turns on the OpenAPI document, and `api.docs` serves its reference page in production. See [REST and OpenAPI](./openapi.md#configuration). `api.invalidateFallback: false` stops a mutation from invalidating the queries of its router namespace. See [Frontend: invalidation](./frontend.md#invalidation).
 
 `seo` sets the title template, canonical links, default Open Graph tags, `robots.txt` and `sitemap.xml`. See [SEO](./seo.md).
 

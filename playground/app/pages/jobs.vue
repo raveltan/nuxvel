@@ -2,9 +2,7 @@
 definePageMeta({ middleware: "auth", layout: "app" });
 
 const { events } = useJobChannel("demo.countdown");
-const { mutate: start, isLoading: starting } = useMutation(
-  useTRPC().jobs.startCountdown.mutationOptions(),
-);
+const countdown = $api.jobs.startCountdown.useMutation();
 
 const latest = computed(() => events.value.at(-1));
 const status = computed(() => {
@@ -29,13 +27,13 @@ const statusColor = computed(() =>
       runs it and reports on its job channel. A failing run is retried twice before it fails.
     </p>
     <div class="flex flex-wrap gap-2">
-      <UButton label="Run countdown" :loading="starting" @click="start({ fail: false })" />
+      <UButton label="Run countdown" :loading="countdown.isLoading" @click="countdown.mutate({ fail: false })" />
       <UButton
         color="error"
         variant="outline"
         label="Run failing countdown"
-        :loading="starting"
-        @click="start({ fail: true })"
+        :loading="countdown.isLoading"
+        @click="countdown.mutate({ fail: true })"
       />
     </div>
     <UCard>

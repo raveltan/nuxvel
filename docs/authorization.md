@@ -8,7 +8,7 @@ Policies decide who may do what to a row. Each policy is one file under `server/
 
 ```ts
 // server/policies/post.policy.ts
-import { postTable } from "../database/schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 export const postPolicy = definePolicy(postTable, {
   update: (actor, post) => post.authorId === actor.id,
@@ -49,7 +49,7 @@ At runtime, `can()` returns `false` when no policy or no matching rule exists. E
 ## Ability refs
 
 ```ts
-import { postPolicy } from "../policies/post.policy";
+import { postPolicy } from "#server/policies/post.policy";
 
 const allowed = await can(ctx.actor, postPolicy.update, post);
 await authorize(ctx.actor, postPolicy.update, post);
@@ -93,7 +93,7 @@ await authorize(ctx.actor, "update", postTable, post);
 ```ts
 // server/channels/moderation.channel.ts
 import { z } from "zod";
-import { userTable } from "../database/schema/auth.schema";
+import { userTable } from "#nuxvel/schema";
 
 export const moderationChannel = defineChannel({
   events: { flagged: z.object({ postId: z.number() }) },
@@ -121,8 +121,7 @@ The option is a predicate, so call `can()` in it, not `authorize()`. `can()` nee
 ```ts
 // server/actions/posts/update-post.action.ts
 import { eq } from "drizzle-orm";
-import { postTable } from "../../database/schema/post.schema";
-import { updatePostInput } from "../../../shared/schemas/post";
+import { postTable } from "#nuxvel/schema";
 
 export const updatePostAction = defineAction({
   input: updatePostInput,
@@ -158,8 +157,7 @@ Policies deny a `systemActor(...)` by default. Wrap a rule in `allowSystem()` wh
 ```ts
 // server/policies/post.policy.ts
 import { inArray } from "drizzle-orm";
-import { postEditorsTable } from "../database/schema/post-editors.schema";
-import { postTable } from "../database/schema/post.schema";
+import { postEditorsTable, postTable } from "#nuxvel/schema";
 
 export const postPolicy = definePolicy(postTable, {
   preload: async (actor, rows) => {
@@ -274,9 +272,8 @@ Return the result of `can()` from a query when the page must show or hide a butt
 ```ts
 import { actingAs, expect, expectConstantQueries, expectPolicyChecked } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { postTable } from "../../server/database/schema/post.schema";
-import { postFactory } from "../../server/factories/post.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { postTable } from "#nuxvel/schema";
+import { postFactory, userFactory } from "#nuxvel/factories";
 
 describe("post policy", () => {
   it("refuses to update another user's post", async () => {

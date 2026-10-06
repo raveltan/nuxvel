@@ -34,7 +34,7 @@ const APP_TYPE_IMPORTS: Record<string, string[]> = {
   "use-maintenance": ["MaintenanceStatus"],
   "use-notifications": ["NotificationEntry"],
   "use-presence": ["PresenceRoom", "PresenceRoomOf"],
-  "use-trpc": ["RouterInputs", "RouterOutputs"],
+  "router-types": ["RouterInputs", "RouterOutputs"],
 };
 
 function publicAppTypeImports(runtimeFile: RuntimeFile) {
@@ -106,6 +106,7 @@ export function addAutoImports(options: ResolvedOptions, runtimeFile: RuntimeFil
 
   addImports([
     { name: "isNetworkError", from: runtimeFile("./runtime/app/trpc/is-network-error") },
+    { name: "$api", from: runtimeFile("./runtime/app/trpc/api") },
     { name: "authClient", from: runtimeFile("./runtime/app/auth/client") },
     ...importsFrom(runtimeFile("./runtime/shared/auth/schemas"), ["signInSchema", "signUpSchema", "forgotPasswordSchema", "resetPasswordSchema"]),
   ]);

@@ -1,7 +1,7 @@
 import { Redis } from "ioredis";
 import { afterAll, describe, it } from "vitest";
 import { recordedEffects } from "../src/testing/recorded";
-import { actingAs, expect, expectCached, expectConstantQueries, guest, text, visit } from "@nuxvel/nuxt/testing";
+import { actingAs, expect, expectCacheHit, expectCached, expectConstantQueries, guest, text, visit } from "@nuxvel/nuxt/testing";
 import { postFactory } from "../../../playground/server/factories/posts.factory";
 import { userFactory } from "../../../playground/server/factories/users.factory";
 import { setupPlayground } from "./helpers/playground";
@@ -52,6 +52,20 @@ describe("the server cache", async () => {
 
   it("forgets every key that matches a glob", async () => {
     expect(await scenario("globbed")).toEqual({ first: null, second: null, other: 3 });
+  });
+
+  it("takes a key array: parts joined with colons, objects with sorted keys, forgotten as a prefix", async () => {
+    expect(await scenario("arrays")).toEqual({
+      sortedObjectKeys: "stored",
+      asString: "stored",
+      remembered: "computed",
+      rememberedAsString: "computed",
+      forgotten: [null, null, null, null],
+      kept: [4, 6],
+    });
+
+    await expectCacheHit(["probe", "array", { page: 1, q: "a" }], { times: 2 });
+    expect(await expectCached(["probe", "prefixed"])).toBe(4);
   });
 
   it("serves a second read of a remembered procedure without a query, until an action invalidates it", async () => {
@@ -106,9 +120,9 @@ describe("the server cache", async () => {
   });
 
   it("asserts that the app cached a key and returns its value", async () => {
-    const key = "posts:list:[null,null,null]";
+    const key = ["post", "list", null];
 
-    await expect(expectCached(key)).rejects.toThrow(key);
+    await expect(expectCached(key)).rejects.toThrow("post:list");
 
     await guest().trpc.post.list();
 

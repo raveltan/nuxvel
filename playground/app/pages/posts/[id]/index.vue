@@ -1,10 +1,10 @@
 <script setup lang="ts">
 const route = useRoute();
-const post = useQuery(useTRPC().post.byId.queryOptions({ id: Number(route.params.id) }));
+const post = $api.post.byId.useQuery({ id: Number(route.params.id) });
 
 useSeo(() => ({
-  title: post.data.value?.title ?? "Post",
-  description: post.data.value?.body.slice(0, 160),
+  title: post.data?.title ?? "Post",
+  description: post.data?.body.slice(0, 160),
   type: "article",
 }));
 </script>

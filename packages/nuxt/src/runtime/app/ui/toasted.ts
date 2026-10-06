@@ -13,15 +13,14 @@ import { FLASH_COOKIE } from "../../shared/flash/flash-message";
  * The toast replaces a {@link flash} message of the mutation, so the
  * next page does not show that message again.
  *
- * @param mutationOptions - Usually `useTRPC().<path>.mutationOptions()`.
+ * @param mutationOptions - Usually `$api.<path>.mutationOptions()`.
  * @param title - The toast title, or a function of the mutation's result.
  *
  * @example
  * ```ts
- * const trpc = useTRPC();
  * const form = useActionForm(
  *   updatePostInput,
- *   toasted(trpc.post.update.mutationOptions(), "Post saved"),
+ *   toasted($api.post.update.mutationOptions(), "Post saved"),
  *   { defaults: { id: post.id, title: post.title, body: post.body } },
  * );
  * ```

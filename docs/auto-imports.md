@@ -6,7 +6,7 @@ Every name on this page is auto-imported in `server/`. You use it without an imp
 
 No other name from nuxvel is auto-imported. The helpers that nuxvel uses internally, such as the tRPC instance, the registries and the test recorders, stay out of your global scope. A name you did not write cannot resolve by accident.
 
-The exports of `shared/schemas/` are also auto-imported, in `server/` and in the app. The pagination names are also auto-imported in the app. So are `SanitizedHtml` and `richText`, which are also auto-imported in `shared/`. For app-side composables, such as `useTRPC()`, `useUser()` and `useFlag()`, see [Frontend](./frontend.md). For `useMaintenance()` and `isMaintenanceError()`, see [Maintenance mode](./maintenance.md#in-the-app). For `isNetworkError()`, see [When the server cannot be reached](./api.md#when-the-server-cannot-be-reached). Test fixtures are not auto-imported. Import them from `@nuxvel/nuxt/testing`, as [Testing](./testing.md) shows.
+The exports of `shared/schemas/` are also auto-imported, in `server/` and in the app. The pagination names are also auto-imported in the app. So are `SanitizedHtml` and `richText`, which are also auto-imported in `shared/`. For app-side names, such as `$api`, `useUser()` and `useFlag()`, see [Frontend](./frontend.md) and [Calling from the client](./api.md#calling-from-the-client). For `useMaintenance()` and `isMaintenanceError()`, see [Maintenance mode](./maintenance.md#in-the-app). For `isNetworkError()`, see [When the server cannot be reached](./api.md#when-the-server-cannot-be-reached). Test fixtures are not auto-imported. Import them from `@nuxvel/nuxt/testing`, as [Testing](./testing.md) shows.
 
 ## Imports
 
@@ -27,7 +27,7 @@ import { postSlugLength } from "#shared/post";
 
 `#server` is not allowed in `app/`: server code must not reach the browser bundle. Use `#shared/*` for code that both sides share.
 
-The ESLint rule `nuxvel/no-parent-imports` of `@nuxvel/nuxt/eslint` reports an import that climbs with `../` out of its kind folder (`server/actions/`, `server/database/schema/`, `server/domains/<domain>/<kind>/`, `app/components/`, `shared/schemas/`, `tests/`) into another one. `eslint --fix` rewrites it to the alias: a table to `#nuxvel/schema` and a factory to `#nuxvel/factories` (named imports only), other server code to `#server/*`, `shared/` to `#shared/*`, `app/` to `~/*` and a module to `#layers/<name>/*`. A relative import inside one kind folder, such as `../tags/create-tag.action` in `server/actions/posts/`, stays legal. The `allow` option lists the targets, relative to the app root, that a relative import may still reach:
+The ESLint rule `nuxvel/no-parent-imports` of `@nuxvel/nuxt/eslint` reports an import that climbs with `../` out of its kind folder (`server/actions/`, `server/database/schema/`, `server/domains/<domain>/<kind>/`, `app/components/`, `shared/schemas/`, `tests/`) into another one. `eslint --fix` rewrites it to the alias: a table to `#nuxvel/schema` and a factory to `#nuxvel/factories` (named imports only), other server code to `#server/*`, `shared/` to `#shared/*`, `app/` to `~/*` and a module to `#layers/<name>/*`. A relative import inside one kind folder, such as `../tags/create-tag.action` in `server/actions/posts/`, stays legal, and so does one from a table file to another table file or from a factory file to another factory file, whatever their folders (drizzle-kit loads them on their own). In `app/` and `server/`, the rule also reports an import of a file in `shared/schemas/`, whose exports are auto-imported there, and `--fix` removes it. It leaves such an import in tests, stories, tables and factories, which run without auto-imports. The `allow` option lists the targets, relative to the app root, that a relative import may still reach:
 
 ```ts
 // eslint.config.ts
@@ -41,6 +41,8 @@ export default [
   },
 ];
 ```
+
+`nuxvel upgrade --only imports` makes the same rewrite in every file of the app, see [`nuxvel upgrade`](./cli.md#nuxvel-upgrade).
 
 ## Naming scheme
 
@@ -210,6 +212,7 @@ Guide: [Actions](./actions.md).
 | `$actions` | namespace | Holds each action definition under its path: `$actions.posts.createPost`. Server only. |
 | `Action` | type | An action from `defineAction`. |
 | `ActionContext` | type | The second argument of an action: who performs it. |
+| `InvalidationTag` | type | What an action's `invalidates` forgets: a string, a key array or a glob. |
 | `ActionErrorCode` | type | The union of the error codes an action declares. |
 | `Actor` | type | Who performs an action: a user, the system or another caller type. |
 
@@ -526,9 +529,10 @@ Guide: [Cache](./cache.md).
 | `remember` | function | Returns a cached value, or computes, stores and returns it. |
 | `cacheGet` | function | Reads a cached value. |
 | `cachePut` | function | Stores a value in the cache. |
-| `cacheForget` | function | Removes one cached value. |
+| `cacheForget` | function | Removes a cached value, every value under a key array, or every value that matches a glob. |
 | `cacheFlush` | function | Removes every cached value with a tag. |
 | `withLock` | function | Runs a function while it holds a Redis lock. Throws `ConflictError` when a different caller holds the lock. |
+| `CacheKey` | type | A cache key: a string, or an array of parts joined with `:`. |
 | `CacheTtl` | type | How long a cached value lives. |
 | `CacheOptions` | type | The options of `remember()` and `cachePut()`. |
 

@@ -1,5 +1,5 @@
-import { healthChecksTable } from "../database/schema/health-check.schema";
-import { probeQueued } from "../events/_probe/queued";
+import { healthChecksTable } from "#nuxvel/schema";
+import { probeQueued } from "#server/events/_probe/queued";
 
 export default defineListener({
   event: probeQueued,

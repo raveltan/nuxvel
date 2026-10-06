@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { faker } from "@faker-js/faker";
 import { hashPassword } from "better-auth/crypto";
 import { defineFactory, encryptAuthSecret, sequence } from "@nuxvel/nuxt/factories";
-import { accountTable, twoFactorTable, userTable } from "../database/schema/auth.schema";
+import { accountTable, twoFactorTable, userTable } from "#nuxvel/schema";
 
 const baseUserFactory = defineFactory(userTable, {
   id: () => randomUUID(),

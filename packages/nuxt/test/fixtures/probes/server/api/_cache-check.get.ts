@@ -59,6 +59,34 @@ async function globbed() {
   };
 }
 
+async function arrays() {
+  await cachePut(["probe", "array", { page: 1, q: "a" }], "stored", 60);
+  const remembered = await remember(["probe", "array", 2], 60, () => "computed");
+
+  await cachePut(["probe", "prefix"], 1, 60);
+  await cachePut(["probe", "prefix", { page: 1 }], 2, 60);
+  await cachePut("probe:prefix:list:deep", 3, 60);
+  await cachePut("probe:prefixed", 4, 60);
+  await cachePut("probe:st*r:1", 5, 60);
+  await cachePut("probe:star:1", 6, 60);
+  await cacheForget(["probe", "prefix"]);
+  await cacheForget(["probe", "st*r"]);
+
+  return {
+    sortedObjectKeys: (await cacheGet(["probe", "array", { q: "a", page: 1 }])) ?? null,
+    asString: (await cacheGet('probe:array:{"page":1,"q":"a"}')) ?? null,
+    remembered,
+    rememberedAsString: (await cacheGet("probe:array:2")) ?? null,
+    forgotten: [
+      (await cacheGet("probe:prefix")) ?? null,
+      (await cacheGet(["probe", "prefix", { page: 1 }])) ?? null,
+      (await cacheGet("probe:prefix:list:deep")) ?? null,
+      (await cacheGet("probe:st*r:1")) ?? null,
+    ],
+    kept: [(await cacheGet("probe:prefixed")) ?? null, (await cacheGet("probe:star:1")) ?? null],
+  };
+}
+
 async function expiring() {
   await cachePut("probe:expiring", "soon", { minutes: 1 });
 
@@ -95,6 +123,7 @@ export default defineEventHandler(async (event) => {
   if (scenario === "transactional") return transactional();
   if (scenario === "expiring") return expiring();
   if (scenario === "globbed") return globbed();
+  if (scenario === "arrays") return arrays();
   if (scenario === "locked") return locked();
 
   return { value: (await cacheGet(String(key))) ?? null };

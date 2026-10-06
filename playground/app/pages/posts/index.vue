@@ -1,11 +1,10 @@
 <script setup lang="ts">
 definePageMeta({ middleware: "auth", layout: "app" });
 
-const trpc = useTRPC();
 const route = useRoute();
 const input = computed(() => paginationSchema.catch({}).parse(route.query));
 
-const posts = useLiveQuery(() => trpc.post.list.queryOptions(input.value), {
+const posts = useLiveQuery(() => $api.post.list.queryOptions(input.value), {
   channel: "posts",
   on: {
     created: (list, payload) => {
@@ -19,8 +18,8 @@ const posts = useLiveQuery(() => trpc.post.list.queryOptions(input.value), {
 });
 
 const { mutate: deletePost, error: deleteError } = useMutation(
-  optimistic(trpc.post.delete.mutationOptions(), {
-    key: () => trpc.post.list.key(input.value),
+  optimistic($api.post.delete.mutationOptions(), {
+    key: () => $api.post.list.key(input.value),
     apply: (list, { id }) => ({ ...list, rows: list.rows.filter((row) => row.id !== id) }),
   }),
 );

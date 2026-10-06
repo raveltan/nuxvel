@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { userTable } from "../../database/schema/auth.schema";
+import { userTable } from "#nuxvel/schema";
 
 export default {
   insertUser: publicProcedure

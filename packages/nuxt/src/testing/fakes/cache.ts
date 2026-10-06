@@ -1,8 +1,10 @@
+import { type CacheKey, cacheKeyString } from "../../runtime/shared/cache/cache-key";
 import type { ObservedCacheLookup } from "../../runtime/server/observe/channels";
 import { recordedEffects } from "../recorded";
 import { expectRecorded } from "./records";
 
-async function expectLookup(helper: string, hit: boolean, key: string, times: number | undefined) {
+async function expectLookup(helper: string, hit: boolean, given: CacheKey, times: number | undefined) {
+  const key = cacheKeyString(given);
   const { cacheLookups } = await recordedEffects();
 
   return expectRecorded(
@@ -17,7 +19,7 @@ async function expectLookup(helper: string, hit: boolean, key: string, times: nu
 /**
  * Asserts that the app read the cache key and found it during the test, and returns the latest such lookup.
  *
- * Sees every read of {@link remember} and {@link cacheGet}. `key` is the exact key that the code gave, with no namespace prefix. Cleared after every test by `@nuxvel/nuxt/testing/setup`. Use {@link expectCacheMiss} for a read that found nothing.
+ * Sees every read of {@link remember} and {@link cacheGet}. `key` is the exact key that the code gave, a string or an array of parts, with no namespace prefix. Cleared after every test by `@nuxvel/nuxt/testing/setup`. Use {@link expectCacheMiss} for a read that found nothing.
  *
  * @param options.times How many hits there must be, 1 or more.
  *
@@ -28,7 +30,7 @@ async function expectLookup(helper: string, hit: boolean, key: string, times: nu
  * await expectCacheHit("posts:list:[null,null,null]", { times: 1 });
  * ```
  */
-export async function expectCacheHit(key: string, options: { times?: number } = {}): Promise<ObservedCacheLookup> {
+export async function expectCacheHit(key: CacheKey, options: { times?: number } = {}): Promise<ObservedCacheLookup> {
   return expectLookup("expectCacheHit", true, key, options.times);
 }
 
@@ -45,6 +47,6 @@ export async function expectCacheHit(key: string, options: { times?: number } = 
  * await expectCacheMiss("posts:list:[null,null,null]", { times: 1 });
  * ```
  */
-export async function expectCacheMiss(key: string, options: { times?: number } = {}): Promise<ObservedCacheLookup> {
+export async function expectCacheMiss(key: CacheKey, options: { times?: number } = {}): Promise<ObservedCacheLookup> {
   return expectLookup("expectCacheMiss", false, key, options.times);
 }

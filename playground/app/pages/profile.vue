@@ -1,25 +1,17 @@
 <script setup lang="ts">
 definePageMeta({ middleware: "auth", layout: "app" });
 
-const trpc = useTRPC();
-const queryCache = useQueryCache();
-const me = useQuery(trpc.profile.me.queryOptions());
+const me = $api.profile.me.useQuery();
 
-const avatarForm = useActionForm(setAvatarInput, trpc.profile.setAvatar.mutationOptions(), {
+const avatarForm = useActionForm(setAvatarInput, $api.profile.setAvatar.mutationOptions(), {
   defaults: { key: "" },
   onSuccess: () => {
     avatarForm.state.key = "";
-    return queryCache.invalidateQueries({ key: trpc.profile.me.key() });
   },
 });
 
-const { mutate: sendTestMail, data: sentMail, isLoading: sending } = useMutation(
-  trpc.profile.sendTestMail.mutationOptions(),
-);
-
-const { mutate: sendTestNotification, isLoading: notifying } = useMutation(
-  trpc.profile.sendTestNotification.mutationOptions(),
-);
+const testMail = $api.profile.sendTestMail.useMutation();
+const testNotification = $api.profile.sendTestNotification.useMutation();
 </script>
 
 <template>
@@ -75,11 +67,11 @@ const { mutate: sendTestNotification, isLoading: notifying } = useMutation(
                 variant="outline"
                 icon="i-lucide-mail"
                 label="Send me a test mail"
-                :loading="sending"
-                @click="sendTestMail()"
+                :loading="testMail.isLoading"
+                @click="testMail.mutate()"
               />
               <p role="status" class="text-sm text-muted">
-                <template v-if="sentMail">Welcome mail queued to {{ sentMail.to }}.</template>
+                <template v-if="testMail.data">Welcome mail queued to {{ testMail.data.to }}.</template>
               </p>
             </div>
           </UCard>
@@ -93,8 +85,8 @@ const { mutate: sendTestNotification, isLoading: notifying } = useMutation(
                 variant="outline"
                 icon="i-lucide-bell"
                 label="Send me a test notification"
-                :loading="notifying"
-                @click="sendTestNotification()"
+                :loading="testNotification.isLoading"
+                @click="testNotification.mutate()"
               />
               <PushToggle />
             </div>

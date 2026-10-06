@@ -27,3 +27,13 @@ const reservedThen = t.router({ then: t.procedure.query(() => 1) });
 
 // @ts-expect-error a then procedure would make the client a thenable
 createTrpcOptionsProxy<typeof reservedThen, typeof client>(client);
+
+const reservedUseQuery = t.router({ post: t.router({ useQuery: t.procedure.query(() => []) }) });
+
+// @ts-expect-error post.useQuery shadows the composable
+createTrpcOptionsProxy<typeof reservedUseQuery, typeof client>(client);
+
+const reservedUseMutation = t.router({ post: t.router({ useMutation: t.procedure.mutation(() => 1) }) });
+
+// @ts-expect-error post.useMutation shadows the composable
+createTrpcOptionsProxy<typeof reservedUseMutation, typeof client>(client);

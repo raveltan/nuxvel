@@ -7,7 +7,7 @@ function typed<T>(value: IsAny<T> extends true ? never : T) {
   return value;
 }
 
-const trpc = useTRPC();
+const { $trpc: trpc } = useNuxtApp();
 
 const clientIsTyped: IsAny<typeof trpc> extends true ? never : true = true;
 const pingReturnsString: Awaited<
@@ -161,6 +161,7 @@ function signInWithUnknownProvider() {
 const { data: ping } = useQuery(trpc.health.ping.queryOptions());
 
 const postList = useQuery(trpc.post.list.queryOptions());
+const reactivePostList = reactive(useQuery(trpc.post.list.queryOptions()));
 function titlesOf<T extends { title: string }[]>(
   posts: IsAny<T> extends true ? never : T,
 ) {
@@ -202,6 +203,12 @@ const feedIsTyped: IsAny<PostFeed> extends true
       <template #default="{ data }">{{ titlesOf(data.rows) }}</template>
     </QueryState>
     <DataTable :query="postList" :columns="[{ accessorKey: 'title', header: 'Title' }]">
+      <template #title-cell="{ row }">{{ titleOf(row.original) }}</template>
+    </DataTable>
+    <QueryState :query="reactivePostList">
+      <template #default="{ data }">{{ titlesOf(data.rows) }}</template>
+    </QueryState>
+    <DataTable :query="reactivePostList" :columns="[{ accessorKey: 'title', header: 'Title' }]">
       <template #title-cell="{ row }">{{ titleOf(row.original) }}</template>
     </DataTable>
   </div>

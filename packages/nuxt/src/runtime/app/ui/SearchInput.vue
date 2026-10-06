@@ -17,7 +17,7 @@ import { UButton, UInput } from "#components";
  * @example
  * ```ts
  * const q = ref("");
- * const posts = useQuery(() => useTRPC().post.list.queryOptions({ q: q.value }));
+ * const posts = $api.post.list.useQuery(() => ({ q: q.value }));
  * ```
  * ```vue
  * <SearchInput v-model="q" aria-label="Search posts" placeholder="Search posts" />

@@ -816,7 +816,7 @@ export default defineDeploy({
 
   it("test:arch flags a listener that emits its own event, and passes one that emits another", async () => {
     const fixtureCwd = scratchDir("arch-emit-loop");
-    const imports = 'import { postPublished } from "../../events/post/published";\nimport { postShared } from "../../events/post/shared";\n\n';
+    const imports = 'import { postPublished } from "#server/events/post/published";\nimport { postShared } from "#server/events/post/shared";\n\n';
     const listeners = {
       "republish.ts": `${imports}export default defineListener({ event: postPublished, handler: async (payload) => { await emit(postPublished, payload); } });\n`,
       "republish-by-name.ts": `${imports}export default defineListener({ event: postPublished, handler: async (payload) => { await emit("post.published", payload); } });\n`,
@@ -847,7 +847,7 @@ export default defineDeploy({
     const routes = {
       "api/posts.post.ts": insert,
       "routes/publish.post.ts":
-        'import { publishPost } from "../actions/posts/publish-post";\n\nexport default defineEventHandler(() => publishPost({ id: 1 }));\n',
+        'import { publishPost } from "#server/actions/posts/publish-post";\n\nexport default defineEventHandler(() => publishPost({ id: 1 }));\n',
       "api/posts.get.ts": "export default defineEventHandler(() => useDb().select().from(posts));\n",
       "api/_probe.get.ts": insert,
       "api/webhooks/stripe.post.ts": insert,
@@ -886,7 +886,7 @@ export default defineDeploy({
     writeFileSync(join(fixtureCwd, "server", "database", "schema", "auth.ts"), table("session", "session"));
     writeFileSync(
       join(fixtureCwd, "server", "privacy", "likes.ts"),
-      'import { likes } from "../database/schema/likes";\n\nexport default defineUserData(likes, likes.userId);\n',
+      'import { likes } from "#nuxvel/schema";\n\nexport default defineUserData(likes, likes.userId);\n',
     );
 
     const { stdout, stderr, exitCode } = await runCliAt(fixtureCwd, "test:arch");
@@ -915,7 +915,7 @@ export default defineDeploy({
     writeFileSync(join(domain, "schema", "refunds.schema.ts"), table("refunds"));
     writeFileSync(
       join(fixtureCwd, "server", "privacy", "refunds.user-data.ts"),
-      'import { refundsTable } from "../domains/order/schema/refunds.schema";\n\nexport default defineUserData(refundsTable, refundsTable.userId);\n',
+      'import { refundsTable } from "#nuxvel/schema";\n\nexport default defineUserData(refundsTable, refundsTable.userId);\n',
     );
 
     const { stdout, stderr, exitCode } = await runCliAt(fixtureCwd, "test:arch");
@@ -1125,10 +1125,42 @@ export default defineDeploy({
     expect(exitCode).toBe(1);
     expect(stdout).toBe("");
     expect(violationLines(stderr).sort()).toEqual([
-      "✖ 3 architecture violations",
+      "✖ 4 architecture violations",
       "✖ layers/shop/app/pages/cart.vue: layers/shop/ may import from layers/billing/ only under layers/billing/shared/",
+      "✖ layers/shop/server/utils/checkout.ts: ../../../billing/server/utils/total leaves layers/shop/server/utils/ for layers/billing/server/utils/: import it from #layers/billing/server/utils/total",
       "✖ layers/shop/server/utils/checkout.ts: layers/shop/ may import from layers/billing/ only under layers/billing/shared/",
       "✖ layers/shop/server/utils/refund.ts: layers/shop/ may import from layers/billing/ only under layers/billing/shared/",
+    ]);
+  }, 60000);
+
+  it("test:arch flags a ../ import into another kind folder and an import of shared/schemas/ in server code, and passes an alias or a sibling", async () => {
+    const fixtureCwd = scratchDir("arch-parent-imports");
+    const files = {
+      "server/jobs/report.job.ts": 'import { userTable } from "../database/schema/auth.schema";\n\nexport const report = userTable;\n',
+      "server/utils/report.ts": 'import { createPostInput } from "#shared/schemas/post";\nimport { userTable } from "#nuxvel/schema";\nimport { slug } from "./slug";\n\nexport const report = [createPostInput, userTable, slug];\n',
+      "app/components/ReportCard.vue":
+        '<script setup lang="ts">\nimport { slug } from "../../server/utils/slug";\n</script>\n\n<template>\n  <p>{{ slug }}</p>\n</template>\n',
+      "shared/utils/report.ts": 'import { slug } from "./format";\n\nexport const reportSlug = slug;\n',
+      "tests/functional/report.ts": 'import ReportCard from "../../app/components/ReportCard.vue";\n\nexport const card = ReportCard;\n',
+    };
+
+    buildNuxtFixture(fixtureCwd);
+
+    for (const [file, content] of Object.entries(files)) {
+      mkdirSync(dirname(join(fixtureCwd, file)), { recursive: true });
+      writeFileSync(join(fixtureCwd, file), content);
+    }
+
+    const { stdout, stderr, exitCode } = await runCliAt(fixtureCwd, "test:arch");
+
+    expect(exitCode).toBe(1);
+    expect(stdout).toBe("");
+    expect(violationLines(stderr).sort()).toEqual([
+      "✖ 4 architecture violations",
+      "✖ app/components/ReportCard.vue: ../../server/utils/slug leaves app/components/ for server/utils/: app/ does not import server code",
+      "✖ server/jobs/report.job.ts: ../database/schema/auth.schema leaves server/jobs/ for server/database/schema/: import it from #nuxvel/schema",
+      "✖ server/utils/report.ts: #shared/schemas/post is in shared/schemas/, whose exports server/ auto-imports: remove the import",
+      "✖ tests/functional/report.ts: ../../app/components/ReportCard.vue leaves tests/ for app/components/: no alias reaches it from here",
     ]);
   }, 60000);
 
@@ -1137,7 +1169,7 @@ export default defineDeploy({
     const files = {
       "server/utils/history.ts": 'import { auditLogTable } from "#nuxvel/schema";\n\nexport const history = () => useDb().select().from(auditLogTable);\n',
       "server/api/history.get.ts":
-        'import { auditSubjectsTable } from "../database/schema/audit-log.schema";\n\nexport default defineEventHandler(() => useDb().select().from(auditSubjectsTable));\n',
+        'import { auditSubjectsTable } from "#nuxvel/schema";\n\nexport default defineEventHandler(() => useDb().select().from(auditSubjectsTable));\n',
       "server/trpc/routers/history.router.ts": 'export const subjects = schemaTable("audit_subjects");\n',
       "server/utils/raw.ts": "export const raw = () => useDb().execute(sql`select * from audit_context`);\n",
       "layers/shop/server/utils/history.ts": 'import { auditContextTable } from "#nuxvel/schema";\n\nexport const context = auditContextTable;\n',

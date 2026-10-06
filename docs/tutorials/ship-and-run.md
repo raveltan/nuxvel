@@ -67,8 +67,7 @@ The files of a domain import each other with relative paths:
 
 ```ts
 // server/domains/link/actions/create-link.action.ts
-import { linkTable } from "../schema/link.schema";
-import { createLinkInput } from "#shared/schemas/link";
+import { linkTable } from "#nuxvel/schema";
 
 export const createLinkAction = defineAction({
   input: createLinkInput,
@@ -145,13 +144,13 @@ The page of the module goes in `layers/reports/app/pages/`:
 <script setup lang="ts">
 definePageMeta({ middleware: "auth" });
 
-const { data } = useQuery(useTRPC().report.summary.queryOptions());
+const summary = $api.report.summary.useQuery();
 </script>
 
 <template>
   <UContainer class="py-8">
     <h1 class="text-2xl font-semibold">Reading report</h1>
-    <p v-if="data">You saved {{ data.saved }} links and read {{ data.read }} of them.</p>
+    <p v-if="summary.data">You saved {{ summary.data.saved }} links and read {{ summary.data.read }} of them.</p>
   </UContainer>
 </template>
 ```
@@ -162,8 +161,7 @@ Keep each test next to the file that it tests. Vitest finds the tests in `layers
 // layers/reports/server/domains/report/routers/report.router.test.ts
 import { actingAs, expect } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../../../../../server/factories/users.factory";
-import { linkFactory } from "../../../../../../server/domains/link/factories/link.factory";
+import { userFactory, linkFactory } from "#nuxvel/factories";
 
 describe("report router", () => {
   it("counts the saved and the read links of the user", async () => {
@@ -204,8 +202,7 @@ Replace its contents:
 // tests/e2e/reports.test.ts
 import { actingAs, expect, heading, text } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { linkFactory } from "../../server/domains/link/factories/link.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { linkFactory, userFactory } from "#nuxvel/factories";
 
 describe("the /reports page in a browser", () => {
   it("shows how many links the user saved and read", async () => {
@@ -240,7 +237,7 @@ The command exits `1`. A link belongs to a user, so `nuxvel user:export` and `nu
 
 ```ts
 // server/privacy/link.user-data.ts
-import { linkTable } from "../domains/link/schema/link.schema";
+import { linkTable } from "#nuxvel/schema";
 
 export const linkUserData = defineUserData(linkTable, linkTable.ownerId);
 ```
@@ -295,7 +292,7 @@ A write in a router has no actor, no audit and no test of its own. Move it into 
 // server/domains/link/actions/mark-all-read.action.ts
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { linkTable } from "../schema/link.schema";
+import { linkTable } from "#nuxvel/schema";
 
 export const markAllReadAction = defineAction({
   input: z.object({}),
@@ -311,7 +308,7 @@ export const markAllReadAction = defineAction({
 });
 ```
 
-The router calls the action. Import `z` from `zod` and `markAllReadAction` from `../actions/mark-all-read.action` at the top of the file:
+The router calls the action. Import `z` from `zod` and `markAllReadAction` from `#server/domains/link/actions/mark-all-read.action` at the top of the file:
 
 ```ts
 // server/domains/link/routers/link.router.ts, in linkRouter
@@ -326,9 +323,8 @@ Replace the generated test with one that checks the rows:
 // server/domains/link/actions/mark-all-read.action.test.ts
 import { expect, expectRow, runAction } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../../factories/users.factory";
-import { linkFactory } from "../factories/link.factory";
-import { linkTable } from "../schema/link.schema";
+import { userFactory, linkFactory } from "#nuxvel/factories";
+import { linkTable } from "#nuxvel/schema";
 
 describe("link/mark-all-read action", () => {
   it("marks only the links of the actor as read", async () => {
@@ -835,7 +831,7 @@ Remove `read` from `createLinkInput` and from the `filters` of `linkListColumns`
 // server/domains/link/actions/mark-all-read.action.ts
 import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
-import { linkTable } from "../schema/link.schema";
+import { linkTable } from "#nuxvel/schema";
 
 export const markAllReadAction = defineAction({
   input: z.object({}),
