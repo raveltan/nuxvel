@@ -1,17 +1,16 @@
 <script setup lang="ts">
 definePageMeta({ middleware: "auth" });
 
-const trpc = useTRPC();
 const queryCache = useQueryCache();
 {{referenceQueries}}
-const form = useActionForm(create{{tablePascalName}}Input, trpc.{{tableCamelName}}.create.mutationOptions(), {
+const form = useActionForm(create{{tablePascalName}}Input, $api.{{tableCamelName}}.create.mutationOptions(), {
   defaults: {{createDefaults}},
   onSuccess: async (created) => {
     queryCache.setQueriesData<RouterOutputs["{{tableCamelName}}"]["list"] | undefined>(
-      { key: trpc.{{tableCamelName}}.list.key() },
+      { key: $api.{{tableCamelName}}.list.key() },
       (list) => list && { ...list, rows: [created, ...list.rows], total: list.total + 1 },
     );
-    queryCache.invalidateQueries({ key: trpc.{{tableCamelName}}.key() });
+    queryCache.invalidateQueries({ key: $api.{{tableCamelName}}.key() });
     await navigateTo({ name: "{{tableName}}" });
   },
 });

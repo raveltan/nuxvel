@@ -1,16 +1,15 @@
 <script setup lang="ts">
 definePageMeta({ middleware: "auth" });
 
-const trpc = useTRPC();
 const route = useRoute();
 const router = useRouter();
 const input = computed(() => listQueryParams({{tableCamelName}}ListInput.catch({ sort: [], filters: {} }).parse(route.query)));
-const rows = useQuery(() => trpc.{{tableCamelName}}.list.queryOptions(input.value));
+const rows = $api.{{tableCamelName}}.list.useQuery(() => input.value);
 const confirm = useConfirm();
 
 const { mutate: remove, error: removeError } = useMutation(
-  optimistic(trpc.{{tableCamelName}}.delete.mutationOptions(), {
-    key: () => trpc.{{tableCamelName}}.list.key(input.value),
+  optimistic($api.{{tableCamelName}}.delete.mutationOptions(), {
+    key: () => $api.{{tableCamelName}}.list.key(input.value),
     apply: (list, { id }) => ({ ...list, rows: list.rows.filter((row) => row.id !== id), total: list.total - 1 }),
   }),
 );
@@ -28,10 +27,9 @@ const editId = computed(() => {
   const id = Number(route.query.edit);
   return route.query.edit !== undefined && Number.isInteger(id) && id > 0 ? id : undefined;
 });
-const editing = useQuery(() => ({
-  ...trpc.{{tableCamelName}}.byId.queryOptions({ id: editId.value ?? 0 }),
-  enabled: import.meta.client && editId.value !== undefined,
-}));
+const editing = $api.{{tableCamelName}}.byId.useQuery(() => ({ id: editId.value ?? 0 }), {
+  enabled: () => import.meta.client && editId.value !== undefined,
+});
 const openError = ref<string>();
 
 function closeEdit() {
@@ -40,7 +38,7 @@ function closeEdit() {
 
 onMounted(() =>
   watch(
-    [() => route.query.edit, () => editing.error.value],
+    [() => route.query.edit, () => editing.error],
     ([edit, error]) => {
       if (edit === undefined || (editId.value !== undefined && !error)) return;
 

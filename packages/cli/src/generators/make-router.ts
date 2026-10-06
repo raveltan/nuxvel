@@ -249,8 +249,8 @@ function uiFiles(name: string, paths: AppPaths, options: CrudOptions, values: Re
       ...fields.map((field) => `${field.key}: ${fieldDefault(field)}`),
       ...columns.map((column) => `${toCamelCase(column)}: ""`),
     ]),
-    referenceQueries: [...new Map(fields.flatMap(({ reference }) => (reference?.list ? [[reference.list.rows, reference.list]] : []))).values()]
-      .map(({ rows, trpcPath }) => `const { data: ${rows} } = useQuery(() => trpc.${trpcPath}.list.queryOptions({ perPage: 100 }));\n`)
+    referenceQueries: [...new Map(fields.flatMap(({ reference }) => (reference?.list ? [[reference.list.query, reference.list]] : []))).values()]
+      .map(({ query, trpcPath }) => `const ${query} = $api.${trpcPath}.list.useQuery({ perPage: 100 });\n`)
       .join(""),
     updateDefaults: objectLiteral(["id: props.row.id", ...shown.map((column) => `${toCamelCase(column)}: props.row.${toCamelCase(column)}`)]),
   };

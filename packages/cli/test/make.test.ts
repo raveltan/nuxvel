@@ -1012,10 +1012,11 @@ export default defineDeploy({
 
     const pagesDir = join(fixtureCwd, "pages", "widget-item");
     const list = readFileSync(join(pagesDir, "index.vue"), "utf-8");
-    expect(list.startsWith('<script setup lang="ts">\ndefinePageMeta({ middleware: "auth" });\n\nconst trpc = useTRPC();\n')).toBe(true);
-    expect(list).toContain("trpc.widgetItem.list.queryOptions(input.value)");
+    expect(list.startsWith('<script setup lang="ts">\ndefinePageMeta({ middleware: "auth" });\n\nconst route = useRoute();\n')).toBe(true);
+    expect(list).toContain("const rows = $api.widgetItem.list.useQuery(() => input.value);");
+    expect(list).toContain("const editing = $api.widgetItem.byId.useQuery(() => ({ id: editId.value ?? 0 }), {");
     expect(list).toContain(
-      "  optimistic(trpc.widgetItem.delete.mutationOptions(), {\n    key: () => trpc.widgetItem.list.key(input.value),\n" +
+      "  optimistic($api.widgetItem.delete.mutationOptions(), {\n    key: () => $api.widgetItem.list.key(input.value),\n" +
         "    apply: (list, { id }) => ({ ...list, rows: list.rows.filter((row) => row.id !== id), total: list.total - 1 }),\n",
     );
     expect(list).toContain(':aria-label="`Delete widget item ${row.original.id}`"\n            @click="confirmDelete(row.original.id)"');
@@ -1081,13 +1082,13 @@ export default defineDeploy({
 
     expect(exitCode, stderr).toBe(0);
     const newPage = readFileSync(join(fixtureCwd, "pages", "task", "new.vue"), "utf-8");
-    const projectRows = "const { data: projectRows } = useQuery(() => trpc.project.list.queryOptions({ perPage: 100 }));\n";
-    expect(newPage).toContain(projectRows);
+    const projectList = "const projectList = $api.project.list.useQuery({ perPage: 100 });\n";
+    expect(newPage).toContain(projectList);
     expect(newPage).toContain('projectId: undefined, reviewerId: null');
-    expect(newPage).toContain('<USelect v-model="form.state.projectId" :items="projectRows?.rows" value-key="id" label-key="name" class="w-full" />');
+    expect(newPage).toContain('<USelect v-model="form.state.projectId" :items="projectList.data?.rows" value-key="id" label-key="name" class="w-full" />');
     expect(newPage).toContain('<UInput v-model.nullable="form.state.reviewerId" class="w-full" />');
     expect(newPage).toContain('@update:model-value="form.state.dueAt = new Date($event)" /></ClientOnly>');
-    expect(readFileSync(join(fixtureCwd, "components", "TaskForm.vue"), "utf-8")).toContain(projectRows);
+    expect(readFileSync(join(fixtureCwd, "components", "TaskForm.vue"), "utf-8")).toContain(projectList);
     expect(readFileSync(join(fixtureCwd, "shared", "schemas", "task.ts"), "utf-8")).toContain(
       '  status: z.enum(["draft", "done"]).optional(),\n',
     );

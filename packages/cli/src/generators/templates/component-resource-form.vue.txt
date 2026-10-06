@@ -2,17 +2,16 @@
 const props = defineProps<{ row: RouterOutputs["{{tableCamelName}}"]["byId"] }>();
 const emit = defineEmits<{ saved: [] }>();
 
-const trpc = useTRPC();
 const queryCache = useQueryCache();
 {{referenceQueries}}
-const form = useActionForm(update{{tablePascalName}}Input, trpc.{{tableCamelName}}.update.mutationOptions(), {
+const form = useActionForm(update{{tablePascalName}}Input, $api.{{tableCamelName}}.update.mutationOptions(), {
   defaults: {{updateDefaults}},
   onSuccess: (saved) => {
     queryCache.setQueriesData<RouterOutputs["{{tableCamelName}}"]["list"] | undefined>(
-      { key: trpc.{{tableCamelName}}.list.key() },
+      { key: $api.{{tableCamelName}}.list.key() },
       (list) => list && { ...list, rows: list.rows.map((row) => (row.id === saved.id ? saved : row)) },
     );
-    queryCache.invalidateQueries({ key: trpc.{{tableCamelName}}.key() });
+    queryCache.invalidateQueries({ key: $api.{{tableCamelName}}.key() });
     emit("saved");
   },
 });

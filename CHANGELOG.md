@@ -52,3 +52,5 @@ applies each step below that names a codemod.
   Pinia Colada to tRPC, so a cancelled query cancels its request.
 - Every mutation procedure of `$api` has `.useMutation(options?)`: it
   runs `useMutation()` and returns its result wrapped in `reactive()`.
+- The pages and the form that `make:resource --ui` writes read the API
+  through `$api` and `.useQuery()`, in place of `useTRPC()`.
