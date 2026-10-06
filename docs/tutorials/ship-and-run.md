@@ -308,7 +308,7 @@ export const markAllReadAction = defineAction({
 });
 ```
 
-The router calls the action. Import `z` from `zod` and `markAllReadAction` from `../actions/mark-all-read.action` at the top of the file:
+The router calls the action. Import `z` from `zod` and `markAllReadAction` from `#server/domains/link/actions/mark-all-read.action` at the top of the file:
 
 ```ts
 // server/domains/link/routers/link.router.ts, in linkRouter
