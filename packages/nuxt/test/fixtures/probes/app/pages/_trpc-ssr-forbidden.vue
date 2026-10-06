@@ -1,8 +1,7 @@
 <script setup lang="ts">
 const route = useRoute();
 const names = String(route.query.names).split(",") as ("ForbiddenError" | "UnauthenticatedError" | "NotFoundError" | "UnknownError")[];
-const trpc = useTRPC();
-const queries = names.map((name) => useQuery({ ...trpc._taxonomyCheck.throwError.queryOptions(name) }));
+const queries = names.map((name) => useQuery({ ...$api._taxonomyCheck.throwError.queryOptions(name) }));
 </script>
 
 <template>

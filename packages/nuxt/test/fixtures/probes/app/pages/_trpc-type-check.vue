@@ -7,7 +7,7 @@ function typed<T>(value: IsAny<T> extends true ? never : T) {
   return value;
 }
 
-const trpc = useTRPC();
+const { $trpc: trpc } = useNuxtApp();
 
 const clientIsTyped: IsAny<typeof trpc> extends true ? never : true = true;
 const pingReturnsString: Awaited<

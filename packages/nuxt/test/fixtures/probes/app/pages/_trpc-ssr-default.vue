@@ -1,8 +1,7 @@
 <script setup lang="ts">
 const route = useRoute();
 const name = route.query.name === "UnknownError" ? "UnknownError" : "NotFoundError";
-const trpc = useTRPC();
-const failing = useQuery({ ...trpc._taxonomyCheck.throwError.queryOptions(name) });
+const failing = useQuery({ ...$api._taxonomyCheck.throwError.queryOptions(name) });
 </script>
 
 <template>

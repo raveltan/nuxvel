@@ -1,6 +1,5 @@
 <script setup lang="ts">
-const trpc = useTRPC();
-const failing = useQuery({ ...trpc._taxonomyCheck.throwError.queryOptions("NotFoundError"), ssrCatchError: true });
+const failing = useQuery({ ...$api._taxonomyCheck.throwError.queryOptions("NotFoundError"), ssrCatchError: true });
 </script>
 
 <template>

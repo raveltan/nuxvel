@@ -1,6 +1,5 @@
 <script setup lang="ts">
-const trpc = useTRPC();
-const { data } = useQuery(trpc._requestsPanelCheck.load.queryOptions());
+const { data } = useQuery($api._requestsPanelCheck.load.queryOptions());
 </script>
 
 <template>

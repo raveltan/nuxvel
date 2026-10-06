@@ -1,6 +1,5 @@
 <script setup lang="ts">
-const trpc = useTRPC();
-const { data } = useQuery(trpc._safeHtmlCheck.sample.queryOptions());
+const { data } = useQuery($api._safeHtmlCheck.sample.queryOptions());
 </script>
 
 <template>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const created = ref<string>();
-const form = useActionForm(createTagInput, useTRPC().tag.create.mutationOptions(), {
+const form = useActionForm(createTagInput, $api.tag.create.mutationOptions(), {
   defaults: { name: "" },
   onSuccess: (tag) => {
     created.value = tag.name;

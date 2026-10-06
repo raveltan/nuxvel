@@ -4,7 +4,7 @@ import type { ModalProps } from "@nuxt/ui";
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
 type ConfirmUi = Parameters<ReturnType<typeof useConfirm>>[0]["ui"];
-const postList = useQuery(useTRPC().post.list.queryOptions());
+const postList = $api.post.list.useQuery();
 const confirmUiIsTyped: IsAny<ConfirmUi> extends true
   ? never
   : ConfirmUi extends ModalProps["ui"]

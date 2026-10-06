@@ -1,6 +1,5 @@
 <script setup lang="ts">
-const trpc = useTRPC();
-const { data: requestId } = useQuery(trpc.health.requestId.queryOptions());
+const { data: requestId } = useQuery($api.health.requestId.queryOptions());
 </script>
 
 <template>
