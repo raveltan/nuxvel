@@ -88,7 +88,7 @@ function pathAlias(from: Place, to: Place) {
  * `server/domains/<domain>/<kind>/`, `app/components/`, `shared/schemas/`,
  * `tests/`, the same in `layers/<name>/`) into another one, and fixes it:
  * a table to `#nuxvel/schema`, a factory to `#nuxvel/factories` (named
- * imports only, and not from a file of the same registry), other server
+ * imports only), other server
  * code to `#server/<path>`, `shared/` to `#shared/<path>`, `app/` to
  * `~/<path>` and a module in `layers/<name>/` to `#layers/<name>/<path>`.
  * It reports server code imported from `app/` or `shared/` without a fix.
@@ -98,7 +98,9 @@ function pathAlias(from: Place, to: Place) {
  * it when it imports only names under their own name. It skips tests,
  * stories, and the tables and factories that tests and drizzle-kit load
  * without auto-imports.
- * A relative import inside one kind folder stays legal. It is part of the
+ * A relative import inside one kind folder stays legal, and so does one
+ * from a table file to another table file or from a factory file to
+ * another factory file, whatever their folders. It is part of the
  * `nuxvel` ESLint plugin.
  *
  * @param options.allow - Globs of import targets, relative to the app
@@ -188,8 +190,10 @@ export const noParentImports: Rule.RuleModule = {
       }
 
       const registry = registryOf(to);
-      const useRegistry = registry !== undefined && registry !== fromRegistry;
-      const alias = useRegistry ? registry : pathAlias(from, to);
+
+      if (registry !== undefined && registry === fromRegistry) return;
+
+      const alias = registry ?? pathAlias(from, to);
 
       if (!alias) {
         context.report({ node, messageId: "noAlias", data });
@@ -197,7 +201,7 @@ export const noParentImports: Rule.RuleModule = {
       }
 
       const quote = context.sourceCode.getText(sourceNode).charAt(0);
-      const fixable = !useRegistry || namedOnly;
+      const fixable = registry === undefined || namedOnly;
 
       context.report({
         node,

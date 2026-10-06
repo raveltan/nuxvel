@@ -106,13 +106,18 @@ describe("architecture lint preset", () => {
       output: `import { postTable } from "#nuxvel/schema";\n`,
     },
     {
-      name: "a table from another schema file, which #nuxvel/schema re-exports",
+      name: "nothing for a table file that imports a table file of another folder",
       file: "server/domains/post/schema/posts.schema.ts",
       source: `import { userTable } from "../../../database/schema/auth.schema";\n`,
-      messages: [
-        "../../../database/schema/auth.schema leaves server/domains/post/schema/ for server/database/schema/: import it from #server/database/schema/auth.schema",
-      ],
-      output: `import { userTable } from "#server/database/schema/auth.schema";\n`,
+      messages: [],
+      output: `import { userTable } from "../../../database/schema/auth.schema";\n`,
+    },
+    {
+      name: "nothing for a factory file that imports a factory file of another folder",
+      file: "server/domains/post/factories/posts.factory.ts",
+      source: `import { userFactory } from "../../../factories/users.factory";\n`,
+      messages: [],
+      output: `import { userFactory } from "../../../factories/users.factory";\n`,
     },
     {
       name: "a namespace import of a table, which only named imports fix",

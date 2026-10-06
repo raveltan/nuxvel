@@ -27,7 +27,7 @@ import { postSlugLength } from "#shared/post";
 
 `#server` is not allowed in `app/`: server code must not reach the browser bundle. Use `#shared/*` for code that both sides share.
 
-The ESLint rule `nuxvel/no-parent-imports` of `@nuxvel/nuxt/eslint` reports an import that climbs with `../` out of its kind folder (`server/actions/`, `server/database/schema/`, `server/domains/<domain>/<kind>/`, `app/components/`, `shared/schemas/`, `tests/`) into another one. `eslint --fix` rewrites it to the alias: a table to `#nuxvel/schema` and a factory to `#nuxvel/factories` (named imports only), other server code to `#server/*`, `shared/` to `#shared/*`, `app/` to `~/*` and a module to `#layers/<name>/*`. A relative import inside one kind folder, such as `../tags/create-tag.action` in `server/actions/posts/`, stays legal. In `app/` and `server/`, the rule also reports an import of a file in `shared/schemas/`, whose exports are auto-imported there, and `--fix` removes it. It leaves such an import in tests, stories, tables and factories, which run without auto-imports. The `allow` option lists the targets, relative to the app root, that a relative import may still reach:
+The ESLint rule `nuxvel/no-parent-imports` of `@nuxvel/nuxt/eslint` reports an import that climbs with `../` out of its kind folder (`server/actions/`, `server/database/schema/`, `server/domains/<domain>/<kind>/`, `app/components/`, `shared/schemas/`, `tests/`) into another one. `eslint --fix` rewrites it to the alias: a table to `#nuxvel/schema` and a factory to `#nuxvel/factories` (named imports only), other server code to `#server/*`, `shared/` to `#shared/*`, `app/` to `~/*` and a module to `#layers/<name>/*`. A relative import inside one kind folder, such as `../tags/create-tag.action` in `server/actions/posts/`, stays legal, and so does one from a table file to another table file or from a factory file to another factory file, whatever their folders (drizzle-kit loads them on their own). In `app/` and `server/`, the rule also reports an import of a file in `shared/schemas/`, whose exports are auto-imported there, and `--fix` removes it. It leaves such an import in tests, stories, tables and factories, which run without auto-imports. The `allow` option lists the targets, relative to the app root, that a relative import may still reach:
 
 ```ts
 // eslint.config.ts
@@ -212,6 +212,7 @@ Guide: [Actions](./actions.md).
 | `$actions` | namespace | Holds each action definition under its path: `$actions.posts.createPost`. Server only. |
 | `Action` | type | An action from `defineAction`. |
 | `ActionContext` | type | The second argument of an action: who performs it. |
+| `InvalidationTag` | type | What an action's `invalidates` forgets: a string, a key array or a glob. |
 | `ActionErrorCode` | type | The union of the error codes an action declares. |
 | `Actor` | type | Who performs an action: a user, the system or another caller type. |
 
