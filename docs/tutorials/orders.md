@@ -1146,14 +1146,13 @@ The buy form places an order for one product. A `ConflictError` with a `field` s
 <script setup lang="ts">
 const props = defineProps<{ productId: number }>();
 
-const trpc = useTRPC();
 const queryCache = useQueryCache();
 
-const form = useActionForm(placeOrderInput, toasted(trpc.order.place.mutationOptions(), "Order placed"), {
+const form = useActionForm(placeOrderInput, toasted($api.order.place.mutationOptions(), "Order placed"), {
   defaults: { productId: props.productId, quantity: 1 },
   onSuccess: async () => {
-    await queryCache.invalidateQueries({ key: trpc.product.key() });
-    await queryCache.invalidateQueries({ key: trpc.order.key() });
+    await queryCache.invalidateQueries({ key: $api.product.key() });
+    await queryCache.invalidateQueries({ key: $api.order.key() });
   },
 });
 </script>
@@ -1201,9 +1200,8 @@ defineProps<{ orders: OrderSummary[] }>();
 <script setup lang="ts">
 definePageMeta({ middleware: "auth" });
 
-const trpc = useTRPC();
-const products = useQuery(trpc.product.list.queryOptions());
-const orders = useQuery(trpc.order.mine.queryOptions());
+const products = $api.product.list.useQuery();
+const orders = $api.order.mine.useQuery();
 
 useSeo({ title: "Shop" });
 </script>

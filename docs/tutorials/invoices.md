@@ -1031,11 +1031,10 @@ No generator writes a page that shows two tables, so create the page by hand:
 <script setup lang="ts">
 definePageMeta({ middleware: "auth" });
 
-const trpc = useTRPC();
 const id = Number(useRoute().params.id);
-const team = useQuery(trpc.team.byId.queryOptions({ id }));
+const team = $api.team.byId.useQuery({ id });
 
-useSeo(() => ({ title: team.data.value?.name ?? "Team" }));
+useSeo(() => ({ title: team.data?.name ?? "Team" }));
 </script>
 
 <template>
@@ -1057,19 +1056,18 @@ When `team.byId` answers `NOT_FOUND` while the server renders the page, nuxvel a
 <script setup lang="ts">
 const props = defineProps<{ teamId: number }>();
 
-const trpc = useTRPC();
 const queryCache = useQueryCache();
-const members = useQuery(trpc.team.members.queryOptions({ id: props.teamId }));
-const { data: abilities } = useQuery(trpc.team.abilities.queryOptions({ id: props.teamId }));
+const members = $api.team.members.useQuery({ id: props.teamId });
+const abilities = $api.team.abilities.useQuery({ id: props.teamId });
 const roles = addMemberInput.shape.role.options;
-const refresh = () => queryCache.invalidateQueries({ key: trpc.team.members.key() });
+const refresh = () => queryCache.invalidateQueries({ key: $api.team.members.key() });
 
 const { mutate: changeRole, error: roleError } = useMutation({
-  ...trpc.team.changeRole.mutationOptions(),
+  ...$api.team.changeRole.mutationOptions(),
   onSettled: refresh,
 });
 
-const form = useActionForm(addMemberInput, toasted(trpc.team.addMember.mutationOptions(), "Member added"), {
+const form = useActionForm(addMemberInput, toasted($api.team.addMember.mutationOptions(), "Member added"), {
   defaults: { teamId: props.teamId, email: "", role: "member" },
   failures: { "team.unknown-email": "email" },
   onSuccess: refresh,
@@ -1086,7 +1084,7 @@ const form = useActionForm(addMemberInput, toasted(trpc.team.addMember.mutationO
           <li v-for="member in data" :key="member.id" class="flex items-center justify-between gap-4 py-2">
             <span>{{ member.name }} <span class="text-muted">{{ member.email }}</span></span>
             <USelect
-              v-if="abilities?.manage"
+              v-if="abilities.data?.manage"
               :model-value="member.role"
               :items="roles"
               :aria-label="`Role of ${member.email}`"
@@ -1099,7 +1097,7 @@ const form = useActionForm(addMemberInput, toasted(trpc.team.addMember.mutationO
       </template>
     </QueryState>
     <UForm
-      v-if="abilities?.manage"
+      v-if="abilities.data?.manage"
       :ref="form.ref"
       :schema="form.schema"
       :state="form.state"
@@ -1650,8 +1648,7 @@ The page shows the teams in a table:
 <script setup lang="ts">
 definePageMeta({ middleware: "auth" });
 
-const trpc = useTRPC();
-const teams = useQuery({ ...trpc.admin.teams.queryOptions(), ssrCatchError: true });
+const teams = useQuery({ ...$api.admin.teams.queryOptions(), ssrCatchError: true });
 
 useSeo({ title: "Admin" });
 </script>
@@ -2044,13 +2041,12 @@ Add a component for the keys to the security page of chapter 8:
 ```vue
 <!-- app/components/ApiKeys.vue -->
 <script setup lang="ts">
-const trpc = useTRPC();
 const queryCache = useQueryCache();
-const keys = useQuery(trpc.apiKeys.list.queryOptions());
+const keys = $api.apiKeys.list.useQuery();
 const newKey = ref<string>();
-const refresh = () => queryCache.invalidateQueries({ key: trpc.apiKeys.key() });
+const refresh = () => queryCache.invalidateQueries({ key: $api.apiKeys.key() });
 
-const form = useActionForm(createApiKeyInput, trpc.apiKeys.create.mutationOptions(), {
+const form = useActionForm(createApiKeyInput, $api.apiKeys.create.mutationOptions(), {
   defaults: { name: "" },
   onSuccess: (created) => {
     newKey.value = created.key;
@@ -2058,7 +2054,7 @@ const form = useActionForm(createApiKeyInput, trpc.apiKeys.create.mutationOption
   },
 });
 
-const { mutate: revoke } = useMutation({ ...trpc.apiKeys.revoke.mutationOptions(), onSettled: refresh });
+const { mutate: revoke } = useMutation({ ...$api.apiKeys.revoke.mutationOptions(), onSettled: refresh });
 </script>
 
 <template>

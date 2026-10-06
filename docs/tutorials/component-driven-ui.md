@@ -384,16 +384,15 @@ The list page shows the products in a table, with a search, sorting, pages and a
 ```vue
 <!-- app/components/ProductTable.vue -->
 <script setup lang="ts">
-const trpc = useTRPC();
 const route = useRoute();
 const { user } = useUser();
 const confirm = useConfirm();
 const input = computed(() => listQueryParams(productListInput.catch({ sort: [], filters: {} }).parse(route.query)));
-const products = useQuery(() => trpc.product.list.queryOptions(input.value));
+const products = $api.product.list.useQuery(input);
 
 const { mutate: remove, error: removeError } = useMutation(
-  optimistic(trpc.product.delete.mutationOptions(), {
-    key: () => trpc.product.list.key(input.value),
+  optimistic($api.product.delete.mutationOptions(), {
+    key: () => $api.product.list.key(input.value),
     apply: (list, { id }) => ({ ...list, rows: list.rows.filter((row) => row.id !== id), total: list.total - 1 }),
   }),
 );
@@ -636,8 +635,7 @@ The new page has a form with one control of each Nuxt UI kind. The controls are 
 <script setup lang="ts">
 const emit = defineEmits<{ created: [product: { id: number }] }>();
 
-const trpc = useTRPC();
-const form = useActionForm(createProductInput, trpc.product.create.mutationOptions(), {
+const form = useActionForm(createProductInput, $api.product.create.mutationOptions(), {
   defaults: { name: "", description: "", price: undefined, category: undefined, published: false, launchOn: undefined, imageKey: "" },
   failures: { "product.needs-image": "imageKey" },
   onSuccess: (product) => emit("created", product),
@@ -847,8 +845,7 @@ The details page shows one product. The description is HTML, so it renders with 
 <script setup lang="ts">
 const props = defineProps<{ id: number }>();
 
-const trpc = useTRPC();
-const product = useQuery(() => trpc.product.byId.queryOptions({ id: props.id }));
+const product = $api.product.byId.useQuery(() => ({ id: props.id }));
 const price = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 </script>
 
