@@ -7,15 +7,14 @@ Auto-imported: composables, components, `shared/schemas/*`, `RouterInputs`, `Rou
 ```vue
 <script setup lang="ts">
 definePageMeta({ middleware: "auth" });
-const trpc = useTRPC();
 const queryCache = useQueryCache();
 const { ts, localeRoute } = useI18n();
-const posts = useQuery(trpc.post.list.queryOptions({ page: 1 }));
-const form = useActionForm(createPostInput, trpc.post.create.mutationOptions(), {
+const posts = $api.post.list.useQuery({ page: 1 });
+const form = useActionForm(createPostInput, $api.post.create.mutationOptions(), {
   defaults: { title: "", body: "" },
   failures: { "post.locked": "title" },
   onSuccess: async () => {
-    queryCache.invalidateQueries({ key: trpc.post.key() });
+    queryCache.invalidateQueries({ key: $api.post.key() });
     await navigateTo(localeRoute({ name: "post" }));
   },
 });
@@ -39,9 +38,9 @@ useSeo(() => ({ title: ts("post.title") }));
 
 | Name | Use |
 |---|---|
-| `useTRPC()` | typed client. `trpc.post.list.queryOptions(input)`, `.mutationOptions()`, `.key()`. One-off: `await trpc.post.list.query()` |
-| `useQuery(options \| () => options)` | cached query (Pinia Colada). Getter for a changing input |
-| `useMutation(options)` | `{ mutate, error, … }` |
+| `$api` | typed API, also in templates. `$api.post.list.useQuery(input \| () => input, options?)` (cached query, Pinia Colada, no `.value`), `$api.post.create.useMutation(options?)` (`{ mutate, error, … }`), `.key()`, `.queryOptions(input)`, `.mutationOptions()`. One-off: `await $api.post.list.query()` |
+| `useQuery(options \| () => options)` | Pinia Colada's own query, for `queryOptions()` |
+| `useMutation(options)` | Pinia Colada's own mutation, for `mutationOptions()` |
 | `useQueryCache()` | `invalidateQueries({ key })`, `setQueriesData` |
 | `optimistic(mutationOptions, { key, apply })` | change the cache first, roll back on error |
 | `useLiveQuery(options, { channel, on \| refetch })` | query patched by channel events |

@@ -138,7 +138,7 @@ Run `./nv db:fresh --seed --force` to seed the dev database again.
 ./nv make:page about
 ```
 
-This creates `app/pages/about.vue`. To read posts in a page, use `useQuery(useTRPC().post.list.queryOptions())`.
+This creates `app/pages/about.vue`. To read posts in a page, use `$api.post.list.useQuery()`.
 
 A missing page or a failed render shows `app/error.vue`, with the status, the message and the request ID.
 
