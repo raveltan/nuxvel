@@ -2,7 +2,7 @@
 
 ## Introduction
 
-nuxvel pages read and write data through the typed API, [`$api`](./api.md#calling-from-the-client). Forms use `useActionForm()`, which binds a shared schema and a mutation to a Nuxt UI `<UForm>`. Pages show the loading, error and empty states of a query with `<QueryState>`. Lists stay current with `useLiveQuery()` and `optimistic()`.
+nuxvel pages read and write data through the typed API, [`$api`](./api.md#calling-from-the-client). Forms use `useActionForm()`, which binds a shared schema and a mutation to a Nuxt UI `<UForm>`. Pages show the loading, error and empty states of a query with `<QueryState>`. Lists stay current with `useLiveQuery()` and optimistic updates.
 
 ## Nuxt UI
 
@@ -63,7 +63,7 @@ Set `nuxvel.ui` to `false` to use your own markup. The default is `true`. With `
 - The module does not install Nuxt UI and does not add a stylesheet. Remove `<UApp>` from `app.vue`.
 - `useActionForm()` drives a plain `<form>` through `form.errors`. See [Forms without Nuxt UI](#forms-without-nuxt-ui).
 - `<QueryState>` renders plain markup for the slots you leave out.
-- `toasted()` and `useConfirm()` are not auto-imported.
+- `useConfirm()` is not auto-imported, and the `toast` and `confirm` options of a mutation throw.
 - `<DataTable>`, `<SearchInput>`, `<UploadField>`, `<AuthForm>`, `<SocialSignIn>`, `<PresenceAvatars>`, `<TypingIndicator>`, `<NotificationBell>` and `<MaintenanceBanner>` are not registered. Build your own bell with `useNotifications()`.
 - A [flash message](#flash-messages) shows no toast. Render `useFlash()` yourself.
 - `<Maintenance>` renders plain markup. See [Maintenance mode](./maintenance.md#in-the-app).
@@ -301,24 +301,21 @@ async function save() {
 ## Success toasts
 
 ```ts
-const form = useActionForm(
-  updatePostInput,
-  toasted($api.post.update.mutationOptions(), "Post saved"),
-  {
-    defaults: { id: post.id, title: post.title, body: post.body },
-    onSuccess: () => navigateTo({ name: "posts" }),
-  },
-);
+const form = useActionForm(updatePostInput, $api.post.update.mutationOptions({ toast: "Post saved" }), {
+  defaults: { id: post.id, title: post.title, body: post.body },
+  onSuccess: () => navigateTo({ name: "posts" }),
+});
+
+const publish = $api.post.publish.useMutation({ toast: (post) => `Published ${post.title}` });
 ```
 
-`toasted(mutationOptions, title)` adds a Nuxt UI success toast to a mutation. The toast shows each time the mutation succeeds. `toasted()` is auto-imported. Call it inside `setup()`.
+`toast` on `.useMutation()` or `.mutationOptions()` shows a Nuxt UI success toast each time the mutation succeeds. Call either inside `setup()`.
 
-- The second argument is the toast title. To make the title from the result, pass a function: `` toasted(options, (post) => `Saved ${post.title}`) ``.
-- `toasted()` accepts any options that `useMutation()` accepts. Use it with `useActionForm()`, with `useMutation()` and around [`optimistic()`](#optimistic-updates).
+- `toast` is the title, the [toast props](https://ui.nuxt.com/docs/components/toast) such as `{ title, description, icon }`, or a function of the result that returns either. The colour is `"success"` unless the props set one.
 - A failure shows no toast. Show the error on the page, as `form.formError` does. A toast closes after some seconds, but an error must stay until the user acts.
 - Screen readers announce the toast. The toast stays on screen when `onSuccess` goes to a different page.
 - The toast replaces a [flash message](#flash-messages) of the mutation. The next page does not show that flash message.
-- `toasted()` needs Nuxt UI and `<UApp>`. With `nuxvel: { ui: false }`, it is not auto-imported.
+- `toast` needs Nuxt UI and `<UApp>`. With `nuxvel: { ui: false }`, a mutation with `toast` throws.
 
 ## Flash messages
 
@@ -348,7 +345,7 @@ A flash message is a message for the next page load only. Call `flash(message)` 
 
 `flash()` is auto-imported on the server. Call it from an action, a tRPC mutation or an event handler while a request runs. Outside a request, for example in a job, it does nothing.
 
-The message travels in a short-lived `nuxvel-flash` cookie on the response. The toast shows when the next page renders on the server. It also shows when the next page comes from a client-side `navigateTo()`, as in the example. A mutation that does not navigate keeps the message until the next navigation. A page that stays open after a mutation can show its own toast with [`toasted()`](#success-toasts). `toasted()` removes the flash message, so the user sees one message. A page that a script fetches does not take the message. When the PWA service worker fetches the next page, the browser takes the message after the page loads.
+The message travels in a short-lived `nuxvel-flash` cookie on the response. The toast shows when the next page renders on the server. It also shows when the next page comes from a client-side `navigateTo()`, as in the example. A mutation that does not navigate keeps the message until the next navigation. A page that stays open after a mutation can show its own toast with the [`toast`](#success-toasts) option. That toast removes the flash message, so the user sees one message. A page that a script fetches does not take the message. When the PWA service worker fetches the next page, the browser takes the message after the page loads.
 
 ### Message types
 
@@ -383,6 +380,16 @@ const flashes = useFlash();
 
 ## Confirm dialogs
 
+```ts
+const deletePost = $api.post.delete.useMutation({
+  confirm: { title: "Delete post?", confirmLabel: "Delete", color: "error" },
+});
+```
+
+`confirm` on `.useMutation()` or `.mutationOptions()` opens a dialog before the mutation runs. It takes the options in the table below, or a function of the input that returns them: `` confirm: ({ id }) => ({ title: `Delete post ${id}?` }) ``. When the user cancels, neither the procedure nor any callback runs, and `status` and `error` stay as they were. `mutate()` does nothing more, `mutateAsync()` rejects with a `MutationCancelledError`, and a form of `useActionForm()` stays as it is, without `onSuccess`. Like `useConfirm()`, it needs Nuxt UI and `<UApp>`.
+
+To ask in your own code, call `useConfirm()`:
+
 ```vue
 <!-- app/pages/posts/index.vue -->
 <script setup lang="ts">
@@ -395,7 +402,7 @@ async function confirmDelete(post: { id: number; title: string }) {
     confirmLabel: "Delete",
     color: "error",
   });
-  if (confirmed) deletePost({ id: post.id });
+  if (confirmed) deletePost.mutate({ id: post.id });
 }
 </script>
 ```
@@ -469,11 +476,11 @@ const posts = $api.post.list.useQuery(input);
 
 The page number, the search text, the sort and the filters live in the URL query, as `?page=`, `?q=`, `?sort=title:asc,createdAt:desc` and one key per filter. The page links are real links, and a new search, sort or filter resets the page. So a reload and the back and forward buttons keep them. The page builds the query input from the URL with the same `listQuery()` schema. `.catch({ sort: [], filters: {} })` changes a URL that is not valid to the first page with no sort and no filter, and `listQueryParams()` turns the result back into the flat input of the procedure. Without sorting and filters, `paginationSchema.catch({}).parse(route.query)` is enough.
 
-To change a row from a cell, pass the same input to [`optimistic()`](#optimistic-updates) as its key: `key: () => $api.post.list.key(input.value)`.
+To change a row from a cell, pass the same input to the key of the [`optimistic`](#optimistic-updates) option: `key: () => $api.post.list.key(input.value)`.
 
 `<DataTable>` is registered only when Nuxt UI is on.
 
-`nuxvel make:resource --ui` writes a list page on `<DataTable>` and the forms on `useActionForm()`, with a column and a control for each field. A reference to a table with a CRUD router is a `<USelect>` with the rows of that table. The list sorts and filters by the `<name>ListColumns` of the resource. Each row of the list has an **Edit** button, which opens the edit form in a modal at `?edit=<id>`, and a **Delete** button, which removes the row at once with `optimistic()` and puts it back if the server refuses. A saved or created row goes into the cached lists at once, and the lists then load again from the server. See [`make:resource`](./cli.md#nuxvel-makeresource-name).
+`nuxvel make:resource --ui` writes a list page on `<DataTable>` and the forms on `useActionForm()`, with a column and a control for each field. A reference to a table with a CRUD router is a `<USelect>` with the rows of that table. The list sorts and filters by the `<name>ListColumns` of the resource. Each row of the list has an **Edit** button, which opens the edit form in a modal at `?edit=<id>`, and a **Delete** button, which asks with a [confirm dialog](#confirm-dialogs), removes the row at once with [`optimistic`](#optimistic-updates) and puts it back if the server refuses. A saved or created row goes into the cached lists at once, and the lists then load again from the server. See [`make:resource`](./cli.md#nuxvel-makeresource-name).
 
 ## File uploads
 
@@ -704,10 +711,32 @@ const posts = useLiveQuery($api.post.list.queryOptions(), {
 - `on` maps the channel's declared events to patches. Each patch gets the cached data and the event payload, and returns the new cached value. The payload type is the output of that event's schema.
 - The payload arrives as JSON. Parse dates again with the [shared schema](./validation.md), as `postSchema.parse` does above.
 - The composable ignores an event with no patch. It patches nothing before the first response arrives.
-- A `created` event can name a row that the list already holds. The query can fetch the row after the broadcast, or `optimistic()` can add it first. So the `created` patch above skips an ID that is already in the list.
+- A `created` event can name a row that the list already holds. The query can fetch the row after the broadcast, or an [`optimistic`](#optimistic-updates) update can add it first. So the `created` patch above skips an ID that is already in the list.
 - For a query whose input changes, pass a getter, as with `useQuery()`: `useLiveQuery(() => $api.post.byId.queryOptions({ id: id.value }), { ... })`. A new input starts a new fetch. Later events patch the entry for the new input.
 - The component joins the channel on mount and leaves it on unmount. It uses the connection that all `useChannel()` calls on the page share.
 - After a reconnect that missed more events than the replay buffer holds, the query fetches again. See [the resync event](./realtime.md#the-resync-event).
+
+### Patching a paginated list
+
+```ts
+const addPost = prependRow({ when: (list) => list.page === 1 });
+
+const posts = useLiveQuery(() => $api.post.list.queryOptions(input.value), {
+  channel: "posts",
+  on: {
+    created: (list, payload) => addPost(list, postSchema.parse(payload)),
+    renamed: replaceRow(),
+    deleted: removeRow(),
+  },
+});
+```
+
+`removeRow()`, `prependRow()` and `replaceRow()` are auto-imported. Each one returns a patch for a page of [`paginated()`](./database.md#pagination) data. Use it in `on` or as the `apply` of a mutation's [`optimistic`](#optimistic-updates) option.
+
+- `removeRow(match?)` removes the row with the same `id` as the payload, and lowers `total` and `lastPage`.
+- `prependRow({ when? })` adds the payload at the top, keeps the page at `perPage` rows, and raises `total` and `lastPage`. It skips a row whose `id` the page already holds. `when` gets the page and the row, and can skip the row.
+- `replaceRow(match?)` merges the payload into the row with the same `id`. `total` does not change.
+- `match` replaces the `id` comparison: `removeRow((row: Post, slug: string) => row.slug === slug)`.
 
 ### Fetching again on an event
 
@@ -726,7 +755,7 @@ const ticket = useLiveQuery(() => $api.ticket.show.queryOptions({ id }), {
 - A disabled query (`enabled: false` in the options) does not fetch again.
 - A failed fetch sets the query's `error`, as with `useQuery()`. It does not give an unhandled rejection.
 
-To patch from the mutations of this tab, use `optimistic()`. The two work together, because both write to the same cache entry.
+To patch from the mutations of this tab, use the [`optimistic`](#optimistic-updates) option. The two work together, because both write to the same cache entry.
 
 For the notifications of the signed-in user, use `useNotifications()` or `<NotificationBell>`. They stay current in the same way. See [Notifications](./notifications.md#reading-in-the-app).
 
@@ -811,23 +840,19 @@ const rename = $api.post.update.useMutation({ invalidate: (post) => [["post", "b
 const ping = $api.health.echo.useMutation({ invalidate: false });
 ```
 
-`invalidate` on `.useMutation()` or `.mutationOptions()` replaces what the call invalidates: the tags that you list, the tags that a function of the result and the input returns, or nothing with `false`. The response's tags and the namespace then do not count. A tag is a string or an array, as in `invalidates`: `"post:byId"` is `["post", "byId"]`. `useActionForm()`, `toasted()` and `optimistic()` keep the `invalidate` of the `mutationOptions()` that you pass them.
+`invalidate` on `.useMutation()` or `.mutationOptions()` replaces what the call invalidates: the tags that you list, the tags that a function of the result and the input returns, or nothing with `false`. The response's tags and the namespace then do not count. A tag is a string or an array, as in `invalidates`: `"post:byId"` is `["post", "byId"]`. `useActionForm()` keeps the `invalidate` of the `mutationOptions()` that you pass it.
 
 ## Optimistic updates
 
 ```ts
-
-const { mutate: deletePost, error: deleteError } = useMutation(
-  optimistic($api.post.delete.mutationOptions(), {
-    key: () => $api.post.list.key(),
-    apply: (rows, input) => rows.filter((row) => row.id !== input.id),
-  }),
-);
+const deletePost = $api.post.delete.useMutation({
+  optimistic: { key: () => $api.post.list.key(input.value), apply: removeRow() },
+});
 ```
 
-`optimistic()` changes a cached query before the server answers. Here the post leaves the list at once. If the server refuses the delete, the post comes back, and `deleteError` holds the error, typed as `Error`, so `deleteError.message` needs no check. When the mutation settles, `optimistic()` fetches the query again, so the server's answer wins.
+`optimistic` changes a cached query before the server answers. Here the post leaves the list at once, and [`removeRow()`](#patching-a-paginated-list) keeps `total` right. If the server refuses the delete, the post comes back, and `deletePost.error` holds the error. When the mutation settles, the query is fetched again, so the server's answer wins.
 
-Wrap the options that you pass to `useActionForm()` in `optimistic()`, and the form works the same way. See [API: optimistic updates](./api.md#optimistic-updates) for the full reference.
+`.mutationOptions()` takes the same `optimistic`, so a form of `useActionForm()` works the same way. See [API: optimistic updates](./api.md#optimistic-updates) for the full reference.
 
 ## Layouts
 

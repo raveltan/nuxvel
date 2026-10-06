@@ -1,17 +1,13 @@
 <script setup lang="ts">
 const props = defineProps<{ post: RouterOutputs["post"]["byId"] }>();
 
-const form = useActionForm(
-  updatePostInput,
-  toasted($api.post.update.mutationOptions(), "Post saved"),
-  {
-    defaults: { id: props.post.id, title: props.post.title, body: props.post.body },
-    failures: { "post.body-empty": "body" },
-    onSuccess: async () => {
-      await navigateTo({ name: "posts" });
-    },
+const form = useActionForm(updatePostInput, $api.post.update.mutationOptions({ toast: "Post saved" }), {
+  defaults: { id: props.post.id, title: props.post.title, body: props.post.body },
+  failures: { "post.body-empty": "body" },
+  onSuccess: async () => {
+    await navigateTo({ name: "posts" });
   },
-);
+});
 </script>
 
 <template>

@@ -618,7 +618,7 @@ describe("nuxvel make:* output running in an app", () => {
       '.where(and(eq(articleTable.ownerId, ctx.user.id), listWhere(articleTable, input.filters), search(articleTable, input.q ?? ""), notTrashed(articleTable)))',
     );
     expect(source("app/pages/article/index.vue")).toContain("<DataTable");
-    expect(source("app/pages/article/index.vue")).toContain("optimistic($api.article.delete.mutationOptions()");
+    expect(source("app/pages/article/index.vue")).toContain("const remove = $api.article.delete.useMutation({");
     expect(source("app/pages/article/index.vue")).toContain("<UModal");
     expect(source("app/components/ArticleForm.vue")).toContain("useActionForm(updateArticleInput");
     expectAppTestPassed("server/trpc/routers/article.router.test.ts");

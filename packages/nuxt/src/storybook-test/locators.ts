@@ -168,7 +168,7 @@ export type ToastLocator = Locator & { dismiss(): Promise<void> };
 
 /**
  * Finds the Nuxt UI toasts in `scope` whose text includes `content`, such
- * as a toast of `toasted()`. A toast renders outside `canvasElement`, so
+ * as the `toast` option of a mutation. A toast renders outside `canvasElement`, so
  * give `page` as the scope. Matches like {@link button}.
  *
  * `dismiss()` clicks the Close button of the toast and waits until the toast is gone.

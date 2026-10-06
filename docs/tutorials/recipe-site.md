@@ -910,11 +910,11 @@ import { publishRecipeAction } from "#server/actions/recipe/publish-recipe.actio
 
 ### The publish button
 
-The generated list at `/recipe` shows the recipes of the author. Show the publication date in place of the body, and a **Publish** button for a draft. In `app/pages/recipe/index.vue`, add the mutation below `const confirm = useConfirm();`:
+The generated list at `/recipe` shows the recipes of the author. Show the publication date in place of the body, and a **Publish** button for a draft. In `app/pages/recipe/index.vue`, add the mutation below the `remove` mutation:
 
 ```ts
 // app/pages/recipe/index.vue
-const { mutate: publish } = useMutation(toasted($api.recipe.publish.mutationOptions(), "Recipe published"));
+const { mutate: publish } = $api.recipe.publish.useMutation({ toast: "Recipe published" });
 ```
 
 In the `columns` of the `<DataTable>`, replace `{ accessorKey: 'body', header: 'Body' }` with `{ accessorKey: 'publishedAt', header: 'Published' }`. Then add a cell for the column, above the `#actions-cell` template:
@@ -933,7 +933,7 @@ In the `columns` of the `<DataTable>`, replace `{ accessorKey: 'body', header: '
       </template>
 ```
 
-`toasted()` shows a success toast when the mutation succeeds. The page stays open, so a [flash message](../frontend.md#flash-messages) would show only on the next page. `onSettled` fetches the list again, so the row shows its date. Each button has an `aria-label` with the title of the recipe. A screen reader thus tells the buttons apart, and a test finds one by its name.
+The `toast` option shows a success toast when the mutation succeeds. The page stays open, so a [flash message](../frontend.md#flash-messages) would show only on the next page. `onSettled` fetches the list again, so the row shows its date. Each button has an `aria-label` with the title of the recipe. A screen reader thus tells the buttons apart, and a test finds one by its name.
 
 ### The account page
 

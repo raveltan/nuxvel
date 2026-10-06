@@ -162,7 +162,7 @@ export function pageOf(scope: LocatorScope): Page {
 }
 
 /**
- * Finds the Nuxt UI toasts in `scope` whose text includes `content`, such as a flash message or a toast of `toasted()`.
+ * Finds the Nuxt UI toasts in `scope` whose text includes `content`, such as a flash message or the `toast` option of a mutation.
  *
  * Matches like {@link button}. A toast is outside the dialogs and the other parts of the page, so give `page` as the scope. `dismiss()` clicks the Close button of the toast and waits until the toast is gone.
  * Close a toast before {@link expectAccessible}, or before you check what is under it.

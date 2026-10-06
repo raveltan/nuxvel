@@ -46,6 +46,15 @@ applies each step below that names a codemod.
   it, and the `useQueryCache()` it leaves unused. Keep one for another
   namespace, and keep them all when the app sets
   `nuxvel.api.invalidateFallback: false`. Codemod: `invalidate`.
+- `toasted()` and `optimistic()` are removed: they are options of
+  `$api.<path>.useMutation()` and `.mutationOptions()`. By hand: write
+  `$api.post.update.mutationOptions({ toast: "Saved" })` in place of
+  `toasted($api.post.update.mutationOptions(), "Saved")`, and
+  `$api.post.delete.useMutation({ optimistic: { key, apply } })` in place
+  of `useMutation(optimistic($api.post.delete.mutationOptions(), { key,
+  apply }))`. An `onMutate` or `onSettled` beside `optimistic` now runs
+  after it instead of being dropped. The type `OptimisticUpdate` stays.
+  Codemod: `mutation-options`.
 
 ### Changes
 
@@ -114,5 +123,27 @@ applies each step below that names a codemod.
   `"namespace"`.
 - `.useMutation()` and `.mutationOptions()` of `$api` take `invalidate`:
   tags, a function `(result, input) => tags`, or `false`, in place of
-  what the response names and the namespace. `useActionForm()`,
-  `toasted()` and `optimistic()` keep it.
+  what the response names and the namespace. `useActionForm()` keeps
+  it.
+- `.useMutation()` and `.mutationOptions()` of `$api` take `optimistic:
+  { key, apply }`, which patches a cached query before the mutation
+  runs. `.mutationOptions()` also takes Pinia
+  Colada's callbacks, and every `onMutate`, `onError` and `onSettled`
+  runs after nuxvel's.
+- `.useMutation()` and `.mutationOptions()` of `$api` take `toast`: a
+  title, Nuxt UI toast props, or a function of the result, shown as a
+  success toast.
+- `.useMutation()` and `.mutationOptions()` of `$api` take `confirm`:
+  the options of `useConfirm()`, or a function of the input that returns
+  them. The dialog opens before the mutation runs. A cancel runs
+  nothing, keeps `status` and `error`, and rejects `mutateAsync()` with
+  a `MutationCancelledError`. `useActionForm()` ignores it.
+- `nuxvel upgrade --only mutation-options` moves `toasted()` and
+  `optimistic()` into the `toast` and `optimistic` options, and turns
+  `useMutation()` of those options into `.useMutation()`.
+- The list page that `make:resource --ui` writes deletes through
+  `.useMutation()` with `optimistic`, `removeRow()` and `confirm`.
+- `removeRow()`, `prependRow()` and `replaceRow()` are auto-imported
+  patches for a page of `paginated()` data, for `useLiveQuery()` and
+  optimistic updates. They keep `total` and `lastPage` right and skip a
+  duplicate row.

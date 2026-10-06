@@ -26,12 +26,18 @@ describe("Nuxt UI opted out with ui: false", async () => {
     expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--ui-primary"))).toBe("");
   });
 
-  it("does not auto-import toasted()", () => {
+  it("does not auto-import useConfirm()", () => {
     const buildDir = useTestContext().nuxt?.options.buildDir ?? "";
     const imports = readFileSync(join(buildDir, "imports.d.ts"), "utf8");
 
     expect(imports).toMatch(/\buseFlash\b/);
-    expect(imports).not.toMatch(/\btoasted\b/);
+    expect(imports).not.toMatch(/\buseConfirm\b/);
+  });
+
+  it.for(["toast", "confirm"])("fails the page that passes the %s option to a mutation", async (option) => {
+    const response = await guest().fetch(`/${option}`);
+
+    expect(response.status).toBe(500);
   });
 
   it("registers the plain-markup <QueryState>", async () => {

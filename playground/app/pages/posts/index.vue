@@ -4,37 +4,28 @@ definePageMeta({ middleware: "auth", layout: "app" });
 const route = useRoute();
 const input = computed(() => paginationSchema.catch({}).parse(route.query));
 
+const addPost = prependRow({ when: (list) => list.page === 1 && !input.value.q });
+
 const posts = useLiveQuery(() => $api.post.list.queryOptions(input.value), {
   channel: "posts",
   on: {
-    created: (list, payload) => {
-      const post = postSchema.parse(payload);
-
-      if (list.page > 1 || input.value.q || list.rows.some((row) => row.id === post.id)) return list;
-
-      return { ...list, rows: [post, ...list.rows].slice(0, list.perPage), total: list.total + 1 };
-    },
+    created: (list, payload) => addPost(list, postSchema.parse(payload)),
   },
 });
 
-const { mutate: deletePost, error: deleteError } = useMutation(
-  optimistic($api.post.delete.mutationOptions(), {
-    key: () => $api.post.list.key(input.value),
-    apply: (list, { id }) => ({ ...list, rows: list.rows.filter((row) => row.id !== id) }),
-  }),
-);
+const deletePost = $api.post.delete.useMutation({
+  optimistic: { key: () => $api.post.list.key(input.value), apply: removeRow() },
+  confirm: ({ id }) => {
+    const post = posts.data.value?.rows.find((row) => row.id === id);
 
-const confirm = useConfirm();
-
-async function confirmDelete(post: { id: number; title: string }) {
-  const confirmed = await confirm({
-    title: "Delete post?",
-    description: `"${post.title}" will be deleted.`,
-    confirmLabel: "Delete",
-    color: "error",
-  });
-  if (confirmed) deletePost({ id: post.id });
-}
+    return {
+      title: "Delete post?",
+      description: post && `"${post.title}" will be deleted.`,
+      confirmLabel: "Delete",
+      color: "error",
+    };
+  },
+});
 </script>
 
 <template>
@@ -44,12 +35,12 @@ async function confirmDelete(post: { id: number; title: string }) {
       <UButton :to="{ name: 'posts-new' }" icon="i-lucide-plus" label="New post" />
     </div>
     <UAlert
-      v-if="deleteError"
+      v-if="deletePost.error"
       role="alert"
       color="error"
       variant="subtle"
       title="Could not delete the post."
-      :description="deleteError.message"
+      :description="deletePost.error.message"
     />
     <DataTable
       :query="posts"
@@ -74,7 +65,7 @@ async function confirmDelete(post: { id: number; title: string }) {
         />
       </template>
       <template #actions-cell="{ row }">
-        <PostActions :post="row.original" @delete="confirmDelete(row.original)" />
+        <PostActions :post="row.original" @delete="deletePost.mutate({ id: row.original.id })" />
       </template>
     </DataTable>
   </div>

@@ -1062,7 +1062,7 @@ const roles = addMemberInput.shape.role.options;
 
 const { mutate: changeRole, error: roleError } = $api.team.changeRole.useMutation();
 
-const form = useActionForm(addMemberInput, toasted($api.team.addMember.mutationOptions(), "Member added"), {
+const form = useActionForm(addMemberInput, $api.team.addMember.mutationOptions({ toast: "Member added" }), {
   defaults: { teamId: props.teamId, email: "", role: "member" },
   failures: { "team.unknown-email": "email" },
 });

@@ -30,6 +30,17 @@ useSeo(() => ({ title: ts("post.title") }));
 </template>
 ```
 
+A delete button asks, removes the row at once and puts it back on error:
+
+```ts
+const input = computed(() => paginationSchema.catch({}).parse(useRoute().query));
+const remove = $api.post.delete.useMutation({
+  toast: "Post deleted",
+  confirm: { title: "Delete post?", confirmLabel: "Delete", color: "error" },
+  optimistic: { key: () => $api.post.list.key(input.value), apply: removeRow() },
+});
+```
+
 ## Data
 
 | Name | Use |
@@ -38,7 +49,7 @@ useSeo(() => ({ title: ts("post.title") }));
 | `useQuery(options \| () => options)` | Pinia Colada's own query, for `queryOptions()` |
 | `useMutation(options)` | Pinia Colada's own mutation, for `mutationOptions()` |
 | `useQueryCache()` | `setQueriesData`, `invalidateQueries({ key })` for a refetch no mutation causes. A mutation already refetches its router's queries and the tags its actions declare in `invalidates` |
-| `optimistic(mutationOptions, { key, apply })` | change the cache first, roll back on error |
+| `{ optimistic: { key, apply } }` in `.useMutation()` or `.mutationOptions()` | change the cache first, roll back on error. `apply` can be `removeRow()`, `prependRow()` or `replaceRow()` on a paginated list |
 | `useLiveQuery(options, { channel, on \| refetch })` | query patched by channel events |
 | `useActionForm(schema, mutationOptions, { defaults, onSuccess, failures, warnUnsaved })` | `form.ref/schema/state/submit/errors/formError/pending` |
 | `RouterOutputs["post"]["byId"]` | procedure type, never hand-written |
@@ -50,8 +61,9 @@ SSR: `NOT_FOUND`/`FORBIDDEN`/`UNAUTHORIZED` render the `error` slot with 404/403
 | Name | Use |
 |---|---|
 | `useUser()` | `{ user, isPending, signOut, signInWith }`. Sign out only with `signOut()` |
-| `useConfirm()` | `await confirm({ title, description, confirmLabel, color })` → boolean |
-| `toasted(mutationOptions, "Saved")` | success toast |
+| `{ confirm: { title, confirmLabel, color } }` in `.useMutation()` or `.mutationOptions()` | dialog before the mutation runs |
+| `useConfirm()` | `await confirm({ title, description, confirmLabel, color })` → boolean, to ask in your own code |
+| `{ toast: "Saved" }` in `.useMutation()` or `.mutationOptions()` | success toast |
 | `useFlash()` | reads a server `flash()` |
 | `useChannel("posts", { limit })` | `{ events, status, close }` |
 | `usePresence("posts", { id })` | `{ members, setState }` |

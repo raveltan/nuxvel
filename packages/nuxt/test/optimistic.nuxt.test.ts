@@ -1,8 +1,8 @@
 import { defineComponent, h } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
-import { useMutation, useQuery, useQueryCache } from "@pinia/colada";
-import { $api, optimistic } from "#imports";
+import { useQuery, useQueryCache } from "@pinia/colada";
+import { $api } from "#imports";
 
 function deferred<T>() {
   let resolve: (value: T) => void = () => {};
@@ -23,12 +23,10 @@ async function mountPingWithOptimisticEcho(
       const queryCache = useQueryCache();
       cachedPing = () => queryCache.getQueryData($api.health.ping.key());
       const { data } = useQuery($api.health.ping.queryOptions());
-      const mutation = useMutation(
-        optimistic({ ...$api.health.echo.mutationOptions(), onError }, {
-          key: () => $api.health.ping.key(),
-          apply: (_current, text) => text,
-        }),
-      );
+      const mutation = $api.health.echo.useMutation({
+        optimistic: { key: () => $api.health.ping.key(), apply: (_current, text) => text },
+        onError,
+      });
       mutate = mutation.mutate;
       return () => h("div", data.value ?? "");
     },
@@ -41,7 +39,7 @@ async function mountPingWithOptimisticEcho(
   return { wrapper, mutate, cachedPing };
 }
 
-describe("optimistic()", () => {
+describe("the optimistic option of .useMutation()", () => {
   let serverPing: string;
 
   beforeEach(() => {
@@ -104,7 +102,7 @@ describe("optimistic()", () => {
     await vi.waitFor(() => expect(wrapper.text()).toBe("confirmed"));
   });
 
-  it("runs the onError of the mutation options after the rollback", async () => {
+  it("runs the onError of the options after the rollback", async () => {
     registerEndpoint("/api/trpc/health.echo", {
       method: "POST",
       handler: () => ({

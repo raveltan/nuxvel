@@ -1282,7 +1282,7 @@ While one story file cannot load, the stories of the starter fail too, with an a
 <script setup lang="ts">
 const props = defineProps<{ rooms: { id: number; name: string; capacity: number }[] }>();
 
-const form = useActionForm(createBookingInput, toasted($api.booking.create.mutationOptions(), "Room booked"), {
+const form = useActionForm(createBookingInput, $api.booking.create.mutationOptions({ toast: "Room booked" }), {
   defaults: { title: "", roomId: undefined, startsAt: undefined, endsAt: undefined, guests: 1 },
   failures: {
     "booking.over-capacity": "guests",
@@ -1421,7 +1421,7 @@ A first version of the component, as an icon button often starts:
 <script setup lang="ts">
 const props = defineProps<{ booking: { id: number; title: string; room: string; booker: string; startsAt: Date } }>();
 
-const cancel = useMutation(toasted($api.booking.cancel.mutationOptions(), "Booking cancelled"));
+const cancel = $api.booking.cancel.useMutation({ toast: "Booking cancelled" });
 </script>
 
 <template>

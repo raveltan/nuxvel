@@ -1,5 +1,5 @@
 import type { AST, Rule, Scope, SourceCode } from "eslint";
-import { type ProcedureTemplateContainer, procedureComposables } from "./procedure-composables.ts";
+import { type ProcedureTemplateContainer, procedureComposables, withTemplateContainers } from "./procedure-composables.ts";
 
 type IdentifierNode = Extract<Rule.Node, { type: "Identifier" }>;
 
@@ -8,14 +8,6 @@ type EstreeNode = Parameters<SourceCode["getAncestors"]>[0];
 type ScriptIdentifier = Extract<Scope.Reference["identifier"], { type: "Identifier" }>;
 
 type ImportSpecifierNode = Extract<Rule.Node, { type: "ImportSpecifier" }>;
-
-type TemplateServices = {
-  defineTemplateBodyVisitor?: (
-    template: Record<string, (node: never) => void>,
-    script: Rule.RuleListener,
-    options: { templateBodyTriggerSelector: "Program" },
-  ) => Rule.RuleListener;
-};
 
 const API = "$api";
 const RETURN_TYPE_BEFORE = /ReturnType<\s*typeof\s+$/;
@@ -189,18 +181,7 @@ export const useTrpc: Rule.RuleModule = {
         report();
       },
     };
-    const services: TemplateServices = sourceCode.parserServices;
 
-    if (!services.defineTemplateBodyVisitor) return script;
-
-    return services.defineTemplateBodyVisitor(
-      {
-        VExpressionContainer(node: ProcedureTemplateContainer) {
-          containers.push(node);
-        },
-      },
-      script,
-      { templateBodyTriggerSelector: "Program" },
-    );
+    return withTemplateContainers(context, containers, script);
   },
 };

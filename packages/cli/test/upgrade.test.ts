@@ -25,7 +25,7 @@ describe("nuxvel upgrade", () => {
 
     expect(unknown.exitCode).toBe(2);
     expect(unknown.stdout).toBe("");
-    expect(stripAnsi(unknown.stderr)).toContain("✖ No codemod named nope\n  → The codemods are test-aliases, imports, use-trpc, invalidate");
+    expect(stripAnsi(unknown.stderr)).toContain("✖ No codemod named nope\n  → The codemods are test-aliases, imports, use-trpc, invalidate, mutation-options");
 
     writeFileSync(join(appDir, "package.json"), "{ not json");
 
@@ -512,6 +512,89 @@ describe("nuxvel upgrade", () => {
 
       expect(again.exitCode, again.stderr).toBe(0);
       expect(again.stdout).not.toContain("report");
+    }, 60000);
+  });
+
+  describe("mutation-options", () => {
+    it("moves toasted() and optimistic() into the options of .mutationOptions() and .useMutation(), and leaves any other shape as a manual step", async () => {
+      const appDir = scratchPlayground("upgrade-mutation-options");
+      const page = join(appDir, "app", "pages", "report-posts.vue");
+      writeFileSync(
+        page,
+        [
+          '<script setup lang="ts">',
+          "const input = computed(() => ({ page: 1 }));",
+          "const remove = useMutation(",
+          '  optimistic(toasted($api.post.delete.mutationOptions(), "Post deleted"), {',
+          "    key: () => $api.post.list.key(input.value),",
+          "    apply: (list, { id }) => ({ ...list, rows: list.rows.filter((row) => row.id !== id) }),",
+          "  }),",
+          ");",
+          "const { mutate: rename } = useMutation(",
+          "  optimistic({ ...$api.post.update.mutationOptions({ invalidate: false }), onError: () => {} }, {",
+          "    key: (post) => $api.post.byId.key({ id: post.id }),",
+          "    apply: (post, { title }) => ({ ...post, title }),",
+          "  }),",
+          ");",
+          "const form = useActionForm(updatePostInput, toasted($api.post.update.mutationOptions(), (post) => `Saved ${post.title}`), {",
+          '  defaults: { id: 1, title: "", body: "" },',
+          "});",
+          'const kept = useMutation(toasted(options, "Saved"));',
+          "</script>",
+          "",
+          "<template>",
+          '  <UButton :loading="remove.isLoading.value" @click="remove.mutate({ id: 1 })" />',
+          '  <UButton @click="rename({ id: 1, title: form.state.title })" />',
+          "</template>",
+          "",
+        ].join("\n"),
+      );
+
+      const applied = await runCliAt(appDir, "upgrade", "--only", "mutation-options");
+
+      expect(applied.exitCode, applied.stderr).toBe(0);
+      expect(applied.stdout).toContain("updated: app/pages/report-posts.vue\n");
+      expect(stripAnsi(applied.stderr)).toContain(
+        "▲ app/pages/report-posts.vue:23: toasted() is removed: pass its second argument as the toast option of $api.<path>.mutationOptions() or .useMutation()",
+      );
+      expect(readFileSync(page, "utf8")).toBe(
+        [
+          '<script setup lang="ts">',
+          "const input = computed(() => ({ page: 1 }));",
+          "const remove = $api.post.delete.useMutation({",
+          '  toast: "Post deleted",',
+          "  optimistic: {",
+          "    key: () => $api.post.list.key(input.value),",
+          "    apply: (list, { id }) => ({ ...list, rows: list.rows.filter((row) => row.id !== id) }),",
+          "  },",
+          "});",
+          "const { mutate: rename } = useMutation(",
+          "  $api.post.update.mutationOptions({",
+          "    invalidate: false,",
+          "    onError: () => {},",
+          "    optimistic: {",
+          "      key: (post) => $api.post.byId.key({ id: post.id }),",
+          "      apply: (post, { title }) => ({ ...post, title }),",
+          "    },",
+          "  }),",
+          ");",
+          "const form = useActionForm(updatePostInput, $api.post.update.mutationOptions({ toast: (post) => `Saved ${post.title}` }), {",
+          '  defaults: { id: 1, title: "", body: "" },',
+          "});",
+          'const kept = useMutation(toasted(options, "Saved"));',
+          "</script>",
+          "",
+          "<template>",
+          '  <UButton :loading="remove.isLoading" @click="remove.mutate({ id: 1 })" />',
+          '  <UButton @click="rename({ id: 1, title: form.state.title })" />',
+          "</template>",
+          "",
+        ].join("\n"),
+      );
+
+      const again = await runCliAt(appDir, "upgrade", "--only", "mutation-options");
+
+      expect(again.stdout).not.toContain("report-posts");
     }, 60000);
   });
 });

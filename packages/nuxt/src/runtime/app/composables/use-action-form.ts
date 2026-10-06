@@ -21,6 +21,7 @@ import {
   type ValidationError,
 } from "../../shared/errors/validation";
 import { serverFields } from "../forms/server-fields";
+import { MutationCancelledError } from "../trpc/options-proxy";
 
 type ActionFailureCode = (typeof actions)[number] extends infer Discovered
   ? Discovered extends { errors: infer Errors } ? keyof Errors & string : never
@@ -111,8 +112,8 @@ function valueAt(state: unknown, path: string): unknown {
  * announced through `useAnnouncer()`, so render `<NuxtAnnouncer>` in
  * `app.vue`. Without Nuxt UI, `submit()` validates `state` itself and fills
  * `errors` per field (the {@link ValidationError} shape) from both the
- * schema and the server. Pass `$api.<path>.mutationOptions()`,
- * optionally wrapped in {@link optimistic}. A submit while the mutation
+ * schema and the server. Pass `$api.<path>.mutationOptions()`, with
+ * `toast` or `optimistic` if needed. A submit while the mutation
  * runs does nothing. Every submit sends the one idempotency key of those
  * options, so a procedure with `idempotent()` answers a repeat of the
  * same state with the first result instead of running again.
@@ -265,6 +266,8 @@ export function useActionForm<Schema extends z.ZodType, TResult>(
       savedState = JSON.stringify(submitted);
       await options.onSuccess?.(result);
     } catch (error) {
+      if (error instanceof MutationCancelledError) return;
+
       const fields = serverFields(error) ?? failureFields(error, options.failures);
 
       if (fields) {

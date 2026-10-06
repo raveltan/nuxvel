@@ -5,23 +5,10 @@ const route = useRoute();
 const router = useRouter();
 const input = computed(() => listQueryParams({{tableCamelName}}ListInput.catch({ sort: [], filters: {} }).parse(route.query)));
 const rows = $api.{{tableCamelName}}.list.useQuery(() => input.value);
-const confirm = useConfirm();
-
-const { mutate: remove, error: removeError } = useMutation(
-  optimistic($api.{{tableCamelName}}.delete.mutationOptions(), {
-    key: () => $api.{{tableCamelName}}.list.key(input.value),
-    apply: (list, { id }) => ({ ...list, rows: list.rows.filter((row) => row.id !== id), total: list.total - 1 }),
-  }),
-);
-
-async function confirmDelete(id: number) {
-  const confirmed = await confirm({
-    title: "Delete {{titleLower}}?",
-    confirmLabel: "Delete",
-    color: "error",
-  });
-  if (confirmed) remove({ id });
-}
+const remove = $api.{{tableCamelName}}.delete.useMutation({
+  optimistic: { key: () => $api.{{tableCamelName}}.list.key(input.value), apply: removeRow() },
+  confirm: { title: "Delete {{titleLower}}?", confirmLabel: "Delete", color: "error" },
+});
 
 const editId = computed(() => {
   const id = Number(route.query.edit);
@@ -59,12 +46,12 @@ useSeo({ title: "{{listTitle}}" });
       <UButton :to="{ name: '{{tableName}}-new' }" icon="i-lucide-plus" label="New {{titleLower}}" />
     </div>
     <UAlert
-      v-if="removeError"
+      v-if="remove.error"
       role="alert"
       color="error"
       variant="subtle"
       title="Could not delete the {{titleLower}}."
-      :description="removeError.message"
+      :description="remove.error.message"
     />
     <UAlert
       v-if="openError"
@@ -100,7 +87,7 @@ useSeo({ title: "{{listTitle}}" });
             icon="i-lucide-trash"
             label="Delete"
             :aria-label="`Delete {{titleLower}} ${row.original.id}`"
-            @click="confirmDelete(row.original.id)"
+            @click="remove.mutate({ id: row.original.id })"
           />
         </div>
       </template>

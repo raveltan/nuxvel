@@ -38,9 +38,11 @@ const mutationOptionsAreTyped: Parameters<
   : never = true;
 
 const { mutate: renamePost } = useMutation(
-  optimistic(trpc.post.update.mutationOptions(), {
-    key: (input) => trpc.post.byId.key({ id: input.id }),
-    apply: (post, input) => ({ ...post, title: input.title }),
+  trpc.post.update.mutationOptions({
+    optimistic: {
+      key: (input) => trpc.post.byId.key({ id: input.id }),
+      apply: (post, input) => ({ ...post, title: input.title }),
+    },
   }),
 );
 const optimisticIsTyped: Parameters<typeof renamePost>[0] extends {
@@ -76,12 +78,13 @@ useActionForm(createPostInput, trpc.post.create.mutationOptions(), {
   },
 });
 
-const toastedCreate = toasted(trpc.post.create.mutationOptions(), (post) => typed(post).title);
-const toastedIsTyped: IsAny<Awaited<ReturnType<typeof toastedCreate.mutation>>> extends true
-  ? never
-  : Parameters<typeof toastedCreate.mutation>[0] extends { title: string; body: string }
-    ? true
-    : never = true;
+
+trpc.post.create.useMutation({ toast: (post) => typed(post).title });
+trpc.post.create.mutationOptions({ toast: (post) => ({ title: typed(post).title, icon: "i-lucide-check" }) });
+
+trpc.post.delete.useMutation({ confirm: (input) => ({ title: `Delete ${typed(input).id}?`, color: "error" }) });
+// @ts-expect-error a confirm dialog needs a title
+trpc.post.delete.mutationOptions({ confirm: {} });
 
 const tagsSchema = z.object({ tags: z.string().transform((tags) => tags.split(",")) });
 const tagsForm = useActionForm(
@@ -113,10 +116,7 @@ const abilitiesAreTyped: IsAny<
     : never = true;
 
 const { mutate: deletePost } = useMutation(
-  optimistic(trpc.post.delete.mutationOptions(), {
-    key: () => trpc.post.list.key(),
-    apply: (list, input) => ({ ...list, rows: list.rows.filter((row) => row.id !== input.id) }),
-  }),
+  trpc.post.delete.mutationOptions({ optimistic: { key: () => trpc.post.list.key(), apply: removeRow() } }),
 );
 const deleteIsTyped: IsAny<Parameters<typeof deletePost>[0]> extends true
   ? never
@@ -197,7 +197,7 @@ const feedIsTyped: IsAny<PostFeed> extends true
   <div>
     {{ ping }} {{ clientIsTyped }} {{ pingReturnsString }} {{ createdKeyIsTyped }}
     {{ queryOptionsAreTyped }} {{ mutationOptionsAreTyped }}
-    {{ optimisticIsTyped }} {{ actionFormIsTyped }} {{ transformFormIsTyped }} {{ toastedIsTyped }}
+    {{ optimisticIsTyped }} {{ actionFormIsTyped }} {{ transformFormIsTyped }}
     {{ abilitiesAreTyped }} {{ deleteIsTyped }} {{ deleteReturnsId }}
     {{ routerInputsAreTyped }} {{ routerOutputsAreTyped }} {{ signInWithIsTyped }} {{ listRowsAreTyped }} {{ feedIsTyped }} {{ networkErrorCodeIsTyped }}    <QueryState :query="postList">
       <template #default="{ data }">{{ titlesOf(data.rows) }}</template>

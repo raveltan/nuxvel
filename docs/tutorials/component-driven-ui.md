@@ -386,26 +386,18 @@ The list page shows the products in a table, with a search, sorting, pages and a
 <script setup lang="ts">
 const route = useRoute();
 const { user } = useUser();
-const confirm = useConfirm();
 const input = computed(() => listQueryParams(productListInput.catch({ sort: [], filters: {} }).parse(route.query)));
 const products = $api.product.list.useQuery(input);
 
-const { mutate: remove, error: removeError } = useMutation(
-  optimistic($api.product.delete.mutationOptions(), {
-    key: () => $api.product.list.key(input.value),
-    apply: (list, { id }) => ({ ...list, rows: list.rows.filter((row) => row.id !== id), total: list.total - 1 }),
-  }),
-);
-
-async function confirmDelete(product: { id: number; name: string }) {
-  const confirmed = await confirm({
+const { mutate: remove, error: removeError } = $api.product.delete.useMutation({
+  optimistic: { key: () => $api.product.list.key(input.value), apply: removeRow() },
+  confirm: ({ id }) => ({
     title: "Delete product?",
-    description: `"${product.name}" will be deleted.`,
+    description: `"${products.data.value?.rows.find((row) => row.id === id)?.name}" will be deleted.`,
     confirmLabel: "Delete",
     color: "error",
-  });
-  if (confirmed) remove({ id: product.id });
-}
+  }),
+});
 
 const price = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 </script>
@@ -450,7 +442,7 @@ const price = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD
           icon="i-lucide-trash"
           label="Delete"
           :aria-label="`Delete ${row.original.name}`"
-          @click="confirmDelete(row.original)"
+          @click="remove({ id: row.original.id })"
         />
       </template>
     </DataTable>
@@ -462,7 +454,7 @@ const price = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD
 - `search="Search products"` puts a [`<SearchInput>`](../frontend.md#search-input) above the table. It sends the search 300 ms after the last key.
 - `<DataTable>` renders the loading and the error states of the query with [`<QueryState>`](../frontend.md#page-states). The `empty` slot replaces the empty state.
 - `<DateTime>` renders the date in a `<time>` element, with the same text on the server and in the browser.
-- `useConfirm()` opens a `ConfirmDialog`. `optimistic()` removes the row from the cached page before the server answers. If the server refuses, the row comes back, and `removeError` holds the error. See [Frontend: optimistic updates](../frontend.md#optimistic-updates).
+- `confirm` opens a `ConfirmDialog` before the mutation runs. `optimistic` removes the row from the cached page before the server answers, and `removeRow()` keeps `total` right. If the server refuses, the row comes back, and `removeError` holds the error. See [Frontend: optimistic updates](../frontend.md#optimistic-updates).
 - `useUser()` gives the signed-in user. Only the owner of a row sees its **Delete** button.
 
 The links go to the routes `products-new` and `products-id`. Chapter 7 adds these pages. Until then, `npm run typecheck` reports the two route names.

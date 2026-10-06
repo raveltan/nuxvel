@@ -833,15 +833,15 @@ const emit = defineEmits<{ typing: [typing: boolean] }>();
 const { user } = useUser();
 const state = reactive({ roomId: props.roomId, body: "" });
 
-const { mutate, error } = useMutation(
-  optimistic($api.message.post.mutationOptions(), {
+const { mutate, error } = $api.message.post.useMutation({
+  optimistic: {
     key: ({ roomId }) => $api.message.forRoom.key({ roomId }),
     apply: (messages, { roomId, body }) => [
       ...messages,
       { id: -Date.now(), roomId, body, authorId: user.value?.id ?? "", authorName: user.value?.name ?? "", createdAt: new Date() },
     ],
-  }),
-);
+  },
+});
 
 function send({ data }: FormSubmitEvent<z.output<typeof postMessageInput>>) {
   mutate(data);
@@ -869,14 +869,14 @@ function send({ data }: FormSubmitEvent<z.output<typeof postMessageInput>>) {
 
 `<UForm>` checks the input with `postMessageInput`, the schema of the server. An empty message shows "Write a message" under the field and sends nothing. `data` is the output of the schema, so the body is already trimmed.
 
-`optimistic()` wraps the options of the mutation. When `mutate()` starts, these steps occur:
+The `optimistic` option changes the cache around the mutation. When `mutate()` starts, these steps occur:
 
 1. `apply` adds the message to the cached result of `forRoom` for this room, with a negative ID. The list shows it at once, with "Sending…".
 2. The form clears the field at once, so the user can type the next message.
-3. When the server answers, `optimistic()` fetches `forRoom` again. The stored message, with its real ID and time, replaces the temporary one.
-4. When the server refuses, `optimistic()` puts back the list that it had before, and `error` shows the alert.
+3. When the server answers, the mutation fetches `forRoom` again. The stored message, with its real ID and time, replaces the temporary one.
+4. When the server refuses, the mutation puts back the list that it had before, and `error` shows the alert.
 
-A chat form clears its field before the answer, so the component uses `useMutation()` and `<UForm>` directly. `useActionForm()` waits for the answer before its `onSuccess`. See [Frontend: optimistic updates](../frontend.md#optimistic-updates).
+A chat form clears its field before the answer, so the component uses `.useMutation()` and `<UForm>` directly. `useActionForm()` waits for the answer before its `onSuccess`. See [Frontend: optimistic updates](../frontend.md#optimistic-updates).
 
 The component emits `typing` with `true` while the field has text, and with `false` when the field loses focus or the message goes out. The page sends the flag to the room. The component does not know about presence, so a story can test it with no channel.
 
@@ -908,7 +908,7 @@ const { members, setState } = usePresence("room", { roomId: id });
 const others = computed(() => members.value.filter((member) => member.userId !== user.value?.id));
 const { status } = useChannel("room", { params: { roomId: id } });
 
-const memberForm = useActionForm(addMemberInput, toasted($api.room.addMember.mutationOptions(), "Member added"), {
+const memberForm = useActionForm(addMemberInput, $api.room.addMember.mutationOptions({ toast: "Member added" }), {
   defaults: { roomId: id, email: "" },
   failures: { "room.member-unknown": "email" },
   onSuccess: () => {
@@ -963,7 +963,7 @@ Each realtime part of the page does one job:
 
 All of these share one connection to the server, an `EventSource` on `/api/channels`. They join the room when the page mounts, and leave it when the page unmounts. They do nothing during server rendering.
 
-The add form shows only to the owner. That is only for the user: the action calls `authorize()`, so a direct call by another member fails. `toasted()` shows the toast "Member added". `failures` puts the message of `room.member-unknown` under the email field.
+The add form shows only to the owner. That is only for the user: the action calls `authorize()`, so a direct call by another member fails. The `toast` option shows the toast "Member added". `failures` puts the message of `room.member-unknown` under the email field.
 
 ### When the connection drops
 
@@ -1172,7 +1172,7 @@ The first test follows one journey across the two pages:
 2. Ada types. Grace's page shows the typing line. `expect` tries again until the line shows, so the test does not wait for the 300 ms of `setState()` itself.
 3. Ada sends. Grace's page shows the message, from the broadcast and the refetch. The typing line goes away, because the send set `typing` to `false`.
 
-The second test holds the request of `message.post` with `page.route()`. The message and "Sending…" show while the request waits in the browser. So the test proves that the list does not wait for the server. Then the test lets the request go. "Sending…" goes away when `optimistic()` fetches the list again.
+The second test holds the request of `message.post` with `page.route()`. The message and "Sending…" show while the request waits in the browser. So the test proves that the list does not wait for the server. Then the test lets the request go. "Sending…" goes away when the mutation fetches the list again.
 
 `visit()` also fails a test on a page error, a `console.error` message or a failed request. So each test also proves that the realtime connection opened with no error.
 

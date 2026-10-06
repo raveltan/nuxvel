@@ -3,7 +3,7 @@ import { setResponseHeader, setResponseStatus } from "h3";
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { useMutation, useQueryCache } from "@pinia/colada";
-import { $api, toasted, useRuntimeConfig } from "#imports";
+import { $api, useRuntimeConfig } from "#imports";
 
 function respondWithEcho(invalidates?: unknown[][]) {
   registerEndpoint("/api/trpc/health.echo", {
@@ -178,7 +178,7 @@ describe("a mutation invalidates", () => {
     await vi.waitFor(() => expect(invalidated).toEqual([["trpc", "tag"]]));
   });
 
-  it("takes invalidate in .useMutation(), and keeps it through toasted()", async () => {
+  it("takes invalidate in .useMutation(), and in .mutationOptions() beside toast", async () => {
     respondWithEcho([["post"]]);
     const invalidated = spyOnInvalidation();
     const mutations: ((text: string) => Promise<string>)[] = [];
@@ -186,7 +186,7 @@ describe("a mutation invalidates", () => {
       defineComponent({
         setup() {
           mutations.push($api.health.echo.useMutation({ invalidate: ["tag"] }).mutateAsync);
-          mutations.push(useMutation(toasted($api.health.echo.mutationOptions({ invalidate: ["flag"] }), "Sent")).mutateAsync);
+          mutations.push(useMutation($api.health.echo.mutationOptions({ invalidate: ["flag"], toast: "Sent" })).mutateAsync);
           return () => h("p");
         },
       }),

@@ -11,7 +11,8 @@
     "paths": {
       "#nuxvel/schema": ["./nuxvel-stubs/schema.ts"],
       "#nuxvel/rate-limits": ["./nuxvel-stubs/rate-limits.ts"],
-      "#nuxvel/error-classifiers": ["./nuxvel-stubs/error-classifiers.ts"]
+      "#nuxvel/error-classifiers": ["./nuxvel-stubs/error-classifiers.ts"],
+      "#app": ["../../node_modules/nuxt/dist/app", "../../../../node_modules/nuxt/dist/app"]
     }
   }
 }

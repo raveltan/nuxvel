@@ -62,7 +62,7 @@ export interface LiveQueryUpdates<TData, Name extends ChannelName> {
  * server sends `resync` and the query refetches instead. With `params`,
  * it follows one room of the channel, and only the `broadcast()` calls
  * with the same `params` update the query. Reach for
- * {@link optimistic} instead to patch from this tab's own mutations,
+ * the `optimistic` option of `$api.<path>.useMutation()` instead to patch from this tab's own mutations,
  * and for `useChannel()` when the events are not about a query.
  *
  * @param queryOptions Usually `$api.<path>.queryOptions(input)`, or

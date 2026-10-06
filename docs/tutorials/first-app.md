@@ -383,7 +383,7 @@ The file name gives the namespace, so the procedure is `rsvp.send`. `rsvpSchema`
 <script setup lang="ts">
 const props = defineProps<{ eventId: number }>();
 
-const form = useActionForm(sendRsvpInput, toasted($api.rsvp.send.mutationOptions(), "RSVP sent"), {
+const form = useActionForm(sendRsvpInput, $api.rsvp.send.mutationOptions({ toast: "RSVP sent" }), {
   defaults: { eventId: props.eventId, answer: undefined },
 });
 </script>
@@ -403,7 +403,7 @@ const form = useActionForm(sendRsvpInput, toasted($api.rsvp.send.mutationOptions
 ```
 
 - `answer` starts as `undefined`. A submit with no choice shows "Pick yes or no" under the field, and sends nothing.
-- `toasted()` shows the toast "RSVP sent" when the mutation succeeds.
+- The `toast` option shows the toast "RSVP sent" when the mutation succeeds.
 - `form.formError` holds a failure that belongs to no field, for example "This event is over." from `fail("rsvp.past")`.
 
 ### The guest list
@@ -621,7 +621,7 @@ import { inviteGuestAction } from "#server/actions/event/invite-guest.action";
 <script setup lang="ts">
 const props = defineProps<{ eventId: number }>();
 
-const form = useActionForm(inviteGuestInput, toasted($api.event.invite.mutationOptions(), "Invitation sent"), {
+const form = useActionForm(inviteGuestInput, $api.event.invite.mutationOptions({ toast: "Invitation sent" }), {
   defaults: { eventId: props.eventId, email: "" },
   onSuccess: () => {
     form.state.email = "";

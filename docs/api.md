@@ -420,30 +420,22 @@ A mutation response names the tags that its actions invalidated, in the header `
 ## Optimistic updates
 
 ```ts
-const { mutate: renamePost } = useMutation(
-  optimistic($api.post.update.mutationOptions(), {
+const renamePost = $api.post.update.useMutation({
+  optimistic: {
     key: (input) => $api.post.byId.key({ id: input.id }),
     apply: (post, input) => ({ ...post, title: input.title }),
-  }),
-);
+  },
+  onError: () => toast.add({ title: "Not saved" }),
+});
 ```
 
-`optimistic()` is auto-imported. It changes a cached query before the server answers. Call it inside `setup()`, because it reads the query cache.
+`optimistic: { key, apply }` on `.useMutation()` or `.mutationOptions()` changes a cached query before the server answers. Call either inside `setup()`, because it reads the query cache.
 
-1. Before the mutation runs, it cancels the query at `key` and shows the result of `apply`.
+1. Before the mutation runs, it cancels the query at `key(input)` and shows the result of `apply`.
 2. If the mutation fails, it puts the previous value back.
 3. When the mutation settles, it refetches the query, so the server's answer wins.
 
-If the query is not in the cache yet, `optimistic()` changes nothing.
-
-To react to a failure, spread the options and add your own `onError`. It runs after the rollback. An `onMutate` or `onSettled` of the options is replaced.
-
-```ts
-optimistic({ ...$api.post.update.mutationOptions(), onError: () => toast.add({ title: "Not saved" }) }, {
-  key: (input) => $api.post.byId.key({ id: input.id }),
-  apply: (post, input) => ({ ...post, title: input.title }),
-});
-```
+If the query is not in the cache yet, it changes nothing. Your own `onMutate`, `onError` and `onSettled` run after nuxvel's, so `onError` sees the value after the rollback. For a page of `paginated()` data, `apply` can be [`removeRow()`, `prependRow()` or `replaceRow()`](./frontend.md#patching-a-paginated-list).
 
 ## REST and OpenAPI
 

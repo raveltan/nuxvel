@@ -1016,10 +1016,10 @@ export default defineDeploy({
     expect(list).toContain("const rows = $api.widgetItem.list.useQuery(() => input.value);");
     expect(list).toContain("const editing = $api.widgetItem.byId.useQuery(() => ({ id: editId.value ?? 0 }), {");
     expect(list).toContain(
-      "  optimistic($api.widgetItem.delete.mutationOptions(), {\n    key: () => $api.widgetItem.list.key(input.value),\n" +
-        "    apply: (list, { id }) => ({ ...list, rows: list.rows.filter((row) => row.id !== id), total: list.total - 1 }),\n",
+      "const remove = $api.widgetItem.delete.useMutation({\n  optimistic: { key: () => $api.widgetItem.list.key(input.value), apply: removeRow() },\n" +
+        '  confirm: { title: "Delete widget item?", confirmLabel: "Delete", color: "error" },\n});\n',
     );
-    expect(list).toContain(':aria-label="`Delete widget item ${row.original.id}`"\n            @click="confirmDelete(row.original.id)"');
+    expect(list).toContain(':aria-label="`Delete widget item ${row.original.id}`"\n            @click="remove.mutate({ id: row.original.id })"');
     expect(list).toContain('search="Search widget item"');
     expect(list).toContain('<template #dueAt-cell="{ row }">\n        <DateTime v-if="row.original.dueAt" :value="row.original.dueAt" />\n      </template>\n');
     expect(list).toContain(

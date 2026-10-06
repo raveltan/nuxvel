@@ -12,6 +12,14 @@ export type ProcedureTemplateContainer = {
   parent: { type: string; key?: { name?: { name?: string }; argument?: { name?: string } | null } };
 };
 
+type TemplateServices = {
+  defineTemplateBodyVisitor?: (
+    template: Record<string, (node: never) => void>,
+    script: Rule.RuleListener,
+    options: { templateBodyTriggerSelector: "Program" },
+  ) => Rule.RuleListener;
+};
+
 const COMPOSABLES = {
   useQuery: { factory: "queryOptions", methods: new Set(["refetch", "refresh"]) },
   useMutation: { factory: "mutationOptions", methods: new Set(["mutate", "mutateAsync", "reset"]) },
@@ -36,6 +44,43 @@ function factoryCall(argument: EstreeNode, factory: string): CallNode | undefine
   if (!apiChain(callee.object) || argument.arguments.some((input) => input.type === "SpreadElement")) return undefined;
 
   return argument;
+}
+
+export function lineIndent(sourceCode: SourceCode, node: EstreeNode) {
+  const [start] = sourceCode.getRange(node);
+  const lineStart = sourceCode.text.lastIndexOf("\n", start - 1) + 1;
+
+  return /^[ \t]*/.exec(sourceCode.text.slice(lineStart))?.[0] ?? "";
+}
+
+export function reindent(sourceCode: SourceCode, node: EstreeNode, indent: string) {
+  const from = lineIndent(sourceCode, node);
+
+  return sourceCode
+    .getText(node)
+    .split("\n")
+    .map((line, index) => (index > 0 && line.startsWith(from) ? indent + line.slice(from.length) : line))
+    .join("\n");
+}
+
+export function withTemplateContainers(
+  context: Rule.RuleContext,
+  containers: ProcedureTemplateContainer[],
+  script: Rule.RuleListener,
+): Rule.RuleListener {
+  const services: TemplateServices = context.sourceCode.parserServices;
+
+  if (!services.defineTemplateBodyVisitor) return script;
+
+  return services.defineTemplateBodyVisitor(
+    {
+      VExpressionContainer(node: ProcedureTemplateContainer) {
+        containers.push(node);
+      },
+    },
+    script,
+    { templateBodyTriggerSelector: "Program" },
+  );
 }
 
 function declared(sourceCode: SourceCode, node: EstreeNode, name: string) {
@@ -92,7 +137,7 @@ export function procedureComposables(
     const options = argument && factoryCall(getter && argument.type === "ArrowFunctionExpression" ? argument.body : argument, factory);
     const [container, declaration, declarator] = sourceCode.getAncestors(call).slice(-3);
 
-    if (!options || options.callee.type !== "MemberExpression" || options.arguments.length > (composable === "useQuery" ? 1 : 0)) return;
+    if (!options || options.callee.type !== "MemberExpression" || options.arguments.length > 1) return;
     if (declarator?.type !== "VariableDeclarator" || declarator.init !== call || declarator.id.type !== "Identifier") return;
     if (declaration?.type !== "VariableDeclaration" || declaration.kind !== "const" || declaration.declarations.length !== 1) return;
     if (container?.type === "ExportNamedDeclaration" || declared(sourceCode, call, composable)) return;
@@ -111,7 +156,7 @@ export function procedureComposables(
 
     const procedure = sourceCode.getText(options.callee.object);
     const [input] = options.arguments;
-    const inputText = input && sourceCode.getText(input);
+    const inputText = input && reindent(sourceCode, input, lineIndent(sourceCode, call));
     const queryInput = input?.type === "ObjectExpression" ? `(${inputText})` : inputText;
     const replacement = inputText === undefined ? "" : getter ? `() => ${queryInput}` : inputText;
 

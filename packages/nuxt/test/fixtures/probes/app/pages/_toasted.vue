@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const form = useActionForm(createPostInput, toasted($api.post.create.mutationOptions(), "Post added"), {
+const form = useActionForm(createPostInput, $api.post.create.mutationOptions({ toast: "Post added" }), {
   defaults: { title: "", body: "" },
 });
 </script>

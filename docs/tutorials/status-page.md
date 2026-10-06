@@ -818,7 +818,7 @@ const props = defineProps<{ incident: RouterOutputs["status"]["current"][number]
 
 const statuses = Object.entries(statusLabels).map(([value, { label }]) => ({ value, label }));
 
-const form = useActionForm(postIncidentUpdateInput, toasted($api.incident.postUpdate.mutationOptions(), "Update posted"), {
+const form = useActionForm(postIncidentUpdateInput, $api.incident.postUpdate.mutationOptions({ toast: "Update posted" }), {
   defaults: { incidentId: props.incident.id, status: props.incident.status, body: "" },
 });
 </script>
@@ -837,7 +837,7 @@ const form = useActionForm(postIncidentUpdateInput, toasted($api.incident.postUp
 </template>
 ```
 
-`toasted()` shows a toast after each success. The select starts at the current status of the incident. The button names the incident, so each form on the list has a button with its own name. Add the two pages under `/admin`:
+The `toast` option shows a toast after each success. The select starts at the current status of the incident. The button names the incident, so each form on the list has a button with its own name. Add the two pages under `/admin`:
 
 ```vue
 <!-- app/pages/admin/index.vue -->
@@ -1171,7 +1171,7 @@ The form goes on the status page:
 ```vue
 <!-- app/components/SubscribeForm.vue -->
 <script setup lang="ts">
-const form = useActionForm(subscribeInput, toasted($api.subscriber.subscribe.mutationOptions(), "You will get a mail for each update"), {
+const form = useActionForm(subscribeInput, $api.subscriber.subscribe.mutationOptions({ toast: "You will get a mail for each update" }), {
   defaults: { email: "" },
 });
 </script>

@@ -69,7 +69,7 @@ describe("playground demo: posts", async () => {
     expect(await page.getByText("Post created", { exact: true }).count()).toBe(0);
   });
 
-  it("shows only the toast of toasted() when the page stays, and no flash on the next navigation", async () => {
+  it("shows only the toast of the toast option when the page stays, and no flash on the next navigation", async () => {
     const page = await signedInPage("demo-posts-toasted@example.com", "/_toasted");
 
     await page.getByLabel("Title").fill("Toasted post");

@@ -455,7 +455,7 @@ function hasLocalizedSeo(nuxt: Nuxt) {
  * `/api/webhooks/<name>` webhook endpoint, the `/api/channels` multiplexed and
  * `/api/channels/<name>` single realtime endpoints (plus the built-in `flags` and `maintenance` channels and each user's `notifications:<userId>` channel) with their
  * `/api/channels/join`, `/api/channels/leave` and `/api/channels/presence` requests, and the `/api/health/live` and
- * `/api/health/ready` probes, installs Nuxt UI with its Tailwind CSS entry, the `toasted()` and `useConfirm()` helpers, the flash toasts and the `<SocialSignIn>`, `<UploadField>`, `<AuthForm>`, `<DataTable>`, `<SearchInput>`, `<PresenceAvatars>`, `<TypingIndicator>`, `<MaintenanceBanner>` and `<NotificationBell>` components
+ * `/api/health/ready` probes, installs Nuxt UI with its Tailwind CSS entry, the `useConfirm()` helper and the `toast` and `confirm` options of `$api` mutations, the flash toasts and the `<SocialSignIn>`, `<UploadField>`, `<AuthForm>`, `<DataTable>`, `<SearchInput>`, `<PresenceAvatars>`, `<TypingIndicator>`, `<MaintenanceBanner>` and `<NotificationBell>` components
  * unless `ui` is `false`, installs `@vite-pwa/nuxt` with an offline page and web push when `pwa` is set, and reports unexpected server and browser errors
  * to the error tracker named by `NUXT_PUBLIC_SENTRY_DSN`. It also generates the `#nuxvel/*` modules by
  * discovering the app's `server/database/schema`, `server/database/backfills`, `server/flags`, `server/jobs`,
