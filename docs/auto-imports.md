@@ -8,6 +8,25 @@ No other name from nuxvel is auto-imported. The helpers that nuxvel uses interna
 
 The exports of `shared/schemas/` are also auto-imported, in `server/` and in the app. The pagination names are also auto-imported in the app. So are `SanitizedHtml` and `richText`, which are also auto-imported in `shared/`. For app-side composables, such as `useTRPC()`, `useUser()` and `useFlag()`, see [Frontend](./frontend.md). For `useMaintenance()` and `isMaintenanceError()`, see [Maintenance mode](./maintenance.md#in-the-app). For `isNetworkError()`, see [When the server cannot be reached](./api.md#when-the-server-cannot-be-reached). Test fixtures are not auto-imported. Import them from `@nuxvel/nuxt/testing`, as [Testing](./testing.md) shows.
 
+## Imports
+
+Import your own code through aliases, never through `../`:
+
+| Alias | Points to |
+|---|---|
+| `#nuxvel/schema` | Every table of `server/database/schema/`. |
+| `#nuxvel/factories` | Every factory of `server/factories/`. |
+| `#server/*` | `server/`: `#server/utils/slug`. |
+| `#shared/*` | `shared/`: `#shared/slug`. |
+
+```ts
+import { userTable } from "#nuxvel/schema";
+import { slugify } from "#server/utils/slug";
+import { postSlugLength } from "#shared/post";
+```
+
+`#server` is not allowed in `app/`: server code must not reach the browser bundle. Use `#shared/*` for code that both sides share.
+
 ## Naming scheme
 
 The form of a name tells you what the name does:

@@ -12,6 +12,7 @@ import { makeGadgetPolicy } from "./scratch-app/make-policy";
 import { addProtectedPage, cachedPages, recordBuildWarnings } from "./scratch-app/private-page-guard";
 import { PWA_OPTIONS, addPwaPages } from "./scratch-app/pwa";
 import { addConsoleProbePage, ownSecurityOptions } from "./scratch-app/security-overrides";
+import { addServerAliasChecks } from "./scratch-app/server-aliases";
 import { addSocialSignIn, githubSignIn } from "./scratch-app/social-login";
 import { SMOKE_ROUTE_RULES, addSmokePages } from "./scratch-app/smoke";
 import { addTableNameChecks } from "./scratch-app/table-names";
@@ -24,6 +25,7 @@ beforeAll(() => {
   writeDotenv(appDir);
   removeI18nConfig(appDir);
   addTableNameChecks(appDir);
+  addServerAliasChecks(appDir);
   addBaseLayer(appDir);
   addDomainFolders(appDir);
   makeGadgetPolicy(appDir);

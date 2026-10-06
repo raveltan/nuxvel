@@ -835,6 +835,43 @@ describe("nuxvel db:*", () => {
     expect(await authors()).toBe(1);
   }, 240000);
 
+  it("db:seed runs a seeder that imports through #server and #shared", async () => {
+    const appDir = scratchPlayground("db-seed-aliases");
+    const databaseUrl = await scratchDatabase("seed-aliases");
+    const env = {
+      ...process.env,
+      NUXT_DATABASE_URL: databaseUrl,
+      NUXT_REDIS_URL: await emptyWorkerRedis(),
+      NUXT_AUTH_SECRET: "seed-test-secret-seed-test-secret-seed",
+    };
+    mkdirSync(join(appDir, "shared"), { recursive: true });
+    writeFileSync(join(appDir, "shared", "aliased-name.ts"), 'export const aliasedName = "Aliased Author";\n');
+    writeFileSync(join(appDir, "server", "utils", "aliased-email.ts"), 'export const aliasedEmail = "aliased-author@example.com";\n');
+    writeFileSync(
+      join(appDir, "server", "seeders", "aliased.seeder.ts"),
+      [
+        'import { aliasedEmail } from "#server/utils/aliased-email";',
+        'import { userFactory } from "#server/factories/users.factory";',
+        'import { aliasedName } from "#shared/aliased-name";',
+        "",
+        "export default defineSeeder(async () => {",
+        "  await userFactory({ name: aliasedName, email: aliasedEmail });",
+        "});",
+        "",
+      ].join("\n"),
+    );
+
+    expect((await runCliWithEnv(appDir, env, "db:migrate")).exitCode).toBe(0);
+
+    const seeded = await runCliWithEnv(appDir, env, "db:seed", "aliased");
+    expect(seeded.exitCode, seeded.stderr).toBe(0);
+    expect(stripAnsi(seeded.stderr)).toContain("✔ Seeded aliased");
+
+    const sql = scratchSql(databaseUrl);
+    const rows = await sql`select name from "user" where email = 'aliased-author@example.com'`;
+    expect(rows.map((row) => row.name)).toEqual(["Aliased Author"]);
+  }, 180000);
+
   it("db:seed builds the server of an app with a prerendered route", async () => {
     const appDir = scratchPlayground("db-seed-prerender");
     const databaseUrl = await scratchDatabase("seed-prerender");
