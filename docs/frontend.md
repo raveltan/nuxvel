@@ -904,7 +904,7 @@ For the notifications of the signed-in user, use `useNotifications()` or `<Notif
 const route = useRoute();
 const id = Number(route.params.id);
 const { user } = useUser();
-const { members, setState } = usePresence("posts", { id });
+const { members, setState } = usePresence("posts", { params: { id } });
 const others = computed(() => members.value.filter((member) => member.userId !== user.value?.id));
 const title = ref("");
 </script>
@@ -921,7 +921,7 @@ const title = ref("");
 </template>
 ```
 
-`usePresence(channel, params)` is auto-imported. It joins one room of a [presence channel](./realtime.md#presence) and shows who else is on the page. This example needs a `posts` channel with `presence: { state: z.object({ typing: z.boolean() }) }`. In place of the name, it also takes the channel from `$channels`, for example `usePresence($channels.posts, { id })`. In the app, `$channels.posts` holds only the channel name.
+`usePresence(channel, { params })` is auto-imported. It joins one room of a [presence channel](./realtime.md#presence) and shows who else is on the page. This example needs a `posts` channel with `presence: { state: z.object({ typing: z.boolean() }) }`. In place of the name, it also takes the channel from `$channels`, for example `usePresence($channels.posts, { params: { id } })`. `params` selects the room, as in `useChannel(name, { params })`. In the app, `$channels.posts` holds only the channel name.
 
 - `members` lists one member for each signed-in user in the room, the current user included. Each member has `userId`, `name`, `avatar`, `state` and `connections`. `state` is typed by the channel's `state` schema. Every `usePresence()` of the same room on a page shares one list.
 - `isPresent(userId)` tells if that user is in the room.

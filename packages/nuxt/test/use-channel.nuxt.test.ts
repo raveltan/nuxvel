@@ -1,4 +1,5 @@
-import { defineComponent, h, nextTick } from "vue";
+import superjson from "superjson";
+import { defineComponent, h, nextTick, watch } from "vue";
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { mountSuspended } from "@nuxt/test-utils/runtime";
 import { useState } from "#app";
@@ -30,12 +31,12 @@ class FakeEventSource extends EventTarget {
     );
   }
 
-  deliver(channel: string, event: string, payload: unknown) {
+  deliver(channel: string, event: string, payload: unknown, stringify: (message: unknown) => string = superjson.stringify) {
     if (this.closed) return;
 
     this.dispatchEvent(
       new MessageEvent(`channel:${channel}`, {
-        data: JSON.stringify({ event, payload }),
+        data: stringify({ event, payload }),
       }),
     );
   }
@@ -137,7 +138,7 @@ describe("useChannel()", () => {
     expect(onlySource().url).toBe(
       `/api/channels?channels=${encodeURIComponent(
         JSON.stringify([{ name: "_probe-public" }, { name: "_probe-members" }]),
-      )}`,
+      )}&build=${useRuntimeConfig().app.buildId}`,
     );
 
     onlySource().connect();
@@ -154,6 +155,56 @@ describe("useChannel()", () => {
       'greeted:{"count":2}',
     );
     expect(FakeEventSource.instances).toHaveLength(1);
+  });
+
+  it("receives a Date as a Date, and reads the plain JSON of a server from before superjson", async () => {
+    const received: unknown[] = [];
+
+    mounted.push(
+      await mountSuspended(
+        defineComponent({
+          setup() {
+            const { events } = useChannel("_probe-public");
+
+            watch(events, (messages) => received.push(...messages.slice(received.length)));
+
+            return () => h("p");
+          },
+        }),
+      ),
+    );
+    await vi.waitFor(() => expect(FakeEventSource.instances).toHaveLength(1));
+    onlySource().connect();
+    await settle();
+    onlySource().deliver("_probe-public", "pinged", { at: new Date("2026-01-02T03:04:05Z") });
+    onlySource().deliver("_probe-public", "pinged", { at: "2026-01-02T03:04:05.000Z" }, JSON.stringify);
+    await nextTick();
+
+    expect(received).toEqual([
+      { event: "pinged", payload: { at: new Date("2026-01-02T03:04:05Z") } },
+      { event: "pinged", payload: { at: "2026-01-02T03:04:05.000Z" } },
+    ]);
+  });
+
+  it("reloads the page when the server answers the connection with reload, and closes the connection without a reconnect", async () => {
+    const reload = vi.spyOn(window.location, "reload").mockImplementation(() => undefined);
+
+    onTestFinished(() => {
+      reload.mockRestore();
+      sessionStorage.removeItem("nuxt:reload");
+    });
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const wrapper = await mountListener(["_probe-public"]);
+    await vi.waitFor(() => expect(FakeEventSource.instances).toHaveLength(1));
+
+    onlySource().dispatchEvent(new MessageEvent("reload", { data: "" }));
+    await vi.advanceTimersByTimeAsync(60_000);
+    await settle();
+
+    expect(reload).toHaveBeenCalledOnce();
+    expect(onlySource().closed).toBe(true);
+    expect(FakeEventSource.instances).toHaveLength(1);
+    expect(wrapper.find(".status-_probe-public").text()).toBe("closed");
   });
 
   it("takes the $channels and $jobs stubs, which hold only the names", async () => {
@@ -176,7 +227,7 @@ describe("useChannel()", () => {
     expect(onlySource().url).toBe(
       `/api/channels?channels=${encodeURIComponent(
         JSON.stringify([{ name: "_probe-public" }, { name: "job:demo.countdown" }]),
-      )}`,
+      )}&build=${useRuntimeConfig().app.buildId}`,
     );
 
     onlySource().connect();
@@ -327,7 +378,7 @@ describe("useChannel()", () => {
     expect(reopened.url).toBe(
       `/api/channels?channels=${encodeURIComponent(
         JSON.stringify([{ name: "_probe-public" }, { name: "_probe-members" }]),
-      )}`,
+      )}&build=${useRuntimeConfig().app.buildId}`,
     );
   });
 
@@ -352,7 +403,7 @@ describe("useChannel()", () => {
     expect(reopened.url).toBe(
       `/api/channels?channels=${encodeURIComponent(
         JSON.stringify([{ name: "_probe-members" }]),
-      )}`,
+      )}&build=${useRuntimeConfig().app.buildId}`,
     );
   });
 

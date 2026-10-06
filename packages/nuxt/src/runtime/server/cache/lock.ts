@@ -21,7 +21,7 @@ const RELEASE = `if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call
  * different caller can get the lock while `fn` still runs. The release
  * removes the lock only when this call still holds it.
  *
- * @param ttl Seconds, or a duration such as `{ minutes: 5 }`.
+ * @param ttl A duration such as `{ minutes: 5 }`.
  *
  * @example
  * ```ts
@@ -32,7 +32,7 @@ export async function withLock<T>(key: string, ttl: CacheTtl, fn: () => T | Prom
   const redis = useRedis("durable");
   const lockKey = redisKey(`${namespace}lock:${key}`);
   const token = randomUUID();
-  const milliseconds = (typeof ttl === "number" ? ttl : windowSeconds(ttl)) * 1000;
+  const milliseconds = Math.ceil(windowSeconds(ttl) * 1000);
 
   if (!(await redis.set(lockKey, token, "PX", milliseconds, "NX"))) {
     throw new ConflictError(`The lock "${key}" is held by a different caller`);

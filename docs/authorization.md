@@ -119,7 +119,7 @@ export const moderationChannel = defineChannel({
 });
 ```
 
-`defineUpload()`, `defineChannel()` and the `channel` of `defineJob()` take an `authorize` option. That option is not the `authorize()` function:
+`defineUpload()`, `defineChannel()` and the `channel` of `defineJob()` take an `authorize` option. Without it, only a signed-in user is allowed, and `public: true` allows a guest too. That option is not the `authorize()` function:
 
 | Name | Gets | Returns |
 |---|---|---|

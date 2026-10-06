@@ -119,9 +119,51 @@ applies each step below that names a codemod.
   Outside one it still sends at once. `sendMailNow()` stays. Codemod:
   `definition-methods` (it maps a string name to its `$` path, and
   prints a name it cannot map, such as a variable, as a manual step).
+- Channels send payloads with superjson, as tRPC does: a `Date` in a
+  payload reaches `useChannel()`, `useLiveQuery()`, `useJobChannel()`
+  and `listen()` as a `Date`, not as an ISO string. By hand: in each
+  `defineChannel()` schema, replace a transform such as
+  `z.date().transform((date) => date.toISOString())` with `z.date()`,
+  and change a listener that parsed the string (`new Date(payload.createdAt)`,
+  `z.coerce.date()`) to use the `Date`. No codemod: the reader of a
+  payload can be any code. A tab opened before the deploy still reads the
+  plain JSON of an older server.
+- Every duration is an object such as `{ seconds: 30 }`, `{ minutes: 5 }`
+  or `{ days: 7 }` (the type `Duration`), and a number is no longer
+  accepted: the `ttl` of `remember()`, `cachePut()` and `withLock()`
+  and the `expiresIn` of `signedUrl()` (server and `@nuxvel/nuxt/testing`)
+  were seconds, and the `timeout` and `backoff` of `defineJob()` and the
+  `delay` of `$jobs.<path>.dispatch()` were milliseconds. By hand:
+  replace `remember(key, 300, fn)` with `remember(key, { minutes: 5 }, fn)`,
+  `{ expiresIn: 7 * 24 * 60 * 60 }` with `{ expiresIn: { days: 7 } }`,
+  `timeout: 30_000` with `timeout: { seconds: 30 }` and
+  `{ delay: 60_000 }` with `{ delay: { minutes: 1 } }`. A `delay: 0`
+  goes. BullMQ's own options keep their milliseconds: `backoff: { type,
+  delay }` and `limiter: { max, duration }`. Codemod: `durations` (it
+  computes number literals and their arithmetic, and prints a variable
+  or a zero as a manual step).
+- `usePresence(channel, room)` is now `usePresence(channel, { params:
+  room })`, the shape of `useChannel(channel, { params })`. By hand:
+  wrap the second argument, `usePresence("posts", { id })` becomes
+  `usePresence("posts", { params: { id } })`. Codemod: `presence-params`
+  (it wraps an object literal, and prints a variable or a call as a
+  manual step).
 
 ### Changes
 
+- `defineUpload({ maxSize })` takes a size with a unit beside bytes:
+  `"500 KB"`, `"2 MB"`. A unit is a power of 1024.
+- `authorize` is optional on `defineChannel()`, `defineUpload()` and
+  the `channel` of `defineJob()`: left out, only signed-in users may
+  listen or upload. `public: true` lets guests in too. `make:channel`
+  writes a channel without `authorize`.
+- `useJobChannel()` returns `status`, `progress`, `result` and `error`
+  of the latest run, beside `events` and `close`.
+- A job with a `channel` broadcasts `started` when each attempt starts,
+  before `progress`, `completed` or `failed`.
+- The realtime connection sends the build ID of the page. After a
+  deploy, the server answers a tab of the older build with a `reload`
+  event, and the page reloads.
 - `belongsTo(table, { column, onDelete, nullable })` of `@nuxvel/nuxt/database`
   writes a foreign key column to the `id` of `table`, with the same SQL as
   the hand-written `.references()`.

@@ -378,6 +378,7 @@ Guide: [Storage](./storage.md).
 | `UploadRequest` | type | What an upload's `authorize` sees. |
 | `PresignedUpload` | type | What the upload endpoint returns for an accepted request. |
 | `SvgHandling` | type | What `promoteUpload()` does with an SVG file. |
+| `FileSize` | type | A `maxSize` of an upload: bytes, or a size such as `"2 MB"`. |
 | `PromoteUploadOptions` | type | Where `promoteUpload()` moves a file from and to. |
 | `CheckUploadOptions` | type | Which uploaded file `checkUpload()` checks. |
 | `UploadName` | type | The name of every upload under `server/uploads/`. |
@@ -549,7 +550,8 @@ Guide: [Security](./security.md).
 | `RateLimit` | type | A shared rate limit from `defineRateLimit()`. |
 | `RateLimitName` | type | The name of every shared limit, `login` included. |
 | `RateLimitOptions` | type | The options of `rateLimit()`. |
-| `RateLimitWindow` | type | How long a rate limit's sliding window lasts. |
+| `Duration` | type | A length of time such as `{ minutes: 5 }`: a cache TTL, a rate limit window, a `signedUrl()` expiry, a job `timeout`, `backoff` or `delay`. |
+| `RateLimitWindow` | type | How long a rate limit's sliding window lasts: a `Duration`. |
 
 ## User content
 

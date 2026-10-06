@@ -1,3 +1,4 @@
+import superjson from "superjson";
 import { expect, guest } from "@nuxvel/nuxt/testing";
 import { afterAll, afterEach, beforeAll, describe, it } from "vitest";
 import {
@@ -43,7 +44,7 @@ describe("broadcast() across processes", async () => {
 
     const expected = {
       event: "message",
-      data: JSON.stringify({ event: "fanned", payload: { n: 1 } }),
+      data: superjson.stringify({ event: "fanned", payload: { n: 1 } }),
       id: expect.stringMatching(/^\d+-\d+$/),
     };
 

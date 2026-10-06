@@ -444,6 +444,7 @@ describe("nuxvel project commands", () => {
     expect(header).toEqual(["NAME", "GUESTS", "REPLAY BUFFER", "SERVERS LISTENING"]);
     expect(rows).toContainEqual(["_probe-public", "allowed", "2 of 500", "0"]);
     expect(rows).toContainEqual(["_probe-admins", "refused", "0 of 500", "0"]);
+    expect(rows).toContainEqual(["_probe-members", "refused", "0 of 500", "0"]);
     expect(rows).toContainEqual(["job:demo.countdown", "refused", "0 of 500", "0"]);
     expect(rows.map((row) => row[0])).toContain("flags");
 

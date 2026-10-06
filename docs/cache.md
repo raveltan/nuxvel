@@ -38,7 +38,13 @@ list: publicProcedure
 
 When the result depends on the input, put the input in the key. Each page and each search then has its own cached value. `cacheForget(["posts"])` removes all of them, see [Invalidation](#invalidation).
 
-`ttl` is a number of seconds, or a duration with the same units as a [rate limit window](./security.md#rate-limiting): `seconds`, `minutes`, `hours` and `days`. The units add up, so `{ hours: 1, minutes: 30 }` is 90 minutes.
+`ttl` is a duration.
+
+### Durations
+
+A duration is an object with one or more of the units `seconds`, `minutes`, `hours` and `days`: `{ seconds: 30 }`, `{ minutes: 5 }`, `{ days: 7 }`. The units add up, so `{ hours: 1, minutes: 30 }` is 90 minutes. A unit can be a fraction, such as `{ seconds: 0.5 }`. The total must be more than zero. The type is `Duration`.
+
+The same object sets a cache `ttl`, the `ttl` of `withLock()`, a [rate limit window](./security.md#rate-limiting), the `expiresIn` of [`signedUrl()`](./security.md#signed-urls), and the `timeout`, `backoff` and dispatch `delay` of a [job](./queues.md#job-options). A number of seconds or milliseconds is not accepted. `nuxvel upgrade --only durations` rewrites the numbers of an older app.
 
 Values go through [superjson](https://github.com/flightcontrolhq/superjson). A `Date`, `Map`, `Set` or `BigInt` reads back as the same type.
 
@@ -151,7 +157,7 @@ export const checkoutRouter = {
     .input(z.object({ cartId: z.number() }))
     .output(orderSchema)
     .mutation(({ input }) =>
-      withLock(`checkout:${input.cartId}`, 30, () => checkoutAction(input)),
+      withLock(`checkout:${input.cartId}`, { seconds: 30 }, () => checkoutAction(input)),
     ),
 };
 ```

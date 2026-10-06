@@ -33,6 +33,14 @@ useLiveQuery($api.post.list.queryOptions(), {
   on: { deleted: (rows) => rows },
 });
 
+type CreatedPayload = Parameters<NonNullable<NonNullable<LiveQueryUpdates<unknown, "posts">["on"]>["created"]>>[1];
+
+const createdPayloadIsTyped: IsAny<CreatedPayload> extends true
+  ? never
+  : CreatedPayload extends { id: number; createdAt: Date }
+    ? true
+    : never = true;
+
 type RefetchPayload = Parameters<
   Exclude<NonNullable<NonNullable<LiveQueryUpdates<unknown, "_probe-public">["refetch"]>["renamed"]>, true>
 >[0];
@@ -97,5 +105,5 @@ const getterLiveQueryIsTyped: IsAny<SelectedData> extends true
 </script>
 
 <template>
-  <div>{{ liveQueryIsTyped }} {{ payloadIsTyped }} {{ posts.data.value?.total }} {{ getterLiveQueryIsTyped }} {{ refetchPayloadIsTyped }}</div>
+  <div>{{ liveQueryIsTyped }} {{ payloadIsTyped }} {{ posts.data.value?.total }} {{ getterLiveQueryIsTyped }} {{ refetchPayloadIsTyped }} {{ createdPayloadIsTyped }}</div>
 </template>

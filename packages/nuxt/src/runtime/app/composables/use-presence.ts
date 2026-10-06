@@ -60,12 +60,14 @@ export interface PresenceRoomOf<State> {
  *
  * @param name A channel whose `defineChannel()` sets `presence`, a
  * {@link PresenceChannelName}, or its `$channels` entry.
- * @param params What selects the room, such as `{ id: post.id }`.
+ * @param options.params What selects the room, such as `{ id: post.id }`,
+ * as in `useChannel(name, { params })`. Leave it out for the room
+ * without params.
  *
  * @example
  * ```vue
  * <script setup lang="ts">
- * const { members, setState } = usePresence($channels.posts, { id: 42 });
+ * const { members, setState } = usePresence($channels.posts, { params: { id: 42 } });
  * </script>
  *
  * <template>
@@ -74,12 +76,15 @@ export interface PresenceRoomOf<State> {
  * </template>
  * ```
  */
-export function usePresence<Name extends PresenceChannelName>(name: Name, params?: PresenceParams): PresenceRoom<Name>;
+export function usePresence<Name extends PresenceChannelName>(name: Name, options?: { params?: PresenceParams }): PresenceRoom<Name>;
 export function usePresence<Definition extends Channel>(
   channel: [DefinitionPresence<Definition>] extends [never] ? never : Definition,
-  params?: PresenceParams,
+  options?: { params?: PresenceParams },
 ): PresenceRoomOf<PresenceStateOf<DefinitionPresence<Definition>>>;
-export function usePresence(channel: string | Channel, params: PresenceParams = {}): PresenceRoomOf<Record<string, unknown>> | PresenceRoomOf<never> {
+export function usePresence(
+  channel: string | Channel,
+  { params = {} }: { params?: PresenceParams } = {},
+): PresenceRoomOf<Record<string, unknown>> | PresenceRoomOf<never> {
   const room = presenceRoom(typeof channel === "string" ? channel : channel.name, params);
   type Member = PresenceMember<Record<string, unknown>>;
 

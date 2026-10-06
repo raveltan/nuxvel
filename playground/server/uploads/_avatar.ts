@@ -1,5 +1,5 @@
 export default defineUpload({
-  maxSize: 1024,
+  maxSize: "1 KB",
   allowedTypes: ["image/png", "image/jpeg"],
-  authorize: () => true,
+  public: true,
 });

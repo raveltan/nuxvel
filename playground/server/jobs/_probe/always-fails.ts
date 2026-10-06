@@ -1,5 +1,5 @@
 export default defineJob({
-  channel: { authorize: () => true },
+  channel: { public: true },
   handler: () => {
     throw new Error("probe.always-fails always fails");
   },

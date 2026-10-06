@@ -1,5 +1,6 @@
 import { shallowRef } from "vue";
-import type { BroadcastMessage } from "../../shared/realtime/channel-message";
+import { reloadNuxtApp, useRuntimeConfig } from "#app";
+import { type BroadcastMessage, parseBroadcast } from "../../shared/realtime/channel-message";
 import {
   channelEventName,
   formatChannelRequests,
@@ -72,7 +73,7 @@ function receive(channel: string, event: MessageEvent<unknown>) {
   if (!state || typeof event.data !== "string") return;
   if (event.lastEventId) state.lastEventId = event.lastEventId;
 
-  const message: BroadcastMessage = JSON.parse(event.data);
+  const message = parseBroadcast(event.data);
 
   for (const listener of [...state.listeners]) listener(message);
 }
@@ -159,13 +160,18 @@ function open() {
       : { name, lastEventId: state.lastEventId },
   );
   const opened = new EventSource(
-    `/api/channels?channels=${formatChannelRequests(requests)}`,
+    `/api/channels?channels=${formatChannelRequests(requests)}&build=${encodeURIComponent(useRuntimeConfig().app.buildId)}`,
   );
 
   source = opened;
   if (connectionStatus.value !== "reconnecting") connectionStatus.value = "connecting";
   opened.addEventListener("connected", connected);
   opened.addEventListener("resync", resynced);
+  opened.addEventListener("reload", () => {
+    disconnect();
+    connectionStatus.value = "closed";
+    reloadNuxtApp();
+  });
   opened.addEventListener("error", () => reconnect(backoff()));
 }
 
@@ -248,7 +254,10 @@ export function currentConnectionId() {
  * 30 seconds, so a tab that went offline recovers and clients of a
  * restarted server do not all return at once. `resync` runs when the server says
  * the channel's replay buffer no longer holds every event this tab
- * missed, so the caller reloads instead of trusting a gap.
+ * missed, so the caller reloads instead of trusting a gap. The
+ * connection sends the app's build ID; a server of another build answers
+ * with one `reload` event: the connection closes without a reconnect,
+ * and the page reloads with `reloadNuxtApp()`.
  */
 export function subscribeToChannel(
   channel: string,

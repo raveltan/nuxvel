@@ -29,7 +29,7 @@ type StubbedMessage = (typeof stubbed.events.value)[number];
 
 const stubIsTyped: IsAny<StubbedMessage> extends true
   ? never
-  : StubbedMessage extends { event: "created"; payload: { createdAt: string } }
+  : StubbedMessage extends { event: "created"; payload: { createdAt: Date } }
     ? true
     : never = true;
 

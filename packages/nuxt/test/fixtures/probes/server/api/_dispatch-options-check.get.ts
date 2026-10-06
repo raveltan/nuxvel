@@ -5,7 +5,7 @@ export default defineEventHandler(async () => {
   await useDb().delete(outboxTable);
 
   await transaction(async () => {
-    await $jobs._probe.record.dispatch({ name: "later" }, { delay: 60_000 });
+    await $jobs._probe.record.dispatch({ name: "later" }, { delay: { minutes: 1 } });
     await $jobs._probe.record.dispatch({ name: "urgent" }, { priority: 3 });
   });
 

@@ -336,7 +336,7 @@ An instructor uploads the file of a lesson. The browser sends the file directly 
 ```ts
 // server/domains/courses/uploads/lesson-file.upload.ts
 export const coursesLessonFileUpload = defineUpload({
-  maxSize: 20 * 1024 * 1024,
+  maxSize: "20 MB",
   allowedTypes: ["application/pdf", "image/png", "image/jpeg"],
   authorize: ({ user }) => user?.role === "instructor" || user?.role === "admin",
 });

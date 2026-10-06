@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export default defineJob({
   attempts: 5,
-  backoff: { type: "fixed", delay: 10 },
+  backoff: { seconds: 0.0103 },
   unique: ({ name }) => name,
   input: z.object({ name: z.string().min(1) }),
   handler: () => {},

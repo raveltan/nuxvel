@@ -11,16 +11,15 @@ describe("signedUrl and requireSignature", async () => {
     expect(probe().valid).toEqual({ invite: "42", expires: expect.any(String), signature: expect.any(String) });
   });
 
-  it("rejects a changed query, a missing signature and an expired link with HTTP 403", () => {
+  it("rejects a changed query and a missing signature with HTTP 403", () => {
     expect(probe()).toMatchObject({
       tampered: "403 Invalid signature",
       unsigned: "403 Invalid signature",
-      expired: "403 This link expired",
     });
   });
 
   it("checks a path string, and throws FORBIDDEN so a tRPC procedure answers 403", () => {
-    expect(probe().path).toMatchObject({ valid: "valid", tampered: "FORBIDDEN Invalid signature", expired: "FORBIDDEN This link expired" });
+    expect(probe().path).toMatchObject({ valid: "valid", tampered: "FORBIDDEN Invalid signature" });
   });
 
   it("refuses a path that the URL parser changes: dot segments, %2e%2e and a backslash", () => {
@@ -37,14 +36,22 @@ describe("signedUrl and requireSignature", async () => {
     expect(probe().rotatedAfterGrace).toBe("403 Invalid signature");
   });
 
-  it("signs a path in the app for a test, and the link expires on the app's clock", async () => {
-    const link = await signedUrl("/api/_signed-url-target?invite=42", { expiresIn: 60 });
+  it("signs a path for its expiresIn duration, and the link expires on the app's clock, for a route and for a procedure that checks its path", async () => {
+    const link = await signedUrl("/api/_signed-url-target?invite=42", { expiresIn: { minutes: 1 } });
+    const { searchParams } = new URL(await guest().trpc._signedCheck.sign({ id: 4 }), "http://x");
+    const procedureLink = { id: 4, expires: String(searchParams.get("expires")), signature: String(searchParams.get("signature")), note: "hi" };
 
     expect(await guest().$fetch(link)).toMatchObject({ invite: "42" });
+    await expect(guest().trpc._signedCheck.open(procedureLink)).resolves.toMatchObject({ note: "hi" });
 
-    await travelBy({ minutes: 2 });
+    await travelBy({ seconds: 50 });
+    expect((await guest().fetch(link)).status).toBe(200);
+
+    await travelBy({ seconds: 20 });
     const expired = await guest().fetch(link);
 
     expect(expired.status).toBe(403);
+    expect(await expired.json()).toMatchObject({ data: { code: "FORBIDDEN", message: "This link expired" } });
+    await expect(guest().trpc._signedCheck.open(procedureLink)).rejects.toBeTrpcError("FORBIDDEN");
   });
 });

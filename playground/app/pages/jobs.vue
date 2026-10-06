@@ -1,19 +1,9 @@
 <script setup lang="ts">
 definePageMeta({ middleware: "auth", layout: "app" });
 
-const { events } = useJobChannel("demo.countdown");
+const { status, progress, result, error } = useJobChannel("demo.countdown");
 const countdown = $api.jobs.startCountdown.useMutation();
 
-const latest = computed(() => events.value.at(-1));
-const status = computed(() => {
-  if (!latest.value) return "idle";
-  if (latest.value.event === "progress") return "running";
-  return latest.value.event;
-});
-const percent = computed(() => {
-  const progress = events.value.findLast((message) => message.event === "progress");
-  return progress?.event === "progress" ? progress.payload.percent : 0;
-});
 const statusColor = computed(() =>
   ({ idle: "neutral", running: "info", completed: "success", failed: "error" } as const)[status.value],
 );
@@ -44,12 +34,12 @@ const statusColor = computed(() =>
             <UBadge data-run-status :color="statusColor" variant="outline" :label="status" />
           </p>
         </div>
-        <UProgress :model-value="percent" aria-label="Countdown progress" />
-        <p v-if="latest?.event === 'failed'" class="text-sm text-error">
-          {{ latest.payload.message }}
+        <UProgress :model-value="progress ?? 0" aria-label="Countdown progress" />
+        <p v-if="error" class="text-sm text-error">
+          {{ error }}
         </p>
-        <p v-else-if="latest?.event === 'completed'" class="text-sm text-muted">
-          Finished at <DateTime :value="latest.payload.result.finishedAt" :options="{ timeStyle: 'medium' }" />
+        <p v-else-if="result" class="text-sm text-muted">
+          Finished at <DateTime :value="result.finishedAt" :options="{ timeStyle: 'medium' }" />
         </p>
       </div>
     </UCard>

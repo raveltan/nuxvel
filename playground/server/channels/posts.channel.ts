@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-const isoDate = z.date().transform((date) => date.toISOString());
-
 export const postsChannel = defineChannel({
   events: {
     created: z.object({
@@ -9,10 +7,9 @@ export const postsChannel = defineChannel({
       title: z.string(),
       body: z.string(),
       authorId: z.string(),
-      createdAt: isoDate,
-      updatedAt: isoDate,
+      createdAt: z.date(),
+      updatedAt: z.date(),
     }),
   },
-  authorize: ({ user }) => user !== null,
   presence: { state: z.object({ typing: z.boolean() }) },
 });

@@ -700,7 +700,7 @@ import { userTable, invoiceTable, orderTable } from "#nuxvel/schema";
 export const invoiceIssueJob = defineJob({
   attempts: 5,
   backoff: { type: "exponential", delay: 2_000 },
-  timeout: 10_000,
+  timeout: { seconds: 10 },
   unique: ({ orderId }) => String(orderId),
   input: z.object({
     orderId: z.number().int().positive(),
@@ -734,7 +734,7 @@ The options set how the worker runs the job:
 |---|---|---|
 | `attempts` | `5` | The first run and four retries. Then the job goes to the failed set. |
 | `backoff` | exponential, from 2 s | The worker waits 2, 4, 8 and 16 seconds between the attempts. |
-| `timeout` | `10_000` | An attempt that runs longer than 10 seconds fails and retries. nuxvel does not stop the handler. |
+| `timeout` | `{ seconds: 10 }` | An attempt that runs longer than 10 seconds fails and retries. nuxvel does not stop the handler. |
 | `unique` | the order ID | While a job with the key `invoice.issue:<orderId>` waits or runs, a second dispatch with that key is not added. |
 
 The job is safe to run two times in three ways:

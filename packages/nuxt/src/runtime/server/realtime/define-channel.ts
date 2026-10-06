@@ -1,5 +1,6 @@
 import type { z } from "zod";
 import { awaitingName } from "../discovery/definition-name";
+import { defaultAuthorize } from "../security/default-authorize";
 import type { RoomParams } from "./registry";
 import type { auth } from "../utils/auth";
 
@@ -49,8 +50,8 @@ export interface Channel<
    *
    * The payload is validated against the event's schema at the call, so
    * a wrong payload throws a `ValidationFailedError` and rolls the
-   * transaction back. Listeners receive the schema's output as JSON, so
-   * a `Date` arrives as a string. A send that fails after the commit is
+   * transaction back. Listeners receive the schema's output through
+   * superjson, so a `Date` arrives as a `Date`. A send that fails after the commit is
    * logged, not thrown. It reaches the connections of every server
    * sharing the Redis, and the last 500 events per channel or room stay
    * there for a client that reconnects with `Last-Event-ID`.
@@ -84,11 +85,12 @@ type BroadcastArgs<Events extends ChannelEvents, Params extends string> = {
  * `events` types the channel end to end: {@link Channel.broadcast} takes only
  * those event names, each with its schema's input and validated against
  * it, and `useChannel()` / `useLiveQuery()` receive each payload as the
- * schema's output. Payloads travel as JSON, so describe them as they
- * arrive — a `Date` becomes a string; `z.date().transform((date) =>
- * date.toISOString())` says so.
+ * schema's output. Payloads travel with superjson, as tRPC results do,
+ * so a `Date`, `Map`, `Set` or `BigInt` arrives as the same type: a
+ * row's schema describes the payload as it is.
  *
- * `authorize` runs before the stream opens, on every connection,
+ * Without `authorize`, only a signed-in user may listen; `public: true`
+ * lets a guest listen too. `authorize` runs before the stream opens, on every connection,
  * reconnects included, and again at each `ping` of an open connection.
  * When the session of an open connection no longer exists, or
  * `authorize` then refuses one of its channels, the server closes the
@@ -122,7 +124,9 @@ type BroadcastArgs<Events extends ChannelEvents, Params extends string> = {
  * @param config.authorize Whether this connection may listen. Gets the
  * signed-in `user`, or `null` for a guest, and the room's `params` as
  * strings (`{}` for the channel itself). Check `params` when a room holds
- * data only some users may see.
+ * data only some users may see. Defaults to signed-in users only.
+ * @param config.public `true` lets every connection listen, guests
+ * included, when `authorize` is left out.
  * @param config.presence `true`, or `{ state }` with a Zod object for
  * the state each member shares. Leave it out for no presence.
  * @param config.params The param names of the channel's rooms. Leave it
@@ -133,7 +137,12 @@ type BroadcastArgs<Events extends ChannelEvents, Params extends string> = {
  * // server/channels/announcements.channel.ts
  * export const announcementsChannel = defineChannel({
  *   events: { published: z.object({ title: z.string() }) },
- *   authorize: ({ user }) => user !== null,
+ * });
+ *
+ * // server/channels/status.channel.ts
+ * export const statusChannel = defineChannel({
+ *   events: { changed: z.object({ up: z.boolean() }) },
+ *   public: true,
  * });
  *
  * // server/channels/board.channel.ts
@@ -149,12 +158,19 @@ export function defineChannel<
   Presence extends ChannelPresence | undefined = undefined,
   Params extends string = never,
 >(
-  config: { events: Events; authorize: Channel["authorize"]; presence?: Presence; params?: readonly Params[] },
+  config: {
+    events: Events;
+    authorize?: Channel["authorize"];
+    public?: boolean;
+    presence?: Presence;
+    params?: readonly Params[];
+  },
 ): Channel<string, Events, Presence, Params> {
   const channel: Channel<string, Events, Presence, Params> = awaitingName(
     {
       name: "",
       ...config,
+      authorize: config.authorize ?? defaultAuthorize(config.public),
       async broadcast(event: string, payload?: unknown, params?: Record<string, string | number>) {
         // a static import cycles through the #nuxvel/channels registry, which holds this channel
         const { broadcastOnCommit } = await import("./broadcast");

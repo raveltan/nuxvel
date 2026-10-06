@@ -72,8 +72,8 @@ SSR: `NOT_FOUND`/`FORBIDDEN`/`UNAUTHORIZED` render the `error` slot with 404/403
 | `{ toast: "Saved" }` in `.useMutation()` or `.mutationOptions()` | success toast |
 | `useFlash()` | reads a server `flash()` |
 | `useChannel("posts", { limit })` | `{ events, status, close }` |
-| `usePresence("posts", { id })` | `{ members, setState }` |
-| `useJobChannel("post.import")` | `{ events }` of a job with `channel` |
+| `usePresence("posts", { params: { id } })` | `{ members, setState }` |
+| `useJobChannel("post.import")` | `{ status, progress, result, error, events, close }` of a job with `channel` |
 | `useUpload("post-cover")` | `{ upload, uploading, progress }` |
 | `useFlag("new-editor")`, `useExperiment("subscribe-button")` | flag, variant |
 | `useNotifications()` | the database notifications |

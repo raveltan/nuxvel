@@ -1,4 +1,5 @@
-import { defineEventHandler, getQuery } from "h3";
+import { createEventStream, defineEventHandler, getQuery, type H3Event } from "h3";
+import { useRuntimeConfig } from "nitropack/runtime";
 import {
   parseChannelRequests,
   type ChannelRequest,
@@ -12,8 +13,19 @@ import { CHANNEL_JOIN_RATE_LIMIT } from "../security/rate-limit-registry";
 import { rateLimiter } from "../security/rate-limit";
 import { auth } from "../utils/auth";
 
+function reload(event: H3Event) {
+  const stream = createEventStream(event);
+
+  void stream.push({ event: "reload", data: "" }).then(() => stream.close());
+
+  return stream.send();
+}
+
 export default defineEventHandler(async (event) => {
-  const requested = getQuery(event).channels;
+  const { channels: requested, build } = getQuery(event);
+
+  if (typeof build === "string" && build !== useRuntimeConfig().app.buildId) return reload(event);
+
   const session = await auth();
   const user = session?.user ?? null;
   const requests = parseChannelRequests(typeof requested === "string" ? requested : "");

@@ -3,7 +3,7 @@ import { setTimeout as sleep } from "node:timers/promises";
 const STEP_MS = 250;
 
 export const demoCountdownJob = defineJob({
-  channel: { authorize: ({ user }) => user !== null },
+  channel: {},
   input: countdownInput,
   handler: async ({ fail }, { reportProgress }) => {
     for (const percent of [25, 50, 75]) {
@@ -15,6 +15,6 @@ export const demoCountdownJob = defineJob({
 
     await reportProgress(100);
 
-    return { finishedAt: new Date().toISOString() };
+    return { finishedAt: new Date() };
   },
 });

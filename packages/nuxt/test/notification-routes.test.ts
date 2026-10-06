@@ -1,3 +1,4 @@
+import superjson from "superjson";
 import { actingAs, expect, guest } from "@nuxvel/nuxt/testing";
 import { afterEach, describe, it } from "vitest";
 import { userFactory } from "../../../playground/server/factories/users.factory";
@@ -39,7 +40,7 @@ describe("the notification routes and channel", async () => {
     await guest().$fetch("/api/_notify-send", { query: { userId: ada.id, name: "Two" } });
     await guest().$fetch("/api/_notify-send", { query: { userId: bob.id, name: "Bob" } });
 
-    expect(await stream.next()).toMatchObject({ data: JSON.stringify({ event: "changed", payload: {} }) });
+    expect(await stream.next()).toMatchObject({ data: superjson.stringify({ event: "changed", payload: {} }) });
 
     const listed = await asAda.$fetch<Listed>("/api/notifications");
 

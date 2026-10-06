@@ -1,3 +1,4 @@
+import superjson from "superjson";
 import { expect, guest } from "@nuxvel/nuxt/testing";
 import { afterEach, describe, it, vi } from "vitest";
 import { closeChannelStreams, openStream } from "./helpers/channel-stream";
@@ -63,7 +64,7 @@ describe("multiplexed channel connection", async () => {
 
     expect(await stream.next()).toEqual({
       event: "channel:_probe-public",
-      data: JSON.stringify({ event: "pinged", payload: { n: 1 } }),
+      data: superjson.stringify({ event: "pinged", payload: { n: 1 } }),
       id: expect.stringMatching(/^\d+-\d+$/),
     });
   });
@@ -78,7 +79,7 @@ describe("multiplexed channel connection", async () => {
 
     expect(await stream.next()).toMatchObject({
       event: "channel:_probe-public",
-      data: JSON.stringify({ event: "joined", payload: { n: 1 } }),
+      data: superjson.stringify({ event: "joined", payload: { n: 1 } }),
     });
 
     await leave({ connectionId: connected.connectionId, channel: "_probe-public" });

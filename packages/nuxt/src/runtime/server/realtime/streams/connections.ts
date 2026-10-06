@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { EventStream } from "h3";
+import { stringifyBroadcast } from "../../../shared/realtime/channel-message";
 import { channelEventName } from "../../../shared/realtime/channel-request";
 import { presenceRoomParams } from "../../../shared/realtime/presence-room";
 import { findSession } from "../../utils/auth";
@@ -95,7 +96,7 @@ export async function startJoiningChannel(
   return async () => {
     if (isPresenceRoom(channel)) {
       const id = await latestEventId(channel);
-      const data = JSON.stringify({ event: "presence.sync", payload: { members: await presenceMembers(channel) } });
+      const data = stringifyBroadcast({ event: "presence.sync", payload: { members: await presenceMembers(channel) } });
 
       void connection.stream.push(eventName === undefined ? { id, data } : { id, event: eventName, data });
     }

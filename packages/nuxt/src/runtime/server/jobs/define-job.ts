@@ -15,11 +15,18 @@ import { type Upcaster, fromJobPayload, upcastPayload } from "./payload";
 import { isRetryableJobError } from "./retryable";
 import { classifyError } from "../errors/classify";
 import { noInput } from "../actions/no-input";
+import { type Duration, windowSeconds } from "../security/rate-limit-window";
 import type { DispatchOptions } from "./dispatch-job";
 
-/** Who may follow a job on its channel: the `channel` option of {@link defineJob}. */
+/**
+ * Who may follow a job on its channel: the `channel` option of
+ * {@link defineJob}. `{}` lets signed-in users follow it.
+ */
 export interface JobChannel {
-  authorize: (connection: ChannelConnection) => boolean | Promise<boolean>;
+  /** Whether this connection may listen. Defaults to signed-in users only. */
+  authorize?: (connection: ChannelConnection) => boolean | Promise<boolean>;
+  /** `true` lets guests follow the runs with no user behind them, when `authorize` is left out. */
+  public?: boolean;
 }
 
 declare const jobResult: unique symbol;
@@ -55,8 +62,8 @@ export interface Job<
    * and a crash after the commit loses nothing. Throws when an option is
    * out of range. Tests assert on it with `expectQueued`.
    *
-   * @param options.delay Milliseconds the job waits on the queue before
-   * it can run. See {@link DispatchOptions}.
+   * @param options.delay How long the job waits on the queue before it
+   * can run, such as `{ minutes: 1 }`. See {@link DispatchOptions}.
    * @param options.priority BullMQ priority, 1 runs first.
    * @param options.dispatcher The {@link Actor} the job runs as. The
    * current actor when unset, `null` for nobody.
@@ -64,7 +71,7 @@ export interface Job<
    * @example
    * ```ts
    * await $jobs.post.notifyFollowers.dispatch({ postId: post.id });
-   * await $jobs.post.sendDigest.dispatch({ postId: post.id }, { delay: 60_000, priority: 10 });
+   * await $jobs.post.sendDigest.dispatch({ postId: post.id }, { delay: { minutes: 1 }, priority: 10 });
    * ```
    */
   dispatch(...args: DispatchArgs<Schema>): Promise<void>;
@@ -77,8 +84,8 @@ interface JobConfig<Schema extends z.ZodType, Result> {
   version?: number;
   upcasters?: Record<number, JobUpcaster>;
   attempts?: number;
-  backoff?: number | BackoffOptions;
-  timeout?: number;
+  backoff?: Duration | BackoffOptions;
+  timeout?: Duration;
   unique?: (payload: z.input<Schema>) => string;
   limiter?: RateLimiterOptions;
   input?: Schema;
@@ -151,10 +158,12 @@ export interface JobContext {
  * `nuxvel queue:versions` flags it while it is still queued.
  * @param config.attempts The number of attempts before the job goes to
  * the failed set, 3 when unset. BullMQ's `attempts` job option.
- * @param config.backoff The wait between attempts, in milliseconds or as
- * BullMQ's `{ type: "fixed" | "exponential", delay }`. Exponential from
- * one second when unset.
- * @param config.timeout Milliseconds that one attempt can run. An attempt
+ * @param config.backoff The wait between attempts: a fixed duration such
+ * as `{ seconds: 30 }`, or BullMQ's own `{ type: "fixed" | "exponential",
+ * delay }`, whose `delay` is in milliseconds. Exponential from one second
+ * when unset.
+ * @param config.timeout How long one attempt can run, such as
+ * `{ seconds: 30 }`. An attempt
  * that runs longer fails and retries like a handler that throws. The
  * handler is not stopped. No limit when unset.
  * @param config.unique Returns a key from the dispatched payload. While a
@@ -172,9 +181,11 @@ export interface JobContext {
  * who dispatched it, `job:<name>:<userId>`. Only that user may listen,
  * and `authorize` must also allow them. A run with no user behind it
  * broadcasts on `job:<name>`, which `authorize` alone guards, like a
- * {@link defineChannel} channel's. Without `channel` the job broadcasts
- * nothing.
- * @param config.handler The work itself. Its second argument is the
+ * {@link defineChannel} channel's. Without `authorize`, signed-in users
+ * may listen, and `public: true` lets guests listen too. Without
+ * `channel` the job broadcasts nothing.
+ * @param config.handler The work itself. Each attempt first broadcasts
+ * `started` on the job's channel. Its second argument is the
  * {@link JobContext}, whose `reportProgress` broadcasts on the job's
  * channel and whose `dispatcher` is the actor that dispatched the run.
  * The handler runs as that actor, so {@link useAuth} returns it. When it returns, `completed` is broadcast there with
@@ -192,7 +203,7 @@ export interface JobContext {
  *   version: 2,
  *   upcasters: { 1: (old) => ({ postId: (old as { id: number }).id }) },
  *   attempts: 5,
- *   timeout: 30_000,
+ *   timeout: { seconds: 30 },
  *   unique: ({ postId }) => String(postId),
  *   input: z.object({ postId: z.number() }),
  *   async handler({ postId }) {
@@ -241,8 +252,8 @@ export function defineJob<Schema extends z.ZodType = typeof noInput, Result = un
       input,
       channel,
       attempts: config.attempts,
-      backoff: config.backoff,
-      timeout: config.timeout,
+      backoff: config.backoff === undefined || "type" in config.backoff ? config.backoff : Math.round(windowSeconds(config.backoff) * 1000),
+      timeout: config.timeout === undefined ? undefined : Math.round(windowSeconds(config.timeout) * 1000),
       unique: config.unique,
       limiter: config.limiter,
       async dispatch(payload?: unknown, options?: DispatchOptions) {
@@ -261,6 +272,8 @@ export function defineJob<Schema extends z.ZodType = typeof noInput, Result = un
           owner = dispatcher?.type === "user" ? dispatcher.id : dispatcher?.userId;
           const payload = upcastPayload(envelope, version, config.upcasters ?? {}, `Job "${job.name}"`);
 
+          await announce(owner, "started", {});
+
           result = await runAs(dispatcher, job.name, async () => {
             const parsed = await input.safeParseAsync(payload);
 
@@ -271,7 +284,7 @@ export function defineJob<Schema extends z.ZodType = typeof noInput, Result = un
                 reportProgress: (percent) => announce(owner, "progress", { percent }),
                 dispatcher,
               }),
-              config.timeout,
+              job.timeout,
               job.name,
             );
           });

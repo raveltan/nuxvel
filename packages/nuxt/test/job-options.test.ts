@@ -28,7 +28,7 @@ describe("queue:work with the options of a defineJob", async () => {
     await limited?.close();
   });
 
-  it("fails an attempt that runs past the timeout and retries it", async () => {
+  it("fails an attempt that runs past the timeout, rounded to whole milliseconds, and retries it", async () => {
     const job = await queue.add("_probe.hangs", { version: 1, payload: {} }, { attempts: 2, backoff: 10 });
 
     await expect.poll(() => job.getState(), { timeout: 20_000, interval: 50 }).toBe("failed");

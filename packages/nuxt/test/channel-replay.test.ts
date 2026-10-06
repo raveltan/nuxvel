@@ -1,3 +1,4 @@
+import superjson from "superjson";
 import { expect, guest } from "@nuxvel/nuxt/testing";
 import { Redis } from "ioredis";
 import { afterEach, describe, it } from "vitest";
@@ -26,7 +27,7 @@ async function send(event: string, n: number) {
 function received(event: string, n: number) {
   return {
     event: "message",
-    data: JSON.stringify({ event, payload: { n } }),
+    data: superjson.stringify({ event, payload: { n } }),
     id: expect.stringMatching(/^\d+-\d+$/),
   };
 }
@@ -106,7 +107,7 @@ describe("channel replay buffer", async () => {
 
     const ids = delivered.map((message) => message.id ?? "");
     const numbers = delivered.map(
-      (message) => (JSON.parse(message.data) as { payload: { n: number } }).payload.n,
+      (message) => superjson.parse<{ payload: { n: number } }>(message.data).payload.n,
     );
 
     expect(ids).toEqual([...ids].sort(compareEventIds));

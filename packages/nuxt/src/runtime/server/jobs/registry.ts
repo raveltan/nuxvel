@@ -26,8 +26,8 @@ type JobResult<Name extends JobName> =
   Extract<Discovered, Job<Name>> extends Job<Name, z.ZodType, infer Result> ? Result : never;
 
 /**
- * What the job named `Name` broadcasts on its channel: each
- * `reportProgress`, then `completed` with the handler's return value (or
+ * What the job named `Name` broadcasts on its channel: `started` when an
+ * attempt starts, each `reportProgress`, then `completed` with the handler's return value (or
  * `null`), or `failed` with a safe message: a taxonomy error's own message,
  * else "Something went wrong".
  */
@@ -35,6 +35,7 @@ export type JobMessage<Name extends JobName> = JobResultMessage<JobResult<Name>>
 
 /** What a job whose handler returns `Result` broadcasts on its channel; see {@link JobMessage}. */
 export type JobResultMessage<Result> =
+  | { event: "started"; payload: Record<string, never> }
   | { event: "progress"; payload: { percent: number } }
   | { event: "completed"; payload: { result: [Result] extends [void | undefined] ? null : Result } }
   | { event: "failed"; payload: { message: string } };

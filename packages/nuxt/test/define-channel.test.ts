@@ -15,7 +15,7 @@ describe("defineChannel()", async () => {
 
   afterEach(() => closeChannelStreams());
 
-  it("rejects a connection its authorize refuses before the stream opens", async () => {
+  it("rejects a guest before the stream opens when the channel leaves out authorize", async () => {
     const stream = await openChannelStream("_probe-members");
 
     expect(stream.response.status).toBe(403);
@@ -25,7 +25,7 @@ describe("defineChannel()", async () => {
     });
   });
 
-  it("opens an authorized connection and keeps it open", async () => {
+  it("opens the connection of a signed-in user when the channel leaves out authorize, and keeps it open", async () => {
     const member = await userFactory.withPassword(PASSWORD)({ email: "channel-member@example.com" });
     const cookie = sessionCookie(await postJson("/api/auth/sign-in/email", { email: member.email, password: PASSWORD })) ?? "";
     const stream = await openChannelStream("_probe-members", { cookie });
@@ -38,6 +38,11 @@ describe("defineChannel()", async () => {
     expect(stream.response.headers.get("x-accel-buffering")).toBe("no");
     expect(await stream.next()).toEqual({ event: "connected", data: "{}" });
     expect(await stream.next(300)).toBe("timeout");
+  });
+
+  it("opens the connection of a guest on a public channel, and refuses one that authorize refuses", async () => {
+    expect((await openChannelStream("_probe-public")).response.status).toBe(200);
+    expect((await openChannelStream("_probe-admins")).response.status).toBe(403);
   });
 
   it("answers 404 for a channel nothing defines", async () => {

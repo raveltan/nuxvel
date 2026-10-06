@@ -478,6 +478,7 @@ describe("nuxvel make:* output running in an app", () => {
     expect(source("server/jobs/shipment/notify-subscribers.job.ts")).not.toContain("name:");
     expect(source("server/mail/shipment/shipped.mail.ts")).toContain("export const shipmentShippedMail = defineMail({");
     expect(source("server/channels/shipment/updates.channel.ts")).toContain("export const shipmentUpdatesChannel = defineChannel({");
+    expect(source("server/channels/shipment/updates.channel.ts")).not.toContain("authorize");
     expect(source("server/channels/shipment/updates.channel.test.ts")).toContain('guest().listen("shipment.updates")).rejects.toBeTrpcError("FORBIDDEN")');
     expect(source("server/notifications/shipment/delivered.notification.ts")).toContain(
       "export const shipmentDeliveredNotification = defineNotification({",

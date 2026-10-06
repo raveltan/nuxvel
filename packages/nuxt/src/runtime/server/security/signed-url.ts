@@ -3,6 +3,7 @@ import type { H3Event } from "h3";
 import { ForbiddenError } from "../errors/forbidden-error";
 import { now } from "../clock/now";
 import { sameText } from "./same-text";
+import { type Duration, windowSeconds } from "./rate-limit-window";
 import { useSecrets } from "./secrets";
 
 const SECRET = "NUXT_AUTH_SECRET";
@@ -25,17 +26,17 @@ function digest(secret: string, signedPart: string) {
  * email.
  *
  * @param path The path to sign, with its query, e.g. `/invites/42?team=7`.
- * @param options.expiresIn The number of seconds that the link stays valid.
+ * @param options.expiresIn How long the link stays valid, such as `{ days: 7 }`.
  *
  * @example
  * ```ts
- * const link = `${origin}${signedUrl(`/invites/${invite.id}`, { expiresIn: 7 * 24 * 60 * 60 })}`;
+ * const link = `${origin}${signedUrl(`/invites/${invite.id}`, { expiresIn: { days: 7 } })}`;
  * ```
  */
-export function signedUrl(path: string, options: { expiresIn: number }): string {
+export function signedUrl(path: string, options: { expiresIn: Duration }): string {
   const url = new URL(path, BASE);
   url.searchParams.delete("signature");
-  url.searchParams.set("expires", String(Math.floor(now().getTime() / 1000) + options.expiresIn));
+  url.searchParams.set("expires", String(Math.floor(now().getTime() / 1000 + windowSeconds(options.expiresIn))));
 
   const signedPart = url.pathname + url.search;
 

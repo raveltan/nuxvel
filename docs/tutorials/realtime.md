@@ -885,7 +885,7 @@ const messages = useLiveQuery($api.message.forRoom.queryOptions({ roomId: id }),
   params: { roomId: id },
   refetch: { posted: true },
 });
-const { members, setState } = usePresence("room", { roomId: id });
+const { members, setState } = usePresence("room", { params: { roomId: id } });
 const others = computed(() => members.value.filter((member) => member.userId !== user.value?.id));
 const { status } = useChannel("room", { params: { roomId: id } });
 
@@ -936,7 +936,7 @@ useSeo(() => ({ title: room.data?.name ?? "Room" }));
 Each realtime part of the page does one job:
 
 - `useLiveQuery()` runs the `forRoom` query and listens to the room `room?roomId=<id>`. On each `posted` event, the query fetches the messages again. An event of another room does not reach the page. The page uses `refetch` and not `on`, because the payload holds no message to patch into the list.
-- `usePresence("room", { roomId: id })` joins the same room as a member. `members` lists each signed-in user in the room, the current user too. A user with two tabs is one member.
+- `usePresence("room", { params: { roomId: id } })` joins the same room as a member. `members` lists each signed-in user in the room, the current user too. A user with two tabs is one member.
 - `<PresenceAvatars>` shows the members as a group of avatars, with the name of each in a tooltip. A member without an image shows initials.
 - `<TypingIndicator>` shows `Ada Lovelace is typing…` for each other member whose state has `typing: true`. It is a polite live region, so a screen reader reads it. The page gives it `others`, because nobody needs to see that they type.
 - `setState({ typing })` merges the flag into the state of the current user. Calls in the same 300 ms go to the server as one request, so the page can call it on each key press.

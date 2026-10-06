@@ -247,10 +247,10 @@ const valid = useSecrets("NUXT_WEBHOOK_SECRET").some(
 Use a signed URL for an invite link, an unsubscribe link or an "approve from email" link. Only your server can make the link, and the link expires.
 
 ```ts
-const link = `${origin}${signedUrl(`/api/invites/${invite.id}/accept`, { expiresIn: 7 * 24 * 60 * 60 })}`;
+const link = `${origin}${signedUrl(`/api/invites/${invite.id}/accept`, { expiresIn: { days: 7 } })}`;
 ```
 
-`signedUrl(path, { expiresIn })` adds the `expires` and `signature` query parameters to the path. `expiresIn` is a number of seconds. The signature covers the path, all query parameters and the expiry time. The function returns a path. Put your origin in front of it for a link in an email.
+`signedUrl(path, { expiresIn })` adds the `expires` and `signature` query parameters to the path. `expiresIn` is a [duration](./cache.md#durations), such as `{ days: 7 }`. The signature covers the path, all query parameters and the expiry time. The function returns a path. Put your origin in front of it for a link in an email.
 
 The route that receives the link calls `requireSignature(event)` first:
 
@@ -645,7 +645,7 @@ expect((await ask()).status).toBe(429);
 `signedUrl(path, { expiresIn })` signs a path in the app under test, so a test can open the link. `travelBy()` past `expiresIn` expires the link.
 
 ```ts
-const link = await signedUrl(`/api/invites/${invite.id}/accept`, { expiresIn: 60 });
+const link = await signedUrl(`/api/invites/${invite.id}/accept`, { expiresIn: { minutes: 1 } });
 expect((await guest().fetch(link)).status).toBe(200);
 ```
 

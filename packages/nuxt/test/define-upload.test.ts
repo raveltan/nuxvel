@@ -67,7 +67,7 @@ describe("defineUpload()", async () => {
     await expectNotStored(presigned.key);
   });
 
-  it("rejects an oversized request before issuing a URL", async () => {
+  it("rejects a request over a maxSize given as \"1 KB\", 1024 bytes, before issuing a URL", async () => {
     const response = await requestUploadUrl("_avatar", {
       type: "image/png",
       size: 2048,
@@ -113,7 +113,7 @@ describe("defineUpload()", async () => {
     });
   });
 
-  it("answers 403 to a request its authorize refuses", async () => {
+  it("answers 403 to a guest when the upload leaves out authorize", async () => {
     const response = await requestUploadUrl("profile-avatar", {
       type: "image/png",
       size: 512,
@@ -125,7 +125,7 @@ describe("defineUpload()", async () => {
     });
   });
 
-  it("issues a URL to a request its authorize accepts", async () => {
+  it("issues a URL to a signed-in user when the upload leaves out authorize", async () => {
     const user = await userFactory({ email: "upload-authorized@example.com", name: "Upload User" });
     const response = await requestUploadUrl(
       "profile-avatar",
@@ -169,5 +169,17 @@ describe("defineUpload()", async () => {
         key: "tmp/profile-avatar/../../avatars/someone-else/avatar.png",
       }),
     ).rejects.toHaveValidationErrors("key");
+  });
+
+  it("throws when an upload is defined with a size that is not at least 1 byte", async () => {
+    const message = (got: string) => `nuxvel: maxSize must be at least 1 byte, as bytes or a size such as "2 MB", got ${got}`;
+
+    expect(await guest().$fetch("/api/_upload-size-check")).toEqual({
+      megabytes: 2 * 1024 * 1024,
+      unknownUnit: message('"2 megabytes"'),
+      zero: message('"0 B"'),
+      notANumber: message("NaN"),
+      belowOneByte: message("0.5"),
+    });
   });
 });

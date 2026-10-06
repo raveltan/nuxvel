@@ -1,3 +1,4 @@
+import superjson from "superjson";
 import { expect, guest } from "@nuxvel/nuxt/testing";
 import { afterAll, afterEach, beforeAll, describe, it } from "vitest";
 import { closeChannelStreams, openStream } from "./helpers/channel-stream";
@@ -60,7 +61,7 @@ describe("channel join and leave across server processes", async () => {
 
     expect(await stream.next()).toMatchObject({
       event: "channel:_probe-public",
-      data: JSON.stringify({ event: "joined", payload: { n: 1 } }),
+      data: superjson.stringify({ event: "joined", payload: { n: 1 } }),
     });
     expect(await stream.next(300)).toBe("timeout");
 

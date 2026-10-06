@@ -1,8 +1,29 @@
 import { awaitingName } from "../discovery/definition-name";
 import type { RateLimitOptions } from "../security/point-of-use";
 import type { SessionUser } from "../utils/auth";
+import { defaultAuthorize } from "../security/default-authorize";
 
 const DEFAULT_RATE_LIMIT: RateLimitOptions = { points: 30, window: { minutes: 1 }, by: "ip" };
+
+const SIZE_UNITS: Record<string, number> = { B: 1, KB: 1024, MB: 1024 ** 2, GB: 1024 ** 3 };
+
+/**
+ * A file size for {@link defineUpload}'s `maxSize`: bytes, or an amount
+ * and a unit, such as `"500 KB"` or `"2 MB"`. A unit is a power of
+ * 1024, as in most upload limits: `"1 KB"` is 1024 bytes.
+ */
+export type FileSize = number | `${number} ${"B" | "KB" | "MB" | "GB"}`;
+
+function sizeInBytes(size: FileSize) {
+  const [, amount, unit] = typeof size === "number" ? [] : (/^(\d+(?:\.\d+)?) (B|KB|MB|GB)$/.exec(size) ?? []);
+  const bytes = typeof size === "number" ? size : Math.floor(Number(amount) * (SIZE_UNITS[unit ?? ""] ?? Number.NaN));
+
+  if (!Number.isFinite(bytes) || bytes < 1) {
+    throw new Error(`nuxvel: maxSize must be at least 1 byte, as bytes or a size such as "2 MB", got ${typeof size === "number" ? size : JSON.stringify(size)}`);
+  }
+
+  return bytes;
+}
 
 /** What an upload's `authorize` sees: the user asking for a URL, or `null` when signed out. */
 export interface UploadRequest {
@@ -68,10 +89,15 @@ export interface PresignedUpload {
  * not match what was declared. Files land under `tmp/<name>/<user id>/`
  * (`tmp/<name>/` for a guest) in the `NUXT_STORAGE_BUCKET` bucket.
  *
- * @param config.maxSize Largest accepted file, in bytes.
+ * @param config.maxSize Largest accepted file: bytes, or a
+ * {@link FileSize} such as `"2 MB"`. A size that is not a number of at
+ * least 1 byte throws when the upload is defined.
  * @param config.allowedTypes Accepted MIME types, matched exactly.
  * @param config.authorize Whether this request may get an upload URL.
- * Gets the signed-in `user`, or `null` for a guest.
+ * Gets the signed-in `user`, or `null` for a guest. Defaults to signed-in
+ * users only.
+ * @param config.public `true` gives every request an upload URL, guests
+ * included, when `authorize` is left out.
  * @param config.rateLimit The limit on the requests for an upload URL, as
  * in `rateLimit()`, counted under `upload/<name>`. Defaults to 30
  * requests per minute for each IP.
@@ -84,17 +110,24 @@ export interface PresignedUpload {
  * ```ts
  * // server/uploads/avatar.upload.ts
  * export const avatarUpload = defineUpload({
- *   maxSize: 2 * 1024 * 1024,
+ *   maxSize: "2 MB",
  *   allowedTypes: ["image/png", "image/jpeg"],
- *   authorize: ({ user }) => user !== null,
  * });
  * ```
  */
 export function defineUpload(
-  config: Omit<Upload, "name" | "svg" | "rateLimit"> & Partial<Pick<Upload, "svg" | "rateLimit">>,
+  config: Omit<Upload, "name" | "svg" | "rateLimit" | "authorize" | "maxSize"> &
+    Partial<Pick<Upload, "svg" | "rateLimit" | "authorize">> & { maxSize: FileSize; public?: boolean },
 ): Upload {
   return awaitingName(
-    { name: "", ...config, svg: config.svg ?? "reject", rateLimit: config.rateLimit ?? DEFAULT_RATE_LIMIT },
+    {
+      name: "",
+      ...config,
+      maxSize: sizeInBytes(config.maxSize),
+      authorize: config.authorize ?? defaultAuthorize(config.public),
+      svg: config.svg ?? "reject",
+      rateLimit: config.rateLimit ?? DEFAULT_RATE_LIMIT,
+    },
     "upload",
   );
 }

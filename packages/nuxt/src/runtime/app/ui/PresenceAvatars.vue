@@ -15,7 +15,7 @@ import type { PresenceMember } from "../../server/realtime/presence";
  * @example
  * ```ts
  * const { user } = useUser();
- * const { members } = usePresence("posts", { id: 42 });
+ * const { members } = usePresence("posts", { params: { id: 42 } });
  * const others = computed(() => members.value.filter((member) => member.userId !== user.value?.id));
  * ```
  * ```vue

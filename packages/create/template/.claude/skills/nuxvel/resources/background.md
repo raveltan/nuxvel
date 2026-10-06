@@ -26,20 +26,20 @@ await $events.post.published.emit({ postId: post.id });
 ```ts
 export const postImportJob = defineJob({
   input: z.object({ postId: z.number() }),
-  channel: { authorize: ({ user }) => user !== null },
+  channel: {},
   async handler({ postId }, { reportProgress }) { … },
 });
-await $jobs.post.import.dispatch({ postId }, { delay: 60_000, priority: 1 });
+await $jobs.post.import.dispatch({ postId }, { delay: { minutes: 1 }, priority: 1 });
 ```
 
 | Option | Meaning |
 |---|---|
 | `queue` | named queue, default `default` |
 | `attempts` | default 3 |
-| `backoff` | ms or `{ type: "fixed" \| "exponential", delay }` |
-| `timeout` | ms per attempt |
+| `backoff` | duration such as `{ seconds: 30 }`, or BullMQ `{ type: "fixed" \| "exponential", delay }` (ms) |
+| `timeout` | duration per attempt, such as `{ seconds: 30 }` |
 | `unique` | `(input) => key`, skip a dispatch while one with the key waits |
-| `limiter` | `{ max, duration }` |
+| `limiter` | BullMQ `{ max, duration }` (ms) |
 | `channel` | browser can follow progress with `useJobChannel` |
 
 A job has no session. Call actions with `{ actor: systemActor("post.import") }`.
@@ -85,22 +85,22 @@ await $notifications.post.published.notify(userId, { postId, title });
 ```ts
 export const postsChannel = defineChannel({
   events: { created: z.object({ id: z.number(), title: z.string() }) },
-  authorize: ({ user }) => user !== null,
 });
 await $channels.posts.broadcast("created", { id, title });
 ```
 
+- Payloads travel with superjson: a `Date` arrives as a `Date`. Use `z.date()` in the event schema.
 - Rooms: `params: ["boardId"]`, then `$channels.board.broadcast("moved", payload, { boardId })`.
 - `presence: true` or `presence: { state: z.object(...) }`. Server: `presenceOf(channel, params)`.
+- No `authorize` means signed-in users only. `public: true` opens a channel, an upload or a job `channel` to guests.
 - `authorize` is a predicate. Use `can(...)` in it (it checks the user of the request), not `authorize()`.
 
 ## Uploads
 
 ```ts
 export const postCoverUpload = defineUpload({
-  maxSize: 2 * 1024 * 1024,
+  maxSize: "2 MB", // or bytes; KB = 1024 B
   allowedTypes: ["image/png", "image/jpeg"],
-  authorize: ({ user }) => user !== null,
 });
 const coverKey = await promoteUpload({ upload: "post-cover", key: input.coverKey, to: `covers/${randomUUID()}` });
 ```
@@ -133,7 +133,8 @@ Targeting without a deploy: `setFlagTargeting(name, { percentage, roles })`, `./
 ## Cache and locks
 
 - `remember(["posts", "list", input], { minutes: 5 }, fn, { tags: ["posts"] })`, `cacheGet`, `cachePut`, `cacheForget(key)` (`["posts"]` also forgets every key under it), `cacheFlush("posts")`. A key is a string or an array of parts joined with `:`.
-- `withLock(key, seconds, fn)`: `ConflictError` when another caller holds it.
+- `withLock(key, { seconds: 30 }, fn)`: `ConflictError` when another caller holds it.
+- Every duration is an object of `seconds`, `minutes`, `hours`, `days` (`{ days: 7 }`), never a number: cache TTL, lock, `signedUrl` `expiresIn`, job `timeout`, `backoff`, `delay`, rate limit `window`.
 - `useRedis(purpose)`, `redisKey(key)`.
 
 ## Other

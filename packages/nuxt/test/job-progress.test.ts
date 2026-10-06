@@ -1,3 +1,4 @@
+import superjson from "superjson";
 import { randomUUID } from "node:crypto";
 import { Redis } from "ioredis";
 import { afterEach, describe, it } from "vitest";
@@ -17,7 +18,7 @@ const PASSWORD = "correct-horse-battery-staple";
 function jobEvent(job: string, event: string, payload: unknown) {
   return {
     event: `channel:job:${job}`,
-    data: JSON.stringify({ event, payload }),
+    data: superjson.stringify({ event, payload }),
     id: expect.stringMatching(/^\d+-\d+$/),
   };
 }
@@ -37,7 +38,7 @@ describe("job progress", async () => {
 
   afterEach(() => closeChannelStreams());
 
-  it("broadcasts what the handler reports, then completed, on the job's channel", async () => {
+  it("broadcasts started, what the handler reports, then completed, on the job's channel", async () => {
     const stream = await openStream(
       `/api/channels?channels=${encodeURIComponent(
         JSON.stringify([{ name: "job:_probe.progress" }]),
@@ -48,6 +49,7 @@ describe("job progress", async () => {
 
     await runJob("_probe.progress", {});
 
+    expect(await stream.next()).toEqual(jobEvent("_probe.progress", "started", {}));
     expect(await stream.next()).toEqual(progress(50));
     expect(await stream.next()).toEqual(progress(100));
     expect(await stream.next()).toEqual(
@@ -64,6 +66,7 @@ describe("job progress", async () => {
       "probe.always-fails always fails",
     );
 
+    expect(await stream.next()).toEqual(jobEvent("_probe.always-fails", "started", {}));
     expect(await stream.next()).toEqual(
       jobEvent("_probe.always-fails", "failed", { message: "Something went wrong" }),
     );
@@ -85,9 +88,10 @@ describe("job progress", async () => {
 
     await runJob("_probe.progress", {}, { actingAs: ada });
 
-    expect(await own.next()).toMatchObject({ data: JSON.stringify({ event: "progress", payload: { percent: 50 } }) });
-    expect(await own.next()).toMatchObject({ data: JSON.stringify({ event: "progress", payload: { percent: 100 } }) });
-    expect(await own.next()).toMatchObject({ data: JSON.stringify({ event: "completed", payload: { result: null } }) });
+    expect(await own.next()).toMatchObject({ data: superjson.stringify({ event: "started", payload: {} }) });
+    expect(await own.next()).toMatchObject({ data: superjson.stringify({ event: "progress", payload: { percent: 50 } }) });
+    expect(await own.next()).toMatchObject({ data: superjson.stringify({ event: "progress", payload: { percent: 100 } }) });
+    expect(await own.next()).toMatchObject({ data: superjson.stringify({ event: "completed", payload: { result: null } }) });
     expect(await shared.next(500)).toBe("timeout");
   }, 30_000);
 
@@ -101,6 +105,7 @@ describe("job progress", async () => {
       "BAD_REQUEST",
     );
 
+    expect(await stream.next()).toEqual(jobEvent("_probe.always-fails", "started", {}));
     expect(await stream.next()).toEqual(
       jobEvent("_probe.always-fails", "failed", { message: "Invalid input" }),
     );
@@ -122,8 +127,13 @@ describe("job progress", async () => {
     }
   });
 
-  it("serves a job's channel only for a job with one, authorized by its authorize", async () => {
+  it("serves a job's channel only for a job with one, to signed-in users when it leaves out authorize, and to guests when it is public", async () => {
+    const member = await userFactory.withPassword(PASSWORD)({ email: "job-progress-member@example.com" });
+    const cookie = sessionCookie(await postJson("/api/auth/sign-in/email", { email: member.email, password: PASSWORD })) ?? "";
+
     expect((await openChannelStream("job:demo.countdown")).response.status).toBe(403);
+    expect((await openChannelStream("job:demo.countdown", { cookie })).response.status).toBe(200);
+    expect((await openChannelStream("job:_probe.progress")).response.status).toBe(200);
     expect((await openChannelStream("job:_probe.record")).response.status).toBe(404);
   });
 });

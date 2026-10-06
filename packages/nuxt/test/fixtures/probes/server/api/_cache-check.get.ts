@@ -5,20 +5,20 @@ async function remembered() {
     return { at: new Date("2026-09-25T10:00:00Z"), calls };
   };
 
-  const first = await remember("probe:remembered", 60, compute);
-  const second = await remember("probe:remembered", 60, compute);
+  const first = await remember("probe:remembered", { minutes: 1 }, compute);
+  const second = await remember("probe:remembered", { minutes: 1 }, compute);
   const callsBeforeForget = calls;
 
   await cacheForget("probe:remembered");
-  const afterForget = await remember("probe:remembered", 60, compute);
+  const afterForget = await remember("probe:remembered", { minutes: 1 }, compute);
 
   return { first, second, callsBeforeForget, afterForget, secondIsDate: second.at instanceof Date };
 }
 
 async function tagged() {
-  await remember("probe:tagged-a", 60, () => "a", { tags: ["probe-posts"] });
+  await remember("probe:tagged-a", { minutes: 1 }, () => "a", { tags: ["probe-posts"] });
   await cachePut("probe:tagged-b", "b", { minutes: 1 }, { tags: ["probe-posts"] });
-  await cachePut("probe:untagged", "c", 60);
+  await cachePut("probe:untagged", "c", { minutes: 1 });
   await cacheFlush("probe-posts");
 
   return {
@@ -30,12 +30,12 @@ async function tagged() {
 
 async function transactional() {
   await transaction(async () => {
-    await remember("probe:rolled-back", 60, () => "never");
+    await remember("probe:rolled-back", { minutes: 1 }, () => "never");
     throw new Error("roll back");
   }).catch(() => {});
 
   const beforeCommit = await transaction(async () => {
-    await remember("probe:committed", 60, () => "kept");
+    await remember("probe:committed", { minutes: 1 }, () => "kept");
     return (await cacheGet("probe:committed")) ?? null;
   });
 
@@ -47,9 +47,9 @@ async function transactional() {
 }
 
 async function globbed() {
-  await cachePut("probe:glob:1", 1, 60);
-  await cachePut("probe:glob:2", 2, 60);
-  await cachePut("probe:other", 3, 60);
+  await cachePut("probe:glob:1", 1, { minutes: 1 });
+  await cachePut("probe:glob:2", 2, { minutes: 1 });
+  await cachePut("probe:other", 3, { minutes: 1 });
   await cacheForget("probe:glob:*");
 
   return {
@@ -60,15 +60,15 @@ async function globbed() {
 }
 
 async function arrays() {
-  await cachePut(["probe", "array", { page: 1, q: "a" }], "stored", 60);
-  const remembered = await remember(["probe", "array", 2], 60, () => "computed");
+  await cachePut(["probe", "array", { page: 1, q: "a" }], "stored", { minutes: 1 });
+  const remembered = await remember(["probe", "array", 2], { minutes: 1 }, () => "computed");
 
-  await cachePut(["probe", "prefix"], 1, 60);
-  await cachePut(["probe", "prefix", { page: 1 }], 2, 60);
-  await cachePut("probe:prefix:list:deep", 3, 60);
-  await cachePut("probe:prefixed", 4, 60);
-  await cachePut("probe:st*r:1", 5, 60);
-  await cachePut("probe:star:1", 6, 60);
+  await cachePut(["probe", "prefix"], 1, { minutes: 1 });
+  await cachePut(["probe", "prefix", { page: 1 }], 2, { minutes: 1 });
+  await cachePut("probe:prefix:list:deep", 3, { minutes: 1 });
+  await cachePut("probe:prefixed", 4, { minutes: 1 });
+  await cachePut("probe:st*r:1", 5, { minutes: 1 });
+  await cachePut("probe:star:1", 6, { minutes: 1 });
   await cacheForget(["probe", "prefix"]);
   await cacheForget(["probe", "st*r"]);
 
@@ -94,17 +94,17 @@ async function expiring() {
 }
 
 async function locked() {
-  const whileHeld = await withLock("probe:lock", 60, () =>
-    withLock("probe:lock", 60, () => "ran").catch((error: unknown) => (error instanceof ConflictError ? "conflict" : error)),
+  const whileHeld = await withLock("probe:lock", { minutes: 1 }, () =>
+    withLock("probe:lock", { minutes: 1 }, () => "ran").catch((error: unknown) => (error instanceof ConflictError ? "conflict" : error)),
   );
-  const afterRelease = await withLock("probe:lock", 60, () => "ran");
-  await withLock("probe:lock", 60, () => {
+  const afterRelease = await withLock("probe:lock", { minutes: 1 }, () => "ran");
+  await withLock("probe:lock", { minutes: 1 }, () => {
     throw new Error("fails");
   }).catch(() => {});
-  const afterThrow = await withLock("probe:lock", 60, () => "ran");
+  const afterThrow = await withLock("probe:lock", { minutes: 1 }, () => "ran");
 
   const redis = useRedis("cache");
-  await withLock("probe:taken-over", 60, async () => {
+  await withLock("probe:taken-over", { minutes: 1 }, async () => {
     const [key] = await redis.keys("*lock:probe:taken-over");
     await redis.set(key ?? "", "other caller");
   });
@@ -112,7 +112,9 @@ async function locked() {
   const otherLock = await redis.get(takenOver ?? "");
   await redis.del(takenOver ?? "");
 
-  return { whileHeld, afterRelease, afterThrow, otherLock };
+  const fractional = await withLock("probe:fractional", { minutes: 1 / 7 }, () => "ran");
+
+  return { whileHeld, afterRelease, afterThrow, otherLock, fractional };
 }
 
 export default defineEventHandler(async (event) => {

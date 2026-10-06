@@ -62,7 +62,7 @@ Before the handler runs, nuxvel validates the payload with the `input` schema. T
 import { z } from "zod";
 
 export const postImportCommentsJob = defineJob({
-  channel: { authorize: ({ user }) => user !== null },
+  channel: {},
   input: z.object({ postId: z.number(), rows: z.number() }),
   async handler({ postId, rows }, { reportProgress }) {
     for (let row = 0; row < rows; row += 1) {
@@ -75,10 +75,11 @@ export const postImportCommentsJob = defineJob({
 });
 ```
 
-A job with a `channel` option broadcasts each run on the channel of the user who dispatched it: `job:<name>:<userId>`, here `job:post.import-comments:<userId>`. Only that user can listen, and `authorize` must also allow them. A run with no user behind it, for example from a schedule or a system actor, broadcasts on `job:<name>`, and `authorize` alone decides who can listen. The channel gets these events:
+A job with a `channel` option broadcasts each run on the channel of the user who dispatched it: `job:<name>:<userId>`, here `job:post.import-comments:<userId>`. Only that user can listen, and `authorize` must also allow them. A run with no user behind it, for example from a schedule or a system actor, broadcasts on `job:<name>`, and `authorize` alone decides who can listen. Without `authorize`, as in `channel: {}`, signed-in users can listen. `channel: { public: true }` lets guests listen too. The channel gets these events:
 
 | Event | Payload | When |
 |---|---|---|
+| `started` | `{}` | An attempt starts, before the handler runs. |
 | `progress` | `{ percent }` | The handler calls `reportProgress(percent)`. |
 | `completed` | `{ result }` | The handler returns. `result` is the return value, or `null`. |
 | `failed` | `{ message }` | The last attempt throws, or the job fails without a retry. |
@@ -128,7 +129,7 @@ Outside a transaction, `dispatch()` writes the outbox row immediately. See [The 
 ### Delay and priority
 
 ```ts
-await $jobs.post.sendDigest.dispatch({ postId: post.id }, { delay: 60_000 });
+await $jobs.post.sendDigest.dispatch({ postId: post.id }, { delay: { minutes: 1 } });
 await $jobs.post.notifyFollowers.dispatch({ postId: post.id }, { priority: 1 });
 ```
 
@@ -136,7 +137,7 @@ The second argument takes BullMQ job options. Both are optional:
 
 | Option | Meaning |
 |---|---|
-| `delay` | Milliseconds that the job waits in the delayed set before a worker can run it. A whole number from 0 to 2147483647, about 24 days. The wait starts when the relay adds the job to the queue. |
+| `delay` | How long the job waits in the delayed set before a worker can run it, as a [duration](./cache.md#durations) such as `{ minutes: 5 }`. At most 2147483647 milliseconds, about 24 days. The wait starts when the relay adds the job to the queue. |
 | `priority` | A whole number from 1 to 2097152. A job with a lower number runs first. A job with no priority runs before all jobs that have one. |
 
 A value out of range throws, and nuxvel writes nothing. The options type is `DispatchOptions`.
@@ -347,8 +348,8 @@ import { z } from "zod";
 export const postSyncToCrmJob = defineJob({
   queue: "crm",
   attempts: 5,
-  backoff: { type: "fixed", delay: 10_000 },
-  timeout: 30_000,
+  backoff: { seconds: 10 },
+  timeout: { seconds: 30 },
   unique: ({ postId }) => String(postId),
   limiter: { max: 10, duration: 1000 },
   input: z.object({ postId: z.number() }),
@@ -363,10 +364,10 @@ These options of `defineJob` set how the job retries and runs. nuxvel gives them
 | Option | Meaning |
 |---|---|
 | `attempts` | The number of attempts before the job moves to the failed set. The default is 3. |
-| `backoff` | The time between attempts. Give milliseconds, or `{ type: "fixed" \| "exponential", delay }`. The default is exponential from one second. |
-| `timeout` | Milliseconds that one attempt can run. An attempt that runs longer fails, and the job retries. nuxvel does not stop the handler. The default is no limit. |
+| `backoff` | The time between attempts: a fixed [duration](./cache.md#durations) such as `{ seconds: 10 }`, or BullMQ's own `{ type: "fixed" \| "exponential", delay }`, whose `delay` is in milliseconds. The default is exponential from one second. |
+| `timeout` | How long one attempt can run, as a [duration](./cache.md#durations) such as `{ seconds: 30 }`. An attempt that runs longer fails, and the job retries. nuxvel does not stop the handler. The default is no limit. |
 | `unique` | A function that returns a key from the payload. While a job with the same key is on the queue and not finished, nuxvel does not add a new dispatch with that key. The outbox row stays and gets `dispatched_at`. |
-| `limiter` | `{ max, duration }`: the worker runs not more than `max` jobs in `duration` milliseconds. Use it for a job that calls an external API with a rate limit. |
+| `limiter` | BullMQ's `{ max, duration }`, passed as it is: the worker runs not more than `max` jobs in `duration` milliseconds. Use it for a job that calls an external API with a rate limit. |
 
 The limiter applies to all jobs of the queue. Put a job with a `limiter` on its own [queue](#named-queues). When two jobs of one queue set different limiters, the worker does not start.
 

@@ -1,4 +1,8 @@
 export default defineJob({
-  channel: { authorize: () => true },
-  handler: () => ({ total: BigInt(1) }),
+  channel: { public: true },
+  handler: () => ({
+    get total(): number {
+      throw new Error("The result cannot be serialized");
+    },
+  }),
 });

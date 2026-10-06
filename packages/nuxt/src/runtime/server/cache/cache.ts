@@ -6,12 +6,12 @@ import { useRedis } from "../redis/client";
 import { deleteMatching } from "../redis/delete-matching";
 import { redisKey } from "../redis/key";
 import { redisNamespace as namespace } from "../redis/namespace";
-import { type RateLimitWindow, windowSeconds } from "../security/rate-limit-window";
+import { type Duration, windowSeconds } from "../security/rate-limit-window";
 
 export type { CacheKey } from "../../shared/cache/cache-key";
 
-/** How long a cached value lives: seconds, or a duration such as `{ minutes: 5 }`. */
-export type CacheTtl = number | RateLimitWindow;
+/** How long a cached value lives: a {@link Duration} such as `{ minutes: 5 }`. */
+export type CacheTtl = Duration;
 
 /** Options for {@link remember} and {@link cachePut}. */
 export interface CacheOptions {
@@ -27,10 +27,6 @@ function keyOf(key: string) {
 
 function tagOf(tag: string) {
   return redisKey(`${namespace}cache-tag:${tag}`);
-}
-
-function seconds(ttl: CacheTtl) {
-  return typeof ttl === "number" ? ttl : windowSeconds(ttl);
 }
 
 async function lookup(given: CacheKey) {
@@ -70,7 +66,7 @@ export async function cacheGet<T = unknown>(key: CacheKey): Promise<T | undefine
  * stores at once, also inside a transaction: use {@link remember} for a
  * value read from the database.
  *
- * @param ttl Seconds, or a duration such as `{ minutes: 5 }`.
+ * @param ttl A duration such as `{ minutes: 5 }`.
  * @param options.tags Tags that {@link cacheFlush} forgets the value by.
  *
  * @example
@@ -80,7 +76,7 @@ export async function cacheGet<T = unknown>(key: CacheKey): Promise<T | undefine
  */
 export async function cachePut(given: CacheKey, value: unknown, ttl: CacheTtl, options: CacheOptions = {}) {
   const key = cacheKeyString(given);
-  const expiresIn = seconds(ttl);
+  const expiresIn = Math.ceil(windowSeconds(ttl));
   const write = useRedis("cache").multi().set(keyOf(key), superjson.stringify(value), "EX", expiresIn);
 
   for (const tag of options.tags ?? []) {
@@ -103,7 +99,7 @@ export async function cachePut(given: CacheKey, value: unknown, ttl: CacheTtl, o
  * value goes through superjson, like {@link cachePut}. Forget it with
  * {@link cacheForget} or, by tag, {@link cacheFlush}.
  *
- * @param ttl Seconds, or a duration such as `{ minutes: 5 }`.
+ * @param ttl A duration such as `{ minutes: 5 }`.
  * @param options.tags Tags that {@link cacheFlush} forgets the value by.
  *
  * @example

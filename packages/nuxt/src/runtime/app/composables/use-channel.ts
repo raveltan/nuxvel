@@ -35,7 +35,10 @@ type Listening<Message> = {
  * is reopened with every joined channel after a random delay, which grows
  * on each failure up to 30 seconds, and the server replays what was
  * missed, so `events` has no duplicate, and no gap unless more than
- * the channel's last 500 events were missed.
+ * the channel's last 500 events were missed. The connection sends the
+ * app's build ID: after a deploy, the server answers a tab of the older
+ * build with a `reload` event, and the page reloads, so it never reads
+ * payloads of a newer shape.
  * The server decides who may listen with the channel's `authorize`; see
  * `defineChannel()`. A channel it refuses, or one no file defines, is
  * dropped rather than retried: `events` simply stays empty until the

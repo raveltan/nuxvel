@@ -1616,7 +1616,7 @@ export const monitorWebhook = defineWebhook({
   verify: hmac({ header: "x-signature", secret: "NUXT_MONITOR_WEBHOOK_SECRET" }),
   eventId: ({ payload }) => payload.id,
   handler: ({ payload: { check, state } }) =>
-    withLock(`monitor:${check}`, 30, async () => {
+    withLock(`monitor:${check}`, { seconds: 30 }, async () => {
       const actor = systemActor("monitor");
       const [open] = await useDb()
         .select()
@@ -1765,7 +1765,7 @@ Read the flag at the start of the handler:
   handler: async ({ payload: { check, state } }) => {
     if (!(await flag("monitor-incidents"))) return;
 
-    await withLock(`monitor:${check}`, 30, async () => {
+    await withLock(`monitor:${check}`, { seconds: 30 }, async () => {
 ```
 
 While the flag is off, the handler returns. The delivery gets `200`, so the monitor does not send it again. Turn the flag off and on from the terminal. The change applies in each server process at the next evaluation:

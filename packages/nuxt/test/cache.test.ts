@@ -82,12 +82,13 @@ describe("the server cache", async () => {
     expect((await guest().trpc.post.list()).rows.map(({ id }) => id)).toContain(post.id);
   });
 
-  it("runs a locked function once at a time and releases only its own lock", async () => {
+  it("runs a locked function once at a time, releases only its own lock, and takes a ttl of fractional milliseconds", async () => {
     expect(await scenario("locked")).toEqual({
       whileHeld: "conflict",
       afterRelease: "ran",
       afterThrow: "ran",
       otherLock: "other caller",
+      fractional: "ran",
     });
   });
 

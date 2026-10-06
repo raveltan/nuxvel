@@ -14,7 +14,6 @@ export const postsChannel = defineChannel({
   events: {
     created: z.object({ id: z.number(), title: z.string() }),
   },
-  authorize: ({ user }) => user !== null,
 });
 ```
 
@@ -23,7 +22,8 @@ Put one channel in each file under `server/channels/`. nuxvel finds the file. Yo
 | Option | Use |
 |---|---|
 | `events` | A Zod schema for each event name that the channel carries. |
-| `authorize` | Decides if this connection may listen. It gets the signed-in `user`, or `null` for a guest, and `params`, the params of the room (see [Broadcasting to a room](#broadcasting-to-a-room)). |
+| `authorize` | Decides if this connection may listen. It gets the signed-in `user`, or `null` for a guest, and `params`, the params of the room (see [Broadcasting to a room](#broadcasting-to-a-room)). Without it, only a signed-in user may listen. |
+| `public` | `true` lets a guest listen too, when `authorize` is left out. |
 | `params` | The param names of the channel's rooms, such as `["boardId"]`. Leave it out for a channel without rooms. |
 
 `events` types the channel from end to end. `broadcast()` accepts only an event that the channel declares, and `useChannel()` only a channel name that a file defines. A payload with the wrong shape fails `nuxt typecheck`.
@@ -86,10 +86,10 @@ Inside a transaction, such as in an action, the event goes out only after the co
 
 `payload` has the input type of the event schema. `broadcast()` validates it against the schema first. Async refinements and transforms also run. An invalid payload throws `ValidationFailedError`, the same error a failed action throws. Listeners get the output of the schema.
 
-Each listener gets an unnamed server-sent event. Its `data` is JSON:
+Each listener gets an unnamed server-sent event. Its `data` is the message `{ event, payload }` in superjson, as tRPC sends a result:
 
 ```json
-{ "event": "created", "payload": { "id": 42, "title": "Hello" } }
+{ "json": { "event": "created", "payload": { "id": 42, "title": "Hello" } } }
 ```
 
 Its `id` identifies the event for [catching up](#catching-up-after-a-reconnect). When no connection listens to the channel, only the replay buffer keeps the event.
@@ -125,17 +125,14 @@ await $channels.board.broadcast("moved", { cardId: card.id }, { boardId: card.bo
 ### Dates in payloads
 
 ```ts
-const isoDate = z.date().transform((date) => date.toISOString());
-
 export const postsChannel = defineChannel({
   events: {
-    created: z.object({ id: z.number(), title: z.string(), createdAt: isoDate }),
+    created: z.object({ id: z.number(), title: z.string(), createdAt: z.date() }),
   },
-  authorize: ({ user }) => user !== null,
 });
 ```
 
-The payload is plain JSON, not superjson as in tRPC responses. A `Date` arrives as an ISO string. Put that conversion in the schema, and the listener type matches what arrives.
+The payload travels with superjson, as tRPC responses do. A `Date`, `Map`, `Set` or `BigInt` arrives as the same type, so `useChannel()` and the `on` patches of `useLiveQuery()` get `createdAt` as a `Date`. Describe the payload as the row it is.
 
 ### Broadcasting from any process
 
@@ -245,6 +242,10 @@ All `useChannel()` calls on a page share one `EventSource` on `GET /api/channels
 
 A page that listens to five channels uses one connection. Browsers allow only a few connections for each host. Each broadcast arrives on the connection as the named event `channel:<name>`. `useChannel()` gives it to the components that listen to that channel.
 
+### After a deploy
+
+The connection also sends the build ID of the page in the `build` parameter. A server of another build answers with one `reload` event and ends the stream. The tab closes its connection without a reconnect, and the page reloads with `reloadNuxtApp()`, so a tab that is open across a deploy never reads payloads of a newer shape. A request without `build` connects as before.
+
 ### The connected event
 
 ```json
@@ -325,7 +326,6 @@ export const postsChannel = defineChannel({
   events: {
     created: z.object({ id: z.number(), title: z.string() }),
   },
-  authorize: ({ user }) => user !== null,
   presence: { state: z.object({ typing: z.boolean() }) },
 });
 ```
@@ -367,7 +367,7 @@ const viewers = await presenceOf("posts", { id: post.id });
 
 ### In a component
 
-`usePresence("posts", { id })` or `usePresence($channels.posts, { id })` joins a room from a component. It returns the members and a `setState()` for the current user. See [Frontend: presence](./frontend.md#presence).
+`usePresence("posts", { params: { id } })` or `usePresence($channels.posts, { params: { id } })` joins a room from a component. It returns the members and a `setState()` for the current user. See [Frontend: presence](./frontend.md#presence).
 
 ### Presence events
 
@@ -438,7 +438,7 @@ During a [blue-green deploy](./deploy.md#deploying), the old server processes ke
 ```ts
 // server/jobs/post/import.job.ts
 export const postImportJob = defineJob({
-  channel: { authorize: ({ user }) => user !== null },
+  channel: {},
   input: z.object({ rows: z.number() }),
   handler: async ({ rows }, { reportProgress }) => {
     for (let row = 0; row < rows; row += 1) {
@@ -450,17 +450,17 @@ export const postImportJob = defineJob({
 });
 ```
 
-The `channel` option gives a job a channel. Each run broadcasts on the channel of the user who dispatched it, `job:<name>:<userId>`. Only that user may listen, and `authorize` must also allow them, as in `defineChannel()`. A run with no user behind it, for example from a schedule or a system actor, broadcasts on `job:<name>`, and `authorize` alone decides who may listen. The handler reports its progress with `reportProgress(percent)`, from its second argument. nuxvel broadcasts each report on the job's channel. A job without `channel` broadcasts nothing.
+The `channel` option gives a job a channel. Each run broadcasts on the channel of the user who dispatched it, `job:<name>:<userId>`. Only that user may listen, and `authorize` must also allow them, as in `defineChannel()`. A run with no user behind it, for example from a schedule or a system actor, broadcasts on `job:<name>`, and `authorize` alone decides who may listen. `channel: {}` leaves out `authorize`, so signed-in users may listen. `channel: { public: true }` lets guests follow `job:<name>` too. The handler reports its progress with `reportProgress(percent)`, from its second argument. nuxvel broadcasts each report on the job's channel. A job without `channel` broadcasts nothing.
 
 ```vue
 <script setup lang="ts">
-const { events } = useJobChannel("post.import");
-const latest = computed(() => events.value.at(-1));
+const { status, progress, result, error } = useJobChannel("post.import");
 </script>
 
 <template>
-  <progress v-if="latest?.event === 'progress'" :value="latest.payload.percent" max="100" />
-  <p v-else-if="latest?.event === 'completed'">Imported {{ latest.payload.result.imported }}</p>
+  <progress v-if="status === 'running'" :value="progress" max="100" />
+  <p v-else-if="result">Imported {{ result.imported }}</p>
+  <p v-else-if="error">{{ error }}</p>
 </template>
 ```
 
@@ -468,11 +468,23 @@ const latest = computed(() => events.value.at(-1));
 
 | Event | Payload | When |
 |---|---|---|
+| `started` | `{}` | An attempt starts, before the handler runs. |
 | `progress` | `{ percent }` | The handler calls `reportProgress()`. |
 | `completed` | `{ result }` | The handler returns. `result` is its return value, or `null`. |
 | `failed` | `{ message }` | The last retry throws, or the job fails immediately, for example with an invalid payload. `message` is generic unless the error is a taxonomy error. See [Queues](./queues.md). |
 
-Read the latest message, as above. Do not walk through all of `events`. Like `useChannel()`, `useJobChannel()` keeps only the newest 100 messages, and `limit` changes that number.
+`useJobChannel()` returns the latest run, read from the newest message:
+
+| Field | Value |
+|---|---|
+| `status` | `idle` before any message, `running` after `started` or a `progress`, then `completed` or `failed`. Each run starts with `started`, so a new run starts again at `running`, with no `progress`, `result` or `error`. |
+| `progress` | The last reported percentage of the run, `100` once it completed, `undefined` before its first report. |
+| `result` | The handler's return value once the run completed, else `undefined`. It is typed from the handler. |
+| `error` | The `message` of a failed run, else `undefined`. |
+| `events` | Every message, oldest first. |
+| `close()` | Stops listening early. |
+
+Read these fields, not all of `events`. Like `useChannel()`, `useJobChannel()` keeps only the newest 100 messages, and `limit` changes that number.
 
 These broadcasts are best effort. When one fails, nuxvel logs and reports the error. The job does not fail and does not retry because of it.
 

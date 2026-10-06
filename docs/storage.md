@@ -82,9 +82,8 @@ The name is `useS3`, not `useStorage`. Nitro's own `useStorage()` is still avail
 ```ts
 // server/uploads/post-cover.upload.ts
 export const postCoverUpload = defineUpload({
-  maxSize: 2 * 1024 * 1024,
+  maxSize: "2 MB",
   allowedTypes: ["image/png", "image/jpeg"],
-  authorize: ({ user }) => user !== null,
 });
 ```
 
@@ -94,9 +93,10 @@ The path of the file is the name of the upload. It is also the last segment of i
 
 | Option | Use |
 |---|---|
-| `maxSize` | The largest accepted file, in bytes. |
+| `maxSize` | The largest accepted file: bytes, or a size with a unit, `B`, `KB`, `MB` or `GB`, such as `"2 MB"`. A unit is a power of 1024, so `"1 KB"` is 1024 bytes. |
 | `allowedTypes` | The accepted MIME types. A type must match exactly. |
-| `authorize` | Decides if this request gets an upload URL. It gets the signed-in `user`, or `null` for a guest. |
+| `authorize` | Decides if this request gets an upload URL. It gets the signed-in `user`, or `null` for a guest. Without it, only a signed-in user gets a URL. |
+| `public` | `true` gives a guest an upload URL too, when `authorize` is left out. |
 | `svg` | What happens to an SVG file: `"reject"` (the default), `"rasterize"` or `"sanitize"`. See [SVG files](#svg-files). |
 | `rateLimit` | The limit on the requests for an upload URL, with the options of [`rateLimit()`](./security.md#limiting-a-route-procedure-or-action). Each upload has a limit. When you do not set it, the limit is 30 requests per minute for each IP. |
 
@@ -157,10 +157,9 @@ The limits also apply to a client that sends false values. The URL is signed for
 ```ts
 // server/uploads/post-logo.upload.ts
 export const postLogoUpload = defineUpload({
-  maxSize: 256 * 1024,
+  maxSize: "256 KB",
   allowedTypes: ["image/png", "image/svg+xml"],
   svg: "rasterize",
-  authorize: ({ user }) => user !== null,
 });
 ```
 

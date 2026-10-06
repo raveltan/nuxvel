@@ -1,7 +1,7 @@
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
 type ChannelConfig = Parameters<typeof defineChannel>[0];
-type AuthorizeConnection = Parameters<ChannelConfig["authorize"]>[0];
+type AuthorizeConnection = Parameters<NonNullable<ChannelConfig["authorize"]>>[0];
 
 export const channelConfigIsTyped: IsAny<ChannelConfig> extends true
   ? never

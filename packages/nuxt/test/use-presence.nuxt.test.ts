@@ -59,7 +59,7 @@ function onlySource() {
 const roster = defineComponent({
   props: { id: { type: String, required: true } },
   setup(props) {
-    const { members } = usePresence("posts", { id: props.id });
+    const { members } = usePresence("posts", { params: { id: props.id } });
 
     return () => h("p", members.value.map((member) => `${member.name}:${JSON.stringify(member.state)}:${member.connections}`).join(","));
   },

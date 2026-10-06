@@ -33,7 +33,7 @@ describe("$jobs.x.dispatch() through the outbox", async () => {
     expect(body.written).toBe(2);
   });
 
-  it("adds a job with the attempts, backoff and unique key of its defineJob, and skips a dispatch whose key is still queued", async () => {
+  it("adds a job with the attempts, backoff (a duration rounded to whole milliseconds) and unique key of its defineJob, and skips a dispatch whose key is still queued", async () => {
     const body = await guest().$fetch("/api/_job-options-check");
     const tuned = { attempts: 5, backoff: { type: "fixed", delay: 10 } };
 

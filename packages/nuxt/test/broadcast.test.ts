@@ -1,3 +1,4 @@
+import superjson from "superjson";
 import { Redis } from "ioredis";
 import { afterEach, describe, it } from "vitest";
 import { actingAs, expect, guest } from "@nuxvel/nuxt/testing";
@@ -53,10 +54,18 @@ describe("broadcast()", async () => {
     expect(await guest().$fetch("/api/_typed-broadcast-check")).toEqual({ rejected: true });
     expect(await stream.next()).toEqual({
       event: "message",
-      data: JSON.stringify({ event: "renamed", payload: { id: 1 } }),
+      data: superjson.stringify({ event: "renamed", payload: { id: 1 } }),
       id: expect.stringMatching(/^\d+-\d+$/),
     });
     expect(await stream.next(300)).toBe("timeout");
+  });
+
+  it("sends the payload with superjson, so a Date reaches a listener as a Date", async () => {
+    const author = actingAs(await userFactory());
+    const stream = await author.listen("posts");
+    const post = await author.trpc.post.create({ title: "Dated", body: "" });
+
+    expect(await stream.next("created")).toMatchObject({ payload: { id: post.id, createdAt: post.createdAt } });
   });
 
   it("sends an event from a broadcast() in a transaction only once it commits, and rejects a payload that fails the schema at the call", async () => {
@@ -65,7 +74,7 @@ describe("broadcast()", async () => {
     expect(await guest().$fetch("/api/_broadcast-after-commit-check")).toEqual({ rejected: true });
     expect(await stream.next()).toEqual({
       event: "message",
-      data: JSON.stringify({ event: "renamed", payload: { id: 2 } }),
+      data: superjson.stringify({ event: "renamed", payload: { id: 2 } }),
       id: expect.stringMatching(/^\d+-\d+$/),
     });
     expect(await stream.next(300)).toBe("timeout");
@@ -84,7 +93,7 @@ describe("broadcast()", async () => {
 
     const expected = {
       event: "message",
-      data: JSON.stringify({ event: "pinged", payload: { count: 1 } }),
+      data: superjson.stringify({ event: "pinged", payload: { count: 1 } }),
       id: expect.stringMatching(/^\d+-\d+$/),
     };
 
@@ -107,7 +116,7 @@ describe("broadcast()", async () => {
     ).resolves.toEqual({ broadcast: true });
     expect(await staying.next()).toEqual({
       event: "message",
-      data: JSON.stringify({ event: "pinged", payload: null }),
+      data: superjson.stringify({ event: "pinged", payload: null }),
       id: expect.stringMatching(/^\d+-\d+$/),
     });
   });
@@ -141,7 +150,7 @@ describe("broadcast()", async () => {
     });
     expect(await returning.next()).toEqual({
       event: "message",
-      data: JSON.stringify({ event: "pinged", payload: null }),
+      data: superjson.stringify({ event: "pinged", payload: null }),
       id: expect.stringMatching(/^\d+-\d+$/),
     });
   });
@@ -159,7 +168,7 @@ describe("broadcast()", async () => {
     });
     expect(await arriving.next()).toEqual({
       event: "message",
-      data: JSON.stringify({ event: "pinged", payload: null }),
+      data: superjson.stringify({ event: "pinged", payload: null }),
       id: expect.stringMatching(/^\d+-\d+$/),
     });
     await expect.poll(() => redisSubscribers("_probe-public")).toBe(1);

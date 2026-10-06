@@ -1,3 +1,4 @@
+import superjson from "superjson";
 import postgres from "postgres";
 import { actingAs, expect, guest, type TestClient } from "@nuxvel/nuxt/testing";
 import { afterEach, describe, it } from "vitest";
@@ -84,7 +85,7 @@ describe("useFlag() / useExperiment() SSR", async () => {
 
     const message = await stream.next();
 
-    expect(JSON.parse(message?.data ?? "null")).toEqual({
+    expect(superjson.parse(message?.data ?? "null")).toEqual({
       event: "changed",
       payload: { name: "probe-rollout" },
     });

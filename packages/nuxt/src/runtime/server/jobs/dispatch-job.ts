@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { Actor } from "../actions/system-actor";
+import { type Duration, windowSeconds } from "../security/rate-limit-window";
 import { ambientActor } from "../utils/use-auth";
 import type { Job } from "./define-job";
 import { queueAfterCommit } from "./outbox/queue-after-commit";
@@ -12,11 +13,11 @@ import { findJob } from "./registry";
  */
 export interface DispatchOptions {
   /**
-   * Milliseconds the job waits in BullMQ's delayed set before a worker
-   * can run it. The wait starts when the relay adds the job to the
-   * queue. A whole number from 0 to 2147483647 (about 24 days).
+   * How long the job waits in BullMQ's delayed set before a worker can
+   * run it, such as `{ minutes: 5 }`. The wait starts when the relay adds
+   * the job to the queue. At most 2147483647 milliseconds (about 24 days).
    */
-  delay?: number;
+  delay?: Duration;
   /**
    * BullMQ priority, a whole number from 1 (runs first) to 2097152. A
    * job with no priority runs before every job that has one.
@@ -43,5 +44,7 @@ export async function dispatchJob(nameOrJob: string | Job, payload: unknown, opt
 
   const dispatcher = options.dispatcher === undefined ? await ambientActor() : options.dispatcher;
 
-  await queueAfterCommit(name, job.version, payload, dispatchOptions.parse(options), dispatcher);
+  const delay = options.delay === undefined ? undefined : Math.round(windowSeconds(options.delay) * 1000);
+
+  await queueAfterCommit(name, job.version, payload, dispatchOptions.parse({ delay, priority: options.priority }), dispatcher);
 }

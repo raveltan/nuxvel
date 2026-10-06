@@ -1,7 +1,7 @@
 <script setup lang="ts">
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
-const { members, setState } = usePresence("posts", { id: 1 });
+const { members, setState } = usePresence("posts", { params: { id: 1 } });
 
 type State = (typeof members.value)[number]["state"];
 
@@ -21,7 +21,10 @@ setState({ typing: "yes" });
 // @ts-expect-error the _probe-public channel does not set presence
 usePresence("_probe-public");
 
-const stubbed = usePresence($channels.posts, { id: 1 });
+// @ts-expect-error the room goes in params
+usePresence("posts", { id: 1 });
+
+const stubbed = usePresence($channels.posts, { params: { id: 1 } });
 
 type StubbedState = (typeof stubbed.members.value)[number]["state"];
 

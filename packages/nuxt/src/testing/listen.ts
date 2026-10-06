@@ -1,6 +1,7 @@
 import type { fetch } from "@nuxt/test-utils/e2e";
 import { onTestFinished } from "vitest";
 import type { ChannelEvent, ChannelName } from "../runtime/server/realtime/registry";
+import { parseBroadcast } from "../runtime/shared/realtime/channel-message";
 import { formatChannelRequests } from "../runtime/shared/realtime/channel-request";
 
 /**
@@ -135,7 +136,7 @@ export function listener(send: typeof fetch): ListenToChannels {
           if (message.done) throw new Error("The channel stream ended");
           if (!message.value.event.startsWith("channel:")) continue;
 
-          const data: { event: string; payload: unknown } = JSON.parse(message.value.data);
+          const data = parseBroadcast(message.value.data);
           const broadcast = { id: message.value.id, ...data };
 
           if (event === undefined || broadcast.event === event) return broadcast;

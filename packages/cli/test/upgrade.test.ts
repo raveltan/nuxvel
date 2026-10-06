@@ -1062,4 +1062,121 @@ describe("nuxvel upgrade", () => {
       expect(again.stdout).not.toContain("effects.get.ts");
     }, 60000);
   });
+
+  describe("durations", () => {
+    it("rewrites a number of seconds or milliseconds to a duration object, leaves the dispatch() of anything but $jobs, and prints a value it cannot compute as a manual step", async () => {
+      const appDir = scratchPlayground("upgrade-durations");
+      const file = join(appDir, "server", "jobs", "report", "digest.job.ts");
+      const manual = (option: string, unit: string) =>
+        `${option} takes a duration such as { minutes: 5 } in place of a number of ${unit}: rewrite the value by hand, or leave the option out when it is zero`;
+      mkdirSync(join(appDir, "server", "jobs", "report"), { recursive: true });
+      const before = [
+        "const TTL = 300;",
+        "",
+        "export const reportDigestJob = defineJob({",
+        "  timeout: 30_000,",
+        "  backoff: 1500,",
+        "  handler: async () => {",
+        '    await cachePut(["report", "count"], 1, 60 * 60);',
+        '    await remember("report:list", 7 * 24 * 60 * 60, () => []);',
+        '    await remember("report:other", TTL, () => []);',
+        '    await withLock("report", 90, () => undefined);',
+        '    const link = signedUrl("/reports/1", { expiresIn: 7 * 24 * 60 * 60 });',
+        "    await $jobs._probe.record.dispatch({ name: link }, { delay: 60_000, priority: 1 });",
+        '    await $jobs._probe.record.dispatch({ name: "now" }, { delay: 0 });',
+        '    await remember("report:done", { minutes: 5 }, () => []);',
+        "    store.dispatch(link, { delay: 5 });",
+        "  },",
+        "});",
+        "",
+        "export const retried = defineJob({ backoff: { type: \"exponential\", delay: 1000 }, handler: () => undefined });",
+        "",
+      ];
+      const after = [
+        "const TTL = 300;",
+        "",
+        "export const reportDigestJob = defineJob({",
+        "  timeout: { seconds: 30 },",
+        "  backoff: { seconds: 1.5 },",
+        "  handler: async () => {",
+        '    await cachePut(["report", "count"], 1, { hours: 1 });',
+        '    await remember("report:list", { days: 7 }, () => []);',
+        '    await remember("report:other", TTL, () => []);',
+        '    await withLock("report", { seconds: 90 }, () => undefined);',
+        '    const link = signedUrl("/reports/1", { expiresIn: { days: 7 } });',
+        "    await $jobs._probe.record.dispatch({ name: link }, { delay: { minutes: 1 }, priority: 1 });",
+        '    await $jobs._probe.record.dispatch({ name: "now" }, { delay: 0 });',
+        '    await remember("report:done", { minutes: 5 }, () => []);',
+        "    store.dispatch(link, { delay: 5 });",
+        "  },",
+        "});",
+        "",
+        "export const retried = defineJob({ backoff: { type: \"exponential\", delay: 1000 }, handler: () => undefined });",
+        "",
+      ];
+      writeFileSync(file, before.join("\n"));
+
+      const applied = await runCliAt(appDir, "upgrade", "--only", "durations");
+      const stderr = stripAnsi(applied.stderr);
+
+      expect(applied.exitCode, applied.stderr).toBe(0);
+      expect(applied.stdout).toContain("updated: server/jobs/report/digest.job.ts\n");
+      expect(stderr).toContain(`▲ server/jobs/report/digest.job.ts:9: ${manual("the ttl of remember()", "seconds")}`);
+      expect(stderr).toContain(`▲ server/jobs/report/digest.job.ts:13: ${manual("delay of dispatch()", "milliseconds")}`);
+      expect(stderr.match(/▲ /g)).toHaveLength(2);
+      expect(readFileSync(file, "utf8")).toBe(after.join("\n"));
+
+      const again = await runCliAt(appDir, "upgrade", "--only", "durations");
+
+      expect(again.stdout).not.toContain("digest.job.ts");
+    }, 60000);
+  });
+
+  describe("presence-params", () => {
+    it("wraps an object literal room of usePresence() in params, in a .vue file, leaves a migrated call, and prints a variable, a call and a spread as manual steps", async () => {
+      const appDir = scratchPlayground("upgrade-presence-params");
+      const file = join(appDir, "app", "components", "PostEditors.vue");
+      const before = [
+        '<script setup lang="ts">',
+        "const props = defineProps<{ id: number; room: { id: number }; extra: [] }>();",
+        "const { members } = usePresence(\"posts\", { id: props.id });",
+        "const fromStub = usePresence($channels.posts, props.room);",
+        "const fromCall = usePresence(\"posts\", roomOf(props.id));",
+        "const migrated = usePresence(\"posts\", { params: { id: props.id } });",
+        "const lobby = usePresence(\"posts\");",
+        "const spread = usePresence(\"posts\", ...props.extra);",
+        "</script>",
+        "",
+        "<template>",
+        "  <PresenceAvatars :members=\"members\" />",
+        "</template>",
+        "",
+      ];
+      writeFileSync(file, before.join("\n"));
+
+      const applied = await runCliAt(appDir, "upgrade", "--only", "presence-params");
+      const stderr = stripAnsi(applied.stderr);
+
+      expect(applied.exitCode, applied.stderr).toBe(0);
+      expect(applied.stdout).toContain("updated: app/components/PostEditors.vue\n");
+      const manual = "usePresence() takes the room as its params option: write usePresence(name, { params: room }) when this argument is the room";
+
+      expect(stderr).toContain(`▲ app/components/PostEditors.vue:4: ${manual}`);
+      expect(stderr).toContain(`▲ app/components/PostEditors.vue:5: ${manual}`);
+      expect(stderr).toContain(`▲ app/components/PostEditors.vue:8: ${manual}`);
+      expect(stderr.match(/▲ /g)).toHaveLength(3);
+      expect(readFileSync(file, "utf8")).toBe(
+        before
+          .map((line) =>
+            line
+              .replace("usePresence(\"posts\", { id: props.id })", "usePresence(\"posts\", { params: { id: props.id } })"),
+          )
+          .join("\n"),
+      );
+
+      const again = await runCliAt(appDir, "upgrade", "--only", "presence-params");
+
+      expect(again.stdout).not.toContain("PostEditors.vue");
+    }, 60000);
+  });
 });

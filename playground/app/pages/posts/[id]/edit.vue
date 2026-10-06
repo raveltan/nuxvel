@@ -5,7 +5,7 @@ const route = useRoute();
 const id = Number(route.params.id);
 const post = $api.post.byId.useQuery({ id });
 const { user } = useUser();
-const { members, setState } = usePresence("posts", { id });
+const { members, setState } = usePresence("posts", { params: { id } });
 const others = computed(() => members.value.filter((member) => member.userId !== user.value?.id));
 </script>
 

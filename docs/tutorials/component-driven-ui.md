@@ -167,9 +167,8 @@ The description is a plain `z.string()`, and the action cleans it on the server 
 ```ts
 // server/uploads/product-image.upload.ts
 export const productImageUpload = defineUpload({
-  maxSize: 2 * 1024 * 1024,
+  maxSize: "2 MB",
   allowedTypes: ["image/png", "image/jpeg", "image/webp"],
-  authorize: ({ user }) => user !== null,
 });
 ```
 

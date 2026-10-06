@@ -8,5 +8,5 @@ export default defineChannel({
       title: z.string().refine(async (title) => title !== "rejected", { message: "That title is rejected" }),
     }),
   },
-  authorize: () => true,
+  public: true,
 });

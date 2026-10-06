@@ -1,11 +1,10 @@
-import type { DispatchOptions } from "../jobs/dispatch-job";
 
 /** One enqueue: the job's queue and dispatch name, the payload envelope it carries and its dispatch options. */
 export interface QueuedJob {
   queue: string;
   name: string;
   payload: unknown;
-  options: DispatchOptions;
+  options: { delay?: number; priority?: number };
 }
 
 /**

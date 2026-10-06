@@ -1,3 +1,4 @@
+import superjson from "superjson";
 import { once } from "node:events";
 import { afterEach, describe, it } from "vitest";
 import postgres from "postgres";
@@ -57,7 +58,7 @@ async function connect(room: string, cookie: string, serverUrl?: string) {
       const message = await stream.next(10_000);
 
       if (message === "timeout" || message === "ended") throw new Error(`no presence event: ${message}`);
-      if (message.event === `channel:${room}`) return JSON.parse(message.data);
+      if (message.event === `channel:${room}`) return superjson.parse(message.data);
     }
   }
 

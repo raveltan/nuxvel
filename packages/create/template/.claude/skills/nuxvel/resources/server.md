@@ -127,4 +127,4 @@ export const postPolicy = definePolicy(postTable, {
 
 - `useAuth()` → `{ user, actor }` anywhere on the server, each `null` when signed out. `requireAuth()` → session or `UnauthenticatedError`. Actor types are the strings `"user"`, `"system"`, `"api-key"`, `"guest"`.
 - Errors: `NotFoundError`, `ConflictError`, `ForbiddenError`, `UnauthenticatedError`, `ValidationFailedError`, `RateLimitedError`, `TransientError`, `UnknownError`. `isTaxonomyError(error, code)`.
-- Other: `audit(name, row, { changes })`, `signedUrl(path, { expiresIn })`, `requireSignature(event)`, `sanitizeHtml`, `richText` (Zod), `flash(message)`, `useLogger(tag?)` (tag defaults to the running action or job), `clientIp()`, `csvSafe()`.
+- Other: `audit(name, row, { changes })`, `signedUrl(path, { expiresIn: { days: 7 } })`, `requireSignature(event)`, `sanitizeHtml`, `richText` (Zod), `flash(message)`, `useLogger(tag?)` (tag defaults to the running action or job), `clientIp()`, `csvSafe()`.

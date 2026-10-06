@@ -6,5 +6,5 @@ export default defineChannel({
     down: z.object({ message: z.string(), retryAfter: z.number() }),
     up: z.object({}),
   },
-  authorize: () => true,
+  public: true,
 });

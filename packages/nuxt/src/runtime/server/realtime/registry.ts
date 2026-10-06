@@ -4,6 +4,7 @@ import { jobChannelName, jobFromChannelName } from "../../shared/realtime/job-ch
 import { userFromNotificationChannel } from "../../shared/realtime/notification-channel";
 import { presenceRoomChannel, presenceRoomParams } from "../../shared/realtime/presence-room";
 import { allJobs, findJob } from "../jobs/registry";
+import { defaultAuthorize } from "../security/default-authorize";
 import type { Channel, ChannelEvents, ChannelPresence } from "./define-channel";
 
 type Discovered = (typeof channels)[number];
@@ -85,7 +86,7 @@ function jobChannel(name: string): ListenableChannel | undefined {
 
   if (!job?.channel) return undefined;
 
-  const { authorize } = job.channel;
+  const authorize = job.channel.authorize ?? defaultAuthorize(job.channel.public);
   const userId = target?.userId;
 
   return {
