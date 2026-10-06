@@ -268,14 +268,26 @@ For a channel event, use [`broadcastAfterCommit()`](./realtime.md#broadcasting-a
 ```ts
 export const createPostAction = defineAction({
   input: createPostInput,
-  invalidates: ["posts:*"],
+  invalidates: ["posts"],
   handler: async (input, ctx) => {
     // ...
   },
 });
 ```
 
-`invalidates` lists cache keys or globs. After the transaction commits, the action removes them with `cacheForget()`. When the handler throws, the action removes nothing. See [Cache](./cache.md#invalidation).
+`invalidates` lists tags. A tag is a string or a [key array](./cache.md#keys). After the transaction commits, the action removes the value of each tag and every value under it: `"posts"` removes `posts`, `posts:list` and `posts:list:{"page":2}`. A string with `*`, `?` or `[` is a glob, such as `"posts:*"`. When the handler throws, the action removes nothing. See [Cache](./cache.md#invalidation).
+
+```ts
+export const updatePostAction = defineAction({
+  input: updatePostInput,
+  handler: async (input, ctx) => {
+    // ...
+  },
+  invalidates: (post) => [["posts", "list"], ["posts", post.id]],
+});
+```
+
+A function gets the result of the handler and the parsed input, and returns the tags. Write it after `handler`: TypeScript reads the result type of the handler first.
 
 ## Action rules
 

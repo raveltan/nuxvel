@@ -72,3 +72,8 @@ applies each step below that names a codemod.
   `["posts", "list", input]`: the parts are joined with `:`, and an
   object part is JSON with sorted keys. `cacheForget(["posts"])` also
   forgets every key under `posts:`.
+- An action's `invalidates` takes tags: strings or key arrays, each
+  forgotten with every cache key under it (`"posts"` also forgets
+  `posts:list`), or a function `(output, input) => tags`. A string with
+  `*`, `?` or `[` stays a glob. A plain string such as `"posts:list"`,
+  which forgot that one key, now also forgets the keys under it.

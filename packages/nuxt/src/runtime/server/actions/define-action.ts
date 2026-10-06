@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import { cacheForget } from "../cache/cache";
+import { type CacheKey, cacheForget } from "../cache/cache";
 import { onCommit, transaction } from "../database/transaction";
 import { classifyError } from "../errors/classify";
 import { awaitingName } from "../discovery/definition-name";
@@ -12,6 +12,10 @@ import { zodLocaleError } from "../i18n/zod-locale-error";
 import type { Actor } from "./system-actor";
 import { logActionCall } from "./trace";
 
+function prefixOrGlob(tag: InvalidationTag): CacheKey {
+  return typeof tag === "string" && !/[*?[]/.test(tag) ? [tag] : tag;
+}
+
 function errorMessage(error: unknown) {
   if (error instanceof Error) return error.message;
 
@@ -21,6 +25,16 @@ function errorMessage(error: unknown) {
 
   return String(error);
 }
+
+/**
+ * What an action invalidates once its transaction commits: a cache key
+ * array, a plain string, or a string glob such as `"posts:*"`.
+ *
+ * An array or a plain string is a prefix: `["posts"]` and `"posts"` forget
+ * `posts` and every key under `posts:`, such as `posts:list:{"page":1}`.
+ * A string with `*`, `?` or `[` is a Redis glob, see {@link cacheForget}.
+ */
+export type InvalidationTag = CacheKey;
 
 /**
  * Second argument every action receives: who performs it, and in which
@@ -99,9 +113,14 @@ export interface Action<
  * `server/rate-limits/`. Past it the call throws {@link RateLimitedError}
  * without running the handler. `by: "user"` throws for a non-user actor,
  * `"ip"` outside a request.
- * @param config.invalidates Cache keys or globs (`"posts:*"`) that
- * {@link cacheForget} forgets once the action's transaction commits.
- * Nothing is forgotten when the handler throws.
+ * @param config.invalidates The {@link InvalidationTag}s the action
+ * forgets once its transaction commits: a list such as
+ * `["posts", ["users", 1]]`, or a function of the handler's result and
+ * the parsed input that returns one, such as
+ * `(post) => [["posts", post.id]]`, written after `handler` so that
+ * TypeScript knows the result type. Each tag forgets the cache key and
+ * every key under it; a string glob (`"posts:*"`) forgets the keys it
+ * matches. Nothing is forgotten when the handler throws.
  *
  * @example
  * ```ts
@@ -109,6 +128,7 @@ export interface Action<
  * export const archivePostAction = defineAction({
  *   input: z.object({ id: z.number() }),
  *   errors: { ALREADY_ARCHIVED: "This post is already archived." },
+ *   invalidates: [["posts", "list"]],
  *   async handler({ id }, { actor }, fail) {
  *     const post = await findOrFail(postTable, id);
  *     if (post.archivedAt) return fail("ALREADY_ARCHIVED");
@@ -132,7 +152,7 @@ export function defineAction<
   ) => Output | Promise<Output>;
   transaction?: boolean;
   rateLimit?: ActionRateLimit<z.output<Schema>>;
-  invalidates?: string[];
+  invalidates?: readonly InvalidationTag[] | ((output: Output, input: z.output<Schema>) => readonly InvalidationTag[]);
 }): Action<z.input<Schema>, Output, Errors> {
   const limitCall = config.rateLimit && actionRateLimiter(config.rateLimit);
   const fail: Fail<Errors> = (code, message) => {
@@ -162,11 +182,12 @@ export function defineAction<
       const runHandler = async () => {
         const output = await config.handler(result.data, ctx, fail);
 
-        const invalidates = config.invalidates ?? [];
+        const invalidates =
+          typeof config.invalidates === "function" ? config.invalidates(output, result.data) : (config.invalidates ?? []);
 
         if (invalidates.length > 0) {
           await onCommit(async () => {
-            for (const key of invalidates) await cacheForget(key);
+            for (const tag of invalidates) await cacheForget(prefixOrGlob(tag));
           });
         }
 

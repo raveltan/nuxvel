@@ -47,7 +47,7 @@ export const updatePostAction = defineAction({
 | `errors` | `{ code: defaultMessage }`. Only these codes compile in `fail` |
 | `transaction: false` | no transaction (reads) |
 | `rateLimit` | options of `rateLimit()` |
-| `invalidates` | cache key patterns to forget after commit, `["posts:*"]` |
+| `invalidates` | tags to forget after commit, each with every key under it: `["posts", ["users", id]]`, or `(output, input) => tags`. A string with `*` stays a glob |
 
 - Runs in `transaction()`. A nested action joins it (savepoint) and inherits the actor.
 - DB errors: unique → `ConflictError` (409). FK → `ValidationFailedError` or `ConflictError`. Deadlock/timeout → `TransientError`.

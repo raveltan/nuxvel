@@ -113,7 +113,7 @@
   },
   "types": {
     "actions/action-error": ["ActionErrorCode"],
-    "actions/define-action": ["Action", "ActionContext"],
+    "actions/define-action": ["Action", "ActionContext", "InvalidationTag"],
     "actions/system-actor": ["Actor"],
     "audit/verify-audit-chain": ["AuditChainBreak"],
     "backfills/define-backfill": ["Backfill"],

@@ -95,7 +95,7 @@ A string key with `*`, `?` or `[` is a Redis glob. `cacheForget()` then finds th
 ```ts
 export const createPostAction = defineAction({
   input: createPostInput,
-  invalidates: ["posts:*"],
+  invalidates: ["posts"],
   handler: async (input, ctx) => {
     const post = await useDb()
       .insert(postTable)
@@ -108,7 +108,13 @@ export const createPostAction = defineAction({
 });
 ```
 
-The `invalidates` option of `defineAction()` lists keys or globs. After the transaction of the action commits, the action removes them with `cacheForget()`. When the handler throws, the transaction rolls back and the action removes nothing.
+The `invalidates` option of `defineAction()` lists tags: strings or key arrays. After the transaction of the action commits, the action removes the value of each tag and every value under it, as `cacheForget(["posts"])` does. A string with `*`, `?` or `[` stays a glob: `"posts:*"` removes the keys that match it. When the handler throws, the transaction rolls back and the action removes nothing.
+
+```ts
+invalidates: (post, input) => [["posts", "list"], ["posts", post.id]],
+```
+
+A function gets the result of the handler and the parsed input, and returns the tags. Write it after `handler`, so that TypeScript knows the result type. See [Actions](./actions.md#invalidating-cached-values).
 
 ### Tags
 

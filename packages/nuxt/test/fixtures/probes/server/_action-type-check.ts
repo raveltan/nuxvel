@@ -72,3 +72,21 @@ export async function runActionTakesADefinitionOrATestStub() {
 
   return { postId, postIdIsTyped };
 }
+
+export const invalidatesFromTheResult = defineAction({
+  input: z.object({ id: z.number() }),
+  handler: ({ id }) => ({ id, slug: "post" }),
+  invalidates: (post, input) => {
+    const typed: IsAny<typeof post> extends true ? never : typeof post extends { slug: string } ? true : never = true;
+    const parsed: typeof input extends { id: number } ? true : never = true;
+
+    return typed && parsed ? [["posts", post.slug], "posts:*"] : [];
+  },
+});
+
+export const invalidatesTakesTags = defineAction({
+  input: z.object({}),
+  // @ts-expect-error a tag is a string or an array of parts
+  invalidates: [1],
+  handler: () => null,
+});
