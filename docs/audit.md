@@ -8,7 +8,7 @@ The audit log records who changed what, and when. Each call to `audit()` appends
 
 ```ts
 // server/actions/posts/create-post.action.ts
-import { postTable } from "../../database/schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 export const createPostAction = defineAction({
   input: createPostInput,
@@ -64,8 +64,8 @@ await audit("post.updated", { type: "post", id: post.id }, {
 
 ```ts
 // server/trpc/routers/post.router.ts
-import { updatePostAction } from "../../actions/posts/update-post.action";
-import { postTable } from "../../database/schema/post.schema";
+import { updatePostAction } from "#server/actions/posts/update-post.action";
+import { postTable } from "#nuxvel/schema";
 
 export const postRouter = {
   update: authedProcedure
@@ -325,8 +325,7 @@ A date without a timezone is in UTC. See [CLI](./cli.md).
 ```ts
 import { actingAs, expect, expectAudited } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { postFactory } from "../../server/factories/post.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { postFactory, userFactory } from "#nuxvel/factories";
 
 describe("update post", () => {
   it("logs the change", async () => {

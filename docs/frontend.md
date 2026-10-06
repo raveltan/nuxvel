@@ -879,7 +879,7 @@ export default [...accessibility, ...architecture];
 // tests/e2e/post.test.ts
 import { actingAs, button, expect, expectAccessible, field } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../server/factories/users.factory";
+import { userFactory } from "#nuxvel/factories";
 
 describe("new post form", () => {
   it("shows an empty title under its field", async () => {

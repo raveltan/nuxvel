@@ -176,7 +176,7 @@ The command writes three files: the mail `postPublishedMail` at `server/mail/pos
 
 ```ts
 // server/api/preview.get.ts
-import { postPublishedMail } from "../mail/post/published.mail";
+import { postPublishedMail } from "#server/mail/post/published.mail";
 
 const { html, text } = await postPublishedMail.render({
   to: "ada@example.com",
@@ -368,9 +368,7 @@ nuxvel has no function that removes an address from the list. To send to the add
 ```ts
 import { expect, expectMailSent, renderMail, runAction } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { postFactory } from "../../server/factories/post.factory";
-import { subscriberFactory } from "../../server/factories/subscribers.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { postFactory, subscriberFactory, userFactory } from "#nuxvel/factories";
 
 describe("post.published mail", () => {
   it("goes to subscribers when a post is published", async () => {

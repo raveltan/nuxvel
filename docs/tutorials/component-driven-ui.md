@@ -188,8 +188,7 @@ A published product needs an image. Declare the failure in the create action, an
 ```ts
 // server/actions/product/create-product.action.ts
 import { randomUUID } from "node:crypto";
-import { productTable } from "../../database/schema/product.schema";
-import { createProductInput } from "#shared/schemas/product";
+import { productTable } from "#nuxvel/schema";
 
 export const createProductAction = defineAction({
   input: createProductInput,
@@ -223,8 +222,7 @@ The update action also writes the description, so it cleans it too:
 ```ts
 // server/actions/product/update-product.action.ts
 import { eq } from "drizzle-orm";
-import { productTable } from "../../database/schema/product.schema";
-import { updateProductInput } from "#shared/schemas/product";
+import { productTable } from "#nuxvel/schema";
 
 export const updateProductAction = defineAction({
   input: updateProductInput,
@@ -293,7 +291,7 @@ The generated factory gives the description a plain string, which is not a `Sani
 import { faker } from "@faker-js/faker";
 import { userFactory } from "./users.factory";
 import { defineFactory } from "@nuxvel/nuxt/factories";
-import { productTable } from "../database/schema/product.schema";
+import { productTable } from "#nuxvel/schema";
 
 export const productFactory = defineFactory(productTable, {
   ownerId: async () => (await userFactory()).id,
@@ -321,8 +319,7 @@ Replace the generated router test:
 import { actingAs, expect, expectStored } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
 import { pixelPng } from "../../../tests/fixtures/pixel";
-import { productFactory } from "../../factories/product.factory";
-import { userFactory } from "../../factories/users.factory";
+import { productFactory, userFactory } from "#nuxvel/factories";
 
 const draft = { name: "Harbour lights", description: "<p>A <b>calm</b> album</p>", price: 1999, category: "music", imageKey: "" } as const;
 
@@ -1057,7 +1054,7 @@ The component tests check each state with a fake server. One end-to-end test che
 // tests/e2e/products.test.ts
 import { actingAs, button, dialog, expect, expectAccessible, field, fillForm, heading, link, toast } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../server/factories/users.factory";
+import { userFactory } from "#nuxvel/factories";
 import { pixelPng } from "../fixtures/pixel";
 
 describe("the product pages", () => {

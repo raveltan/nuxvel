@@ -15,8 +15,8 @@ nuxvel make:router post
 ```ts
 // server/trpc/routers/post.router.ts
 import { z } from "zod";
-import { createPostAction } from "../../actions/posts/create-post.action";
-import { postTable } from "../../database/schema/post.schema";
+import { createPostAction } from "#server/actions/posts/create-post.action";
+import { postTable } from "#nuxvel/schema";
 
 export const postRouter = {
   list: publicProcedure
@@ -465,7 +465,7 @@ A machine client signs in with an API key in place of a session cookie. An `auth
 ```ts
 import { actingAs, expect, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../server/factories/users.factory";
+import { userFactory } from "#nuxvel/factories";
 
 describe("post router", () => {
   it("creates a post as the signed-in user", async () => {

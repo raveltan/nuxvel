@@ -158,7 +158,7 @@ In development, each `remember()` and `cacheGet()` call adds a `cache:lookup` li
 ```ts
 import { actingAs, expectCacheHit, expectCacheMiss, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../server/factories/users.factory";
+import { userFactory } from "#nuxvel/factories";
 
 describe("post list", () => {
   it("reads the posts again after a new post", async () => {

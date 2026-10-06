@@ -177,7 +177,7 @@ Each command writes a factory and a test that inserts two rows. Give the inciden
 // server/factories/incident.factory.ts
 import { faker } from "@faker-js/faker";
 import { defineFactory } from "@nuxvel/nuxt/factories";
-import { incidentTable } from "../database/schema/incident.schema";
+import { incidentTable } from "#nuxvel/schema";
 
 export const incidentFactory = defineFactory(incidentTable, {
   title: () => `${faker.helpers.arrayElement(["API", "Dashboard", "Sign-in", "Webhooks"])} ${faker.helpers.arrayElement(["is slow", "returns errors", "is down"])}`,
@@ -194,7 +194,7 @@ export const resolvedIncidentFactory = incidentFactory.state({
 import { faker } from "@faker-js/faker";
 import { incidentFactory } from "./incident.factory";
 import { defineFactory } from "@nuxvel/nuxt/factories";
-import { incidentUpdateTable } from "../database/schema/incident-update.schema";
+import { incidentUpdateTable } from "#nuxvel/schema";
 
 export const incidentUpdateFactory = defineFactory(incidentUpdateTable, {
   incidentId: async () => (await incidentFactory()).id,
@@ -211,10 +211,7 @@ The demo data is a history of twelve resolved incidents and one subscriber. Repl
 
 ```ts
 // server/seeders/database.seeder.ts
-import { resolvedIncidentFactory } from "../factories/incident.factory";
-import { incidentUpdateFactory } from "../factories/incident-update.factory";
-import { subscriberFactory } from "../factories/subscriber.factory";
-import { userFactory } from "../factories/users.factory";
+import { resolvedIncidentFactory, incidentUpdateFactory, subscriberFactory, userFactory } from "#nuxvel/factories";
 
 const DEMO_EMAIL = "demo@example.com";
 const DEMO_PASSWORD = "demo-password";
@@ -236,10 +233,7 @@ export const databaseSeeder = defineSeeder(async () => {
 // tests/functional/seeders.test.ts
 import { expectCount, expectRow, runSeeder, signIn } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userTable } from "../../server/database/schema/auth.schema";
-import { incidentTable } from "../../server/database/schema/incident.schema";
-import { incidentUpdateTable } from "../../server/database/schema/incident-update.schema";
-import { subscriberTable } from "../../server/database/schema/subscriber.schema";
+import { userTable, incidentTable, incidentUpdateTable, subscriberTable } from "#nuxvel/schema";
 
 describe("the database seeder", () => {
   it("creates a demo user, a history of resolved incidents and a subscriber", async () => {
@@ -277,8 +271,8 @@ The status page is public. It shows the open incidents, one page for each incide
 ```ts
 // server/utils/with-updates.ts
 import { desc, inArray } from "drizzle-orm";
-import type { IncidentRow } from "../database/schema/incident.schema";
-import { incidentUpdateTable } from "../database/schema/incident-update.schema";
+import type { IncidentRow } from "#nuxvel/schema";
+import { incidentUpdateTable } from "#nuxvel/schema";
 
 export async function withUpdates(incidents: IncidentRow[]) {
   const updates = await useDb()
@@ -300,7 +294,7 @@ The function reads the updates of all the incidents in one query, newest first. 
 // server/trpc/routers/status.router.ts
 import { desc, eq, ne } from "drizzle-orm";
 import { z } from "zod";
-import { incidentTable } from "../../database/schema/incident.schema";
+import { incidentTable } from "#nuxvel/schema";
 
 export const statusRouter = {
   current: publicProcedure.output(z.array(incidentSchema)).query(async () =>
@@ -339,8 +333,7 @@ Test the router. `guest().trpc` calls it as a visitor:
 // server/trpc/routers/status.router.test.ts
 import { expect, expectConstantQueries, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { incidentFactory, resolvedIncidentFactory } from "../../factories/incident.factory";
-import { incidentUpdateFactory } from "../../factories/incident-update.factory";
+import { incidentFactory, resolvedIncidentFactory, incidentUpdateFactory } from "#nuxvel/factories";
 
 describe("status router", () => {
   it("lists the open incidents with their updates, newest update first", async () => {
@@ -612,8 +605,7 @@ The team opens an incident and posts the updates. In this app, each account is a
 ```ts
 // server/actions/incidents/open-incident.action.ts
 import { z } from "zod";
-import { incidentTable } from "../../database/schema/incident.schema";
-import { incidentUpdateTable } from "../../database/schema/incident-update.schema";
+import { incidentTable, incidentUpdateTable } from "#nuxvel/schema";
 
 export const openIncidentAction = defineAction({
   input: openIncidentInput.extend({ monitor: z.string().max(255).optional() }),
@@ -629,8 +621,7 @@ export const openIncidentAction = defineAction({
 ```ts
 // server/actions/incidents/post-update.action.ts
 import { eq } from "drizzle-orm";
-import { incidentTable } from "../../database/schema/incident.schema";
-import { incidentUpdateTable } from "../../database/schema/incident-update.schema";
+import { incidentTable, incidentUpdateTable } from "#nuxvel/schema";
 
 export const postUpdateAction = defineAction({
   input: postIncidentUpdateInput,
@@ -663,8 +654,8 @@ An action checks its input and runs its handler in one transaction. The incident
 // server/actions/incidents/open-incident.action.test.ts
 import { expect, expectRow, runAction } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { incidentUpdateTable } from "../../database/schema/incident-update.schema";
-import { userFactory } from "../../factories/users.factory";
+import { incidentUpdateTable } from "#nuxvel/schema";
+import { userFactory } from "#nuxvel/factories";
 
 describe("incidents/open-incident action", () => {
   it("opens an incident with its first update", async () => {
@@ -695,9 +686,8 @@ describe("incidents/open-incident action", () => {
 // server/actions/incidents/post-update.action.test.ts
 import { expect, expectRow, freezeTime, runAction } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { incidentTable } from "../../database/schema/incident.schema";
-import { incidentFactory, resolvedIncidentFactory } from "../../factories/incident.factory";
-import { userFactory } from "../../factories/users.factory";
+import { incidentTable } from "#nuxvel/schema";
+import { incidentFactory, resolvedIncidentFactory, userFactory } from "#nuxvel/factories";
 
 describe("incidents/post-update action", () => {
   it("adds an update and moves the incident to its status", async () => {
@@ -740,8 +730,8 @@ describe("incidents/post-update action", () => {
 
 ```ts
 // server/trpc/routers/incident.router.ts
-import { openIncidentAction } from "../../actions/incidents/open-incident.action";
-import { postUpdateAction } from "../../actions/incidents/post-update.action";
+import { openIncidentAction } from "#server/actions/incidents/open-incident.action";
+import { postUpdateAction } from "#server/actions/incidents/post-update.action";
 
 export const incidentRouter = {
   open: authedProcedure
@@ -765,8 +755,7 @@ export const incidentRouter = {
 // server/trpc/routers/incident.router.test.ts
 import { actingAs, expect, expectActionCalled, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { incidentFactory } from "../../factories/incident.factory";
-import { userFactory } from "../../factories/users.factory";
+import { incidentFactory, userFactory } from "#nuxvel/factories";
 
 describe("incident router", () => {
   it("opens an incident as the signed-in member of the team", async () => {
@@ -1026,7 +1015,7 @@ When an incident starts, many visitors open the same incident page at the same t
 // server/trpc/routers/status.router.ts
 import { desc, eq, ne } from "drizzle-orm";
 import { z } from "zod";
-import { incidentTable } from "../../database/schema/incident.schema";
+import { incidentTable } from "#nuxvel/schema";
 
 export const statusRouter = {
   current: publicProcedure.output(z.array(incidentSchema)).query(async () =>
@@ -1087,8 +1076,7 @@ After the transaction commits, the action removes every key that matches the glo
 // tests/functional/status-cache.test.ts
 import { actingAs, expect, expectCacheHit, expectCacheMiss, expectQueryCount, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { incidentFactory } from "../../server/factories/incident.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { incidentFactory, userFactory } from "#nuxvel/factories";
 
 describe("the status cache", () => {
   it("reads an incident from the database once, then from the cache", async () => {
@@ -1143,7 +1131,7 @@ rm server/actions/subscribers/subscribe.action.test.ts
 
 ```ts
 // server/actions/subscribers/subscribe.action.ts
-import { subscriberTable } from "../../database/schema/subscriber.schema";
+import { subscriberTable } from "#nuxvel/schema";
 
 export const subscribeAction = defineAction({
   input: subscribeInput,
@@ -1156,7 +1144,7 @@ export const subscribeAction = defineAction({
 ```ts
 // server/trpc/routers/subscriber.router.ts
 import { z } from "zod";
-import { subscribeAction } from "../../actions/subscribers/subscribe.action";
+import { subscribeAction } from "#server/actions/subscribers/subscribe.action";
 
 export const subscriberRouter = {
   subscribe: publicProcedure
@@ -1172,7 +1160,7 @@ export const subscriberRouter = {
 // server/trpc/routers/subscriber.router.test.ts
 import { expect, expectCount, expectRow, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { subscriberTable } from "../../database/schema/subscriber.schema";
+import { subscriberTable } from "#nuxvel/schema";
 
 describe("subscriber router", () => {
   it("subscribes an email once, also when it is sent two times", async () => {
@@ -1383,9 +1371,7 @@ The mail goes out from a job, after the update commits:
 // server/jobs/incident/announce.job.ts
 import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
-import { incidentTable } from "../../database/schema/incident.schema";
-import { incidentUpdateTable } from "../../database/schema/incident-update.schema";
-import { subscriberTable } from "../../database/schema/subscriber.schema";
+import { incidentTable, incidentUpdateTable, subscriberTable } from "#nuxvel/schema";
 
 export const incidentAnnounceJob = defineJob({
   input: z.object({
@@ -1424,8 +1410,7 @@ Dispatch the job from the two actions. `dispatchAfterCommit()` takes the job nam
 ```ts
 // server/actions/incidents/post-update.action.ts
 import { eq } from "drizzle-orm";
-import { incidentTable } from "../../database/schema/incident.schema";
-import { incidentUpdateTable } from "../../database/schema/incident-update.schema";
+import { incidentTable, incidentUpdateTable } from "#nuxvel/schema";
 
 export const postUpdateAction = defineAction({
   input: postIncidentUpdateInput,
@@ -1477,10 +1462,8 @@ See [Queues: the outbox](../queues.md#the-outbox). Test the job:
 // server/jobs/incident/announce.job.test.ts
 import { expect, expectMailSent, expectNoMailSent, expectRow, renderMail, runJob } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { incidentUpdateTable } from "../../database/schema/incident-update.schema";
-import { incidentFactory } from "../../factories/incident.factory";
-import { incidentUpdateFactory } from "../../factories/incident-update.factory";
-import { subscriberFactory } from "../../factories/subscriber.factory";
+import { incidentUpdateTable } from "#nuxvel/schema";
+import { incidentFactory, incidentUpdateFactory, subscriberFactory } from "#nuxvel/factories";
 
 describe("incident.announce job", () => {
   it("mails the update to each subscriber and marks it announced", async () => {
@@ -1521,9 +1504,8 @@ describe("incident.announce job", () => {
 // server/actions/incidents/post-update.action.test.ts
 import { expect, expectNotQueued, expectQueued, expectRow, freezeTime, runAction } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { incidentTable } from "../../database/schema/incident.schema";
-import { incidentFactory, resolvedIncidentFactory } from "../../factories/incident.factory";
-import { userFactory } from "../../factories/users.factory";
+import { incidentTable } from "#nuxvel/schema";
+import { incidentFactory, resolvedIncidentFactory, userFactory } from "#nuxvel/factories";
 
 describe("incidents/post-update action", () => {
   it("adds an update and moves the incident to its status", async () => {
@@ -1596,9 +1578,7 @@ export const incidentOpenedNotification = defineNotification({
 // server/actions/incidents/open-incident.action.ts
 import { ne } from "drizzle-orm";
 import { z } from "zod";
-import { userTable } from "../../database/schema/auth.schema";
-import { incidentTable } from "../../database/schema/incident.schema";
-import { incidentUpdateTable } from "../../database/schema/incident-update.schema";
+import { userTable, incidentTable, incidentUpdateTable } from "#nuxvel/schema";
 
 export const openIncidentAction = defineAction({
   input: openIncidentInput.extend({ monitor: z.string().max(255).optional() }),
@@ -1627,7 +1607,7 @@ The query leaves out the member who opened the incident. `notify()` writes the r
 // server/notifications/incident/opened.notification.test.ts
 import { expectNotified, sendNotification } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../factories/users.factory";
+import { userFactory } from "#nuxvel/factories";
 
 describe("incident.opened notification", () => {
   it("reaches the user through the database channel, with a link to the open incidents", async () => {
@@ -1669,9 +1649,9 @@ The command writes `server/webhooks/monitor.webhook.ts`, which answers at `POST 
 // server/webhooks/monitor.webhook.ts
 import { and, eq, ne } from "drizzle-orm";
 import { z } from "zod";
-import { openIncidentAction } from "../actions/incidents/open-incident.action";
-import { postUpdateAction } from "../actions/incidents/post-update.action";
-import { incidentTable } from "../database/schema/incident.schema";
+import { openIncidentAction } from "#server/actions/incidents/open-incident.action";
+import { postUpdateAction } from "#server/actions/incidents/post-update.action";
+import { incidentTable } from "#nuxvel/schema";
 
 export const monitorWebhook = defineWebhook({
   payload: z.object({ id: z.string(), check: z.string().min(1).max(100), state: z.enum(["down", "up"]) }),
@@ -1725,8 +1705,8 @@ Replace the generated test:
 import { deliverWebhook, expect, expectCount, expectQueued, expectRow, guest } from "@nuxvel/nuxt/testing";
 import { randomUUID } from "node:crypto";
 import { describe, it } from "vitest";
-import { incidentTable } from "../database/schema/incident.schema";
-import { incidentFactory } from "../factories/incident.factory";
+import { incidentTable } from "#nuxvel/schema";
+import { incidentFactory } from "#nuxvel/factories";
 
 process.env.NUXT_MONITOR_WEBHOOK_SECRET = "monitor-webhook-test-secret";
 
@@ -1949,7 +1929,7 @@ export const incidentStaleNotification = defineNotification({
 // server/notifications/incident/stale.notification.test.ts
 import { expectNotified, sendNotification } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../factories/users.factory";
+import { userFactory } from "#nuxvel/factories";
 
 describe("incident.stale notification", () => {
   it("reaches the user through the database channel", async () => {
@@ -1965,9 +1945,7 @@ describe("incident.stale notification", () => {
 ```ts
 // server/schedules/incidents/remind-stale.schedule.ts
 import { and, eq, gt, ne, notExists } from "drizzle-orm";
-import { userTable } from "../../database/schema/auth.schema";
-import { incidentTable } from "../../database/schema/incident.schema";
-import { incidentUpdateTable } from "../../database/schema/incident-update.schema";
+import { userTable, incidentTable, incidentUpdateTable } from "#nuxvel/schema";
 
 const STALE_AFTER_MS = 60 * 60 * 1000;
 
@@ -2019,9 +1997,7 @@ nuxvel.auth.reencrypt-two-factor  04:15 every day   2026-10-03T17:15:00.000Z
 // server/schedules/incidents/remind-stale.schedule.test.ts
 import { expectNotNotified, expectNotified, freezeTime, runSchedule, travelBy } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { incidentFactory, resolvedIncidentFactory } from "../../factories/incident.factory";
-import { incidentUpdateFactory } from "../../factories/incident-update.factory";
-import { userFactory } from "../../factories/users.factory";
+import { incidentFactory, resolvedIncidentFactory, incidentUpdateFactory, userFactory } from "#nuxvel/factories";
 
 describe("incidents.remind-stale schedule", () => {
   it("reminds the team of an open incident with no update for an hour", async () => {
@@ -2069,10 +2045,8 @@ The functional tests check the server, and the stories check each component. An 
 // tests/e2e/incidents.test.ts
 import { actingAs, button, expect, expectMailSent, expectRow, fillForm, field, heading, link, text, toast, visit, workQueue } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { subscriberTable } from "../../server/database/schema/subscriber.schema";
-import { resolvedIncidentFactory } from "../../server/factories/incident.factory";
-import { subscriberFactory } from "../../server/factories/subscriber.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { subscriberTable } from "#nuxvel/schema";
+import { resolvedIncidentFactory, subscriberFactory, userFactory } from "#nuxvel/factories";
 
 describe("incidents in a browser", () => {
   it("opens an incident, posts an update and mails the subscribers a link to it", async () => {

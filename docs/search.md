@@ -65,7 +65,7 @@ const rows = await useDb().select(postColumns).from(postTable);
 // server/trpc/routers/post.router.ts
 import { desc, getTableColumns } from "drizzle-orm";
 import { z } from "zod";
-import { postTable } from "../../database/schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 const { searchVector: _searchVector, ...postColumns } = getTableColumns(postTable);
 
@@ -163,7 +163,7 @@ The snippet is HTML. `highlight()` escapes the text of the column, so you can sh
 ```ts
 import { expect, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { postFactory } from "../../server/factories/post.factory";
+import { postFactory } from "#nuxvel/factories";
 
 describe("post search", () => {
   it("finds a post by a stemmed word", async () => {

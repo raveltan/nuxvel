@@ -308,7 +308,7 @@ nuxvel keeps its rate limit counts in Redis, so all instances of the app share o
 ```ts
 // server/api/posts/search.get.ts
 import { ilike } from "drizzle-orm";
-import { postTable } from "../../database/schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 export default defineEventHandler({
   onRequest: [rateLimit({ points: 30, window: { minutes: 1 }, by: "ip" })],
@@ -329,7 +329,7 @@ create: authedProcedure
 ```ts
 // server/actions/comments/create-comment.action.ts
 import { z } from "zod";
-import { commentTable } from "../../database/schema/comment.schema";
+import { commentTable } from "#nuxvel/schema";
 
 export const createCommentAction = defineAction({
   input: z.object({ postId: z.number().int().positive(), body: z.string().min(1) }),
@@ -535,7 +535,7 @@ Content that users write can contain HTML, SVG scripts or spreadsheet formulas. 
 ```ts
 // server/actions/posts/import-post.action.ts
 import { z } from "zod";
-import { postTable } from "../../database/schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 export const importPostAction = defineAction({
   input: z.object({ title: z.string().min(1), html: z.string() }),
@@ -579,7 +579,7 @@ An uploaded SVG file can run scripts. An upload refuses SVG files unless you set
 
 ```ts
 // server/api/posts/export.get.ts
-import { postTable } from "../../database/schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 export default defineEventHandler(async (event) => {
   const rows = await useDb().select().from(postTable);
@@ -606,7 +606,7 @@ A spreadsheet runs a cell that starts with `=` as a formula. A user can write su
 ```ts
 import { actingAs, expect } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../server/factories/users.factory";
+import { userFactory } from "#nuxvel/factories";
 
 describe("post rate limit", () => {
   it("refuses the sixth post in a minute", async () => {

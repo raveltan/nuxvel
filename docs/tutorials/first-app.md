@@ -139,7 +139,7 @@ The command writes `server/factories/event.factory.ts` and a test. It selects a 
 import { faker } from "@faker-js/faker";
 import { userFactory } from "./users.factory";
 import { defineFactory } from "@nuxvel/nuxt/factories";
-import { eventTable } from "../database/schema/event.schema";
+import { eventTable } from "#nuxvel/schema";
 
 export const eventFactory = defineFactory(eventTable, {
   ownerId: async () => (await userFactory()).id,
@@ -197,7 +197,7 @@ import { index, integer, pgTable, serial, text, unique } from "drizzle-orm/pg-co
 
 ```ts
 // server/privacy/rsvp.user-data.ts
-import { rsvpTable } from "../database/schema/rsvp.schema";
+import { rsvpTable } from "#nuxvel/schema";
 
 export const rsvpUserData = defineUserData(rsvpTable, rsvpTable.guestId);
 ```
@@ -215,7 +215,7 @@ A policy says who may do what to a row. Add a rule `host` to the policy of the e
 
 ```ts
 // server/policies/event.policy.ts
-import { eventTable } from "../database/schema/event.schema";
+import { eventTable } from "#nuxvel/schema";
 
 export const eventPolicy = definePolicy(eventTable, {
   update: (actor, row) => row.ownerId === (actor.userId ?? actor.id) || actor.role === "admin",
@@ -324,8 +324,7 @@ The `error` option is the message that the form shows under the field.
 
 ```ts
 // server/actions/rsvp/send-rsvp.action.ts
-import { eventTable } from "../../database/schema/event.schema";
-import { rsvpTable } from "../../database/schema/rsvp.schema";
+import { eventTable, rsvpTable } from "#nuxvel/schema";
 
 export const sendRsvpAction = defineAction({
   input: sendRsvpInput,
@@ -362,7 +361,7 @@ A router reads, and calls an action to write. Add a router for the answers:
 
 ```ts
 // server/trpc/routers/rsvp.router.ts
-import { sendRsvpAction } from "../../actions/rsvp/send-rsvp.action";
+import { sendRsvpAction } from "#server/actions/rsvp/send-rsvp.action";
 
 export const rsvpRouter = {
   send: authedProcedure
@@ -415,8 +414,7 @@ The host sees the answers in a table. Add a procedure `guests` to the event rout
 
 ```ts
 // server/trpc/routers/event.router.ts
-import { userTable } from "../../database/schema/auth.schema";
-import { rsvpTable } from "../../database/schema/rsvp.schema";
+import { rsvpTable, userTable } from "#nuxvel/schema";
 
   guests: authedProcedure
     .input(paginationSchema.extend({ id: eventIdInput.shape.id }))
@@ -588,7 +586,7 @@ Delete the generated test, `server/actions/event/invite-guest.action.test.ts`, a
 
 ```ts
 // server/actions/event/invite-guest.action.ts
-import { eventTable } from "../../database/schema/event.schema";
+import { eventTable } from "#nuxvel/schema";
 
 export const inviteGuestAction = defineAction({
   input: inviteGuestInput,
@@ -613,7 +611,7 @@ Add the procedure to the event router, after `guests`:
 
 ```ts
 // server/trpc/routers/event.router.ts
-import { inviteGuestAction } from "../../actions/event/invite-guest.action";
+import { inviteGuestAction } from "#server/actions/event/invite-guest.action";
 
   invite: authedProcedure
     .input(inviteGuestInput)
@@ -677,9 +675,8 @@ Each test gets a clean database. A factory inserts the rows that it needs. `acti
 // tests/functional/rsvp.test.ts
 import { actingAs, expect, expectRow, runAction } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { rsvpTable } from "../../server/database/schema/rsvp.schema";
-import { eventFactory } from "../../server/factories/event.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { rsvpTable } from "#nuxvel/schema";
+import { eventFactory, userFactory } from "#nuxvel/factories";
 
 describe("RSVPs", () => {
   it("keeps the last answer of a guest", async () => {
@@ -731,8 +728,7 @@ The invitation tests check the mail, the validation and the policy:
 // tests/functional/invite.test.ts
 import { actingAs, expect, expectMailSent, expectNoMailSent } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { eventFactory } from "../../server/factories/event.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { eventFactory, userFactory } from "#nuxvel/factories";
 
 describe("invitations", () => {
   it("mails the invitation with a link to the event", async () => {
@@ -841,7 +837,7 @@ An end-to-end test follows a user across pages in a real browser, with the real 
 // tests/e2e/rsvp.test.ts
 import { actingAs, button, cell, expect, expectMailSent, fillForm, heading, link, toast } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../server/factories/users.factory";
+import { userFactory } from "#nuxvel/factories";
 
 describe("an event", () => {
   it("goes from the invitation to the guest list", async () => {

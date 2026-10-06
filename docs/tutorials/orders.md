@@ -209,7 +209,7 @@ Give a product a real name and 10 items in stock. Keep the quantity of an order 
 // server/factories/product.factory.ts
 import { faker } from "@faker-js/faker";
 import { defineFactory } from "@nuxvel/nuxt/factories";
-import { productTable } from "../database/schema/product.schema";
+import { productTable } from "#nuxvel/schema";
 
 export const productFactory = defineFactory(productTable, {
   name: () => faker.commerce.productName(),
@@ -224,7 +224,7 @@ import { faker } from "@faker-js/faker";
 import { productFactory } from "./product.factory";
 import { userFactory } from "./users.factory";
 import { defineFactory } from "@nuxvel/nuxt/factories";
-import { orderTable } from "../database/schema/order.schema";
+import { orderTable } from "#nuxvel/schema";
 
 export const orderFactory = defineFactory(orderTable, {
   buyerId: async () => (await userFactory()).id,
@@ -238,8 +238,7 @@ Add two products to the starter's seeder:
 
 ```ts
 // server/seeders/database.seeder.ts
-import { productFactory } from "../factories/product.factory";
-import { userFactory } from "../factories/users.factory";
+import { productFactory, userFactory } from "#nuxvel/factories";
 
 const DEMO_EMAIL = "demo@example.com";
 const DEMO_PASSWORD = "demo-password";
@@ -306,9 +305,8 @@ The stock must go down with the order, or not at all. So the stock listener is a
 ```ts
 // server/listeners/order/reserve-stock.listener.ts
 import { and, eq, gte, sql } from "drizzle-orm";
-import { orderPlacedEvent } from "../../events/order/placed.event";
-import { orderTable } from "../../database/schema/order.schema";
-import { productTable } from "../../database/schema/product.schema";
+import { orderPlacedEvent } from "#server/events/order/placed.event";
+import { orderTable, productTable } from "#nuxvel/schema";
 
 export const orderReserveStockListener = defineListener({
   event: orderPlacedEvent,
@@ -347,9 +345,8 @@ rm server/listeners/order/reserve-stock.listener.test.ts
 
 ```ts
 // server/actions/order/place-order.action.ts
-import { orderPlacedEvent } from "../../events/order/placed.event";
-import { orderTable } from "../../database/schema/order.schema";
-import { productTable } from "../../database/schema/product.schema";
+import { orderPlacedEvent } from "#server/events/order/placed.event";
+import { orderTable, productTable } from "#nuxvel/schema";
 
 export const placeOrderAction = defineAction({
   input: placeOrderInput,
@@ -411,12 +408,8 @@ Replace the generated test:
 import { defineFactory } from "@nuxvel/nuxt/factories";
 import { expect, expectCount, expectListenerQueued, expectListenerRan, expectNotQueued, expectQueued, expectRow, runAction } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { orderTable } from "../../database/schema/order.schema";
-import { outboxTable } from "../../database/schema/outbox.schema";
-import { productTable } from "../../database/schema/product.schema";
-import { orderFactory } from "../../factories/order.factory";
-import { productFactory } from "../../factories/product.factory";
-import { userFactory } from "../../factories/users.factory";
+import { orderTable, outboxTable, productTable } from "#nuxvel/schema";
+import { orderFactory, productFactory, userFactory } from "#nuxvel/factories";
 
 const outboxRowFactory = defineFactory(outboxTable, { jobName: "invoice.issue" });
 
@@ -472,7 +465,7 @@ The generated test of the event emits `{ orderId: 1 }`, and no such order exists
 // server/events/order/placed.event.test.ts
 import { emit, expect, expectEmitted, expectListenerQueued, expectListenerRan } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { orderFactory } from "../../factories/order.factory";
+import { orderFactory } from "#nuxvel/factories";
 
 describe("order.placed event", () => {
   it("runs the stock listener now and queues the others", async () => {
@@ -502,9 +495,8 @@ A queued listener runs in the worker, after the commit, with no transaction arou
 
 ```ts
 // server/listeners/order/record-sale.listener.ts
-import { orderPlacedEvent } from "../../events/order/placed.event";
-import { orderTable } from "../../database/schema/order.schema";
-import { saleTable } from "../../database/schema/sale.schema";
+import { orderPlacedEvent } from "#server/events/order/placed.event";
+import { orderTable, saleTable } from "#nuxvel/schema";
 
 export const orderRecordSaleListener = defineListener({
   event: orderPlacedEvent,
@@ -538,10 +530,8 @@ A mail has no unique key in the database. The listener claims the order first:
 ```ts
 // server/listeners/order/send-confirmation.listener.ts
 import { and, eq, isNull } from "drizzle-orm";
-import { orderPlacedEvent } from "../../events/order/placed.event";
-import { userTable } from "../../database/schema/auth.schema";
-import { orderTable } from "../../database/schema/order.schema";
-import { productTable } from "../../database/schema/product.schema";
+import { orderPlacedEvent } from "#server/events/order/placed.event";
+import { userTable, orderTable, productTable } from "#nuxvel/schema";
 
 export const orderSendConfirmationListener = defineListener({
   event: orderPlacedEvent,
@@ -639,8 +629,8 @@ describe("order.confirmation mail", () => {
 // server/listeners/order/record-sale.listener.test.ts
 import { expect, expectCount, expectRow, freezeTime, runListener, travelBy } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { saleTable } from "../../database/schema/sale.schema";
-import { orderFactory } from "../../factories/order.factory";
+import { saleTable } from "#nuxvel/schema";
+import { orderFactory } from "#nuxvel/factories";
 
 describe("order.record-sale listener", () => {
   it("writes one sale, however often it runs", async () => {
@@ -672,8 +662,7 @@ The second test stops the clock 30 seconds before midnight. The factory writes t
 // server/listeners/order/send-confirmation.listener.test.ts
 import { expectMailSent, runListener } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { orderFactory } from "../../factories/order.factory";
-import { userFactory } from "../../factories/users.factory";
+import { orderFactory, userFactory } from "#nuxvel/factories";
 
 describe("order.send-confirmation listener", () => {
   it("sends one mail, however often it runs", async () => {
@@ -708,9 +697,7 @@ Chapter 3 generated the job. The job reads the URL of the service from the runti
 // server/jobs/invoice/issue.job.ts
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { userTable } from "../../database/schema/auth.schema";
-import { invoiceTable } from "../../database/schema/invoice.schema";
-import { orderTable } from "../../database/schema/order.schema";
+import { userTable, invoiceTable, orderTable } from "#nuxvel/schema";
 
 export const invoiceIssueJob = defineJob({
   attempts: 5,
@@ -778,8 +765,8 @@ A retry cannot fix a refused order or a missing row, so these fail at once. Any 
 // server/jobs/invoice/issue.job.test.ts
 import { expect, expectFetched, expectLogged, expectNoRow, expectNotFetched, expectRow, fakeFetch, runJob } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { invoiceTable } from "../../database/schema/invoice.schema";
-import { orderFactory } from "../../factories/order.factory";
+import { invoiceTable } from "#nuxvel/schema";
+import { orderFactory } from "#nuxvel/factories";
 
 const invoices = "https://invoicing.example.com/invoices";
 
@@ -851,7 +838,7 @@ A buyer whose invoice is late can ask for it again. Two clicks must not start tw
 ```ts
 // server/actions/invoice/request-invoice.action.ts
 import { z } from "zod";
-import { orderTable } from "../../database/schema/order.schema";
+import { orderTable } from "#nuxvel/schema";
 
 export const requestInvoiceAction = defineAction({
   input: z.object({ orderId: z.number().int().positive() }),
@@ -870,8 +857,7 @@ A buyer who asks for the order of another buyer gets `NOT_FOUND`, as if the orde
 // server/actions/invoice/request-invoice.action.test.ts
 import { expect, expectQueued, runAction } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { orderFactory } from "../../factories/order.factory";
-import { userFactory } from "../../factories/users.factory";
+import { orderFactory, userFactory } from "#nuxvel/factories";
 
 describe("invoice.request-invoice action", () => {
   it("adds no second job while the first one waits", async () => {
@@ -922,11 +908,7 @@ Add `expectMailSent`, `fakeFetch` and `workQueue` to the import from `@nuxvel/nu
 // server/actions/order/place-order.action.test.ts
 import { expect, expectCount, expectListenerQueued, expectListenerRan, expectMailSent, expectNotQueued, expectQueued, expectRow, fakeFetch, runAction, workQueue } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { invoiceTable } from "../../database/schema/invoice.schema";
-import { orderTable } from "../../database/schema/order.schema";
-import { outboxTable } from "../../database/schema/outbox.schema";
-import { productTable } from "../../database/schema/product.schema";
-import { saleTable } from "../../database/schema/sale.schema";
+import { invoiceTable, orderTable, outboxTable, productTable, saleTable } from "#nuxvel/schema";
 ```
 
 `workQueue` does not run the `nuxvel.mail` job, so no mail leaves the test. `expectMailSent` reads the mail fake. Each job runs as the actor that dispatched it, as in the worker.
@@ -1067,7 +1049,7 @@ The retry keeps the payload and the dispatcher of the job. A failed job stays in
 // server/trpc/routers/product.router.ts
 import { asc } from "drizzle-orm";
 import { z } from "zod";
-import { productTable } from "../../database/schema/product.schema";
+import { productTable } from "#nuxvel/schema";
 
 export const productRouter = {
   list: publicProcedure
@@ -1080,10 +1062,8 @@ export const productRouter = {
 // server/trpc/routers/order.router.ts
 import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { placeOrderAction } from "../../actions/order/place-order.action";
-import { invoiceTable } from "../../database/schema/invoice.schema";
-import { orderTable } from "../../database/schema/order.schema";
-import { productTable } from "../../database/schema/product.schema";
+import { placeOrderAction } from "#server/actions/order/place-order.action";
+import { invoiceTable, orderTable, productTable } from "#nuxvel/schema";
 
 export const orderRouter = {
   mine: authedProcedure
@@ -1122,9 +1102,7 @@ Test the router. The last test checks that the list does not run one query for e
 // server/trpc/routers/order.router.test.ts
 import { actingAs, expect, expectConstantQueries, fakeFetch, runJob } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { orderFactory } from "../../factories/order.factory";
-import { productFactory } from "../../factories/product.factory";
-import { userFactory } from "../../factories/users.factory";
+import { orderFactory, productFactory, userFactory } from "#nuxvel/factories";
 
 describe("order router", () => {
   it("lists the orders of the buyer, with the invoice once it is issued", async () => {
@@ -1317,8 +1295,7 @@ The browser test follows one buyer through the page, and works the queue in the 
 // tests/e2e/shop.test.ts
 import { actingAs, button, expect, expectMailSent, fakeFetch, fillForm, text, workQueue } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { productFactory } from "../../server/factories/product.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { productFactory, userFactory } from "#nuxvel/factories";
 
 describe("the shop in a browser", () => {
   it("places an order and shows its invoice once the queue has run", async () => {
@@ -1428,7 +1405,7 @@ A first version updates each row of the batch:
 ```ts
 // server/database/backfills/order-total-cents.backfill.ts
 import { eq, isNull } from "drizzle-orm";
-import { orderTable } from "../schema/order.schema";
+import { orderTable } from "#nuxvel/schema";
 
 export const orderTotalCentsBackfill = defineBackfill({
   table: orderTable,
@@ -1453,9 +1430,8 @@ Replace the generated test:
 // server/database/backfills/order-total-cents.backfill.test.ts
 import { expect, expectCount, expectQueryCount, expectRow, runBackfill } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { backfillsTable } from "../schema/backfills.schema";
-import { orderTable } from "../schema/order.schema";
-import { orderFactory } from "../../factories/order.factory";
+import { backfillsTable, orderTable } from "#nuxvel/schema";
+import { orderFactory } from "#nuxvel/factories";
 
 describe("order-total-cents backfill", () => {
   it("fills the cents of every old order", async () => {
@@ -1504,7 +1480,7 @@ The backfill itself runs 8 queries for its bookkeeping. It counts the rows, writ
 ```ts
 // server/database/backfills/order-total-cents.backfill.ts
 import { inArray, isNull, sql } from "drizzle-orm";
-import { orderTable } from "../schema/order.schema";
+import { orderTable } from "#nuxvel/schema";
 
 export const orderTotalCentsBackfill = defineBackfill({
   table: orderTable,

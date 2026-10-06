@@ -8,14 +8,14 @@ nuxvel can export or erase all of the personal data of one user. You declare whi
 
 ```ts
 // server/privacy/posts.user-data.ts
-import { postTable } from "../database/schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 export const postsUserData = defineUserData(postTable, postTable.authorId);
 ```
 
 ```ts
 // server/privacy/users.user-data.ts
-import { userTable } from "../database/schema/auth.schema";
+import { userTable } from "#nuxvel/schema";
 
 export const usersUserData = defineUserData(userTable, userTable.id);
 ```
@@ -32,14 +32,14 @@ The column must be a string column of the table that you pass. A column of anoth
 
 ```ts
 // server/privacy/posts.user-data.ts
-import { postTable } from "../database/schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 export const postsUserData = defineUserData(postTable, postTable.authorId);
 ```
 
 ```ts
 // server/privacy/post-editors.user-data.ts
-import { postTable } from "../database/schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 export const postEditorsUserData = defineUserData(postTable, postTable.editorId);
 ```
@@ -50,7 +50,7 @@ A table can have two user columns, such as the author and the editor of a post. 
 
 ```ts
 // server/privacy/users.user-data.ts
-import { userTable } from "../database/schema/auth.schema";
+import { userTable } from "#nuxvel/schema";
 
 export const usersUserData = defineUserData(userTable, userTable.id, { personal: [userTable.name, userTable.email] });
 ```
@@ -70,7 +70,7 @@ This applies when the `type` of the target is the name of the declared table, as
 
 ```ts
 // server/privacy/flag-exposures.user-data.ts
-import { flagExposuresTable } from "../database/schema/flag-exposures.schema";
+import { flagExposuresTable } from "#nuxvel/schema";
 
 export const flagExposuresUserData = defineUserData(flagExposuresTable, flagExposuresTable.unitId);
 ```
@@ -175,8 +175,7 @@ export const eraseAccountAction = defineAction({
 ```ts
 import { expect, expectAudited, runAction } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { postFactory } from "../../server/factories/post.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { postFactory, userFactory } from "#nuxvel/factories";
 
 describe("account.erase-account", () => {
   it("erases the author and their posts", async () => {

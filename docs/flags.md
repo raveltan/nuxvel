@@ -352,8 +352,8 @@ import {
   startExperiment,
   stopExperiment,
 } from "@nuxvel/nuxt/testing";
-import { flagExposuresTable } from "../../server/database/schema/flag-exposures.schema";
-import { userFactory } from "../../server/factories/users.factory";
+import { flagExposuresTable } from "#nuxvel/schema";
+import { userFactory } from "#nuxvel/factories";
 
 describe("flag fixtures", () => {
   it("turns a flag on and off for the code under test", async () => {

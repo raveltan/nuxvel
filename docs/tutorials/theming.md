@@ -66,7 +66,7 @@ The `plant` table has an `ownerId` column, so it holds user data. Declare it, or
 
 ```ts
 // server/privacy/plants.user-data.ts
-import { plantTable } from "../database/schema/plant.schema";
+import { plantTable } from "#nuxvel/schema";
 
 export const plantsUserData = defineUserData(plantTable, plantTable.ownerId);
 ```

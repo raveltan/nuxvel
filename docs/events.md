@@ -53,7 +53,7 @@ The listener:
 
 ```ts
 // server/listeners/post/notify-subscribers.listener.ts
-import { postPublishedEvent } from "../../events/post/published.event";
+import { postPublishedEvent } from "#server/events/post/published.event";
 
 export const postNotifySubscribersListener = defineListener({
   event: postPublishedEvent,
@@ -67,7 +67,7 @@ Replace the `console.log` with the work of the listener:
 
 ```ts
 // server/listeners/post/notify-subscribers.listener.ts
-import { postPublishedEvent } from "../../events/post/published.event";
+import { postPublishedEvent } from "#server/events/post/published.event";
 
 export const postNotifySubscribersListener = defineListener({
   event: postPublishedEvent,
@@ -99,7 +99,7 @@ A listener is queued by default. When the action emits the event, nuxvel writes 
 
 ```ts
 // server/listeners/post/count-published.listener.ts
-import { postPublishedEvent } from "../../events/post/published.event";
+import { postPublishedEvent } from "#server/events/post/published.event";
 
 export const postCountPublishedListener = defineListener({
   event: postPublishedEvent,
@@ -120,7 +120,7 @@ A sync listener does not make network calls, such as `$fetch` or `sendMail`. [`n
 // server/actions/posts/publish-post.action.ts
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { postTable } from "../../database/schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 export const publishPostAction = defineAction({
   input: z.object({ id: z.number() }),
@@ -147,7 +147,7 @@ export const publishPostAction = defineAction({
 `emit` takes the event name and a payload of the input type of the payload schema. Each listener gets the output type. An unknown event name or a wrong payload does not compile.
 
 ```ts
-import { postPublishedEvent } from "../../events/post/published.event";
+import { postPublishedEvent } from "#server/events/post/published.event";
 
 await emit(postPublishedEvent, { postId: post.id });
 ```
@@ -216,7 +216,7 @@ The command lists each event, the server files that emit it and its listeners. I
 // server/events/post/published.event.test.ts
 import { emit, expectEmitted, expectListenerQueued, expectListenerRan } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { postFactory } from "../../factories/post.factory";
+import { postFactory } from "#nuxvel/factories";
 
 describe("post.published event", () => {
   it("runs its listeners", async () => {

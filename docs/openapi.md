@@ -27,7 +27,7 @@ export default defineNuxtConfig({
 ```ts
 // server/trpc/routers/post.router.ts
 import { desc } from "drizzle-orm";
-import { postTable } from "../../database/schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 export const postRouter = {
   list: publicProcedure
@@ -201,7 +201,7 @@ nuxvel key:issue 5b1c… --name ci
 
 ```ts
 // server/policies/posts.policy.ts
-import { postTable } from "../database/schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 export const postsPolicy = definePolicy(postTable, {
   update: (actor, post) =>
@@ -252,8 +252,7 @@ A `create-nuxvel` app has this table. In an existing app, add the file, then run
 ```ts
 import { actingAs, expect, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { postFactory } from "../../server/factories/post.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { postFactory, userFactory } from "#nuxvel/factories";
 
 describe("posts over REST", () => {
   it("returns a post as JSON", async () => {

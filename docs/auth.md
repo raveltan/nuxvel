@@ -437,7 +437,7 @@ export default defineEventHandler(async () => {
 ```ts
 // server/api/drafts.get.ts
 import { eq } from "drizzle-orm";
-import { postTable } from "../database/schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 export default defineEventHandler(async () => {
   const { user } = await requireAuth();
@@ -526,9 +526,8 @@ The links in the auth mails also go to the pages of that locale. For a user with
 // server/trpc/routers/post.router.ts
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { deletePostAction } from "../../actions/posts/delete-post.action";
-import { postTable } from "../../database/schema/post.schema";
-import { postIdInput, postSchema } from "../../../shared/schemas/post";
+import { deletePostAction } from "#server/actions/posts/delete-post.action";
+import { postTable } from "#nuxvel/schema";
 
 export const postRouter = {
   mine: authedProcedure.output(z.array(postSchema)).query(({ ctx }) =>
@@ -579,7 +578,7 @@ For admin tools, use `adminProcedure`. It also needs a two-factor sign-in.
 // server/trpc/routers/account.router.ts
 import { desc } from "drizzle-orm";
 import { z } from "zod";
-import { userTable } from "../../database/schema/auth.schema";
+import { userTable } from "#nuxvel/schema";
 
 export const accountRouter = {
   signUps: adminProcedure
@@ -602,7 +601,7 @@ The session table has a `two_factor_verified` column for this check, and the ses
 
 ```ts
 // server/trpc/routers/account.router.ts
-import { changeEmailAction } from "../../actions/account/change-email.action";
+import { changeEmailAction } from "#server/actions/account/change-email.action";
 
 export const accountRouter = {
   changeEmail: freshProcedure
@@ -675,7 +674,7 @@ See [CLI](./cli.md#nuxvel-keyrotate-name) and [Security](./security.md#rotating-
 ```ts
 import { actingAs, expect, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../server/factories/users.factory";
+import { userFactory } from "#nuxvel/factories";
 
 describe("posts", () => {
   it("lets a signed-in user create a post", async () => {

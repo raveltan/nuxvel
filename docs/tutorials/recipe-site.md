@@ -161,7 +161,7 @@ Give the recipe factory realistic values, a slug that is valid in a URL, and a s
 import { faker } from "@faker-js/faker";
 import { userFactory } from "./users.factory";
 import { defineFactory, sequence } from "@nuxvel/nuxt/factories";
-import { recipeTable } from "../database/schema/recipe.schema";
+import { recipeTable } from "#nuxvel/schema";
 
 export const recipeFactory = defineFactory(recipeTable, {
   ownerId: async () => (await userFactory()).id,
@@ -189,8 +189,7 @@ Give the demo user some recipes. One recipe has a fixed slug, so you can open it
 
 ```ts
 // server/seeders/database.seeder.ts
-import { publishedRecipeFactory, recipeFactory } from "../factories/recipe.factory";
-import { userFactory } from "../factories/users.factory";
+import { publishedRecipeFactory, recipeFactory, userFactory } from "#nuxvel/factories";
 
 const DEMO_EMAIL = "demo@example.com";
 const DEMO_PASSWORD = "demo-password";
@@ -243,16 +242,6 @@ export const recipeCardSchema = recipeSchema.pick({ slug: true, title: true, sum
 import { and, desc, eq, isNotNull } from "drizzle-orm";
 import { z } from "zod";
 // ...the imports of the generated router...
-import {
-  recipeIdInput,
-  recipeListInput,
-  createRecipeInput,
-  updateRecipeInput,
-  recipeSchema,
-  recipeSlugInput,
-  publishedRecipeSchema,
-  recipeCardSchema,
-} from "#shared/schemas/recipe";
 
 export const recipeRouter = {
   latest: publicProcedure.output(z.array(recipeCardSchema)).query(() =>
@@ -589,7 +578,7 @@ The recipe pages have the parameter `slug`, so add them from a source. A source 
 ```ts
 // server/api/__sitemap__/recipes.ts
 import { isNotNull } from "drizzle-orm";
-import { recipeTable } from "../../database/schema/recipe.schema";
+import { recipeTable } from "#nuxvel/schema";
 
 export default defineSitemapEventHandler(async () => {
   const recipes = await useDb()
@@ -621,7 +610,7 @@ A functional test reads the head tags with `getMeta()`, and fetches the English 
 import { url } from "@nuxt/test-utils/e2e";
 import { expect, getMeta, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { publishedRecipeFactory, recipeFactory } from "../../server/factories/recipe.factory";
+import { publishedRecipeFactory, recipeFactory } from "#nuxvel/factories";
 
 describe("SEO", () => {
   it("renders the head tags of a recipe", async () => {
@@ -718,8 +707,7 @@ The `client` preset renders a whole page only in the browser: the server sends a
 // tests/functional/rendering.test.ts
 import { actingAs, expect, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { publishedRecipeFactory, recipeFactory } from "../../server/factories/recipe.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { publishedRecipeFactory, recipeFactory, userFactory } from "#nuxvel/factories";
 
 describe("rendering", () => {
   it("caches the public pages for every visitor", async () => {
@@ -783,8 +771,7 @@ The two caches work together. The page cache keeps a page for one minute. When t
 // tests/functional/recipe-cache.test.ts
 import { actingAs, expect, expectCached, expectCacheHit, expectCacheMiss, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { publishedRecipeFactory, recipeFactory } from "../../server/factories/recipe.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { publishedRecipeFactory, recipeFactory, userFactory } from "#nuxvel/factories";
 
 describe("the recipe cache", () => {
   it("keeps one value for each recipe", async () => {
@@ -870,9 +857,7 @@ Replace the action:
 ```ts
 // server/actions/recipe/publish-recipe.action.ts
 import { eq } from "drizzle-orm";
-import { pushSubscriptionsTable } from "../../database/schema/push-subscriptions.schema";
-import { recipeTable } from "../../database/schema/recipe.schema";
-import { recipeIdInput } from "#shared/schemas/recipe";
+import { pushSubscriptionsTable, recipeTable } from "#nuxvel/schema";
 
 export const publishRecipeAction = defineAction({
   input: recipeIdInput,
@@ -912,7 +897,7 @@ Add the procedure to the router, next to the generated ones:
 
 ```ts
 // server/trpc/routers/recipe.router.ts
-import { publishRecipeAction } from "../../actions/recipe/publish-recipe.action";
+import { publishRecipeAction } from "#server/actions/recipe/publish-recipe.action";
 ```
 
 ```ts
@@ -989,9 +974,7 @@ The generated test of the action checks nothing useful now. Replace it:
 // server/actions/recipe/publish-recipe.action.test.ts
 import { expect, expectNoPushSent, expectPushSent, runAction } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { pushSubscriptionsFactory } from "../../factories/push-subscriptions.factory";
-import { publishedRecipeFactory, recipeFactory } from "../../factories/recipe.factory";
-import { userFactory } from "../../factories/users.factory";
+import { pushSubscriptionsFactory, publishedRecipeFactory, recipeFactory, userFactory } from "#nuxvel/factories";
 
 describe("recipe/publish-recipe action", () => {
   it("publishes the recipe and notifies each reader with notifications on", async () => {
@@ -1283,9 +1266,8 @@ In the 404 test, the **Go home** button now opens a page with the heading "Recip
 // tests/e2e/site.test.ts
 import { actingAs, button, expect, expectAccessible, expectPushSent, expectRow, heading, link, text, toast, visit } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { pushSubscriptionsTable } from "../../server/database/schema/push-subscriptions.schema";
-import { publishedRecipeFactory, recipeFactory } from "../../server/factories/recipe.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { pushSubscriptionsTable } from "#nuxvel/schema";
+import { publishedRecipeFactory, recipeFactory, userFactory } from "#nuxvel/factories";
 
 describe("the public site", () => {
   it("reads a recipe and saves it for later", async () => {
@@ -1372,7 +1354,7 @@ The first and the third test open the pages as a guest. The fourth opens two pag
 import { createPage, url } from "@nuxt/test-utils/e2e";
 import { expect, heading } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { publishedRecipeFactory } from "../../server/factories/recipe.factory";
+import { publishedRecipeFactory } from "#nuxvel/factories";
 
 describe("offline", () => {
   it("shows a recipe read before, and the offline page for any other", async () => {
@@ -1741,7 +1723,7 @@ A functional test checks the head tags of a Chinese page, the sitemaps, the cach
 import { url } from "@nuxt/test-utils/e2e";
 import { expect, getMeta, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { publishedRecipeFactory } from "../../server/factories/recipe.factory";
+import { publishedRecipeFactory } from "#nuxvel/factories";
 
 describe("English and Chinese", () => {
   it("renders the head tags of a page in Chinese", async () => {
@@ -1844,7 +1826,7 @@ The **Locale** menu in the toolbar of Storybook shows each story in the locale t
 import { url } from "@nuxt/test-utils/e2e";
 import { button, expect, expectAccessible, fillForm, heading, link, visit } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { publishedRecipeFactory } from "../../server/factories/recipe.factory";
+import { publishedRecipeFactory } from "#nuxvel/factories";
 
 describe("the site in Chinese", () => {
   it("reads a recipe in Chinese and saves it", async () => {

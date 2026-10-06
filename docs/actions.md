@@ -26,7 +26,7 @@ Fill in the input schema and the handler. The input of this action is `createPos
 
 ```ts
 // server/actions/posts/create-post.action.ts
-import { postTable } from "../../database/schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 export const createPostAction = defineAction({
   input: createPostInput,
@@ -80,7 +80,7 @@ A file that exports more than one action fails at boot. An action defined outsid
 
 ```ts
 // server/trpc/routers/post.router.ts
-import { createPostAction } from "../../actions/posts/create-post.action";
+import { createPostAction } from "#server/actions/posts/create-post.action";
 
 export const postRouter = {
   create: authedProcedure
@@ -157,7 +157,7 @@ if (actor?.type === SYSTEM_ACTOR_TYPE) {
 ```ts
 // server/actions/posts/update-post.action.ts
 import { eq } from "drizzle-orm";
-import { postTable } from "../../database/schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 export const updatePostAction = defineAction({
   input: updatePostInput,
@@ -291,7 +291,7 @@ export const createPostAction = defineAction({
 ```ts
 import { expect, runAction } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { userFactory } from "../../server/factories/users.factory";
+import { userFactory } from "#nuxvel/factories";
 
 describe("update post", () => {
   it("rejects an empty body", async () => {

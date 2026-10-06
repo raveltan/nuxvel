@@ -263,7 +263,7 @@ When the constraint covers one column, `error.field` names that column by its sc
 // server/trpc/routers/post.router.ts
 import { desc, ilike } from "drizzle-orm";
 import { z } from "zod";
-import { postTable } from "../../database/schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 export const postRouter = {
   list: publicProcedure
@@ -372,7 +372,7 @@ list: publicProcedure
 ```ts
 // server/trpc/routers/post.router.ts
 import { z } from "zod";
-import { postTable } from "../../database/schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 export const postRouter = {
   feed: publicProcedure
@@ -556,8 +556,7 @@ nuxvel make:seeder posts
 ```ts
 // server/seeders/posts.seeder.ts
 import { faker } from "@faker-js/faker";
-import { postFactory } from "../factories/post.factory";
-import { userFactory } from "../factories/users.factory";
+import { postFactory, userFactory } from "#nuxvel/factories";
 
 export const postsSeeder = defineSeeder(async () => {
   const ada = await userFactory({ name: "Ada Lovelace", email: "ada@example.com" });
@@ -651,9 +650,8 @@ The actor of a seeder is `systemActor("seed")`. So `audit()` works, and the row 
 ```ts
 import { actingAs, expect, expectConstantQueries, expectRow, guest } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-import { postTable } from "../../server/database/schema/post.schema";
-import { postFactory } from "../../server/factories/post.factory";
-import { userFactory } from "../../server/factories/users.factory";
+import { postTable } from "#nuxvel/schema";
+import { postFactory, userFactory } from "#nuxvel/factories";
 
 describe("posts", () => {
   it("creates a post", async () => {
