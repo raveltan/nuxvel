@@ -83,8 +83,8 @@ applies each step below that names a codemod.
   mutation.
 - `nuxvel upgrade --only use-trpc` replaces `useTRPC()` with `$api`: a
   `const` bound to `useTRPC()` goes, and each use of it becomes `$api`.
-- The `use-trpc` codemod also turns `useQuery($api.<path>.queryOptions(input))`
-  into `$api.<path>.useQuery(input)`, and `useMutation($api.<path>.mutationOptions())`
+  It also turns `useQuery($api.<path>.queryOptions(input))` into
+  `$api.<path>.useQuery(input)`, and `useMutation($api.<path>.mutationOptions())`
   into `$api.<path>.useMutation()`, when every use of the result reads `.value`.
 - `remember()`, `cachePut()`, `cacheGet()`, `cacheForget()` and the cache
   assertions of `@nuxvel/nuxt/testing` take a key array such as
