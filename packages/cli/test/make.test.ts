@@ -1159,11 +1159,6 @@ export default defineDeploy({
     expect(unparsable.exitCode).toBe(1);
     expect(unparsable.stderr).toContain(`${manifest} is not valid JSON`);
     expect(stripAnsi(unparsable.stderr)).toContain("→ Fix the file, or delete it");
-
-    const notDryRun = await runCliAt(fixtureCwd, "upgrade");
-
-    expect(notDryRun.exitCode).toBe(2);
-    expect(stripAnsi(notDryRun.stderr)).toContain("→ Run nuxvel upgrade --dry-run");
   });
 
   it("a generator prints why nuxt prepare failed and exits non-zero", async () => {

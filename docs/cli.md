@@ -1488,22 +1488,54 @@ A placeholder is written `{{name}}`. Start from a copy of the built-in template,
 | `make:page` | `page.vue.txt` |
 | `make:story` | `story.ts.txt` |
 
-### `nuxvel upgrade --dry-run`
+### `nuxvel upgrade`
 
 ```sh
-nuxvel upgrade --dry-run
+nuxvel upgrade [--dry-run] [--only <codemod>]
 ```
+
+Run `nuxvel upgrade` after `npm update @nuxvel/nuxt @nuxvel/cli`. It applies the codemods of the installed nuxvel: each one rewrites the code that a release changed, so the app takes the release without the hand steps of the [changelog](../CHANGELOG.md). It prints each file that it changes on stdout:
+
+```
+updated: package.json
+```
+
+| Codemod | Since | What it changes |
+| --- | --- | --- |
+| `test-aliases` | 0.3.0 | Adds `#nuxvel/schema`, `#nuxvel/factories`, `#server/*` and `#shared/*` to the `imports` of `package.json`, so tests can import them |
+
+The command runs every codemod, oldest first. A codemod changes only the code that still needs it, so a second run changes nothing and prints `✔ No codemod changed a file`. `--only <codemod>` runs one codemod. An unknown name exits `2` and lists the codemods.
+
+A codemod leaves code that it cannot rewrite safely as it is, and prints the file and line with the step to take by hand, on stderr:
+
+```
+▲ package.json:9: #server/* maps to "./src/server/*": map it to "./server/*" so tests can import it
+```
+
+`--dry-run` writes nothing. It prints what the codemods would change as a unified diff on stdout:
+
+```diff
+--- a/package.json
++++ b/package.json
+@@ -5,3 +5,7 @@
+   "imports": {
+-    "#nuxvel/test-namespaces": "./.nuxt/nuxvel/test-namespaces.mjs"
++    "#nuxvel/test-namespaces": "./.nuxt/nuxvel/test-namespaces.mjs",
++    "#nuxvel/schema": "./.nuxt/nuxvel/schema.ts",
++    "#nuxvel/factories": "./.nuxt/nuxvel/factories.ts",
++    "#server/*": "./server/*",
++    "#shared/*": "./shared/*"
+   },
+```
+
+Then it reports the generated files that you edited by hand:
 
 ```
 modified: server/policies/blog-post.policy.ts
 missing: server/actions/posts/create-post.action.ts
 ```
 
-nuxvel records each file that a `make:*` command writes in `.nuxvel/generated.json`. The record holds the template of the file, the version of that template, and a hash of what the command wrote. `upgrade --dry-run` hashes those files again and reports the ones that you edited since, or deleted.
-
-The list goes to stdout. When you edited nothing, stdout stays empty and stderr shows `✔ No generated files were hand-edited`.
-
-Only `--dry-run` works for now. Without it, the command exits `2`. A mode that applies template changes comes with the first template that changes.
+nuxvel records each file that a `make:*` command writes in `.nuxvel/generated.json`. The record holds the template of the file, the version of that template, and a hash of what the command wrote. `upgrade --dry-run` hashes those files again and reports the ones that you edited since, or deleted. When you edited nothing, stderr shows `✔ No generated files were hand-edited`.
 
 A `generated.json` that is not valid JSON, or that has an entry without its `template`, `templateVersion` and `hash`, stops the command. The error names the path, and the command exits `1`. `make:*` and `factory:sync` also update the file, and they fail the same way. Fix the entry, or delete the file to stop tracking what was generated so far.
 

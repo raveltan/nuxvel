@@ -1,0 +1,134 @@
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
+import { runAppTests } from "./helpers/app.ts";
+import { runBinAt, runCliAt, stripAnsi } from "./helpers/run.ts";
+import { scratchPlayground } from "./helpers/scratch.ts";
+
+const oldManifest = (imports: Record<string, string>) =>
+  `${JSON.stringify({ name: "my-app", type: "module", private: true, imports, scripts: { test: "nuxvel test" } }, null, 2)}\n`;
+
+const testNamespaces = { "#nuxvel/test-namespaces": "./.nuxt/nuxvel/test-namespaces.mjs" };
+
+const testAliases = {
+  "#nuxvel/schema": "./.nuxt/nuxvel/schema.ts",
+  "#nuxvel/factories": "./.nuxt/nuxvel/factories.ts",
+  "#server/*": "./server/*",
+  "#shared/*": "./shared/*",
+};
+
+describe("nuxvel upgrade", () => {
+  it("--only names the codemods when it gets an unknown one, and a package.json that is not JSON stops the command", async () => {
+    const appDir = scratchPlayground("upgrade-usage");
+
+    const unknown = await runCliAt(appDir, "upgrade", "--only", "nope");
+
+    expect(unknown.exitCode).toBe(2);
+    expect(unknown.stdout).toBe("");
+    expect(stripAnsi(unknown.stderr)).toContain("✖ No codemod named nope\n  → The codemods are test-aliases");
+
+    writeFileSync(join(appDir, "package.json"), "{ not json");
+
+    const broken = await runCliAt(appDir, "upgrade");
+
+    expect(broken.exitCode).toBe(1);
+    expect(stripAnsi(broken.stderr)).toContain("✖ package.json is not a valid package.json\n  → Fix the file, then run nuxvel upgrade again");
+    expect(readFileSync(join(appDir, "package.json"), "utf8")).toBe("{ not json");
+  });
+
+  describe("test-aliases", () => {
+    it("--dry-run prints the diff, the upgrade maps the aliases once, and an app test imports through them", async () => {
+      const appDir = scratchPlayground("upgrade-test-aliases");
+      const manifestPath = join(appDir, "package.json");
+      writeFileSync(manifestPath, oldManifest(testNamespaces));
+
+      const dryRun = await runCliAt(appDir, "upgrade", "--dry-run");
+
+      expect(dryRun.exitCode, dryRun.stderr).toBe(0);
+      expect(dryRun.stdout).toBe(
+        [
+          "--- a/package.json",
+          "+++ b/package.json",
+          "@@ -2,9 +2,13 @@",
+          '   "name": "my-app",',
+          '   "type": "module",',
+          '   "private": true,',
+          '   "imports": {',
+          '-    "#nuxvel/test-namespaces": "./.nuxt/nuxvel/test-namespaces.mjs"',
+          '+    "#nuxvel/test-namespaces": "./.nuxt/nuxvel/test-namespaces.mjs",',
+          '+    "#nuxvel/schema": "./.nuxt/nuxvel/schema.ts",',
+          '+    "#nuxvel/factories": "./.nuxt/nuxvel/factories.ts",',
+          '+    "#server/*": "./server/*",',
+          '+    "#shared/*": "./shared/*"',
+          "   },",
+          '   "scripts": {',
+          '     "test": "nuxvel test"',
+          "   }",
+          "",
+        ].join("\n"),
+      );
+      expect(stripAnsi(dryRun.stderr)).toContain("✔ The codemods would update 1 file");
+      expect(stripAnsi(dryRun.stderr)).toContain("✔ No generated files were hand-edited");
+      expect(readFileSync(manifestPath, "utf8")).toBe(oldManifest(testNamespaces));
+
+      const applied = await runCliAt(appDir, "upgrade", "--only", "test-aliases");
+
+      expect(applied.exitCode, applied.stderr).toBe(0);
+      expect(applied.stdout).toBe("updated: package.json\n");
+      expect(stripAnsi(applied.stderr)).toBe("✔ Updated 1 file\n");
+      expect(readFileSync(manifestPath, "utf8")).toBe(oldManifest({ ...testNamespaces, ...testAliases }));
+
+      const again = await runCliAt(appDir, "upgrade");
+
+      expect(again.exitCode).toBe(0);
+      expect(again.stdout).toBe("");
+      expect(stripAnsi(again.stderr)).toBe("✔ No codemod changed a file\n");
+
+      const prepared = await runBinAt(appDir, "nuxi", ["prepare"]);
+      expect(prepared.exitCode, prepared.stderr).toBe(0);
+
+      writeFileSync(join(appDir, "server", "utils", "greeting.ts"), 'export const greeting = "hello";\n');
+      mkdirSync(join(appDir, "tests", "functional"), { recursive: true });
+      writeFileSync(
+        join(appDir, "tests", "functional", "aliases.test.ts"),
+        [
+          'import { expect, expectRow } from "@nuxvel/nuxt/testing";',
+          'import { it } from "vitest";',
+          'import { postFactory } from "#nuxvel/factories";',
+          'import { postsTable } from "#nuxvel/schema";',
+          'import { greeting } from "#server/utils/greeting";',
+          'import { createPostInput } from "#shared/schemas/post";',
+          "",
+          'it("imports through the aliases of package.json", async () => {',
+          "  const post = await postFactory();",
+          "",
+          "  await expectRow(postsTable, { id: post.id });",
+          '  expect(greeting).toBe("hello");',
+          '  expect(createPostInput.parse({ title: "Hi", body: "" })).toEqual({ title: "Hi", body: "" });',
+          "});",
+          "",
+        ].join("\n"),
+      );
+
+      const result = await runAppTests(appDir, ["tests/functional/aliases.test.ts"]);
+
+      expect(result.exitCode, result.stdout).toBe(0);
+    }, 300000);
+
+    it("leaves an alias the app maps elsewhere and prints it as a manual step", async () => {
+      const appDir = scratchPlayground("upgrade-test-aliases-conflict");
+      const manifestPath = join(appDir, "package.json");
+      const manifest = oldManifest({ ...testNamespaces, ...testAliases, "#server/*": "./src/server/*" });
+      writeFileSync(manifestPath, manifest);
+
+      const { stdout, stderr, exitCode } = await runCliAt(appDir, "upgrade");
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toBe("");
+      expect(stripAnsi(stderr)).toBe(
+        '▲ package.json:9: #server/* maps to "./src/server/*": map it to "./server/*" so tests can import it\n✔ No codemod changed a file\n',
+      );
+      expect(readFileSync(manifestPath, "utf8")).toBe(manifest);
+    });
+  });
+});
