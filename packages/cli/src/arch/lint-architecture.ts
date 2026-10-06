@@ -124,6 +124,16 @@ export async function lintArchitecture(cwd: string, layout: AppLayout) {
     await lint(cwd, testFiles, [{ files: ["**/*.ts"], languageOptions: { parser: typescriptParser } }, ...testConfigs], findings);
   }
 
+  const imports = architecture.find((candidate) => candidate.name === "nuxvel/imports");
+  const importFiles = await glob(
+    ["server", "app", "shared", "tests"].flatMap((root) => [`${root}/**/*.{ts,vue}`, `layers/*/${root}/**/*.{ts,vue}`]),
+    { cwd, absolute: true, ignore: ["**/node_modules/**", "**/.nuxt/**", "**/.output/**", "**/*.d.ts"] },
+  );
+
+  if (imports && importFiles.length > 0) {
+    await lint(cwd, importFiles, [tsConfig(imports), vueConfig(imports)], findings);
+  }
+
   for (const finding of translations.findings) findings.add(finding);
 
   return { findings: [...findings], warnings: suffixWarnings(cwd, layout) };

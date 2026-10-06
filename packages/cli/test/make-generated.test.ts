@@ -299,7 +299,7 @@ describe("nuxvel make:* output running in an app", () => {
     mkdirSync(join(appDir, "server", "privacy"), { recursive: true });
     writeFileSync(
       join(appDir, "server", "privacy", "shelf.user-data.ts"),
-      'import { shelfTable } from "../database/schema/shelf.schema";\n\nexport const shelfUserData = defineUserData(shelfTable, shelfTable.keeperId);\n',
+      'import { shelfTable } from "#nuxvel/schema";\n\nexport const shelfUserData = defineUserData(shelfTable, shelfTable.keeperId);\n',
     );
     arch = await runCliWithEnv(appDir, { ...process.env, PLAYGROUND_TEST_PROBES: "" }, "test:arch");
 

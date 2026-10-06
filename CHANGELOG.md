@@ -20,6 +20,14 @@ applies each step below that names a codemod.
   "#shared/*": "./shared/*"
   ```
   Codemod: `test-aliases`.
+- `nuxvel test:arch` reports `../` imports between kind folders, and an
+  import of `shared/schemas/` in `app/` and `server/`, which auto-import
+  it (the rule `nuxvel/no-parent-imports`, now in the `architecture`
+  preset). By hand: import tables from `#nuxvel/schema`, factories from
+  `#nuxvel/factories`, other server code from `#server/<path>`, `shared/`
+  from `#shared/<path>` and `app/` from `~/<path>`, and delete the imports
+  of `shared/schemas/` from `app/` and `server/`. `npx eslint --fix` with
+  the preset does the same. Codemod: `imports`.
 - A router or procedure named `useQuery` or `useMutation` fails `nuxt
   typecheck`, as `$api` reserves these names. Rename it.
 
