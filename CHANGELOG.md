@@ -20,8 +20,8 @@ applies each step below that names a codemod.
   "#shared/*": "./shared/*"
   ```
   Codemod: `test-aliases`.
-- A router or procedure named `useQuery` fails `nuxt typecheck`, as
-  `$api` reserves the name. Rename it.
+- A router or procedure named `useQuery` or `useMutation` fails `nuxt
+  typecheck`, as `$api` reserves these names. Rename it.
 
 ### Changes
 
@@ -50,3 +50,5 @@ applies each step below that names a codemod.
   runs `useQuery()` and returns its result wrapped in `reactive()`.
 - The `query` function of `queryOptions()` passes the abort signal of
   Pinia Colada to tRPC, so a cancelled query cancels its request.
+- Every mutation procedure of `$api` has `.useMutation(options?)`: it
+  runs `useMutation()` and returns its result wrapped in `reactive()`.

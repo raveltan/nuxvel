@@ -1,4 +1,14 @@
-import { type EntryKey, type EntryKeyTagged, useQuery, type UseQueryOptions, type UseQueryReturn } from "@pinia/colada";
+import {
+  type _EmptyObject,
+  type EntryKey,
+  type EntryKeyTagged,
+  useMutation,
+  type UseMutationOptions,
+  type UseMutationReturn,
+  useQuery,
+  type UseQueryOptions,
+  type UseQueryReturn,
+} from "@pinia/colada";
 import type { TRPCClientError } from "@trpc/client";
 import type {
   AnyTRPCMutationProcedure,
@@ -72,6 +82,33 @@ export interface TRPCMutationOptions<
   ) => Promise<Output<TRouter, TProcedure>>;
 }
 
+/**
+ * The options `.useMutation()` takes: Pinia Colada's `useMutation()`
+ * options without `mutation`, which the procedure provides, such as
+ * `onSuccess`, `onError` or `onSettled`.
+ */
+export type TRPCUseMutationOptions<
+  TRouter extends AnyTRPCRouter,
+  TProcedure extends AnyTRPCProcedure,
+  TContext extends Record<any, any> = _EmptyObject,
+> = Omit<
+  UseMutationOptions<Output<TRouter, TProcedure>, inferProcedureInput<TProcedure>, TRPCClientError<TRouter>, TContext>,
+  "mutation"
+>;
+
+/**
+ * What `.useMutation()` returns: Pinia Colada's `useMutation()` result
+ * wrapped in `reactive()`, so `data`, `error` and `status` read without
+ * `.value`.
+ */
+export type TRPCUseMutationReturn<
+  TRouter extends AnyTRPCRouter,
+  TProcedure extends AnyTRPCProcedure,
+  TContext extends Record<any, any> = _EmptyObject,
+> = Reactive<
+  UseMutationReturn<Output<TRouter, TProcedure>, inferProcedureInput<TProcedure>, TRPCClientError<TRouter>, TContext>
+>;
+
 interface DecoratedQuery<
   TRouter extends AnyTRPCRouter,
   TProcedure extends AnyTRPCQueryProcedure,
@@ -123,6 +160,25 @@ interface DecoratedMutation<
    * input once.
    */
   mutationOptions(): TRPCMutationOptions<TRouter, TProcedure>;
+  /**
+   * Runs Pinia Colada's `useMutation()` for this procedure and returns
+   * its result wrapped in `reactive()`. Call it in `setup`, like
+   * `useMutation()`. Like `mutationOptions()`, it picks one idempotency
+   * key and sends it with every `mutate()`.
+   *
+   * @param options Pinia Colada's `useMutation()` options, without `mutation`.
+   *
+   * @example
+   * ```ts
+   * const createPost = $api.post.create.useMutation({
+   *   onSuccess: (post) => navigateTo({ name: "posts-id", params: { id: post.id } }),
+   * });
+   * createPost.mutate({ title: "Hello", body: "First post" });
+   * ```
+   */
+  useMutation<TContext extends Record<any, any> = _EmptyObject>(
+    options?: TRPCUseMutationOptions<TRouter, TProcedure, TContext>,
+  ): TRPCUseMutationReturn<TRouter, TProcedure, TContext>;
 }
 
 type DecorateRecord<
@@ -142,7 +198,7 @@ type DecorateRecord<
 };
 
 /** The names `$api` claims on every path, which no router or procedure may use. */
-export type ReservedTRPCName = "key" | "queryOptions" | "useQuery" | "mutationOptions" | "then";
+export type ReservedTRPCName = "key" | "queryOptions" | "useQuery" | "mutationOptions" | "useMutation" | "then";
 
 type ReservedPaths<TRecord extends TRPCRouterRecord, Prefix extends string = ""> = {
   [K in keyof TRecord & string]: K extends ReservedTRPCName
@@ -163,7 +219,8 @@ type ReservedNameCheck<TRouter extends AnyTRPCRouter> = [
 /**
  * The Pinia Colada helpers `$api` layers over every procedure:
  * `useQuery()`, `queryOptions()` and `key()` on queries,
- * `mutationOptions()` on mutations, `key()` on namespaces.
+ * `useMutation()` and `mutationOptions()` on mutations, `key()` on
+ * namespaces.
  */
 export type TRPCOptionsProxy<TRouter extends AnyTRPCRouter> = DecorateRecord<
   TRouter,
@@ -209,6 +266,18 @@ function useProcedureQuery(client: object, procedurePath: string[], [input, opti
   );
 }
 
+function mutationOptionsOf(client: object, procedurePath: string[]) {
+  const context = { idempotencyKey: crypto.randomUUID() };
+
+  return {
+    mutation: async (mutationInput: unknown) => call(client, [...procedurePath, "mutate"], [mutationInput, { context }]),
+  };
+}
+
+function useProcedureMutation(client: object, procedurePath: string[], options: unknown) {
+  return reactive(useMutation({ ...(typeof options === "object" ? options : {}), ...mutationOptionsOf(client, procedurePath) }));
+}
+
 function pathProxy(client: object, path: string[]): unknown {
   return new Proxy(() => {}, {
     get: (_target, prop) =>
@@ -224,13 +293,8 @@ function pathProxy(client: object, path: string[]): unknown {
             call(client, [...procedurePath, "query"], [args[0], { signal: context?.signal }]),
         };
       if (method === "useQuery") return useProcedureQuery(client, procedurePath, args);
-      if (method === "mutationOptions") {
-        const context = { idempotencyKey: crypto.randomUUID() };
-
-        return {
-          mutation: (mutationInput: unknown) => call(client, [...procedurePath, "mutate"], [mutationInput, { context }]),
-        };
-      }
+      if (method === "mutationOptions") return mutationOptionsOf(client, procedurePath);
+      if (method === "useMutation") return useProcedureMutation(client, procedurePath, args[0]);
 
       return call(client, path, args);
     },

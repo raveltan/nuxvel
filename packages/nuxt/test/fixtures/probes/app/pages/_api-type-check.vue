@@ -1,6 +1,10 @@
 <script setup lang="ts">
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
+function typed<T>(value: IsAny<T> extends true ? never : T) {
+  return value;
+}
+
 function titleOf<T extends { title: string }>(post: IsAny<T> extends true ? never : T) {
   return post.title;
 }
@@ -45,6 +49,34 @@ function useQueryWithWrongOption() {
   return $api.health.ping.useQuery(undefined, { staleTime: "soon" });
 }
 
+const createPost = $api.post.create.useMutation({
+  onSuccess: (created, input) => `${typed(created).title} ${typed(input).body}`,
+});
+const updatePost = $api.post.update.useMutation({
+  onMutate: () => ({ previousTitle: "before" }),
+  onError: (_error, _input, context) => context.previousTitle,
+});
+const useMutationDataIsTyped: IsAny<typeof createPost.data> extends true
+  ? never
+  : typeof createPost.data extends { id: number; title: string } | undefined
+    ? true
+    : never = true;
+const useMutationErrorIsTyped: IsAny<typeof createPost.error> extends true
+  ? never
+  : NonNullable<typeof createPost.error> extends { data: unknown }
+    ? true
+    : never = true;
+const useMutationInputIsTyped: IsAny<Parameters<typeof updatePost.mutate>[0]> extends true
+  ? never
+  : Parameters<typeof updatePost.mutate>[0] extends { id: number; title: string }
+    ? true
+    : never = true;
+
+function createPostWithWrongInput() {
+  // @ts-expect-error post.create takes a title and a body
+  createPost.mutate({ headline: "Hello" });
+}
+
 function pingWithoutInput() {
   // @ts-expect-error post.byId needs an input
   return $api.post.byId.queryOptions();
@@ -55,6 +87,7 @@ function pingWithoutInput() {
   <div>
     {{ apiIsTyped }} {{ queryOptionsAreTyped }} {{ mutationInputIsTyped }} {{ pingWithoutInput }}
     {{ useQueryDataIsTyped }} {{ useQueryErrorIsTyped }} {{ pingIsString }} {{ useQueryWithoutInput }} {{ useQueryWithWrongOption }}
+    {{ useMutationDataIsTyped }} {{ useMutationErrorIsTyped }} {{ useMutationInputIsTyped }} {{ createPostWithWrongInput }}
     {{ $api.post.byId.key({ id: 1 }) }}
     <p>
       <!-- @vue-expect-error id is a number -->
@@ -64,6 +97,8 @@ function pingWithoutInput() {
     <p v-if="post.data">{{ titleOf(post.data) }}</p>
     <p v-if="post.state.status === 'success'">{{ titleOf(post.state.data) }}</p>
     <p v-if="post.error">{{ post.error.message }}</p>
+    <p v-if="createPost.data">{{ titleOf(createPost.data) }}</p>
+    <p v-if="createPost.error">{{ createPost.error.message }}</p>
     <QueryState :query="postList">
       <template #default="{ data }">{{ data.rows.map((row) => titleOf(row)).join(", ") }}</template>
     </QueryState>

@@ -32,14 +32,14 @@ function apiPath(path: string[]): unknown {
  * in templates. It reads `useNuxtApp().$trpc` when a procedure is called,
  * so call it where a composable may run: in `setup`, a plugin or route
  * middleware. Every query has `useQuery(input, options?)`, `query(input)`,
- * `queryOptions(input)` and `key(input?)`, every mutation `mutate(input)`
- * and `mutationOptions()`, and every namespace `key()`. Keys start with
- * `"trpc"`.
+ * `queryOptions(input)` and `key(input?)`, every mutation
+ * `useMutation(options?)`, `mutate(input)` and `mutationOptions()`, and
+ * every namespace `key()`. Keys start with `"trpc"`.
  *
  * @example
  * ```ts
  * const post = $api.post.byId.useQuery(() => ({ id: props.id }));
- * const { mutate } = useMutation($api.post.create.mutationOptions());
+ * const createPost = $api.post.create.useMutation();
  * await useQueryCache().invalidateQueries({ key: $api.post.key() });
  * ```
  */

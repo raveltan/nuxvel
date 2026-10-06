@@ -124,7 +124,7 @@ create: authedProcedure
 
 `idempotent()` is auto-imported on the server. It runs a mutation once for each idempotency key, and answers each repeat with the first result. Use it on a mutation that must not run twice when the browser sends it twice, for example a create.
 
-The client sends the key in the `Idempotency-Key` header. `mutationOptions()` from `useTRPC()` picks one key and sends it with each call. Thus `useActionForm()` sends it too. A mutation with a key goes in its own request, not in a batch.
+The client sends the key in the `Idempotency-Key` header. `.useMutation()` and `mutationOptions()` of `$api` pick one key and send it with each call. Thus `useActionForm()` sends it too. A mutation with a key goes in its own request, not in a batch.
 
 - The first result stays in Redis for 24 hours. The key includes the user, the procedure path, the client's key and the input. A repeat with other input runs again.
 - A repeat while the first call still runs gets a `ConflictError`.
@@ -373,15 +373,21 @@ Call `.useQuery()` in `setup`, as `useQuery()`. During SSR the query runs on the
 
 ```vue
 <script setup lang="ts">
-const trpc = useTRPC();
-
 const queryCache = useQueryCache();
-const { mutate: createPost } = useMutation({
-  ...trpc.post.create.mutationOptions(),
-  onSettled: () => queryCache.invalidateQueries({ key: trpc.post.key() }),
+const createPost = $api.post.create.useMutation({
+  onSettled: () => queryCache.invalidateQueries({ key: $api.post.key() }),
 });
 </script>
+
+<template>
+  <UAlert v-if="createPost.error" color="error" :title="createPost.error.message" />
+  <UButton :loading="createPost.isLoading" @click="createPost.mutate({ title: 'Hello', body: 'First post' })">
+    Create
+  </UButton>
+</template>
 ```
+
+`.useMutation(options?)` runs Pinia Colada's `useMutation()` for the procedure and returns its result wrapped in `reactive()`: `createPost.mutate()`, `createPost.data`, `createPost.error` and `createPost.isLoading`, without `.value`. `options` are the options of Pinia Colada's `useMutation()`, without `mutation`: `onMutate`, `onSuccess`, `onError`, `onSettled` and the others. Call it in `setup`, as `useMutation()`.
 
 nuxvel installs Pinia Colada. `useQuery`, `useMutation` and `useQueryCache` are auto-imported. Each procedure on `$api` builds their options, so you do not write a key by hand.
 
@@ -389,11 +395,12 @@ nuxvel installs Pinia Colada. `useQuery`, `useMutation` and `useQueryCache` are 
 |---|---|---|
 | `$api.post.byId.useQuery(input, options?)` | the result of `useQuery`, in `reactive()` | |
 | `$api.post.byId.queryOptions(input)` | `{ key, query }` | `useQuery` |
+| `$api.post.create.useMutation(options?)` | the result of `useMutation`, in `reactive()` | |
 | `$api.post.create.mutationOptions()` | `{ mutation }` | `useMutation` |
 | `$api.post.byId.key(input?)` | `["trpc", "post", "byId", input]` | cache reads and writes |
 | `$api.post.key()` | `["trpc", "post"]` | invalidating a whole namespace |
 
-`queryOptions()` with Pinia Colada's own `useQuery()` is the step below `.useQuery()`: use it to build the options yourself, for example to pass them to `useLiveQuery()`. The `query` function passes the abort signal of Pinia Colada to tRPC, so a query that Pinia Colada cancels also cancels its request.
+`queryOptions()` with Pinia Colada's own `useQuery()` is the step below `.useQuery()`, and `mutationOptions()` with `useMutation()` the step below `.useMutation()`: use them to build the options yourself, for example to pass them to `useLiveQuery()` or `useActionForm()`. The `query` function passes the abort signal of Pinia Colada to tRPC, so a query that Pinia Colada cancels also cancels its request.
 
 A key is `"trpc"`, then the router path, then the input:
 
@@ -401,7 +408,7 @@ A key is `"trpc"`, then the router path, then the input:
 - A shorter key matches all keys under it.
 - No key collides with a key that you write by hand for a query that is not tRPC.
 
-These helpers use the names `key`, `queryOptions`, `useQuery`, `mutationOptions` and `then`. A router or procedure with one of these names fails `nuxt typecheck`. Rename it.
+These helpers use the names `key`, `queryOptions`, `useQuery`, `mutationOptions`, `useMutation` and `then`. A router or procedure with one of these names fails `nuxt typecheck`. Rename it.
 
 ## Optimistic updates
 

@@ -1,5 +1,5 @@
 import { defineComponent, h, isReactive, isRef, nextTick, reactive, ref, unref } from "vue";
-import { getQuery } from "h3";
+import { getQuery, getRequestHeader } from "h3";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { useQueryCache } from "@pinia/colada";
@@ -164,5 +164,82 @@ describe("$api.<query>.useQuery()", () => {
     refetch();
 
     await vi.waitFor(() => expect(calls).toEqual(["ping", "ping"]));
+  });
+});
+
+describe("$api.<mutation>.useMutation()", () => {
+  function respondWithEcho() {
+    const keys: (string | undefined)[] = [];
+    registerEndpoint("/api/trpc/health.echo", {
+      method: "POST",
+      handler: (event) => {
+        keys.push(getRequestHeader(event, "idempotency-key"));
+        return { result: { data: { json: "hello" } } };
+      },
+    });
+    return keys;
+  }
+
+  async function mountEcho(options: object = {}) {
+    let echo: ReturnType<typeof $api.health.echo.useMutation> | undefined;
+    const wrapper = await mountSuspended(
+      defineComponent({
+        setup() {
+          const mutation = $api.health.echo.useMutation(options);
+          echo = mutation;
+          return () => h("p", mutation.error?.message ?? mutation.data ?? mutation.status);
+        },
+      }),
+    );
+    if (!echo) throw new Error("the component did not set up");
+    return { wrapper, echo };
+  }
+
+  it("sends one idempotency key with every mutation of one useMutation()", async () => {
+    const keys = respondWithEcho();
+    const { echo } = await mountEcho();
+    const other = await mountEcho();
+
+    await echo.mutateAsync("hello");
+    await echo.mutateAsync("hello");
+    await other.echo.mutateAsync("hello");
+
+    expect(keys[0]).toMatch(/^[0-9a-f-]{36}$/);
+    expect(keys[1]).toBe(keys[0]);
+    expect(keys[2]).not.toBe(keys[0]);
+  });
+
+  it("shows the data of a mutation without .value", async () => {
+    respondWithEcho();
+    const { wrapper, echo } = await mountEcho();
+
+    echo.mutate("hello");
+
+    await vi.waitFor(() => expect(wrapper.text()).toBe("hello"));
+    expect(echo.status).toBe("success");
+  });
+
+  it("shows the error of a failed mutation without .value", async () => {
+    registerEndpoint("/api/trpc/health.echo", {
+      method: "POST",
+      handler: () => ({
+        error: { json: { message: "echo refused", code: -32603, data: { code: "INTERNAL_SERVER_ERROR", httpStatus: 500 } } },
+      }),
+    });
+    const { wrapper, echo } = await mountEcho();
+
+    echo.mutate("hello");
+
+    await vi.waitFor(() => expect(wrapper.text()).toBe("echo refused"));
+  });
+
+  it("passes its options to useMutation()", async () => {
+    respondWithEcho();
+    const onSuccess = vi.fn();
+    const { echo } = await mountEcho({ onSuccess });
+
+    await echo.mutateAsync("hello");
+
+    expect(onSuccess).toHaveBeenCalledWith("hello", "hello", expect.anything());
   });
 });
