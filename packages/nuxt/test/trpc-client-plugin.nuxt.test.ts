@@ -2,7 +2,7 @@ import { defineComponent, h } from "vue";
 import { describe, expect, it, vi } from "vitest";
 import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { useQuery } from "@pinia/colada";
-import { setResponseHeader, setResponseStatus } from "h3";
+import { readBody, setResponseHeader, setResponseStatus } from "h3";
 import { QueryState } from "#components";
 import { $api, isNetworkError } from "#imports";
 
@@ -26,6 +26,23 @@ describe("client tRPC plugin", () => {
     const wrapper = await mountSuspended(component);
 
     expect(wrapper.text()).toContain("pong");
+  });
+
+  it("sends each mutation in a request of its own, also when two run at once", async () => {
+    const requests: unknown[] = [];
+    registerEndpoint("/api/trpc/health.echo", {
+      method: "POST",
+      handler: async (event) => {
+        const { json } = await readBody<{ json: string }>(event);
+        requests.push(json);
+        return { result: { data: { json } } };
+      },
+    });
+
+    const echoed = await Promise.all([$api.health.echo.mutate("first"), $api.health.echo.mutate("second")]);
+
+    expect(echoed).toEqual(["first", "second"]);
+    expect(requests.sort()).toEqual(["first", "second"]);
   });
 
   it("shows a clear message when a proxy answers with HTML, and loads the data on retry", async () => {

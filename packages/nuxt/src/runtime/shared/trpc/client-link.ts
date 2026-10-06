@@ -26,11 +26,13 @@ function asNetworkError(error: TRPCClientError<AnyTRPCRouter>, op: Operation) {
 
 /**
  * Builds the batching tRPC link, with superjson matching the server
- * transformer. A call whose context carries an `idempotencyKey` goes
- * alone, with the key in the `Idempotency-Key` header. Shared by the
- * Nuxt plugin and any hand-rolled client.
+ * transformer. Every mutation goes alone, in its own request, so that
+ * its response headers are its own; a call whose context carries an
+ * `idempotencyKey` also goes alone, with the key in the
+ * `Idempotency-Key` header. Shared by the Nuxt plugin and any
+ * hand-rolled client.
  *
- * It sends at most 10 calls in one batch, and more calls go in more requests.
+ * It sends at most 10 queries in one batch, and more queries go in more requests.
  *
  * A call that gets no tRPC answer fails with `data.code`
  * `NETWORK_ERROR` and the message "Can't reach the server. Check your
@@ -59,11 +61,14 @@ export function createTrpcClientLink<TRouter extends AnyTRPCRouter>(
   };
 
   const transport = splitLink<AnyTRPCRouter>({
-    condition: (op) => typeof op.context.idempotencyKey === "string",
+    condition: (op) => op.type === "mutation" || typeof op.context.idempotencyKey === "string",
     true: httpLink({
       ...sent,
       transformer: superjson,
-      headers: ({ op }) => ({ ...buildHeaders(), [IDEMPOTENCY_KEY_HEADER]: String(op.context.idempotencyKey) }),
+      headers: ({ op }) => ({
+        ...buildHeaders(),
+        ...(typeof op.context.idempotencyKey === "string" ? { [IDEMPOTENCY_KEY_HEADER]: op.context.idempotencyKey } : {}),
+      }),
     }),
     false: httpBatchLink({ ...sent, transformer: superjson, headers: buildHeaders, maxItems: TRPC_MAX_BATCH_SIZE }),
   });

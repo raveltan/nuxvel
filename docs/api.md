@@ -124,7 +124,7 @@ create: authedProcedure
 
 `idempotent()` is auto-imported on the server. It runs a mutation once for each idempotency key, and answers each repeat with the first result. Use it on a mutation that must not run twice when the browser sends it twice, for example a create.
 
-The client sends the key in the `Idempotency-Key` header. `.useMutation()` and `mutationOptions()` of `$api` pick one key and send it with each call. Thus `useActionForm()` sends it too. A mutation with a key goes in its own request, not in a batch.
+The client sends the key in the `Idempotency-Key` header. `.useMutation()` and `mutationOptions()` of `$api` pick one key and send it with each call. Thus `useActionForm()` sends it too. Each mutation goes in its own request, not in a batch.
 
 - The first result stays in Redis for 24 hours. The key includes the user, the procedure path, the client's key and the input. A repeat with other input runs again.
 - A repeat while the first call still runs gets a `ConflictError`.
@@ -336,7 +336,7 @@ const posts = $api.post.list.useQuery();
 </script>
 ```
 
-`$api` is the typed API of the app. It is auto-imported in components, pages, composables and plugins, and you can use it in templates. It finds the tRPC client of the current Nuxt app when you call a procedure, so call it where a composable can run: in `setup`, in a plugin or in route middleware. The client sends calls through an `httpBatchLink` with the same superjson transformer. One batch carries at most 10 calls. The client sends more calls in more requests. The server refuses a bigger batch from any other client with `BAD_REQUEST`. During SSR it calls procedures in the same process, with the visitor's request headers. Thus an `authedProcedure` query renders signed in on the first load. A query that fails with `NOT_FOUND`, `FORBIDDEN` or `UNAUTHORIZED` during SSR renders its error state with HTTP 404, 403 or 401, see [Errors during server rendering](./frontend.md#errors-during-server-rendering).
+`$api` is the typed API of the app. It is auto-imported in components, pages, composables and plugins, and you can use it in templates. It finds the tRPC client of the current Nuxt app when you call a procedure, so call it where a composable can run: in `setup`, in a plugin or in route middleware. The client sends queries through an `httpBatchLink` with the same superjson transformer. One batch carries at most 10 queries. The client sends more queries in more requests. Each mutation goes in a request of its own, so that its response [names what it invalidated](#what-a-mutation-invalidates). The server refuses a bigger batch from any other client with `BAD_REQUEST`. During SSR it calls procedures in the same process, with the visitor's request headers. Thus an `authedProcedure` query renders signed in on the first load. A query that fails with `NOT_FOUND`, `FORBIDDEN` or `UNAUTHORIZED` during SSR renders its error state with HTTP 404, 403 or 401, see [Errors during server rendering](./frontend.md#errors-during-server-rendering).
 
 Read data through `.useQuery()`, so that the result is cached. See [Caching queries](#caching-queries-pinia-colada). For a one-off call, `await $api.post.list.query()` also works.
 

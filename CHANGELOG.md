@@ -80,3 +80,6 @@ applies each step below that names a codemod.
 - A tRPC mutation response carries the header `x-nuxvel-invalidates`:
   the tags its actions' `invalidates` declared and committed, as
   URL-encoded JSON arrays (`"posts:*"` is sent as `["posts"]`).
+- The tRPC client sends every mutation in a request of its own, not in
+  a batch; queries are still batched. A test that mocks a mutation with
+  `registerEndpoint()` answers with one result object, not an array.

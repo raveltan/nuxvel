@@ -7,17 +7,15 @@ import { $api, useFormErrors } from "#imports";
 function answerCreatePost(error: { message: string; code: string; httpStatus: number; fields?: Record<string, string[]> }) {
   registerEndpoint("/api/trpc/post.create", {
     method: "POST",
-    handler: () => [
-      {
-        error: {
-          json: {
-            message: error.message,
-            code: -32600,
-            data: { code: error.code, httpStatus: error.httpStatus, ...(error.fields ? { fields: error.fields } : {}) },
-          },
+    handler: () => ({
+      error: {
+        json: {
+          message: error.message,
+          code: -32600,
+          data: { code: error.code, httpStatus: error.httpStatus, ...(error.fields ? { fields: error.fields } : {}) },
         },
       },
-    ],
+    }),
   });
 }
 
