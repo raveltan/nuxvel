@@ -26,8 +26,8 @@ const flashesByRequest = new WeakMap<H3Event, FlashMessage[]>();
  *
  * @example
  * ```ts
- * create: authedProcedure.input(createPostInput).mutation(async ({ input, ctx }) => {
- *   const post = await createPostAction(input, { actor: ctx.actor });
+ * create: authedProcedure.input(createPostInput).mutation(async ({ input }) => {
+ *   const post = await createPostAction(input);
  *   flash("Post created");
  *   return post;
  * }),

@@ -55,6 +55,19 @@ applies each step below that names a codemod.
   apply }))`. An `onMutate` or `onSettled` beside `optimistic` now runs
   after it instead of being dropped. The type `OptimisticUpdate` stays.
   Codemod: `mutation-options`.
+- The `audited()` tRPC middleware is removed: the `audit` option of
+  `defineAction()` writes the same row. By hand: delete
+  `.use(audited("post.updated", { target: postTable }))` from the
+  procedure and add `audit: { name: "post.updated", target: postTable }`
+  to the action it calls, importing `postTable` there. A procedure
+  that calls no action writes the row with `await audit("post.updated",
+  { type: getTableName(postTable), id: input.id })` in its handler.
+  Codemod: `audit`.
+- `nuxvel test:arch` reports an `.action()` without `.output()` before
+  it, and an action with `procedure` and no `output`, in the rule
+  `nuxvel/router-output`. By hand: add `.output(schema)` before
+  `.action()`, and `output: schema` to the action, listing only the
+  fields the browser may see.
 
 ### Changes
 
@@ -143,7 +156,35 @@ applies each step below that names a codemod.
   `useMutation()` of those options into `.useMutation()`.
 - The list page that `make:resource --ui` writes deletes through
   `.useMutation()` with `optimistic`, `removeRow()` and `confirm`.
+- `allowGuest(rule)` lets the guest actor of a signed-out caller reach
+  a policy rule. Every other rule denies it. An action's `rateLimit`
+  with `by: "user"` counts the guest by its IP.
+- `defineAction()` takes `output`: the schema of what its mounted
+  procedure sends. A field it does not list never reaches the client.
+- `defineAction()` takes `procedure`: `"public"`, `"authed"`, `"admin"`
+  or a procedure builder. The action is then a mutation at its path
+  (`posts.updatePost` for `server/actions/posts/update-post.action.ts`),
+  typed on `$api`, with no router. A router key at the same path fails
+  the build. `nuxvel routes` lists it with the action file.
+- Every procedure builder has `.action(action)`: a mutation that runs
+  the action, with its input and output, as the caller (a signed-out
+  caller as the actor `{ type: "guest", id: "guest" }`).
+- Every procedure builder has `.openapi({ path?, summary?, tags?,
+  protect? })`: the method is `GET` for a query and `POST` for a
+  mutation, the path defaults to the procedure path and the tag to its
+  router. `.meta({ openapi })` still works.
+- `nuxvel upgrade --only audit` moves `audited()` to the `audit` option
+  of the action that the mutation calls, or to `audit()` in a handler
+  that calls no action.
+- `defineAction()` takes `audit`: a name such as `"post.created"`, which
+  audits the row the handler returns, or `{ name, target }`, which
+  audits the row with the id `input.id` and the columns that changed.
+- `input` is optional on `defineAction()` and `defineJob()`. Without
+  it, the action or job takes `{}` or `undefined`.
 - `removeRow()`, `prependRow()` and `replaceRow()` are auto-imported
   patches for a page of `paginated()` data, for `useLiveQuery()` and
   optimistic updates. They keep `total` and `lastPage` right and skip a
   duplicate row.
+- `make:action` writes an action without `input` when you give no fields,
+  and `make:router --crud` writes `.openapi()` for `GET` and `POST`
+  procedures and mutations that do not pass the actor.

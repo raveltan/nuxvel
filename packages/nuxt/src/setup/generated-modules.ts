@@ -124,6 +124,7 @@ export function generatedModules(
     "#nuxvel/nitro-routes": async () => buildNitroRoutesModuleCode(await nitroScan.handlers()),
     "#nuxvel/task-names": () => buildTaskNamesModuleCode(nitroScan.taskNames()),
     "#nuxvel/translations": () => buildTranslationsModuleCode(translationFiles()),
-    "#nuxvel/trpc-routers": async () => buildTrpcRoutersModuleCode(await discoverLayers("trpc/routers")),
+    "#nuxvel/trpc-routers": async () =>
+      buildTrpcRoutersModuleCode(await discoverLayers("trpc/routers"), await discoverNamed("action", "actions")),
   };
 }

@@ -15,7 +15,6 @@ nuxvel make:router post
 ```ts
 // server/trpc/routers/post.router.ts
 import { z } from "zod";
-import { createPostAction } from "#server/actions/posts/create-post.action";
 import { postTable } from "#nuxvel/schema";
 
 export const postRouter = {
@@ -28,14 +27,11 @@ export const postRouter = {
     .output(postSchema)
     .query(({ input }) => findOrFail(postTable, input.id)),
 
-  create: authedProcedure
-    .input(createPostInput)
-    .output(postSchema)
-    .mutation(({ input, ctx }) => createPostAction(input, { actor: ctx.actor })),
+  create: authedProcedure.output(postSchema).action($actions.posts.createPost),
 };
 ```
 
-Put router files under `server/trpc/routers/`. Export a plain object as a named export whose name ends with `Router`, for example `export const postRouter = { ... }` in `post.router.ts`. A default export also works. nuxvel builds the root router and generates the `AppRouter` type at build time. `publicProcedure`, `authedProcedure`, `useDb` and `findOrFail` are auto-imported, and so are the schemas in `shared/schemas/`. Import actions and tables yourself.
+Put router files under `server/trpc/routers/`. Export a plain object as a named export whose name ends with `Router`, for example `export const postRouter = { ... }` in `post.router.ts`. A default export also works. nuxvel builds the root router and generates the `AppRouter` type at build time. `publicProcedure`, `authedProcedure`, `useDb` and `findOrFail` are auto-imported, and so are the schemas in `shared/schemas/`. `.action()` runs an action from `$actions`, see [Running an action](#running-an-action). Import tables yourself.
 
 In a `publicProcedure`, `ctx.user` is the signed-in user, or `null` for a signed-out visitor. `ctx.actor` is that user as an actor, or `null`. In each procedure, `ctx.locale` is the locale of the request, see [Internationalization](./i18n.md#the-locale-on-the-server).
 
@@ -43,7 +39,7 @@ Code that a procedure calls reads the same caller with [`useAuth()`](./auth.md#t
 
 A router reads with `useDb()` queries and writes through [actions](./actions.md). It does not call `useDb().insert()`, `.update()` or `.delete()`. Thus every write gets a transaction, an actor and a trace. `nuxvel test:arch` reports a router that writes directly.
 
-Every query and mutation has an `.output()` schema. tRPC sends what the procedure returns, so a raw row sends every column, also a column that you add to the table later. The output schema removes each field that it does not list. Use the row schema, such as `postSchema` from `shared/schemas/post.ts`, and remove from it each column that a caller must not see. `nuxvel test:arch` reports a query or mutation without `.output()`. A procedure that returns nothing uses `.output(z.void())`.
+Every query and mutation has an `.output()` schema. tRPC sends what the procedure returns, so a raw row sends every column, also a column that you add to the table later. The output schema removes each field that it does not list. Use the row schema, such as `postSchema` from `shared/schemas/post.ts`, and remove from it each column that a caller must not see. `nuxvel test:arch` reports a query, a mutation or an `.action()` without `.output()`. A procedure that returns nothing uses `.output(z.void())`. The check sees only a chain that starts from a `*Procedure` name, not one that starts from a local variable. A loose schema such as `z.any()` passes the check but removes no field.
 
 A Nitro route under `server/api/` or `server/routes/` only reads. It does not write with `useDb()` and does not call an action. Put the write in a tRPC mutation. `nuxvel test:arch` reports a route that writes, except in a `webhooks`, `uploads` or `auth` folder.
 
@@ -73,6 +69,8 @@ The build fails, and names both files, in these cases:
 
 In a Nuxt layer app, a namespace in a higher layer hides the routers of lower layers on that namespace.
 
+An action with `procedure` is a mutation at its own path, such as `posts.updatePost` for `server/actions/posts/update-post.action.ts`, in the router of that namespace when there is one. A router key or a router file at that path fails the build, and the error names both files. See [Actions: serving an action as a procedure](./actions.md#serving-an-action-as-a-procedure).
+
 ## Procedure builders
 
 | Builder | What it does |
@@ -89,25 +87,43 @@ All builders do these things:
 - They reject a mutation with `FORBIDDEN` when its `Origin` header does not match the request host, or when its `Sec-Fetch-Site` header is `cross-site` or `same-site`. A request with an API key skips this check.
 - They turn a database error or an upstream error into a taxonomy error, for example a unique-constraint violation into a `ConflictError`. See [Database errors](#database-errors).
 
+An action called in a procedure runs as the caller: the builder sets the actor, so the call needs no `{ actor: ctx.actor }`. Give `ctx.actor` to policies. Do not build an actor yourself.
+
+### Running an action
+
 ```ts
-update: authedProcedure
-  .input(updatePostInput)
-  .output(postSchema)
-  .mutation(({ input, ctx }) => updatePostAction(input, { actor: ctx.actor })),
+update: authedProcedure.output(postSchema).action($actions.posts.updatePost),
 ```
 
-Give `ctx.actor` to actions and policies. Do not build an actor yourself.
+`.action(action)` ends a procedure with a mutation that runs the action. It works on every builder, after any `.use()`, `.meta()` or `.openapi()`:
 
-Pass the procedure's `input` to the action as it is. The action parses it again with the same schema. This is safe when the parsed output of the schema is also a valid input. A schema that changes the type does not compile there, for example `z.string().transform(...)` into a `Date`. Give the procedure a plain schema, and do the transform in the action's own schema.
+- The input is the input schema of the action. tRPC parses it first, then the action parses the raw input again, so an async refinement runs twice. A schema with a transform works, because the action gets the raw input, not the output of the first parse.
+- The output is the `.output()` before `.action()`, else the [`output`](./actions.md#serving-an-action-as-a-procedure) schema of the action, else what the action returns. Set one of them: it lists the fields the browser gets. `nuxvel test:arch` reports an `.action()` without `.output()`, as it does a query or a mutation.
+- An error of the action, such as its [typed failure](./actions.md#typed-failures), reaches the caller as it is.
+- The action runs as the caller. When nobody is signed in, as in a `publicProcedure`, it runs as the actor `{ type: "guest", id: "guest" }`.
+
+A procedure that does more than forward to the action, for example `flash()` after it, calls the action in `.mutation()`:
+
+```ts
+create: authedProcedure
+  .input(createPostInput)
+  .output(postSchema)
+  .mutation(async ({ input }) => {
+    const post = await $actions.posts.createPost(input);
+    flash("Post created");
+    return post;
+  }),
+```
+
+The action parses `input` again with the same schema. This is safe when the parsed output of the schema is also a valid input. A schema that changes the type does not compile there, for example `z.string().transform(...)` into a `Date`. Give the procedure a plain schema, and do the transform in the action's own schema.
 
 ## Rate limiting a procedure
 
 ```ts
 create: authedProcedure
   .use(rateLimit({ points: 5, window: { minutes: 1 }, by: "user" }))
-  .input(createPostInput)
   .output(postSchema)
-  .mutation(({ input, ctx }) => createPostAction(input, { actor: ctx.actor })),
+  .action($actions.posts.createPost),
 ```
 
 `rateLimit({ points, window, by })` counts calls for each procedure path. `by` is `"ip"`, `"user"` or a key function. See [Security](./security.md#where-its-used). To spend a [shared limit](./security.md#shared-limits), use `rateLimit({ limit, by })`.
@@ -117,9 +133,8 @@ create: authedProcedure
 ```ts
 create: authedProcedure
   .use(idempotent())
-  .input(createPostInput)
   .output(postSchema)
-  .mutation(({ input, ctx }) => createPostAction(input, { actor: ctx.actor })),
+  .action($actions.posts.createPost),
 ```
 
 `idempotent()` is auto-imported on the server. It runs a mutation once for each idempotency key, and answers each repeat with the first result. Use it on a mutation that must not run twice when the browser sends it twice, for example a create.
@@ -441,13 +456,13 @@ If the query is not in the cache yet, it changes nothing. Your own `onMutate`, `
 
 ```ts
 list: publicProcedure
-  .meta({ openapi: { method: "GET", path: "/posts" } })
+  .openapi({ path: "/posts" })
   .input(paginationSchema.optional())
   .output(paginated(postSchema))
   .query(({ input }) => paginate(useDb().select().from(postTable).orderBy(desc(postTable.id)).$dynamic(), input)),
 ```
 
-A procedure with `openapi` meta also answers as a plain REST endpoint, here `GET /api/v1/posts`. `paginated(postSchema)` is the output schema of a [paginated](./database.md#pagination) list. See [REST and OpenAPI](./openapi.md).
+A procedure with `.openapi()` also answers as a plain REST endpoint, here `GET /api/v1/posts`. A query answers `GET` and a mutation `POST`. `paginated(postSchema)` is the output schema of a [paginated](./database.md#pagination) list. See [REST and OpenAPI](./openapi.md).
 
 ## API keys
 

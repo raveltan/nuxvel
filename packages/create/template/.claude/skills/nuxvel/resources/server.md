@@ -47,19 +47,21 @@ export const updatePostAction = defineAction({
 | `errors` | `{ code: defaultMessage }`. Only these codes compile in `fail` |
 | `transaction: false` | no transaction (reads) |
 | `rateLimit` | options of `rateLimit()` |
+| `audit` | `"post.created"` audits the returned row. `{ name: "post.updated", target: postTable }` audits the row of `input.id` with the changed columns |
+| `output` | schema of what the mounted procedure sends. Required with `procedure` (`test:arch`) |
+| `procedure` | `"public"`, `"authed"`, `"admin"` or a builder (`roleProcedure(["editor"])`): also a mutation at its path, `$api.posts.updatePost` for `actions/posts/update-post.action.ts`, no router. A router key at that path fails the build |
 | `invalidates` | tags to forget after commit, each with every key under it: `["post", ["user", id]]`, or `(output, input) => tags`. Use router names, and cache under them: `remember(["post", "list", input], …)`. The client refetches the queries under each tag, and the router's own. A string with `*` stays a glob |
 
 - Runs in `transaction()`. A nested action joins it (savepoint) and inherits the actor.
 - DB errors: unique → `ConflictError` (409). FK → `ValidationFailedError` or `ConflictError`. Deadlock/timeout → `TransientError`.
-- Call: `createPostAction(input, { actor: ctx.actor })`. No request: `{ actor: systemActor("import-job") }` or `{ actor: userActor(user) }`.
+- Call: `$actions.posts.createPost(input)` runs as the actor in scope (procedure, job, action). No request: `{ actor: systemActor("import-job") }` or `{ actor: userActor(user) }`.
 - `isActionError(error, updatePostAction, "post.locked")` narrows.
 
 ## Router
 
 ```ts
 import { desc } from "drizzle-orm";
-import { createPostAction } from "../../actions/posts/create-post.action";
-import { postTable } from "../../database/schema/post.schema";
+import { postTable } from "#nuxvel/schema";
 
 export const postRouter = {
   list: publicProcedure
@@ -67,10 +69,7 @@ export const postRouter = {
     .output(paginated(postSchema))
     .query(({ input }) => paginate(useDb().select().from(postTable).orderBy(desc(postTable.id)).$dynamic(), input)),
   byId: publicProcedure.input(postIdInput).output(postSchema).query(({ input }) => findOrFail(postTable, input.id)),
-  create: authedProcedure
-    .input(createPostInput)
-    .output(postSchema)
-    .mutation(({ input, ctx }) => createPostAction(input, { actor: ctx.actor })),
+  create: authedProcedure.output(postSchema).action($actions.posts.createPost),
 };
 ```
 
@@ -83,11 +82,12 @@ export const postRouter = {
 | `freshProcedure` | sign-in < 10 min | `FORBIDDEN` |
 | `signedProcedure(options)` | valid signed link. Runs as system actor | `FORBIDDEN` |
 
-Middleware (`.use(...)`): `idempotent`, `audited("post.updated", { target: postTable })`, `rateLimit({ points: 5, window: { minutes: 1 }, by: "user" })`.
+Middleware (`.use(...)`): `idempotent`, `rateLimit({ points: 5, window: { minutes: 1 }, by: "user" })`.
 
-- Pass `input` to the action unchanged. Put transforms in the action schema, not the procedure schema.
+- `.action($actions.posts.createPost)` on any builder: a mutation with the action's input, its errors, and the `.output()` before it (required, `test:arch`), run as the caller (a guest is `{ type: "guest" }`). Use `.mutation()` only when it does more than call the action.
+- In `.mutation()`, pass `input` to the action unchanged. Put transforms in the action schema, not the procedure schema.
 - `useCaller().post.list()`: in-process call as the current request user.
-- `.meta({ openapi: { method: "GET", path: "/posts", protect: false } })` also serves it over REST.
+- `.openapi({ path: "/posts", protect: false })` also serves it over REST: `GET` for a query, `POST` for a mutation, tag from the router. Other method: `.meta({ openapi: { method: "PATCH", path } })`.
 - A route in `server/api/` only reads. `defineValidatedHandler({ params, query, body }, handler)` validates it.
 
 ## Policy
@@ -102,6 +102,7 @@ export const postPolicy = definePolicy(postTable, {
 - `can(actor, $policies.post.update, post)` → boolean. `authorize(...)` → throws `ForbiddenError`. String form: `can(actor, "update", postTable, post)`.
 - `canMany(actor, [postPolicy.update, postPolicy.delete], rows)` → `[{ update, delete }]` per row, one `preload` for the list.
 - `allowSystem(rule)`: system actors reach the rule. Without it, the rule refuses a system actor.
+- `allowGuest(rule)`: the guest actor (signed-out caller of a public action) reaches the rule. Without it, the rule refuses the guest.
 - One policy per table. No rule → `false`.
 
 ## Queries

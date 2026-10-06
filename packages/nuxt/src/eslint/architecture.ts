@@ -29,7 +29,8 @@ const IMPORT_FILES = ["server", "app", "shared", "tests"].flatMap((root) => [`${
  * action per file exported under the file's camelCase name,
  * `nuxvel/router-db-writes` keeps `useDb().insert/update/delete` out of
  * tRPC routers, `nuxvel/router-output` wants an `.output()` schema on
- * every query and mutation built from a `*Procedure`, `nuxvel/route-writes` keeps those writes and action
+ * every query, mutation and `.action()` built from a `*Procedure`, and
+ * an `output` on every action with a `procedure`, `nuxvel/route-writes` keeps those writes and action
  * calls out of Nitro routes, `nuxvel/sync-listener-network` keeps network calls
  * (`fetch`, `$fetch`, `sendMail`, `useS3`, ...) out of `sync: true`
  * listeners, `nuxvel/listener-emit-loop` stops a listener emitting the
@@ -154,7 +155,7 @@ export const architecture: Linter.Config[] = [
     name: "nuxvel/actions",
     files: ["server/actions/**/*.ts", "server/domains/*/actions/**/*.action.ts"],
     plugins: { nuxvel: nuxvelPlugin },
-    rules: { "nuxvel/action-imports": "error", "nuxvel/action-naming": "error" },
+    rules: { "nuxvel/action-imports": "error", "nuxvel/action-naming": "error", "nuxvel/router-output": "error" },
   },
   {
     name: "nuxvel/routers",

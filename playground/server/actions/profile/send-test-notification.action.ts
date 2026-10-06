@@ -1,9 +1,7 @@
 import { eq } from "drizzle-orm";
-import { z } from "zod";
 import { userTable } from "#nuxvel/schema";
 
 export const sendTestNotificationAction = defineAction({
-  input: z.object({}),
   handler: async (_input, ctx) => {
     const recipient = await useDb()
       .select()

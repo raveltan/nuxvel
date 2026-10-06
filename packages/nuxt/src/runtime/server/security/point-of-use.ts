@@ -148,8 +148,7 @@ function budgetOf(options: RateLimitOptions): (place: string) => Budget {
  * // server/trpc/routers/post.router.ts
  * create: authedProcedure
  *   .use(rateLimit({ points: 5, window: { minutes: 1 }, by: "user" }))
- *   .input(createPostInput)
- *   .mutation(({ input, ctx }) => createPostAction(input, { actor: ctx.actor })),
+ *   .action($actions.posts.createPost),
  *
  * // server/api/export.post.ts, sharing server/rate-limits/export.rate-limit.ts
  * export default defineEventHandler({

@@ -440,10 +440,10 @@ describe("nuxvel make:* generators", () => {
       join(fixtureCwd, "server", "actions", "widgets", "archive-widget.action.ts"),
       "utf-8",
     );
-    expect(actionFile).toContain('import { z } from "zod";');
+    expect(actionFile).not.toContain("zod");
     expect(actionFile).toContain("export const archiveWidgetAction = defineAction({");
     expect(actionFile).not.toContain("name:");
-    expect(actionFile).toContain("input: z.object({}),");
+    expect(actionFile).not.toContain("input:");
 
     const testFile = readFileSync(
       join(fixtureCwd, "server", "actions", "widgets", "archive-widget.action.test.ts"),
@@ -894,8 +894,8 @@ export default defineDeploy({
     expect(routerFile).toContain("create: authedProcedure\n    .input(createWidgetItemInput)\n    .output(widgetItemSchema)");
     expect(routerFile).toContain("update: authedProcedure\n    .input(updateWidgetItemInput)\n    .output(widgetItemSchema)");
     expect(routerFile).toContain("delete: authedProcedure\n    .input(widgetItemIdInput)\n    .output(widgetItemIdInput)");
-    expect(routerFile).toContain("await createWidgetItemAction(input, { actor: ctx.actor });\n      flash(\"Widget item created\");");
-    expect(routerFile).toContain("await updateWidgetItemAction(input, { actor: ctx.actor });");
+    expect(routerFile).toContain("await createWidgetItemAction(input);\n      flash(\"Widget item created\");");
+    expect(routerFile).toContain("await updateWidgetItemAction(input);");
     expect(routerFile).not.toContain(".meta(");
     expect(routerFile).not.toContain("restore:");
     expect(policyFile).toContain("  delete: (actor, row) =>");
@@ -958,13 +958,13 @@ export default defineDeploy({
       "  ownerId: z.string(),\n  name: z.string(),\n  createdAt: z.date(),\n  updatedAt: z.date(),\n  deletedAt: z.date().nullable(),\n});",
     );
     expect(routerFile).toContain(
-      'list: authedProcedure\n    .meta({ openapi: { method: "GET", path: "/widget-item", summary: "List widget item rows", tags: ["widget-item"] } })',
+      'list: authedProcedure\n    .openapi({ path: "/widget-item", summary: "List widget item rows", tags: ["widget-item"] })',
     );
     expect(routerFile).toContain(
-      'byId: authedProcedure\n    .meta({ openapi: { method: "GET", path: "/widget-item/{id}", summary: "Get a widget item", tags: ["widget-item"] } })\n    .input(widgetItemIdInput)\n    .output(widgetItemSchema)',
+      'byId: authedProcedure\n    .openapi({ path: "/widget-item/{id}", summary: "Get a widget item", tags: ["widget-item"] })\n    .input(widgetItemIdInput)\n    .output(widgetItemSchema)',
     );
     expect(routerFile).toContain(
-      'create: authedProcedure\n    .meta({ openapi: { method: "POST", path: "/widget-item", summary: "Create a widget item", tags: ["widget-item"] } })\n    .input(createWidgetItemInput)\n    .output(widgetItemSchema)',
+      'create: authedProcedure\n    .openapi({ path: "/widget-item", summary: "Create a widget item", tags: ["widget-item"] })\n    .input(createWidgetItemInput)\n    .output(widgetItemSchema)',
     );
     expect(routerFile).toContain(
       'update: authedProcedure\n    .meta({ openapi: { method: "PATCH", path: "/widget-item/{id}", summary: "Update a widget item", tags: ["widget-item"] } })\n    .input(updateWidgetItemInput)\n    .output(widgetItemSchema)',
@@ -973,7 +973,7 @@ export default defineDeploy({
       'delete: authedProcedure\n    .meta({ openapi: { method: "DELETE", path: "/widget-item/{id}", summary: "Delete a widget item", tags: ["widget-item"] } })\n    .input(widgetItemIdInput)\n    .output(widgetItemIdInput)',
     );
     expect(routerFile).toContain(
-      'restore: authedProcedure\n    .meta({ openapi: { method: "POST", path: "/widget-item/{id}/restore", summary: "Restore a widget item", tags: ["widget-item"] } })\n    .input(widgetItemIdInput)\n    .output(widgetItemSchema)',
+      'restore: authedProcedure\n    .openapi({ path: "/widget-item/{id}/restore", summary: "Restore a widget item", tags: ["widget-item"] })\n    .input(widgetItemIdInput)\n    .output(widgetItemSchema)',
     );
     expect(existsSync(join(fixtureCwd, "app", "pages", "widget-item"))).toBe(false);
 

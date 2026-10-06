@@ -9,7 +9,13 @@ const echo = probeNamed("_define-job-check.echo", defineJob({
   },
 }));
 
-const unregistered = defineJob({ version: 3, input: z.object({}), handler: () => {} });
+const unregistered = defineJob({ version: 3, handler: () => {} });
+
+const noInputGiven = probeNamed("_define-job-check.no-input", defineJob({
+  handler: (input) => {
+    seen.push(input ?? "undefined");
+  },
+}));
 
 function nameError() {
   try {
@@ -28,6 +34,8 @@ export default defineEventHandler(async () => {
     registeredSpreadName: { ...echo }.name,
   };
   await echo.run({ version: 1, payload: { title: "Hello", views: 3 } });
+  await noInputGiven.run({ version: 1, payload: {} });
+  await noInputGiven.run({ version: 1 });
 
   try {
     await echo.run({ version: 1, payload: { title: "no", views: -1 } });

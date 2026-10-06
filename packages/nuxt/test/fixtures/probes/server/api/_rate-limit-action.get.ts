@@ -19,7 +19,9 @@ const sharedEcho = probeNamed("_rate-limit-action.shared", defineAction({
 }));
 
 export default defineEventHandler(async (event) => {
-  const { key, shared } = getQuery(event);
+  const { key, shared, guest } = getQuery(event);
+
+  if (guest !== undefined) return limitedPerUser({}, { actor: { type: "guest", id: "guest" } });
 
   if (shared !== undefined) return sharedEcho({ key: String(shared) }, { actor: systemActor("rate-limit-probe") });
 

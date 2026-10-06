@@ -25,7 +25,7 @@ describe("nuxvel upgrade", () => {
 
     expect(unknown.exitCode).toBe(2);
     expect(unknown.stdout).toBe("");
-    expect(stripAnsi(unknown.stderr)).toContain("✖ No codemod named nope\n  → The codemods are test-aliases, imports, use-trpc, invalidate, mutation-options");
+    expect(stripAnsi(unknown.stderr)).toContain("✖ No codemod named nope\n  → The codemods are test-aliases, imports, use-trpc, invalidate, mutation-options, audit");
 
     writeFileSync(join(appDir, "package.json"), "{ not json");
 
@@ -595,6 +595,130 @@ describe("nuxvel upgrade", () => {
       const again = await runCliAt(appDir, "upgrade", "--only", "mutation-options");
 
       expect(again.stdout).not.toContain("report-posts");
+    }, 60000);
+  });
+  describe("audit", () => {
+    it("moves audited() to the audit option of the action the mutation calls, or to audit() in a handler without one, and leaves any other shape as a manual step", async () => {
+      const appDir = scratchPlayground("upgrade-audit");
+      const router = join(appDir, "server", "trpc", "routers", "report.router.ts");
+      const action = join(appDir, "server", "actions", "reports", "archive-report.action.ts");
+      writeFileSync(
+        router,
+        [
+          'import { z } from "zod";',
+          'import { archiveReportAction } from "#server/actions/reports/archive-report.action";',
+          'import { closeReportAction } from "#server/actions/reports/close-report.action";',
+          'import { healthChecksTable, postsTable, userTable } from "#nuxvel/schema";',
+          "",
+          "const auditName = \"user.promoted\";",
+          "",
+          "export const reportRouter = {",
+          "  archive: authedProcedure",
+          "    .input(postIdInput)",
+          '    .use(audited("report.archived", { target: healthChecksTable }))',
+          "    .output(z.void())",
+          "    .mutation(({ input, ctx }) => archiveReportAction(input, { actor: ctx.actor })),",
+          "  rename: authedProcedure",
+          "    .input(z.object({ id: z.number(), title: z.string() }))",
+          '    .use(audited("report.renamed", { target: postsTable }))',
+          "    .output(z.void())",
+          "    .mutation(async ({ input }) => {",
+          "      await useDb().select().from(postsTable).where(eq(postsTable.id, input.id));",
+          "    }),",
+          "  promote: authedProcedure",
+          "    .input(z.object({ id: z.string() }))",
+          "    .use(audited(auditName, { target: userTable }))",
+          "    .output(z.void())",
+          "    .mutation(() => undefined),",
+          "  close: authedProcedure",
+          "    .input(postIdInput)",
+          '    .use(audited("report.closed", { target: postsTable }))',
+          "    .output(z.void())",
+          "    .mutation(({ input }) => closeReportAction(input)),",
+          "};",
+          "",
+        ].join("\n"),
+      );
+      mkdirSync(join(appDir, "server", "actions", "reports"), { recursive: true });
+      const closeAction = ["export const closeReportAction = defineAction({", "  input: postIdInput,", "  handler: async () => {},", "});", ""].join("\n");
+      writeFileSync(join(appDir, "server", "actions", "reports", "close-report.action.ts"), closeAction);
+      mkdirSync(join(appDir, "server", "jobs", "reports"), { recursive: true });
+      writeFileSync(
+        join(appDir, "server", "jobs", "reports", "close-stale.job.ts"),
+        "export const reportsCloseStaleJob = defineJob({ handler: () => $actions.reports.closeReport({ id: 1 }) });\n",
+      );
+      writeFileSync(action, ["export const archiveReportAction = defineAction({", "  input: postIdInput,", "  handler: async () => {},", "});", ""].join("\n"));
+
+      const applied = await runCliAt(appDir, "upgrade", "--only", "audit");
+
+      expect(applied.exitCode, applied.stderr).toBe(0);
+      expect(applied.stdout).toContain("updated: server/trpc/routers/report.router.ts\n");
+      expect(applied.stdout).toContain("updated: server/actions/reports/archive-report.action.ts\n");
+      expect(readFileSync(action, "utf8")).toBe(
+        [
+          "export const archiveReportAction = defineAction({",
+          "  input: postIdInput,",
+          '  audit: { name: "report.archived", target: healthChecksTable },',
+          "  handler: async () => {},",
+          "});",
+          "",
+        ].join("\n").replace(/^/, 'import { healthChecksTable } from "#nuxvel/schema";\n\n'),
+      );
+      expect(readFileSync(router, "utf8")).toBe(
+        [
+          'import { z } from "zod";',
+          'import { archiveReportAction } from "#server/actions/reports/archive-report.action";',
+          'import { closeReportAction } from "#server/actions/reports/close-report.action";',
+          'import { postsTable, userTable } from "#nuxvel/schema";',
+          'import { getTableName } from "drizzle-orm";',
+          "",
+          "const auditName = \"user.promoted\";",
+          "",
+          "export const reportRouter = {",
+          "  archive: authedProcedure",
+          "    .input(postIdInput)",
+          "    .output(z.void())",
+          "    .mutation(({ input, ctx }) => archiveReportAction(input, { actor: ctx.actor })),",
+          "  rename: authedProcedure",
+          "    .input(z.object({ id: z.number(), title: z.string() }))",
+          "    .output(z.void())",
+          "    .mutation(async (opts) => {",
+          "      const result = await (async ({ input }) => {",
+          "      await useDb().select().from(postsTable).where(eq(postsTable.id, input.id));",
+          "    })(opts);",
+          '      await audit("report.renamed", { type: getTableName(postsTable), id: opts.input.id });',
+          "      return result;",
+          "    }),",
+          "  promote: authedProcedure",
+          "    .input(z.object({ id: z.string() }))",
+          "    .use(audited(auditName, { target: userTable }))",
+          "    .output(z.void())",
+          "    .mutation(() => undefined),",
+          "  close: authedProcedure",
+          "    .input(postIdInput)",
+          '    .use(audited("report.closed", { target: postsTable }))',
+          "    .output(z.void())",
+          "    .mutation(({ input }) => closeReportAction(input)),",
+          "};",
+          "",
+        ].join("\n"),
+      );
+      expect(stripAnsi(applied.stderr)).toContain(
+        "▲ server/trpc/routers/report.router.ts:16: audited(\"report.renamed\", { target: postsTable }) became audit() in the handler, which records no changed columns: give it { changes } if the log needs them\n",
+      );
+      expect(stripAnsi(applied.stderr)).toContain(
+        "▲ server/trpc/routers/report.router.ts:23: the name is not a string, or the target is not a table name: move audited(auditName, { target: userTable }) to the audit option of the action, or to audit() in the handler\n",
+      );
+
+      expect(stripAnsi(applied.stderr)).toContain(
+        "▲ server/trpc/routers/report.router.ts:28: server/actions/reports/close-report.action.ts is also called from server/jobs/reports/close-stale.job.ts, so its audit option would audit that call too: move audited(\"report.closed\", { target: postsTable }) to the audit option of the action, or to audit() in the handler\n",
+      );
+      expect(readFileSync(join(appDir, "server", "actions", "reports", "close-report.action.ts"), "utf8")).toBe(closeAction);
+
+      const again = await runCliAt(appDir, "upgrade", "--only", "audit");
+
+      expect(again.exitCode, again.stderr).toBe(0);
+      expect(again.stdout).not.toContain("report");
     }, 60000);
   });
 });

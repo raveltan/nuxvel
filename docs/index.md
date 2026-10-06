@@ -260,7 +260,7 @@ Every server helper is auto-imported. There are no barrel files. [Server auto-im
 - [Backfills](./backfills.md): `defineBackfill()`, `runBackfill()`, resumable data migrations
 - [Redis](./redis.md): `useRedis()`, one connection per purpose
 - [Cache](./cache.md): `remember()`, `cacheForget()`, `cacheFlush()`, tags, `withLock()`
-- [Audit log](./audit.md): `audit()`, `audited()`, redaction, hash chain, retention
+- [Audit log](./audit.md): `audit()`, the `audit` option of an action, redaction, hash chain, retention
 - [Privacy](./privacy.md): `defineUserData()`, `nuxvel user:export`, `nuxvel user:erase`
 - [Storybook](./storybook.md): `.storybook/`, stories next to their components, play functions, component tests, `npm run storybook`, `storybook build`
 - [Progressive web app](./pwa.md): the web app manifest, the service worker, the offline page, `<PwaInstallPrompt>`, `usePush()`, `<PushToggle>`, `sendPush()`

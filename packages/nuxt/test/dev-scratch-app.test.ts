@@ -1,4 +1,5 @@
 import { afterAll, beforeAll } from "vitest";
+import { addWatchedAction } from "./dev-scratch-app/action-mount-watch";
 import { addExtraLocales } from "./dev-scratch-app/extra-locales";
 import { addRoutersDir } from "./dev-scratch-app/router-watch";
 import { addSharedSchema } from "./dev-scratch-app/shared-schemas-watch";
@@ -15,6 +16,7 @@ beforeAll(() => {
   addNamespacesRoute(appDir);
   addRoutersDir(appDir);
   addSharedSchema(appDir);
+  addWatchedAction(appDir);
 });
 afterAll(() => removeScratchApp(appDir));
 

@@ -897,15 +897,9 @@ Add the procedure to the router, next to the generated ones:
 
 ```ts
 // server/trpc/routers/recipe.router.ts
-import { publishRecipeAction } from "#server/actions/recipe/publish-recipe.action";
-```
-
-```ts
-// server/trpc/routers/recipe.router.ts
   publish: authedProcedure
-    .input(recipeIdInput)
     .output(recipeSchema)
-    .mutation(({ input, ctx }) => publishRecipeAction(input, { actor: ctx.actor })),
+    .action($actions.recipe.publishRecipe),
 ```
 
 ### The publish button

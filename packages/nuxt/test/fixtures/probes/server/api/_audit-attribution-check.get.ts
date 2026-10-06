@@ -1,11 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { eq, inArray, type SQL, sql } from "drizzle-orm";
-import { z } from "zod";
 import { auditContextTable, auditLogTable, auditSubjectsTable } from "~~/server/database/schema/audit-log.schema";
 import { userTable } from "~~/server/database/schema/auth.schema";
 
 const post = probeNamed("_audit-attribution-check.post", defineAction({
-  input: z.object({}),
   handler: () => audit("post.created", { id: 1 }),
 }));
 

@@ -298,24 +298,24 @@ export const coursesCourseRouter = {
   create: instructorProcedure
     .input(createCourseInput)
     .output(courseSchema)
-    .mutation(async ({ input, ctx }) => {
-      const row = await createCourseAction(input, { actor: ctx.actor });
+    .mutation(async ({ input }) => {
+      const row = await createCourseAction(input);
       flash("Course created");
       return row;
     }),
   update: instructorProcedure
     .input(updateCourseInput)
     .output(courseSchema)
-    .mutation(async ({ input, ctx }) => {
-      const row = await updateCourseAction(input, { actor: ctx.actor });
+    .mutation(async ({ input }) => {
+      const row = await updateCourseAction(input);
       flash("Course saved");
       return row;
     }),
   delete: instructorProcedure
     .input(courseIdInput)
     .output(courseIdInput)
-    .mutation(async ({ input, ctx }) => {
-      const row = await deleteCourseAction(input, { actor: ctx.actor });
+    .mutation(async ({ input }) => {
+      const row = await deleteCourseAction(input);
       flash("Course deleted");
       return row;
     }),
@@ -405,24 +405,24 @@ export const coursesLessonRouter = {
   create: instructorProcedure
     .input(newLessonInput)
     .output(lessonSchema)
-    .mutation(async ({ input, ctx }) => {
-      const row = await createLessonAction(input, { actor: ctx.actor });
+    .mutation(async ({ input }) => {
+      const row = await createLessonAction(input);
       flash("Lesson created");
       return row;
     }),
   update: instructorProcedure
     .input(updateLessonInput)
     .output(lessonSchema)
-    .mutation(async ({ input, ctx }) => {
-      const row = await updateLessonAction(input, { actor: ctx.actor });
+    .mutation(async ({ input }) => {
+      const row = await updateLessonAction(input);
       flash("Lesson saved");
       return row;
     }),
   delete: instructorProcedure
     .input(lessonIdInput)
     .output(lessonIdInput)
-    .mutation(async ({ input, ctx }) => {
-      const row = await deleteLessonAction(input, { actor: ctx.actor });
+    .mutation(async ({ input }) => {
+      const row = await deleteLessonAction(input);
       flash("Lesson deleted");
       return row;
     }),
@@ -881,16 +881,16 @@ export const learningRouter = {
   enroll: authedProcedure
     .input(courseIdInput)
     .output(z.object({ id: z.number() }))
-    .mutation(async ({ input, ctx }) => {
-      const enrollment = await enrollAction(input, { actor: ctx.actor });
+    .mutation(async ({ input }) => {
+      const enrollment = await enrollAction(input);
       flash("You are enrolled");
       return { id: enrollment.id };
     }),
   completeLesson: authedProcedure
     .input(z.object({ lessonId: z.number().int().positive() }))
     .output(z.object({ finished: z.boolean() }))
-    .mutation(async ({ input, ctx }) => {
-      const enrollment = await completeLessonAction(input, { actor: ctx.actor });
+    .mutation(async ({ input }) => {
+      const enrollment = await completeLessonAction(input);
       return { finished: enrollment.completedAt !== null };
     }),
   progress: authedProcedure
@@ -2258,7 +2258,7 @@ Add a procedure with `openapi` meta to the learning router. It answers at `GET /
 ```ts
 // server/domains/learning/routers/learning.router.ts, in learningRouter
   completions: integrationProcedure
-    .meta({ openapi: { method: "GET", path: "/courses/{courseId}/completions", summary: "List the students who finished a course", tags: ["learning"] } })
+    .openapi({ path: "/courses/{courseId}/completions", summary: "List the students who finished a course", tags: ["learning"] })
     .input(courseIdInput)
     .output(z.array(z.object({ email: z.string(), completedAt: z.date() })))
     .query(async ({ input, ctx }) => {

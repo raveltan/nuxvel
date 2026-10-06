@@ -728,21 +728,19 @@ describe("incidents/post-update action", () => {
 ```ts
 // server/trpc/routers/incident.router.ts
 import { openIncidentAction } from "#server/actions/incidents/open-incident.action";
-import { postUpdateAction } from "#server/actions/incidents/post-update.action";
 
 export const incidentRouter = {
   open: authedProcedure
     .input(openIncidentInput)
     .output(incidentSchema.omit({ updates: true }))
-    .mutation(async ({ input, ctx }) => {
-      const incident = await openIncidentAction(input, { actor: ctx.actor });
+    .mutation(async ({ input }) => {
+      const incident = await openIncidentAction(input);
       flash("Incident opened");
       return incident;
     }),
   postUpdate: authedProcedure
-    .input(postIncidentUpdateInput)
     .output(incidentUpdateSchema)
-    .mutation(({ input, ctx }) => postUpdateAction(input, { actor: ctx.actor })),
+    .action($actions.incidents.postUpdate),
 };
 ```
 

@@ -360,13 +360,11 @@ A router reads, and calls an action to write. Add a router for the answers:
 
 ```ts
 // server/trpc/routers/rsvp.router.ts
-import { sendRsvpAction } from "#server/actions/rsvp/send-rsvp.action";
 
 export const rsvpRouter = {
   send: authedProcedure
-    .input(sendRsvpInput)
     .output(rsvpSchema)
-    .mutation(({ input, ctx }) => sendRsvpAction(input, { actor: ctx.actor })),
+    .action($actions.rsvp.sendRsvp),
 };
 ```
 
@@ -606,12 +604,10 @@ Add the procedure to the event router, after `guests`:
 
 ```ts
 // server/trpc/routers/event.router.ts
-import { inviteGuestAction } from "#server/actions/event/invite-guest.action";
 
   invite: authedProcedure
-    .input(inviteGuestInput)
     .output(z.void())
-    .mutation(({ input, ctx }) => inviteGuestAction(input, { actor: ctx.actor })),
+    .action($actions.event.inviteGuest),
 ```
 
 ### The invite form

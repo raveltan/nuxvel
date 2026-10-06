@@ -14,7 +14,7 @@ function isProcedure(value: unknown): value is AnyProcedure {
 function routerFile(path: string) {
   const files: Record<string, string> = routerFiles;
   const namespace = Object.keys(files)
-    .filter((candidate) => path.startsWith(`${candidate}.`))
+    .filter((candidate) => `${path}.`.startsWith(`${candidate}.`))
     .sort((a, b) => b.length - a.length)[0];
 
   return namespace === undefined ? "@nuxvel/nuxt" : (files[namespace] ?? "");

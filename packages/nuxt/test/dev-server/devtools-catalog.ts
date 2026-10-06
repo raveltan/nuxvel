@@ -66,6 +66,8 @@ describe("the DevTools registry catalog", () => {
     expect(readySection<CatalogPolicy[]>(results, "policies").map((policy) => policy.table)).toEqual([
       "health_checks",
       "posts",
+      "tags",
+      "webhook_endpoints",
     ]);
   });
 
@@ -88,6 +90,7 @@ describe("the DevTools registry catalog", () => {
       rules: [
         { name: "update", allowsSystem: false },
         { name: "probe", allowsSystem: true },
+        { name: "view", allowsSystem: false },
       ],
     });
     expect(definitions.mails.find((mail) => mail.name === "welcome")?.input.properties).toHaveProperty("to");

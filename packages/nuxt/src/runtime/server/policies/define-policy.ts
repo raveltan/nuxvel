@@ -39,7 +39,34 @@ export type PolicyPreload<Row = Record<string, unknown>, Preloaded = unknown> = 
  */
 export function allowSystem<Row, Preloaded>(rule: PolicyRule<Row, Preloaded>): PolicyRule<Row, Preloaded> {
   const wrapped: PolicyRule<Row, Preloaded> = (actor, row, preloaded) => rule(actor, row, preloaded);
-  return Object.assign(wrapped, { allowsSystem: true });
+  return Object.assign(wrapped, rule, { allowsSystem: true });
+}
+
+/**
+ * Marks a rule as reachable by the guest actor, `{ type: "guest" }`: a
+ * signed-out caller of a `"public"` action or of `.action()` on a
+ * {@link publicProcedure}.
+ *
+ * By default {@link can} denies the guest on every rule, so a rule
+ * written for users, such as `() => true` for "any signed-in user", does
+ * not open to visitors. Wrap the rules a visitor may pass. Auto-imported
+ * on the server.
+ *
+ * @example
+ * ```ts
+ * export const commentPolicy = definePolicy(commentsTable, {
+ *   create: allowGuest((actor, comment) => comment.postId !== null),
+ * });
+ * ```
+ */
+export function allowGuest<Row, Preloaded>(rule: PolicyRule<Row, Preloaded>): PolicyRule<Row, Preloaded> {
+  const wrapped: PolicyRule<Row, Preloaded> = (actor, row, preloaded) => rule(actor, row, preloaded);
+  return Object.assign(wrapped, rule, { allowsGuest: true });
+}
+
+/** Whether a rule was wrapped in {@link allowGuest}. Used by {@link can}. */
+export function ruleAllowsGuest(rule: PolicyRule): boolean {
+  return "allowsGuest" in rule && rule.allowsGuest === true;
 }
 
 /** Whether a rule was wrapped in {@link allowSystem}. Used by {@link can}. */

@@ -2,7 +2,7 @@
 
 ## Introduction
 
-nuxvel can serve a tRPC procedure as a plain REST endpoint. Use it for clients that cannot use the tRPC client: a mobile app, a partner, a script. You add an `openapi` entry to the procedure's meta, and the procedure answers at `/api/v1/<path>` with plain JSON. The tRPC call stays as it was. A machine client signs in with an API key. nuxvel uses [`trpc-to-openapi`](https://github.com/mcampa/trpc-to-openapi) for this.
+nuxvel can serve a tRPC procedure as a plain REST endpoint. Use it for clients that cannot use the tRPC client: a mobile app, a partner, a script. You call `.openapi()` on the procedure, and the procedure answers at `/api/v1/<path>` with plain JSON. The tRPC call stays as it was. A machine client signs in with an API key. nuxvel uses [`trpc-to-openapi`](https://github.com/mcampa/trpc-to-openapi) for this.
 
 ## Configuration
 
@@ -31,13 +31,13 @@ import { postTable } from "#nuxvel/schema";
 
 export const postRouter = {
   list: publicProcedure
-    .meta({ openapi: { method: "GET", path: "/posts", summary: "List posts", tags: ["posts"], protect: false } })
+    .openapi({ path: "/posts", summary: "List posts", protect: false })
     .input(paginationSchema.optional())
     .output(paginated(postSchema))
     .query(({ input }) => paginate(useDb().select().from(postTable).orderBy(desc(postTable.id)).$dynamic(), input)),
 
   byId: publicProcedure
-    .meta({ openapi: { method: "GET", path: "/posts/{id}", summary: "Get a post", tags: ["posts"], protect: false } })
+    .openapi({ path: "/posts/{id}", summary: "Get a post", protect: false })
     .input(postIdInput)
     .output(postSchema)
     .query(({ input }) => findOrFail(postTable, input.id)),
@@ -49,7 +49,22 @@ GET /api/v1/posts      → 200 { "rows": [{ "id": 1, "title": "Hello", ... }], "
 GET /api/v1/posts/1    → 200 { "id": 1, "title": "Hello", ... }
 ```
 
-`method` is `GET`, `POST`, `PATCH`, `PUT` or `DELETE`. `path` starts with `/` and comes after `api.restPrefix`. `summary` and `tags` are optional. A procedure without `openapi` meta has no REST endpoint. Use `GET` only for a query. nuxvel rejects a mutation that a link from another site opens (`403 Cross-origin mutation rejected`). To change state from a link in a mail, use a [signed URL](./security.md#signed-urls).
+`.openapi(options)` works on every procedure builder, also before [`.action()`](./api.md#running-an-action). It takes the `openapi` meta of `trpc-to-openapi` without `method`:
+
+| Option | Default |
+|---|---|
+| `path` | The procedure path, with each segment in kebab-case: `post.byId` is `/post/by-id`. A path starts with `/` and comes after `api.restPrefix`. |
+| `summary` | None |
+| `tags` | The first segment of the procedure path: `["post"]` for `post.byId` |
+| `protect` | `true`. See below. |
+
+A query answers `GET` and a mutation `POST`. A procedure without `.openapi()` has no REST endpoint.
+
+```ts
+update: authedProcedure.openapi({ path: "/posts/{id}" }).output(postSchema).action($actions.posts.updatePost),
+```
+
+To choose another method, such as `PATCH` or `DELETE`, set the meta by hand: `.meta({ openapi: { method: "PATCH", path: "/posts/{id}" } })`. `method` is `GET`, `POST`, `PATCH`, `PUT` or `DELETE`, and `path` is required there. Use `GET` only for a query. nuxvel rejects a mutation that a link from another site opens (`403 Cross-origin mutation rejected`). To change state from a link in a mail, use a [signed URL](./security.md#signed-urls).
 
 `postSchema` is the row schema that `nuxvel make:schema` writes in `shared/schemas/post.ts`. Its type is `PostRow`, and it has no input rules, so every row that the database returns passes the output check. Use a row schema, not an input schema, as the output schema. See [Validation: naming](./validation.md#naming). `paginated(postSchema)` is the schema of the page that [`paginate()`](./database.md#pagination) returns.
 
@@ -82,7 +97,7 @@ GET /api/v1/openapi.json
 → { "openapi": "3.1.0", "info": { "title": "Blog API", ... }, "servers": [{ "url": "/api/v1" }], "paths": { "/posts": ... } }
 ```
 
-With `api.openapi` set, nuxvel serves an OpenAPI 3.1 document at `<restPrefix>/openapi.json`. It lists every procedure with `openapi` meta. The input and output schemas become the request and response schemas. The `operationId` is the procedure path with dashes, such as `post-byId`.
+With `api.openapi` set, nuxvel serves an OpenAPI 3.1 document at `<restPrefix>/openapi.json`. It lists every procedure with `.openapi()` or `openapi` meta. The input and output schemas become the request and response schemas. The `operationId` is the procedure path with dashes, such as `post-byId`.
 
 Give the document to a client generator, or write it to a file with [`nuxvel openapi:export`](./cli.md#nuxvel-openapiexport-file):
 

@@ -1,9 +1,7 @@
 import { type SQL, sql } from "drizzle-orm";
-import { z } from "zod";
 import { auditLogTable } from "~~/server/database/schema/audit-log.schema";
 
 const writeFour = probeNamed("_audit-chain-check.writeFour", defineAction({
-  input: z.object({}),
   handler: async () => {
     await audit("post.drafted", { id: 1 });
     await audit("post.created", { id: 1 });

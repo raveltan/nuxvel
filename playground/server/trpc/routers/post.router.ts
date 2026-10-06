@@ -1,9 +1,6 @@
 import { and, desc, getTableColumns, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { createPostAction } from "#server/actions/posts/create-post.action";
-import { deletePostAction } from "#server/actions/posts/delete-post.action";
-import { restorePostAction } from "#server/actions/posts/restore-post.action";
-import { updatePostAction } from "#server/actions/posts/update-post.action";
 import { userTable } from "#nuxvel/schema";
 import { postsTable } from "#nuxvel/schema";
 import { postPolicy } from "#server/policies/post.policy";
@@ -14,7 +11,7 @@ const postOutputSchema = postSchema.extend({ deletedAt: z.coerce.date().nullable
 
 export const postRouter = {
   list: publicProcedure
-    .meta({ openapi: { method: "GET", path: "/posts", summary: "List posts", tags: ["posts"], protect: false } })
+    .openapi({ path: "/posts", summary: "List posts", tags: ["posts"], protect: false })
     .input(paginationSchema.optional())
     .output(paginated(postOutputSchema))
     .query(({ input }) => {
@@ -44,7 +41,7 @@ export const postRouter = {
       }),
     ),
   byId: publicProcedure
-    .meta({ openapi: { method: "GET", path: "/posts/{id}", summary: "Get a post", tags: ["posts"], protect: false } })
+    .openapi({ path: "/posts/{id}", summary: "Get a post", tags: ["posts"], protect: false })
     .input(postIdInput)
     .output(postOutputSchema)
     .query(({ input }) => findOrFail(postsTable, input.id)),
@@ -79,34 +76,16 @@ export const postRouter = {
       return rows.map((post, index) => ({ id: post.id, can: abilities[index] }));
     }),
   create: authedProcedure
-    .meta({ openapi: { method: "POST", path: "/posts", summary: "Create a post", tags: ["posts"] } })
+    .openapi({ path: "/posts", summary: "Create a post", tags: ["posts"] })
     .use(idempotent())
     .input(createPostInput)
     .output(postOutputSchema)
-    .mutation(async ({ input, ctx }) => {
-      const post = await createPostAction(input, { actor: ctx.actor });
+    .mutation(async ({ input }) => {
+      const post = await createPostAction(input);
       flash("Post created");
       return post;
     }),
-  update: authedProcedure
-    .input(updatePostInput)
-    .output(postOutputSchema)
-    .use(audited("post.updated", { target: postsTable }))
-    .mutation(({ input, ctx }) =>
-      updatePostAction(input, { actor: ctx.actor }),
-    ),
-  delete: authedProcedure
-    .input(postIdInput)
-    .output(postIdInput)
-    .use(audited("post.deleted", { target: postsTable }))
-    .mutation(({ input, ctx }) =>
-      deletePostAction(input, { actor: ctx.actor }),
-    ),
-  restore: authedProcedure
-    .input(postIdInput)
-    .output(postOutputSchema)
-    .use(audited("post.restored", { target: postsTable }))
-    .mutation(({ input, ctx }) =>
-      restorePostAction(input, { actor: ctx.actor }),
-    ),
+  update: authedProcedure.output(postOutputSchema).action($actions.posts.updatePost),
+  delete: authedProcedure.output(postIdInput).action($actions.posts.deletePost),
+  restore: authedProcedure.output(postOutputSchema).action($actions.posts.restorePost),
 };

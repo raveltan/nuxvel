@@ -20,7 +20,7 @@ async function subjectOrId(id: string | undefined) {
 /**
  * Asserts the app wrote an `audit_log` row for `action` whose columns
  * include `match`, and returns it — the test-side counterpart of the
- * server's {@link audit} and {@link audited}.
+ * server's {@link audit} and of the `audit` option of {@link defineAction}.
  *
  * Reads the `audit_log` table from the app's `server/database/schema/`.
  * `audit()` stores a user as a subject ID; pass the user's ID as `actorId` or `targetId`

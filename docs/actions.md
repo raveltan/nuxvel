@@ -14,10 +14,7 @@ nuxvel make:action posts/create-post
 
 ```ts
 // server/actions/posts/create-post.action.ts
-import { z } from "zod";
-
 export const createPostAction = defineAction({
-  input: z.object({}),
   handler: async () => {},
 });
 ```
@@ -74,23 +71,65 @@ export const archivePostAction = defineAction({
 
 The test then calls the action with a sample value for each field, here `{ postId: 1, reason: "Sample text" }`. See [CLI: fields](./cli.md#fields).
 
+An action that takes no input leaves `input` out. It then takes `{}` or `undefined`:
+
+```ts
+// server/actions/posts/publish-all.action.ts
+import { postTable } from "#nuxvel/schema";
+
+export const publishAllAction = defineAction({
+  handler: async () => useDb().update(postTable).set({ publishedAt: new Date() }),
+});
+```
+
 A file that exports more than one action fails at boot. An action defined outside `server/actions/` throws when you call it. `nuxvel test:arch` reports a file whose export name does not match its file name.
+
+## Serving an action as a procedure
+
+```ts
+// server/actions/posts/update-post.action.ts
+export const updatePostAction = defineAction({
+  input: updatePostInput,
+  procedure: "authed",
+  output: postSchema,
+  handler: async (input) => { /* ... */ },
+});
+```
+
+With `procedure`, the action is also a tRPC mutation at its path, with no router: `server/actions/posts/update-post.action.ts` is `posts.updatePost`. The client calls it as `$api.posts.updatePost`, with the types of the action, and `nuxvel routes` lists it with the action file.
+
+| `procedure` | The mutation is |
+|---|---|
+| `"public"` | `publicProcedure.output(output).action(action)` |
+| `"authed"` | `authedProcedure.output(output).action(action)` |
+| `"admin"` | `adminProcedure.output(output).action(action)` |
+| a builder, such as `roleProcedure(["editor"])` | `builder.output(output).action(action)` |
+
+`output` is the schema of what the mutation sends, as `.output()` of a router procedure. A field that it does not list, such as a password hash, never reaches the client, and the `$api` type has only its fields. A call from server code still gets the whole result of the handler. `nuxvel test:arch` reports an action with `procedure` and no `output`.
+
+The input is the input schema of the action, and a [typed failure](#typed-failures) reaches the client as it is. See [API: running an action](./api.md#running-an-action). The action runs as the caller. A signed-out caller of a `"public"` action is the actor `{ type: "guest", id: "guest" }`. Policies deny it unless the rule is wrapped in [`allowGuest()`](./authorization.md#guests), and `rateLimit` with `by: "user"` counts it by its IP.
+
+When a router has the namespace of the action, the action is added to that router: the `posts` router keeps its own procedures beside `posts.updatePost`. A router key or a router file at the path of the action fails the build, and the error names both files.
+
+The build reads `procedure` from the object literal of `defineAction({ ... })`. An action defined with a variable, `defineAction(config)`, is not mounted. An action without `procedure` is not served. Call it from a router when the procedure needs its own middleware, its own OpenAPI path or more work around the action. See [API: running an action](./api.md#running-an-action).
 
 ## Calling an action
 
 ```ts
 // server/trpc/routers/post.router.ts
-import { createPostAction } from "#server/actions/posts/create-post.action";
-
 export const postRouter = {
   create: authedProcedure
     .input(createPostInput)
     .output(postSchema)
-    .mutation(({ input, ctx }) => createPostAction(input, { actor: ctx.actor })),
+    .mutation(async ({ input }) => {
+      const post = await $actions.posts.createPost(input);
+      flash("Post created");
+      return post;
+    }),
 };
 ```
 
-Import the action and call it with its input and a context that holds the actor. The call returns a promise of what the handler returns.
+Call the action from `$actions`, or import it, with its input. The call returns a promise of what the handler returns. In a procedure, the action runs as the caller. See [The actor](#the-actor).
 
 The caller passes the input type of the schema. The handler gets the parsed output. The action parses the input once, so pass the raw value, not a value that you parsed already. Async refinements and transforms also work:
 
@@ -122,12 +161,11 @@ Set `transaction: false` to run the handler without a transaction, for example f
 ## The actor
 
 ```ts
-await createPostAction(input, { actor: ctx.actor });
 await createPostAction(input, { actor: userActor(user) });
 await createPostAction(input, { actor: systemActor("backfill-job") });
 ```
 
-Name the actor that does the work in every top-level call. This is a call from a procedure, a route, a task or a seed script.
+Name the actor that does the work in every top-level call outside a procedure: a call from a route, a task or a seed script.
 
 ```ts
 export const publishPostAction = defineAction({
@@ -136,11 +174,11 @@ export const publishPostAction = defineAction({
 });
 ```
 
-Inside an action or a procedure, you can omit the second argument. The called action then runs as the actor of the running action or procedure. If no actor is in scope, the call throws `defineAction: actor is required`.
+Inside an action, a procedure or a job, omit the second argument. The called action then runs as the actor of the running action, procedure or job. If no actor is in scope, the call throws `defineAction: actor is required`.
 
 The second argument of the handler also has `locale`, the locale of the request. A caller can give another locale: `createPostAction(input, { actor, locale: "zh" })`. See [Internationalization: the locale on the server](./i18n.md#the-locale-on-the-server).
 
-An actor is `{ type, id, role?, userId? }`. An API-key actor has the type `"api-key"`, and `userId` is the owner of the key. In a procedure, use `ctx.actor` from `authedProcedure`. Outside a procedure, use `userActor(user)`. It keeps the user's `role`, so policy rules that check `actor.role` see it. For work with no user, such as a job, a task or a seed script, use `systemActor(name)`. The name identifies the process in traces and audit rows.
+An actor is `{ type, id, role?, userId? }`. An API-key actor has the type `"api-key"`, and `userId` is the owner of the key. In a procedure, the actor is the caller, and `ctx.actor` holds it for a policy check. Outside a procedure, use `userActor(user)`. It keeps the user's `role`, so policy rules that check `actor.role` see it. For work with no user, such as a job, a task or a seed script, use `systemActor(name)`. The name identifies the process in traces and audit rows.
 
 ```ts
 const { actor } = await useAuth();
@@ -288,6 +326,19 @@ export const updatePostAction = defineAction({
 ```
 
 A function gets the result of the handler and the parsed input, and returns the tags. Write it after `handler`: TypeScript reads the result type of the handler first. A mutation that runs the action names its tags in its response, see [API](./api.md#what-a-mutation-invalidates).
+
+### Auditing the change
+
+```ts
+export const publishPostAction = defineAction({
+  input: postIdInput,
+  audit: "post.published",
+  handler: async ({ id }) =>
+    useDb().update(postTable).set({ publishedAt: new Date() }).where(eq(postTable.id, id)).returning().then(firstOrFail),
+});
+```
+
+`audit` writes an [audit-log](./audit.md) row in the transaction of the action, after the handler returns. A name audits the row that the handler returns. `{ name, target: postTable }` audits the row with the ID `input.id`, with the columns that changed. See [Audit log: auditing an action](./audit.md#auditing-an-action).
 
 ## Action rules
 

@@ -325,8 +325,8 @@ export const postRouter = {
   create: authedProcedure
     .input(createPostInput)
     .output(postSchema)
-    .mutation(async ({ input, ctx }) => {
-      const post = await createPostAction(input, { actor: ctx.actor });
+    .mutation(async ({ input }) => {
+      const post = await createPostAction(input);
       flash("Post created");
       return post;
     }),

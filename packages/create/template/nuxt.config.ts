@@ -20,7 +20,7 @@ export default defineNuxtConfig({
         { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
       ],
     },
-    // Serves /api/v1/openapi.json for procedures with .meta({ openapi }), and its reference page at /api/v1/docs.
+    // Serves /api/v1/openapi.json for procedures with .openapi(), and its reference page at /api/v1/docs.
     // docs: true also serves the reference page in production.
     // api: { restPrefix: '/api/v1', openapi: { title: 'nuxvel API', version: '1.0.0' }, docs: false },
     queue: { outboxRetention: '7 days' },

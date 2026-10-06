@@ -3,6 +3,7 @@ import type { RateLimit } from "../security/define-rate-limit";
 import { ipKey, requestEvent } from "../security/rate-limit-key";
 import { type RateLimitName, sharedLimit } from "../security/rate-limit-registry";
 import { type RateLimitWindow, checkedPoints, windowSeconds } from "../security/rate-limit-window";
+import { GUEST_ACTOR_TYPE } from "./guest-actor";
 import type { Actor } from "./system-actor";
 
 type ActionRateLimitBy<Input> = "ip" | "user" | ((ctx: { input: Input; actor: Actor }) => string);
@@ -22,7 +23,8 @@ export type ActionRateLimit<Input> =
       window: RateLimitWindow;
       /**
        * Who shares one budget: `"ip"` (needs a request), `"user"` (needs a
-       * user actor) or a function of the parsed `input` and the `actor`.
+       * user actor, and counts the guest actor by its IP) or a function of
+       * the parsed `input` and the `actor`.
        */
       by: ActionRateLimitBy<Input>;
     }
@@ -34,7 +36,7 @@ export type ActionRateLimit<Input> =
     };
 
 function actionKey<Input>(actionName: string, by: ActionRateLimitBy<Input>, input: Input, actor: Actor) {
-  if (by === "ip") return ipKey(requestEvent(`the action ${actionName}`));
+  if (by === "ip" || (by === "user" && actor.type === GUEST_ACTOR_TYPE)) return ipKey(requestEvent(`the action ${actionName}`));
   if (by !== "user") return by({ input, actor });
 
   if (actor.type !== "user") {

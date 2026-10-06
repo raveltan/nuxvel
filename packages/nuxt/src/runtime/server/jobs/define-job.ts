@@ -13,6 +13,7 @@ import { publishChannelMessage } from "../realtime/streams/publish-message";
 import { type Upcaster, fromJobPayload, upcastPayload } from "./payload";
 import { isRetryableJobError } from "./retryable";
 import { classifyError } from "../errors/classify";
+import { noInput } from "../actions/no-input";
 
 /** Who may follow a job on its channel: the `channel` option of {@link defineJob}. */
 export interface JobChannel {
@@ -55,7 +56,7 @@ interface JobConfig<Schema extends z.ZodType, Result> {
   timeout?: number;
   unique?: (payload: z.input<Schema>) => string;
   limiter?: RateLimiterOptions;
-  input: Schema;
+  input?: Schema;
   handler: (input: z.infer<Schema>, context: JobContext) => Result;
 }
 
@@ -135,7 +136,8 @@ export interface JobContext {
  * queue, so give the job its own `queue`. The jobs of one queue cannot
  * set different limiters.
  * @param config.input Zod schema for the current version; the handler
- * receives the parsed value.
+ * receives the parsed value. Without it the job takes `{}` or
+ * `undefined`.
  * @param config.channel Lets the browser follow each run with
  * `useJobChannel(name)`. Each run broadcasts on the channel of the user
  * who dispatched it, `job:<name>:<userId>`. Only that user may listen,
@@ -171,7 +173,7 @@ export interface JobContext {
  * });
  * ```
  */
-export function defineJob<Schema extends z.ZodType, Result>(
+export function defineJob<Schema extends z.ZodType = typeof noInput, Result = unknown>(
   config: JobConfig<Schema, Result> & { channel: JobChannel },
 ): Job<string, Schema, Awaited<Result>> & { channel: JobChannel };
 /**
@@ -179,13 +181,15 @@ export function defineJob<Schema extends z.ZodType, Result>(
  * the overload taking `channel` for everything else {@link defineJob}
  * does.
  */
-export function defineJob<Schema extends z.ZodType, Result>(
+export function defineJob<Schema extends z.ZodType = typeof noInput, Result = unknown>(
   config: JobConfig<Schema, Result> & { channel?: undefined },
 ): Job<string, Schema, Awaited<Result>> & { channel?: undefined };
-export function defineJob<Schema extends z.ZodType, Result>(
+export function defineJob<Schema extends z.ZodType = typeof noInput, Result = unknown>(
   config: JobConfig<Schema, Result> & { channel?: JobChannel },
 ): Job<string, Schema, Awaited<Result>> {
   const version = config.version ?? 1;
+  // Schema falls back to typeof noInput exactly when config.input is omitted
+  const input = config.input ?? (noInput as unknown as Schema);
   const channel = config.channel;
 
   async function announce(owner: string | undefined, event: string, payload: unknown) {
@@ -205,7 +209,7 @@ export function defineJob<Schema extends z.ZodType, Result>(
       queue: config.queue ?? "default",
       version,
       upcasters: Object.keys(config.upcasters ?? {}).map(Number),
-      input: config.input,
+      input,
       channel,
       attempts: config.attempts,
       backoff: config.backoff,
@@ -223,7 +227,7 @@ export function defineJob<Schema extends z.ZodType, Result>(
           const payload = upcastPayload(envelope, version, config.upcasters ?? {}, `Job "${job.name}"`);
 
           result = await runAs(dispatcher, async () => {
-            const parsed = await config.input.safeParseAsync(payload);
+            const parsed = await input.safeParseAsync(payload);
 
             if (!parsed.success) throw new ValidationFailedError(parsed.error);
 

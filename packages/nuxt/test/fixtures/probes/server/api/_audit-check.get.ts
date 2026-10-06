@@ -1,8 +1,6 @@
-import { z } from "zod";
 import { auditLogTable } from "~~/server/database/schema/audit-log.schema";
 
 const rolledBack = probeNamed("_audit-check.rolledBack", defineAction({
-  input: z.object({}),
   handler: async () => {
     await audit("post.created", { id: 1 });
     throw new Error("boom");
@@ -10,14 +8,12 @@ const rolledBack = probeNamed("_audit-check.rolledBack", defineAction({
 }));
 
 const committed = probeNamed("_audit-check.committed", defineAction({
-  input: z.object({}),
   handler: async () => {
     await audit("post.updated", { id: 2 }, { changes: { title: "new" } });
   },
 }));
 
 const typed = probeNamed("_audit-check.typed", defineAction({
-  input: z.object({}),
   handler: () => audit("moderation.hidden", { type: "posts", id: 3 }),
 }));
 

@@ -12,7 +12,6 @@ const doThing = probeNamed("_action-fail-check.doThing", defineAction({
 }));
 
 const doOtherThing = probeNamed("_action-fail-check.doOtherThing", defineAction({
-  input: z.object({}),
   errors: {
     "thing.notFound": "Other thing not found",
   },

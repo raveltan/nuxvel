@@ -64,7 +64,7 @@ await audit("user.updated", { type: "user", id: user.id }, {
 // changes: { email: { changed: true } }
 ```
 
-This applies when the `type` of the target is the name of the declared table, as with [`audited()`](./audit.md#auditing-a-mutation). A `create-nuxvel` app marks `name` and `email` of the `user` table as personal.
+This applies when the `type` of the target is the name of the declared table, as with the [`audit` option](./audit.md#auditing-an-action) of an action. A `create-nuxvel` app marks `name` and `email` of the `user` table as personal.
 
 ## Framework tables
 
@@ -164,10 +164,7 @@ After it writes `user.erased`, the erasure deletes the `audit_subjects` row of t
 
 ```ts
 // server/actions/account/erase-account.action.ts
-import { z } from "zod";
-
 export const eraseAccountAction = defineAction({
-  input: z.object({}),
   handler: async (_input, ctx) => eraseUserData(ctx.actor.id),
 });
 ```

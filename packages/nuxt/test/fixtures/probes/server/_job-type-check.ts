@@ -1,5 +1,3 @@
-import { z } from "zod";
-
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
 export const jobNameIsTyped: IsAny<JobName> extends true
@@ -43,7 +41,6 @@ export const nestedJobIsReachable: Job = $jobs.post.notifyFollowers;
 type Equals<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
 
 export const jobDispatcherIsTyped = defineJob({
-  input: z.object({}),
   handler: (_input, { dispatcher }) => {
     const dispatcherIsActor: Equals<typeof dispatcher, Actor | null> extends true ? true : never = true;
 

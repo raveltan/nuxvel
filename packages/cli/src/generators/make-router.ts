@@ -38,8 +38,8 @@ function mutation(procedure: string, input: string, action: string, message: str
   return [
     `  ${procedure}: authedProcedure${meta}`,
     `    .input(${input})${output}`,
-    "    .mutation(async ({ input, ctx }) => {",
-    `      const row = await ${action}(input, { actor: ctx.actor });`,
+    "    .mutation(async ({ input }) => {",
+    `      const row = await ${action}(input);`,
     `      flash("${message}");`,
     "      return row;",
     "    }),",
@@ -69,9 +69,11 @@ function routerValues(name: string, options: CrudOptions, actionsImport: string,
   const article = /^[aeiou]/.test(lower) ? "an" : "a";
   const base = `/${registeredName(name, options.domain).replace(".", "/")}`;
   const meta = (method: string, path: string, summary: string) =>
-    options.openapi
-      ? `\n    .meta({ openapi: { method: "${method}", path: "${base}${path}", summary: "${summary}", tags: ["${name}"] } })`
-      : "";
+    !options.openapi
+      ? ""
+      : method === "GET" || method === "POST"
+        ? `\n    .openapi({ path: "${base}${path}", summary: "${summary}", tags: ["${name}"] })`
+        : `\n    .meta({ openapi: { method: "${method}", path: "${base}${path}", summary: "${summary}", tags: ["${name}"] } })`;
   const output = (schema: string) => `\n    .output(${schema})`;
   const rowOutput = output(`${table}Schema`);
 

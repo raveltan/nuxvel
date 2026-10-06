@@ -152,6 +152,16 @@ export const postPolicy = definePolicy(postTable, {
 
 Policies deny a `systemActor(...)` by default. Wrap a rule in `allowSystem()` when system actors, such as a job or a scheduled task, must pass it. The wrapped rule still runs, so it can check the row.
 
+## Guests
+
+```ts
+export const commentPolicy = definePolicy(commentTable, {
+  create: allowGuest((actor, comment) => comment.postId !== null),
+});
+```
+
+A signed-out caller of a `"public"` action, or of `.action()` on a `publicProcedure`, runs as the guest actor `{ type: "guest", id: "guest" }`. See [Actions: serving an action as a procedure](./actions.md#serving-an-action-as-a-procedure). Policies deny the guest by default, so a rule written for users does not open to visitors. Wrap a rule in `allowGuest()` when a visitor may pass it. The wrapped rule still runs, so it can check the row.
+
 ## Preloading data for rules
 
 ```ts

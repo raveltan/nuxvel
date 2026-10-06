@@ -354,7 +354,7 @@ nuxvel test:arch
 - A `.vue` file under `app/` does not use `v-html`. Render user HTML with `<SafeHtml :html>`, see [Frontend: rendering HTML](./frontend.md#rendering-html).
 - A `.vue` or `.ts` file under `app/` uses a route name, not an internal path string, in a link. The rule checks the `to` of `<NuxtLink>`, `<ULink>` and `<UButton>`, and the first argument of `navigateTo()`, `router.push()` and `router.replace()`. It flags a string or a template literal that starts with `/`, for example `to="/sign-in"`. Use `:to="{ name: 'sign-in' }"`: the typecheck then fails when the page moves. Paths under `/api`, `/webhooks` and `/_nuxvel`, and full URLs, are correct.
 - Each translation file of the default locale, for example `locales/en.json` or `locales/pages/posts/en.json`, has a file next to it for each other locale of `i18n.locales`, with each of its keys. Two layers of the app do not give the same key of the default locale different texts. A literal key in a `.vue` or `.ts` file under `app/` is in a translation file of the default locale: the first argument of `$t`, `$ts`, `$tc`, `t`, `ts` and `tc`, both strings of a `cond ? "a" : "b"` argument, and the `keypath` of `<i18n-t>`. The rule `nuxvel/translation-keys` checks the keys; it skips a key built at runtime, such as `` $t(`status.${state}`) ``. See [Internationalization: missing translations](./i18n.md#missing-translations).
-- A `.ts` file under `server/**` does not read the audit tables. It does not import `auditLogTable`, `auditSubjectsTable`, `auditContextTable` or the `audit-log.schema` file, and it does not read these names as a property (for example `schema.auditLogTable` after `import * as schema from "#nuxvel/schema"`). It does not call `schemaTable()` with `"audit_log"`, `"audit_subjects"` or `"audit_context"`. No `sql` template and no `sql.raw()` string in it names these tables. The audit log is for compliance only. A feature that shows history keeps its own table, see [Audit log: showing history in the app](./audit.md#showing-history-in-the-app). The rule skips `server/database/schema/audit-log.schema.ts` and test files. Writes with `audit()` and `audited()` are correct.
+- A `.ts` file under `server/**` does not read the audit tables. It does not import `auditLogTable`, `auditSubjectsTable`, `auditContextTable` or the `audit-log.schema` file, and it does not read these names as a property (for example `schema.auditLogTable` after `import * as schema from "#nuxvel/schema"`). It does not call `schemaTable()` with `"audit_log"`, `"audit_subjects"` or `"audit_context"`. No `sql` template and no `sql.raw()` string in it names these tables. The audit log is for compliance only. A feature that shows history keeps its own table, see [Audit log: showing history in the app](./audit.md#showing-history-in-the-app). The rule skips `server/database/schema/audit-log.schema.ts` and test files. Writes with `audit()` and the `audit` option of an action are correct.
 - A functional test does not read the HTML of a page. The rule flags a `$fetch` of a page path, a `$fetch<string>` of a path that is not a string literal, and `.text()` on the response of a `fetch` of a page path or of a `fetch` with an `accept: text/html` header. A page path starts with `/`, is not under `/api`, `/webhooks` or `/_nuxvel`, and has no file extension, also at the end of a template string such as `` `/locales/${locale}/data.json` ``. Check what a page shows in a story `play` function (`nuxvel test:ui`) or with `visit()` (`nuxvel test:e2e`). `getMeta()`, reads under `/api`, `/robots.txt`, and checks of the status or the `location` of a page response are correct. A functional test is a `.ts` file under `tests/` but not under `tests/e2e/`, or a `.test.ts` file under `server/`.
 - A `.ts` or `.vue` file under `server/`, `app/`, `shared/` or `tests/` does not climb with `../` out of its kind folder (`server/actions/`, `server/database/schema/`, `app/components/`, `tests/`, ...) into another one. It imports a table from `#nuxvel/schema`, a factory from `#nuxvel/factories`, other server code from `#server/*`, `shared/` from `#shared/*` and `app/` from `~/*`. A file in `app/` or `server/` does not import `shared/schemas/`, whose exports are auto-imported there. `nuxvel upgrade --only imports` fixes both, see [Imports](./auto-imports.md#imports).
 - A test file or a story does not import `expect` from `vitest`, `playwright/test`, `@playwright/test` or `storybook/test`. A test imports `expect` from `@nuxvel/nuxt/testing`, and a story imports it from `@nuxvel/nuxt/storybook/test`. The built-in ESLint rule `no-restricted-imports` makes this check. It covers the `.ts` files under `tests/`, the `.test.ts` files under `server/` and the `.stories.ts` files under `app/`.
@@ -1112,10 +1112,7 @@ nuxvel make:action posts/archive-post
 
 ```ts
 // server/actions/posts/archive-post.action.ts
-import { z } from "zod";
-
 export const archivePostAction = defineAction({
-  input: z.object({}),
   handler: async () => {},
 });
 ```
@@ -1136,7 +1133,7 @@ nuxvel make:router blog-post --crud
 export const blogPostRouter = {};
 ```
 
-With `--crud`, it also writes what `make:schema` and `make:policy` write, and three actions: `create-<name>.action.ts`, `update-<name>.action.ts` and `delete-<name>.action.ts`. The table gets an `ownerId` column that references `userTable.id`, and an index on that column, `<table>_owner_id_idx`. Postgres does not index a foreign key column for you. These actions have no test file. The delete action removes the row from the table. The policy lets the owner or an admin update and delete a row. The router then connects `list` and `byId` queries and `create`, `update` and `delete` mutations to the actions and the policy. This sample leaves out the `.meta({ openapi })` of each procedure, as `--no-openapi` does:
+With `--crud`, it also writes what `make:schema` and `make:policy` write, and three actions: `create-<name>.action.ts`, `update-<name>.action.ts` and `delete-<name>.action.ts`. The table gets an `ownerId` column that references `userTable.id`, and an index on that column, `<table>_owner_id_idx`. Postgres does not index a foreign key column for you. These actions have no test file. The delete action removes the row from the table. The policy lets the owner or an admin update and delete a row. The router then connects `list` and `byId` queries and `create`, `update` and `delete` mutations to the actions and the policy. This sample leaves out the `.openapi()` of each procedure, as `--no-openapi` does:
 
 ```ts
 // server/trpc/routers/blog-post.router.ts
@@ -1168,24 +1165,24 @@ export const blogPostRouter = {
   create: authedProcedure
     .input(createBlogPostInput)
     .output(blogPostSchema)
-    .mutation(async ({ input, ctx }) => {
-      const row = await createBlogPostAction(input, { actor: ctx.actor });
+    .mutation(async ({ input }) => {
+      const row = await createBlogPostAction(input);
       flash("Blog post created");
       return row;
     }),
   update: authedProcedure
     .input(updateBlogPostInput)
     .output(blogPostSchema)
-    .mutation(async ({ input, ctx }) => {
-      const row = await updateBlogPostAction(input, { actor: ctx.actor });
+    .mutation(async ({ input }) => {
+      const row = await updateBlogPostAction(input);
       flash("Blog post saved");
       return row;
     }),
   delete: authedProcedure
     .input(blogPostIdInput)
     .output(blogPostIdInput)
-    .mutation(async ({ input, ctx }) => {
-      const row = await deleteBlogPostAction(input, { actor: ctx.actor });
+    .mutation(async ({ input }) => {
+      const row = await deleteBlogPostAction(input);
       flash("Blog post deleted");
       return row;
     }),
@@ -1217,7 +1214,7 @@ These flags change what `--crud` writes. `--soft-deletes` and `--searchable` nee
 | --- | --- |
 | `--soft-deletes` | Adds `...softDeletes()` to the table. The delete action trashes the row with `softDelete()` and keeps it. Adds a `restore-<name>` action, a `restore` mutation and a `restore` rule to the policy. `list` leaves out trashed rows with `notTrashed()`. See [Soft deletes](./soft-deletes.md). |
 | `--searchable <columns>` | Adds a `text` column for each name, as `make:schema --searchable` does. `list` matches the search text `q` with `search()` and orders by `searchRank()`. The update action saves the fields. See [Full-text search](./search.md). |
-| `--no-openapi` | Leaves out the `.meta({ openapi })` of each procedure. The `.output()` schemas stay. Without this flag, every procedure is a REST endpoint (see below). See [REST and OpenAPI](./openapi.md). |
+| `--no-openapi` | Leaves out the `.openapi()` of each procedure. The `.output()` schemas stay. Without this flag, every procedure is a REST endpoint (see below). See [REST and OpenAPI](./openapi.md). |
 
 ```sh
 nuxvel make:router blog-post --crud --soft-deletes --searchable title,body
@@ -1225,7 +1222,7 @@ nuxvel make:router blog-post --crud --soft-deletes --searchable title,body
 
 Each procedure gets an `.output()` schema, with or without `--no-openapi`. The schema removes every field that it does not list, so a column that you add to the table later does not reach the browser until you add it to `blogPostSchema`. A one-line comment above `blogPostSchema` in `shared/schemas/blog-post.ts` says this. Remove from the schema each column that a caller must not see, for example a token.
 
-By default, each procedure also gets `.meta({ openapi })` and answers as a REST endpoint under `api.restPrefix`:
+By default, each procedure also gets `.openapi()` and answers as a REST endpoint under `api.restPrefix`:
 
 | Procedure | REST endpoint | Output |
 | --- | --- | --- |
@@ -1241,7 +1238,7 @@ Every procedure needs a session or an [API key](./openapi.md#api-keys). With `--
 ```ts
 // server/trpc/routers/blog-post.router.ts, the list procedure
 list: authedProcedure
-  .meta({ openapi: { method: "GET", path: "/blog-post", summary: "List blog post rows", tags: ["blog-post"] } })
+  .openapi({ path: "/blog-post", summary: "List blog post rows", tags: ["blog-post"] })
   .input(blogPostListInput)
   .output(paginated(blogPostSchema))
   .query(({ input, ctx }) =>
@@ -1508,6 +1505,7 @@ updated: package.json
 | `use-trpc` | 0.3.0 | Replaces `useTRPC()` with [`$api`](./api.md#calling-from-the-client). A `const` bound to `useTRPC()` goes, and each use of it, in the script and in the template, becomes `$api`. `ReturnType<typeof useTRPC>` becomes `typeof $api`, and `import { useTRPC } from "#imports"` imports `$api`. A `const` set to `useQuery($api.<path>.queryOptions(input))`, or to `useQuery(() => $api.<path>.queryOptions(input))`, becomes `$api.<path>.useQuery(input)` or `$api.<path>.useQuery(() => input)`, and one set to `useMutation($api.<path>.mutationOptions())` becomes `$api.<path>.useMutation()`, when each use of it reads `.value` of a member, which drops the `.value`, calls one of its functions, or is the `:query` of a component. Any other shape, such as destructuring or a spread into the options, stays as it is. It leaves a file that declares its own `$api`, an import of `useTRPC` under another name, and the name `"useTRPC"` in a string, such as `mockNuxtImport("useTRPC", ...)`, as manual steps |
 | `invalidate` | 0.3.0 | Removes a hand-written `invalidateQueries({ key: $api.<path>.key(...) })` from the `onSuccess` or `onSettled` of a mutation, which the client now [invalidates](./frontend.md#invalidation) itself: in `$api.<path>.useMutation({ ... })`, in `useMutation({ ...$api.<path>.mutationOptions(), ... })` and in the options of `useActionForm(schema, $api.<path>.mutationOptions(), { ... })`, also inside `toasted()` or `optimistic()` of an older app. It removes the call only when the key is in the namespace of the mutation (`$api.post.key()` for `$api.post.update`), and also a callback it leaves empty and a `useQueryCache()` that nothing else uses. A key of another namespace, `exact: true` and a mutation with its own `invalidate` stay as they are. Skip it when the app sets `nuxvel.api.invalidateFallback: false` |
 | `mutation-options` | 0.3.0 | Replaces `toasted(options, title)` and `optimistic(options, { key, apply })` with the [`toast`](./frontend.md#success-toasts) and [`optimistic`](./frontend.md#optimistic-updates) options of `$api.<path>.mutationOptions()`, also when they wrap each other or `{ ...$api.<path>.mutationOptions(), onError }`. Then a `const` set to `useMutation($api.<path>.mutationOptions({ ... }))` becomes `$api.<path>.useMutation({ ... })`, as `use-trpc` does it. It leaves a wrapper around other options, such as a variable, and an import of `toasted` or `optimistic`, as manual steps |
+| `audit` | 0.3.0 | Moves `.use(audited(name, { target }))` of a procedure to the [`audit: { name, target }` option](./audit.md#auditing-an-action) of the action its `.mutation()` calls, imported or from `$actions`, with an import of the table in the action file, and removes the table import that the router no longer uses. A mutation that calls no action gets `audit(name, { type: getTableName(target), id: opts.input.id })` in its handler, which records no changed columns, and a manual step that says so. It leaves a name that is not a string, a target that is not a table name, a procedure without `.mutation()`, a mutation that calls more than one action, an action that two procedures audit, an action that other code or another procedure also calls, whose `audit` option would audit that call too, and an action that already has `audit`, as manual steps |
 
 The command runs every codemod, oldest first. A codemod changes only the code that still needs it, so a second run changes nothing and prints `✔ No codemod changed a file`. `--only <codemod>` runs one codemod. An unknown name exits `2` and lists the codemods.
 

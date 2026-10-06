@@ -7,7 +7,6 @@ const requireTitle = probeNamed("_error-formatter-check.require-title", defineAc
 }));
 
 const refuse = probeNamed("_error-formatter-check.refuse", defineAction({
-  input: z.object({}),
   errors: { "check.refused": "Refused on purpose" },
   transaction: false,
   handler: (_input, _ctx, fail) => fail("check.refused"),

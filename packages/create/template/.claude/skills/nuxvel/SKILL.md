@@ -12,7 +12,7 @@ Nuxt 4 + `@nuxvel/nuxt`. Data: Drizzle on Postgres. API: tRPC. Input: Zod. Auth:
 1. Write data only in an action. A router, route, job or page calls an action. It never calls `useDb().insert()`, `.update()` or `.delete()`.
 2. An action never reads the request. It gets the actor in `ctx.actor`.
 3. Each `.query()` and `.mutation()` has `.output(schema)`. No result: `.output(z.void())`.
-4. Pass `ctx.actor` to actions and policies. Do not build an actor in a procedure.
+4. An action in a procedure runs as the caller: no `{ actor: ctx.actor }`. Pass `ctx.actor` to policies. Do not build an actor in a procedure.
 5. Do not import an auto-imported name. Import tables, actions, `drizzle-orm` operators and test fixtures.
 6. Links use route names in the current locale: `:to="$localeRoute({ name: 'post-id', params: { id } })"`. Never `"/post/1"`.
 7. No `v-html`. Use `<SafeHtml :html>`.

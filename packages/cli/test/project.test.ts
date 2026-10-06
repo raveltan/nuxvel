@@ -394,6 +394,7 @@ describe("nuxvel project commands", () => {
     expect(rows).toContainEqual(["GET", "/api/trpc/health.ping", "server/trpc/routers/health.router.ts"]);
     expect(rows).toContainEqual(["POST", "/api/trpc/health.create", "server/trpc/routers/health.router.ts"]);
     expect(rows).toContainEqual(["POST", "/api/trpc/apiKeys.create", "@nuxvel/nuxt"]);
+    expect(rows).toContainEqual(["POST", "/api/trpc/healthChecks.updateHealthCheck", "server/actions/health-checks/update-health-check.action.ts"]);
     expect(rows).toContainEqual(["GET", "/api/_repeated-queries-check", "server/api/_repeated-queries-check.get.ts"]);
     expect(rows.find((row) => row[1] === "/api/health/live")).toEqual([
       "ALL",
@@ -755,7 +756,7 @@ export default defineDeploy({
     expect(lines.at(-1)).toBe("✖ 3 architecture violations");
   }, 60000);
 
-  it("test:arch flags a query or mutation without an .output() schema, and passes one with it", async () => {
+  it("test:arch flags a query, mutation, .action() or action with a procedure without an output schema, and passes one with it", async () => {
     const fixtureCwd = scratchDir("arch-router-output");
 
     buildNuxtFixture(fixtureCwd);
@@ -768,9 +769,28 @@ export default defineDeploy({
         "  rename: authedProcedure.input(renameGadgetInput).mutation(({ input }) => input),",
         "  byId: publicProcedure.input(gadgetIdInput).output(gadgetSchema).query(({ input }) => findOrFail(gadgetTable, input.id)),",
         "  raw: publicProcedure.output(z.number()).query(() => pool.query(\"select 1\").then(() => 1)),",
+        "  archive: authedProcedure.action($actions.gadgets.archiveGadget),",
+        "  restore: authedProcedure.output(gadgetSchema).action($actions.gadgets.restoreGadget),",
         "};",
         "",
       ].join("\n"),
+    );
+    mkdirSync(join(fixtureCwd, "server", "actions", "gadgets"), { recursive: true });
+    writeFileSync(
+      join(fixtureCwd, "server", "actions", "gadgets", "archive-gadget.action.ts"),
+      'export const archiveGadgetAction = defineAction({ procedure: "authed", handler: () => 1 });\n',
+    );
+    writeFileSync(
+      join(fixtureCwd, "server", "actions", "gadgets", "polish-gadget.action.ts"),
+      'export const polishGadgetAction = defineAction({ "procedure": "authed", handler: () => 1 });\n',
+    );
+    writeFileSync(
+      join(fixtureCwd, "server", "actions", "gadgets", "spread-gadget.action.ts"),
+      'const base = { output: gadgetSchema };\n\nexport const spreadGadgetAction = defineAction({ ...base, procedure: "authed", handler: () => 1 });\n',
+    );
+    writeFileSync(
+      join(fixtureCwd, "server", "actions", "gadgets", "restore-gadget.action.ts"),
+      'export const restoreGadgetAction = defineAction({ procedure: "authed", output: gadgetSchema, handler: () => 1 });\n',
     );
 
     const { stdout, stderr, exitCode } = await runCliAt(fixtureCwd, "test:arch");
@@ -779,9 +799,12 @@ export default defineDeploy({
     expect(exitCode).toBe(1);
     expect(stdout).toBe("");
     expect(lines).toEqual([
+      "✖ server/actions/gadgets/archive-gadget.action.ts: archiveGadgetAction has a procedure but no output schema: list the fields that are safe to send to the browser",
+      "✖ server/actions/gadgets/polish-gadget.action.ts: polishGadgetAction has a procedure but no output schema: list the fields that are safe to send to the browser",
       "✖ server/trpc/routers/gadget.router.ts: list has no .output() schema: list the fields that are safe to send to the browser",
       "✖ server/trpc/routers/gadget.router.ts: rename has no .output() schema: list the fields that are safe to send to the browser",
-      "✖ 2 architecture violations",
+      "✖ server/trpc/routers/gadget.router.ts: archive has no .output() schema: list the fields that are safe to send to the browser",
+      "✖ 5 architecture violations",
     ]);
   }, 60000);
 
@@ -1125,7 +1148,7 @@ export default defineDeploy({
     expect(exitCode).toBe(1);
     expect(stdout).toBe("");
     expect(violationLines(stderr).sort()).toEqual([
-      "✖ 4 architecture violations",
+      "✖ 5 architecture violations",
       "✖ layers/shop/app/pages/cart.vue: layers/shop/ may import from layers/billing/ only under layers/billing/shared/",
       "✖ layers/shop/server/utils/checkout.ts: ../../../billing/server/utils/total leaves layers/shop/server/utils/ for layers/billing/server/utils/: import it from #layers/billing/server/utils/total",
       "✖ layers/shop/server/utils/checkout.ts: layers/shop/ may import from layers/billing/ only under layers/billing/shared/",
@@ -1156,7 +1179,7 @@ export default defineDeploy({
     expect(exitCode).toBe(1);
     expect(stdout).toBe("");
     expect(violationLines(stderr).sort()).toEqual([
-      "✖ 4 architecture violations",
+      "✖ 5 architecture violations",
       "✖ app/components/ReportCard.vue: ../../server/utils/slug leaves app/components/ for server/utils/: app/ does not import server code",
       "✖ server/jobs/report.job.ts: ../database/schema/auth.schema leaves server/jobs/ for server/database/schema/: import it from #nuxvel/schema",
       "✖ server/utils/report.ts: #shared/schemas/post is in shared/schemas/, whose exports server/ auto-imports: remove the import",

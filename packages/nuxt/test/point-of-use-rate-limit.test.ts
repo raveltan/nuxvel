@@ -74,6 +74,12 @@ describe("rateLimit() at the point of use", async () => {
     expect(otherKey.status).toBe(200);
   });
 
+  it("counts the guest actor of an action limited by user by its IP", async () => {
+    const limited = await statuses("/api/_rate-limit-action?guest", 2);
+
+    expect(limited.map((response) => response.status)).toEqual([200, 429]);
+  });
+
   it("refuses an action limited by user when a system actor calls it", async () => {
     const response = await guest().fetch("/api/_rate-limit-action");
 

@@ -1,4 +1,7 @@
-import { describe, it } from "vitest";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
+import { afterAll, describe, it } from "vitest";
 import { expect, guest } from "@nuxvel/nuxt/testing";
 import { buildTrpcRoutersModuleCode } from "../src/trpc-routers";
 import { setupPlayground } from "./helpers/playground";
@@ -86,6 +89,78 @@ describe("tRPC router namespaces", () => {
   it("hide a lower layer's router under a namespace the higher layer defines as a router", () => {
     expect(buildLayered(["admin.ts"], ["admin/users.ts"])).toContain("export default { admin: router0 };");
     expect(buildLayered(["admin/users.ts"], ["admin.ts"])).toContain("export default { admin: { users: router0 } };");
+  });
+});
+
+describe("actions with a procedure", () => {
+  const app = mkdtempSync(join(tmpdir(), "nuxvel-mounted-actions-"));
+  const write = (path: string, source: string) => {
+    const file = join(app, path);
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, source);
+    return file;
+  };
+  const updatePost = write(
+    "server/actions/posts/update-post.action.ts",
+    'export const updatePostAction = defineAction({ procedure: "authed", handler: () => 1 });\n',
+  );
+  const internal = write("server/actions/posts/archive-post.action.ts", "export const archivePostAction = defineAction({ handler: () => 1 });\n");
+  const actions = [
+    { file: updatePost, name: "posts.update-post" },
+    { file: internal, name: "posts.archive-post" },
+  ];
+  const routerDir = join(app, "server/trpc/routers");
+  const build = (files: Record<string, string>) => () =>
+    buildTrpcRoutersModuleCode(
+      [{ dir: routerDir, files: Object.entries(files).map(([path, source]) => write(`server/trpc/routers/${path}`, source)) }],
+      actions,
+    );
+
+  afterAll(() => rmSync(app, { recursive: true, force: true }));
+
+  it("mount an action at its path, beside the keys of the router of its namespace", () => {
+    const alone = build({})();
+    const merged = build({ "posts.router.ts": "export const postsRouter = { list: publicProcedure.query(() => []) };\n" })();
+
+    expect(alone).toContain("export default { posts: { updatePost: mountAction(action0) } };");
+    expect(alone).not.toContain("archivePost");
+    expect(merged).toContain(`export default { posts: mountActions(router0, { updatePost: mountAction(action0) }, ${JSON.stringify(join(routerDir, "posts.router.ts"))}) };`);
+    expect(merged).toContain(`"posts.updatePost":${JSON.stringify(updatePost)}`);
+  });
+
+  it("leave out an action whose defineAction() takes a variable", () => {
+    const variable = write(
+      "server/actions/posts/pin-post.action.ts",
+      'const config = { procedure: "authed", handler: () => 1 };\nexport const pinPostAction = defineAction(config);\n',
+    );
+
+    expect(buildTrpcRoutersModuleCode([{ dir: routerDir, files: [] }], [{ file: variable, name: "posts.pin-post" }])).toBe(
+      "export default {};\nexport const routerFiles = {};\n",
+    );
+  });
+
+  it("fail with both files when two actions are mounted at one path", () => {
+    const first = write("server/actions/posts/rank-1.action.ts", 'export const rank1Action = defineAction({ procedure: "authed", handler: () => 1 });\n');
+    const second = write("server/actions/posts/rank1.action.ts", 'export const rank1Action = defineAction({ procedure: "authed", handler: () => 1 });\n');
+
+    expect(() =>
+      buildTrpcRoutersModuleCode([{ dir: routerDir, files: [] }], [
+        { file: first, name: "posts.rank-1" },
+        { file: second, name: "posts.rank1" },
+      ]),
+    ).toThrow(`nuxvel: ${first} and ${second} are both mounted at the tRPC procedure "posts.rank1"`);
+  });
+
+  it("fail with both files when a router key or a router file is at the path of the action", () => {
+    const router = join(routerDir, "posts.router.ts");
+    const file = join(routerDir, "posts/update-post.ts");
+
+    expect(build({ "posts.router.ts": "export const postsRouter = { updatePost: authedProcedure.mutation(() => 1) };\n" })).toThrow(
+      `nuxvel: ${router} and ${updatePost} both define the tRPC procedure "posts.updatePost"`,
+    );
+    expect(build({ "posts/update-post.ts": "export default { run: publicProcedure.query(() => 1) };\n" })).toThrow(
+      `nuxvel: ${file} and ${updatePost} both define the tRPC procedure "posts.updatePost"`,
+    );
   });
 });
 

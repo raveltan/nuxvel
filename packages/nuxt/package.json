@@ -212,6 +212,7 @@
     "nuxt-security": "^2.6.0",
     "nuxt-site-config": "^4.2.3",
     "ohash": "^2.0.11",
+    "oxc-parser": "^0.150.0",
     "pinia": "^4.0.3",
     "postgres": "^3.4.9",
     "radix3": "^1.1.2",

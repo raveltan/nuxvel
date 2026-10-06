@@ -156,8 +156,8 @@ export const checkoutRouter = {
   pay: authedProcedure
     .input(z.object({ cartId: z.number() }))
     .output(orderSchema)
-    .mutation(({ input, ctx }) =>
-      withLock(`checkout:${input.cartId}`, 30, () => checkoutAction(input, { actor: ctx.actor })),
+    .mutation(({ input }) =>
+      withLock(`checkout:${input.cartId}`, 30, () => checkoutAction(input)),
     ),
 };
 ```

@@ -98,7 +98,7 @@ export const restorePostAction = defineAction({
 });
 ```
 
-A restore action finds the trashed row and checks a policy rule, as any other action does. Add a `restore` rule to the [policy](./authorization.md) of the table. To audit the delete and the restore, see [Audit log](./audit.md#soft-deletes-and-restores).
+A restore action finds the trashed row and checks a policy rule, as any other action does. Add a `restore` rule to the [policy](./authorization.md) of the table. To audit the delete and the restore, see [Audit log](./audit.md#auditing-an-action).
 
 ## Unique values
 
@@ -179,7 +179,7 @@ describe("post.restore", () => {
 ## See also
 
 - [Database](./database.md)
-- [Audit log](./audit.md#soft-deletes-and-restores)
+- [Audit log](./audit.md#auditing-an-action)
 - [Authorization](./authorization.md)
 - [Privacy](./privacy.md#erasing-a-users-data)
 - [Testing](./testing.md)

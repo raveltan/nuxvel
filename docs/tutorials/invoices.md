@@ -815,8 +815,6 @@ Replace the generated team router. `list` and `byId` read only the teams of the 
 // server/trpc/routers/team.router.ts
 import { and, asc, desc, eq, getTableColumns, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { addMemberAction } from "#server/actions/team/add-member.action";
-import { changeRoleAction } from "#server/actions/team/change-role.action";
 import { createTeamAction } from "#server/actions/team/create-team.action";
 import { updateTeamAction } from "#server/actions/team/update-team.action";
 import { deleteTeamAction } from "#server/actions/team/delete-team.action";
@@ -866,36 +864,34 @@ export const teamRouter = {
   create: authedProcedure
     .input(createTeamInput)
     .output(teamSchema)
-    .mutation(async ({ input, ctx }) => {
-      const row = await createTeamAction(input, { actor: ctx.actor });
+    .mutation(async ({ input }) => {
+      const row = await createTeamAction(input);
       flash("Team created");
       return row;
     }),
   update: authedProcedure
     .input(updateTeamInput)
     .output(teamSchema)
-    .mutation(async ({ input, ctx }) => {
-      const row = await updateTeamAction(input, { actor: ctx.actor });
+    .mutation(async ({ input }) => {
+      const row = await updateTeamAction(input);
       flash("Team saved");
       return row;
     }),
   delete: freshProcedure
     .input(teamIdInput)
     .output(teamIdInput)
-    .mutation(async ({ input, ctx }) => {
-      const row = await deleteTeamAction(input, { actor: ctx.actor });
+    .mutation(async ({ input }) => {
+      const row = await deleteTeamAction(input);
       flash("Team deleted");
       return row;
     }),
   addMember: authedProcedure
     .use(rateLimit({ points: 10, window: { hours: 1 }, by: "user" }))
-    .input(addMemberInput)
     .output(memberSchema)
-    .mutation(({ input, ctx }) => addMemberAction(input, { actor: ctx.actor })),
+    .action($actions.team.addMember),
   changeRole: authedProcedure
-    .input(changeRoleInput)
     .output(membershipSchema)
-    .mutation(({ input, ctx }) => changeRoleAction(input, { actor: ctx.actor })),
+    .action($actions.team.changeRole),
 };
 ```
 
@@ -908,7 +904,7 @@ In the generated invoice router, change the `where` of `list` and the query of `
 ```ts
 // server/trpc/routers/invoice.router.ts
   list: authedProcedure
-    .meta({ openapi: { method: "GET", path: "/invoice", summary: "List the invoices of your teams", tags: ["invoice"] } })
+    .openapi({ path: "/invoice", summary: "List the invoices of your teams", tags: ["invoice"] })
     .input(invoiceListInput)
     .output(paginated(invoiceSchema))
     .query(({ input, ctx }) =>
@@ -923,7 +919,7 @@ In the generated invoice router, change the `where` of `list` and the query of `
       ),
     ),
   byId: authedProcedure
-    .meta({ openapi: { method: "GET", path: "/invoice/{id}", summary: "Get an invoice", tags: ["invoice"] } })
+    .openapi({ path: "/invoice/{id}", summary: "Get an invoice", tags: ["invoice"] })
     .input(invoiceIdInput)
     .output(invoiceSchema)
     .query(({ input, ctx }) => findInvoiceFor(ctx.user.id, input.id)),
@@ -1866,23 +1862,14 @@ The audit log records who changed what, and when. It is for compliance: the app 
 
 `audit(action, target, options)` writes the row in the transaction of the action, with the actor of the action. If the action fails after it, the row rolls back with the change.
 
-For an invoice update, the log must show the columns that changed. Add `audited()` to the `update` procedure of the invoice router, after `.input()`:
+For an invoice update, the log must show the columns that changed. Add the `audit` option to the update action, after `input`:
 
 ```ts
-// server/trpc/routers/invoice.router.ts
-  update: authedProcedure
-    .meta({ openapi: { method: "PATCH", path: "/invoice/{id}", summary: "Update an invoice", tags: ["invoice"] } })
-    .input(updateInvoiceInput)
-    .use(audited("invoice.updated", { target: invoiceTable }))
-    .output(invoiceSchema)
-    .mutation(async ({ input, ctx }) => {
-      const row = await updateInvoiceAction(input, { actor: ctx.actor });
-      flash("Invoice saved");
-      return row;
-    }),
+// server/actions/invoice/update-invoice.action.ts, in defineAction
+  audit: { name: "invoice.updated", target: invoiceTable },
 ```
 
-`audited()` loads the row of `input.id` before and after the mutation. It writes only the changed columns, as `{ column: { from, to } }`. A mutation that fails writes no row.
+The action loads the row of `input.id` before and after the handler. It writes only the changed columns, as `{ column: { from, to } }`. A call that fails writes no row.
 
 The log keeps no user ID. It stores a subject ID in place of each user, so `nuxvel user:erase` can remove the personal data and keep the chain. A hash chain links each row to the row before it, and `nuxvel audit:verify` finds a changed row. `nuxvel audit:tail` prints each new row, and `nuxvel audit:export` prints the rows of a time range. Chapter 13 exports the rows that an API key writes. The seeder writes rows with factories, not with actions, so it writes no audit rows.
 
@@ -2133,7 +2120,7 @@ id,occurredAt,actorType,actorId,action,targetType,targetId,changes,metadata,requ
 ✔ Audit chain intact: 2 rows verified
 ```
 
-The actor of both rows is the key, not the user. `audited()` of chapter 11 wrote the changed column of the update. The `prevHash` of row 2 is the `hash` of row 1.
+The actor of both rows is the key, not the user. The `audit` option of the update action in chapter 11 wrote the changed column of the update. The `prevHash` of row 2 is the `hash` of row 1.
 
 ### Test the API
 

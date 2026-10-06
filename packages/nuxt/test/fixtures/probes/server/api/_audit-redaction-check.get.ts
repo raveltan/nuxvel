@@ -1,8 +1,6 @@
-import { z } from "zod";
 import { auditLogTable } from "~~/server/database/schema/audit-log.schema";
 
 const withRedactedFields = probeNamed("_audit-redaction-check.withRedactedFields", defineAction({
-  input: z.object({}),
   handler: async () => {
     await audit(
       "user.updated",

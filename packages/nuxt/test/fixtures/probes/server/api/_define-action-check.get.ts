@@ -17,6 +17,10 @@ const claimHandle = probeNamed("_define-action-check.claim-handle", defineAction
   handler: (input) => input.handle,
 }));
 
+const noInputGiven = probeNamed("_define-action-check.no-input", defineAction({
+  handler: (input) => input ?? "undefined",
+}));
+
 async function fieldsOf(call: () => Promise<unknown>) {
   try {
     await call();
@@ -32,16 +36,18 @@ export default defineEventHandler(async () => {
   const transformed = await splitTags({ tags: "news,tech" }, { actor });
   const claimed = await claimHandle({ handle: "ravel" }, { actor });
   const refusedFields = await fieldsOf(() => claimHandle({ handle: "taken" }, { actor }));
+  const withoutInput = [await noInputGiven({}, { actor }), await noInputGiven(undefined, { actor })];
 
   try {
     await echo({ name: "a", age: 5 }, { actor });
-    return { valid, transformed, claimed, refusedFields, invalidThrew: false };
+    return { valid, transformed, claimed, refusedFields, withoutInput, invalidThrew: false };
   } catch (error) {
     return {
       valid,
       transformed,
       claimed,
       refusedFields,
+      withoutInput,
       invalidThrew: true,
       fields: error instanceof ValidationFailedError ? error.fields : undefined,
     };

@@ -364,7 +364,6 @@ The generated `list` and `byId` return the rooms that the user owns. In a chat, 
 // server/trpc/routers/room.router.ts
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { addMemberAction } from "#server/actions/room/add-member.action";
 import { createRoomAction } from "#server/actions/room/create-room.action";
 import { updateRoomAction } from "#server/actions/room/update-room.action";
 import { deleteRoomAction } from "#server/actions/room/delete-room.action";
@@ -404,31 +403,30 @@ export const roomRouter = {
   create: authedProcedure
     .input(createRoomInput)
     .output(roomSchema)
-    .mutation(async ({ input, ctx }) => {
-      const row = await createRoomAction(input, { actor: ctx.actor });
+    .mutation(async ({ input }) => {
+      const row = await createRoomAction(input);
       flash("Room created");
       return row;
     }),
   update: authedProcedure
     .input(updateRoomInput)
     .output(roomSchema)
-    .mutation(async ({ input, ctx }) => {
-      const row = await updateRoomAction(input, { actor: ctx.actor });
+    .mutation(async ({ input }) => {
+      const row = await updateRoomAction(input);
       flash("Room saved");
       return row;
     }),
   delete: authedProcedure
     .input(roomIdInput)
     .output(roomIdInput)
-    .mutation(async ({ input, ctx }) => {
-      const row = await deleteRoomAction(input, { actor: ctx.actor });
+    .mutation(async ({ input }) => {
+      const row = await deleteRoomAction(input);
       flash("Room deleted");
       return row;
     }),
   addMember: authedProcedure
-    .input(addMemberInput)
     .output(z.object({ roomId: z.number(), userId: z.string() }))
-    .mutation(({ input, ctx }) => addMemberAction(input, { actor: ctx.actor })),
+    .action($actions.room.addMember),
 };
 ```
 
@@ -686,8 +684,8 @@ export const messageRouter = {
   post: authedProcedure
     .input(postMessageInput)
     .output(z.object({ id: z.number() }))
-    .mutation(async ({ input, ctx }) => {
-      const row = await postMessageAction(input, { actor: ctx.actor });
+    .mutation(async ({ input }) => {
+      const row = await postMessageAction(input);
       return { id: row.id };
     }),
 };

@@ -3,7 +3,8 @@ import discoveredPolicies from "#nuxvel/policies";
 import { type Actor, SYSTEM_ACTOR_TYPE } from "../actions/system-actor";
 import { publishObserved } from "../observe/channels";
 import type { AbilityRef, Policy, PolicyRule } from "./define-policy";
-import { ruleAllowsSystem } from "./define-policy";
+import { ruleAllowsGuest, ruleAllowsSystem } from "./define-policy";
+import { GUEST_ACTOR_TYPE } from "../actions/guest-actor";
 import { policyRegistry } from "./registry";
 
 let registry: Map<string, Policy> | undefined;
@@ -32,6 +33,12 @@ function ruleFor(policy: Policy | undefined, action: string) {
   return policy && Object.hasOwn(policy.rules, action) ? policy.rules[action] : undefined;
 }
 
+function reachable(actor: Actor, rule: PolicyRule | undefined): rule is PolicyRule {
+  return rule !== undefined
+    && (actor.type !== SYSTEM_ACTOR_TYPE || ruleAllowsSystem(rule))
+    && (actor.type !== GUEST_ACTOR_TYPE || ruleAllowsGuest(rule));
+}
+
 async function decide(
   actor: Actor,
   action: string,
@@ -40,9 +47,7 @@ async function decide(
   row: Record<string, unknown>,
   preloaded: unknown,
 ) {
-  const allowed = rule !== undefined
-    && (actor.type !== SYSTEM_ACTOR_TYPE || ruleAllowsSystem(rule))
-    && (await rule(actor, row, preloaded)) === true;
+  const allowed = reachable(actor, rule) && (await rule(actor, row, preloaded)) === true;
 
   publishObserved("policy:decision", {
     action,
@@ -68,10 +73,12 @@ export function abilityCall(args: CanArgs): [action: string, table: Table, row: 
  * so a misspelled rule or a table with no policy fails to compile.
  *
  * Auto-imported on the server. Returns `false` when no policy or no
- * matching rule exists at runtime, and when a system actor hits a rule
- * that is not wrapped in {@link allowSystem}. Throws when two files
+ * matching rule exists at runtime, when a system actor hits a rule
+ * that is not wrapped in {@link allowSystem}, and when the guest actor
+ * hits a rule that is not wrapped in {@link allowGuest}. Throws when two files
  * under `server/policies/` define a policy for the same table. Runs the
- * policy's `preload` for this one row. Use {@link authorize} to throw
+ * policy's `preload` for this one row, unless the rule denies this
+ * actor's type anyway. Use {@link authorize} to throw
  * instead, and {@link canMany} to check a list.
  *
  * @example
@@ -94,7 +101,10 @@ export async function can(actor: Actor, ...args: CanArgs): Promise<boolean> {
 export async function canByName(actor: Actor, action: string, table: Table, row: Record<string, unknown>) {
   const policy = policyFor(table);
 
-  return decide(actor, action, table, ruleFor(policy, action), row, await policy?.preload?.(actor, [row]));
+  const rule = ruleFor(policy, action);
+  const preloaded = reachable(actor, rule) ? await policy?.preload?.(actor, [row]) : undefined;
+
+  return decide(actor, action, table, rule, row, preloaded);
 }
 
 /**
@@ -138,7 +148,8 @@ export async function canMany(
 
 async function canManyByName(actor: Actor, actions: readonly string[], table: Table, rows: Record<string, unknown>[]) {
   const policy = policyFor(table);
-  const preloaded = rows.length > 0 ? await policy?.preload?.(actor, rows) : undefined;
+  const anyReachable = actions.some((action) => reachable(actor, ruleFor(policy, action)));
+  const preloaded = rows.length > 0 && anyReachable ? await policy?.preload?.(actor, rows) : undefined;
 
   return Promise.all(
     rows.map(async (row) => {

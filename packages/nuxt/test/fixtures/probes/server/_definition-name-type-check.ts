@@ -28,7 +28,6 @@ export async function oldNamesNoLongerCompile() {
 export const jobsTakeNoName = defineJob({
   // @ts-expect-error a job is named after its file, not by an option
   name: "post.notify-followers",
-  input: z.object({}),
   handler: () => {},
 });
 

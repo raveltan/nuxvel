@@ -243,6 +243,7 @@ Guide: [Authorization](./authorization.md).
 |---|---|---|
 | `definePolicy` | function | Defines the authorization rules for one table. |
 | `allowSystem` | function | Lets system actors reach a rule. |
+| `allowGuest` | function | Lets the guest actor of a signed-out caller reach a rule. |
 | `can` | function | Tells whether the actor may perform an action on a row. |
 | `canMany` | function | Checks several actions on every row of a list, with one preload for the list. |
 | `authorize` | function | Throws `ForbiddenError` when the actor may not perform an action on a row. |
@@ -495,7 +496,6 @@ Guide: [Audit log](./audit.md).
 | Name | Kind | Description |
 |---|---|---|
 | `audit` | function | Writes an audit-log row for the actor in scope. |
-| `audited` | middleware | Writes an audit-log row for a mutation, with a before and after diff. |
 | `verifyAuditChain` | function | Checks the hash chain of `audit_log` and returns the first break. |
 | `maintainAuditPartitions` | function | Creates the coming monthly partitions and drops the expired ones. |
 | `AuditChainBreak` | type | Where `verifyAuditChain()` found a break. |

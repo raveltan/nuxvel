@@ -23,6 +23,51 @@ const createdKeyIsTyped: IsAny<CreatedKey> extends true
     ? true
     : never = true;
 
+type ActionProcedureOutput = Awaited<ReturnType<typeof trpc._procedureMethodsCheck.update.mutate>>;
+type ActionProcedureInput = Parameters<typeof trpc._procedureMethodsCheck.update.mutate>[0];
+type ActionProcedureSetOutput = Awaited<ReturnType<typeof trpc._procedureMethodsCheck.rename.mutate>>;
+const actionProcedureOutputIsTyped: IsAny<ActionProcedureOutput> extends true
+  ? never
+  : ActionProcedureOutput extends { title: string; body: string }
+    ? true
+    : never = true;
+const actionProcedureInputIsTyped: IsAny<ActionProcedureInput> extends true
+  ? never
+  : ActionProcedureInput extends { id: number; title: string }
+    ? true
+    : never = true;
+const actionProcedureKeepsItsOutput: IsAny<ActionProcedureSetOutput> extends true
+  ? never
+  : keyof ActionProcedureSetOutput extends "id" | "title"
+    ? true
+    : never = true;
+
+type MountedActionOutput = Awaited<ReturnType<typeof $api.healthChecks.updateHealthCheck.mutate>>;
+type MountedActionInput = Parameters<typeof $api.healthChecks.updateHealthCheck.mutate>[0];
+const mountedActionOutputIsTyped: IsAny<MountedActionOutput> extends true
+  ? never
+  : MountedActionOutput extends { id: number; name: string }
+    ? true
+    : never = true;
+const mountedActionInputIsTyped: IsAny<MountedActionInput> extends true
+  ? never
+  : MountedActionInput extends { id: number; name: string }
+    ? true
+    : never = true;
+
+type ActionOutputSchemaOutput = Awaited<ReturnType<typeof trpc._procedureMethodsCheck.secret.mutate>>;
+const actionSendsItsOutputSchema: IsAny<ActionOutputSchemaOutput> extends true
+  ? never
+  : keyof ActionOutputSchemaOutput extends "id"
+    ? true
+    : never = true;
+type MountedOutputSchemaOutput = Awaited<ReturnType<typeof $api._probes.secretRow.mutate>>;
+const mountedActionSendsItsOutputSchema: IsAny<MountedOutputSchemaOutput> extends true
+  ? never
+  : keyof MountedOutputSchemaOutput extends "id"
+    ? true
+    : never = true;
+
 const byIdOptions = trpc.post.byId.queryOptions({ id: 1 });
 const queryOptionsAreTyped: IsAny<
   Awaited<ReturnType<typeof byIdOptions.query>>
@@ -195,7 +240,7 @@ const feedIsTyped: IsAny<PostFeed> extends true
 
 <template>
   <div>
-    {{ ping }} {{ clientIsTyped }} {{ pingReturnsString }} {{ createdKeyIsTyped }}
+    {{ ping }} {{ clientIsTyped }} {{ pingReturnsString }} {{ createdKeyIsTyped }} {{ actionProcedureOutputIsTyped }} {{ actionProcedureInputIsTyped }} {{ actionProcedureKeepsItsOutput }} {{ mountedActionOutputIsTyped }} {{ mountedActionInputIsTyped }} {{ mountedActionSendsItsOutputSchema }} {{ actionSendsItsOutputSchema }}
     {{ queryOptionsAreTyped }} {{ mutationOptionsAreTyped }}
     {{ optimisticIsTyped }} {{ actionFormIsTyped }} {{ transformFormIsTyped }}
     {{ abilitiesAreTyped }} {{ deleteIsTyped }} {{ deleteReturnsId }}

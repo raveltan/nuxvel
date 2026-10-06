@@ -291,11 +291,9 @@ A write in a router has no actor, no audit and no test of its own. Move it into 
 ```ts
 // server/domains/link/actions/mark-all-read.action.ts
 import { eq } from "drizzle-orm";
-import { z } from "zod";
 import { linkTable } from "#nuxvel/schema";
 
 export const markAllReadAction = defineAction({
-  input: z.object({}),
   handler: async (_input, ctx) => {
     const rows = await useDb()
       .update(linkTable)
@@ -308,13 +306,13 @@ export const markAllReadAction = defineAction({
 });
 ```
 
-The router calls the action. Import `z` from `zod` and `markAllReadAction` from `#server/domains/link/actions/mark-all-read.action` at the top of the file:
+The router calls the action. Import `z` from `zod` at the top of the file:
 
 ```ts
 // server/domains/link/routers/link.router.ts, in linkRouter
   markAllRead: authedProcedure
     .output(z.object({ count: z.number() }))
-    .mutation(({ ctx }) => markAllReadAction({}, { actor: ctx.actor })),
+    .action($actions.link.markAllRead),
 ```
 
 Replace the generated test with one that checks the rows:
@@ -830,11 +828,9 @@ Remove `read` from `createLinkInput` and from the `filters` of `linkListColumns`
 ```ts
 // server/domains/link/actions/mark-all-read.action.ts
 import { and, eq, isNull } from "drizzle-orm";
-import { z } from "zod";
 import { linkTable } from "#nuxvel/schema";
 
 export const markAllReadAction = defineAction({
-  input: z.object({}),
   handler: async (_input, ctx) => {
     const rows = await useDb()
       .update(linkTable)

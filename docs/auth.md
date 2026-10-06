@@ -526,7 +526,6 @@ The links in the auth mails also go to the pages of that locale. For a user with
 // server/trpc/routers/post.router.ts
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { deletePostAction } from "#server/actions/posts/delete-post.action";
 import { postTable } from "#nuxvel/schema";
 
 export const postRouter = {
@@ -534,9 +533,8 @@ export const postRouter = {
     useDb().select().from(postTable).where(eq(postTable.authorId, ctx.user.id)),
   ),
   delete: authedProcedure
-    .input(postIdInput)
     .output(postIdInput)
-    .mutation(({ input, ctx }) => deletePostAction(input, { actor: ctx.actor })),
+    .action($actions.posts.deletePost),
 };
 ```
 
@@ -601,13 +599,11 @@ The session table has a `two_factor_verified` column for this check, and the ses
 
 ```ts
 // server/trpc/routers/account.router.ts
-import { changeEmailAction } from "#server/actions/account/change-email.action";
 
 export const accountRouter = {
   changeEmail: freshProcedure
-    .input(changeEmailSchema)
     .output(z.object({ email: z.email() }))
-    .mutation(({ input, ctx }) => changeEmailAction(input, { actor: ctx.actor })),
+    .action($actions.account.changeEmail),
 };
 ```
 

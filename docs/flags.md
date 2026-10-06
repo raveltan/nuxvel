@@ -330,10 +330,7 @@ const button = await client.getStringValue("subscribe-button", "control");
 
 ```ts
 // server/actions/posts/features.action.ts
-import { z } from "zod";
-
 export const postFeaturesAction = defineAction({
-  input: z.object({}),
   handler: async () => ({
     newEditor: await flag("new-editor"),
     subscribeButton: await experiment("subscribe-button"),

@@ -36,8 +36,7 @@ function requestIdempotencyKey() {
  * ```ts
  * create: authedProcedure
  *   .use(idempotent())
- *   .input(createPostInput)
- *   .mutation(({ input, ctx }) => createPostAction(input, { actor: ctx.actor })),
+ *   .action($actions.posts.createPost),
  * ```
  */
 export function idempotent(): TRPCMiddlewareFunction<{ user?: { id: string } }, object, object, object, unknown> {

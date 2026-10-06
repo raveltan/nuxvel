@@ -15,7 +15,7 @@ export async function runCodemods(cwd: string, selected: Codemod[]) {
 
     for (const file of files) {
       const source = after.get(file) ?? readFileSync(join(cwd, file), "utf8");
-      const rewrite = codemod.rewrite(source, file);
+      const rewrite = codemod.rewrite(source, file, cwd);
 
       if (!before.has(file)) before.set(file, source);
       after.set(file, rewrite.output);

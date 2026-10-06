@@ -1,3 +1,4 @@
+import type { AnyProcedureBuilder } from "@trpc/server/unstable-core-do-not-import";
 import type { z } from "zod";
 import { type CacheKey, cacheForget } from "../cache/cache";
 import { onCommit, transaction } from "../database/transaction";
@@ -12,6 +13,8 @@ import { localeScope, currentLocale } from "../i18n/current-locale";
 import { zodLocaleError } from "../i18n/zod-locale-error";
 import type { Actor } from "./system-actor";
 import { logActionCall } from "./trace";
+import { noInput } from "./no-input";
+import { type ActionAudit, runAudited } from "./action-audit";
 
 function prefixOrGlob(tag: InvalidationTag): CacheKey {
   return typeof tag === "string" && !/[*?[]/.test(tag) ? [tag] : tag;
@@ -59,21 +62,38 @@ export type Fail<Errors extends Record<string, string>> = (
 ) => never;
 
 /**
+ * The `procedure` option of {@link defineAction}: the builder of the
+ * procedure that serves the action, by name ({@link publicProcedure},
+ * {@link authedProcedure} or {@link adminProcedure}) or as a builder
+ * value, such as `roleProcedure(["editor"])`.
+ */
+export type ActionProcedure = "public" | "authed" | "admin" | AnyProcedureBuilder;
+
+declare const served: unique symbol;
+
+/**
  * An action from {@link defineAction}: call it with the schema's input
  * and an actor. Without `ctx` it runs as the actor of the running action or procedure, so an
  * action, a job or a procedure that set an actor can call another action
- * with the input alone; with no actor in scope the call throws. It also carries its `actionName` and its declared
- * `errors`, which {@link isActionError} matches against.
+ * with the input alone; with no actor in scope the call throws. It also carries its `actionName`, its declared
+ * `errors`, which {@link isActionError} matches against, its `input`
+ * schema and its `procedure`.
  */
 export interface Action<
   Input,
   Output,
   Errors extends Record<string, string>,
   Name extends string = string,
+  Served = Output,
 > {
   (input: Input, ctx?: ActionContext): Promise<Output>;
   readonly actionName: Name;
   readonly errors: Partial<Errors>;
+  readonly input: z.ZodType;
+  readonly output?: z.ZodType;
+  readonly procedure?: ActionProcedure;
+  /** Brands the action with what its mounted procedure sends; no such property exists at runtime. */
+  readonly [served]?: Served;
 }
 
 /**
@@ -101,7 +121,8 @@ export interface Action<
  * called.
  *
  * @param config.input Zod schema; callers pass its input type, the handler
- * receives the parsed output.
+ * receives the parsed output. Without it the action takes `{}` or
+ * `undefined`.
  * @param config.errors Error codes this action can `fail()` with, mapped
  * to default messages. Without it, `fail()` accepts no code.
  * @param config.handler The work itself. It gets the parsed input,
@@ -122,6 +143,28 @@ export interface Action<
  * TypeScript knows the result type. Each tag forgets the cache key and
  * every key under it; a string glob (`"posts:*"`) forgets the keys it
  * matches. Nothing is forgotten when the handler throws.
+ * @param config.procedure Serves the action as a tRPC mutation at its
+ * path, typed on `$api`: `server/actions/posts/update-post.action.ts`
+ * is `$api.posts.updatePost`. `"public"`, `"authed"` or `"admin"`
+ * picks that procedure builder, and a builder value, such as
+ * `roleProcedure(["editor"])`, is used as it is. The mutation is
+ * `builder.output(output).action(action)`. A router key
+ * at the same path fails the build. Without it, the action is only
+ * called from server code. The build finds `procedure` in the object
+ * literal of `defineAction({ ... })`: `defineAction(config)` with a
+ * variable argument is not mounted. `nuxvel test:arch` reports an
+ * action with `procedure` and no `output`.
+ * @param config.output The Zod schema of what the mounted procedure
+ * sends, as `.output()` of a router procedure: a field it does not list
+ * never reaches the client. Calls from server code get the handler's
+ * result as it is.
+ * @param config.audit Writes an audit row with {@link audit} in the
+ * action's transaction once the handler returns. A name such as
+ * `"post.updated"` targets the row the handler returns, by its `id`.
+ * `{ name, target }` targets the row of the `target` table with the id
+ * `input.id`, and records the columns the handler changed as
+ * `{ column: { from, to } }`, ignoring `createdAt`, `updatedAt` and
+ * `searchVector`. A handler that throws writes no row.
  *
  * @example
  * ```ts
@@ -129,22 +172,30 @@ export interface Action<
  * export const archivePostAction = defineAction({
  *   input: z.object({ id: z.number() }),
  *   errors: { ALREADY_ARCHIVED: "This post is already archived." },
+ *   procedure: "authed",
+ *   audit: "post.archived",
  *   invalidates: [["posts", "list"]],
  *   async handler({ id }, { actor }, fail) {
  *     const post = await findOrFail(postTable, id);
  *     if (post.archivedAt) return fail("ALREADY_ARCHIVED");
  *     await authorize(actor, "update", postTable, post);
- *     return useDb().update(postTable).set({ archivedAt: new Date() });
+ *     return useDb()
+ *       .update(postTable)
+ *       .set({ archivedAt: new Date() })
+ *       .where(eq(postTable.id, id))
+ *       .returning()
+ *       .then(firstOrFail);
  *   },
  * });
  * ```
  */
 export function defineAction<
-  Schema extends z.ZodType,
-  Output,
+  Schema extends z.ZodType = typeof noInput,
+  Output = unknown,
   Errors extends Record<string, string> = Record<never, string>,
+  OutputSchema extends z.ZodType = z.ZodType<Output>,
 >(config: {
-  input: Schema;
+  input?: Schema;
   errors?: Errors;
   handler: (
     input: z.output<Schema>,
@@ -154,7 +205,12 @@ export function defineAction<
   transaction?: boolean;
   rateLimit?: ActionRateLimit<z.output<Schema>>;
   invalidates?: readonly InvalidationTag[] | ((output: Output, input: z.output<Schema>) => readonly InvalidationTag[]);
-}): Action<z.input<Schema>, Output, Errors> {
+  audit?: ActionAudit<z.output<Schema>, Output>;
+  procedure?: ActionProcedure;
+  output?: OutputSchema;
+}): Action<z.input<Schema>, Output, Errors, string, z.output<OutputSchema>> {
+  // Schema falls back to typeof noInput exactly when config.input is omitted
+  const schema = config.input ?? (noInput as unknown as Schema);
   const limitCall = config.rateLimit && actionRateLimiter(config.rateLimit);
   const fail: Fail<Errors> = (code, message) => {
     throw new ActionError(code, message ?? config.errors?.[code] ?? code, defined.actionName);
@@ -174,14 +230,15 @@ export function defineAction<
     let failure: string | undefined;
 
     try {
-      const result = await config.input.safeParseAsync(rawInput, { error: zodLocaleError(ctx.locale) });
+      const result = await schema.safeParseAsync(rawInput, { error: zodLocaleError(ctx.locale) });
 
       if (!result.success) throw new ValidationFailedError(result.error);
 
       await limitCall?.(defined.actionName, result.data, ctx.actor);
 
       const runHandler = async () => {
-        const output = await config.handler(result.data, ctx, fail);
+        const handle = async () => config.handler(result.data, ctx, fail);
+        const output = config.audit === undefined ? await handle() : await runAudited(config.audit, result.data, handle);
 
         if (config.invalidates !== undefined) {
           const invalidates =
@@ -217,8 +274,8 @@ export function defineAction<
 
   const errors: Partial<Errors> = config.errors ?? {};
 
-  const defined: Action<z.input<Schema>, Output, Errors> = awaitingName(
-    Object.assign(run, { actionName: "", errors }),
+  const defined: Action<z.input<Schema>, Output, Errors, string, z.output<OutputSchema>> = awaitingName(
+    Object.assign(run, { actionName: "", errors, input: schema, output: config.output, procedure: config.procedure }),
     "action",
     "actionName",
   );

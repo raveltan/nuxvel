@@ -3,6 +3,7 @@ import superjson from "superjson";
 import type { OpenApiMeta } from "trpc-to-openapi";
 import type { SessionUser } from "../utils/auth";
 import { errorFormatter } from "./error-formatter";
+import type { OpenapiOptions } from "./procedure-methods";
 
 /**
  * What a caller hands to every procedure.
@@ -25,14 +26,14 @@ export interface TRPCContext {
 
 /**
  * The initialized tRPC instance: superjson on the wire, taxonomy-aware
- * error formatting, and `.meta({ openapi })` to expose a procedure over
- * REST.
+ * error formatting, and `.meta({ openapi })` or `.openapi()` to expose a
+ * procedure over REST.
  *
  * Use `t.router` to build a router; prefer {@link publicProcedure} and
  * {@link authedProcedure} over `t.procedure` so origin, auth and
  * error-reporting handling stay in place.
  */
-export const t = initTRPC.meta<OpenApiMeta>().context<TRPCContext>().create({
+export const t = initTRPC.meta<OpenApiMeta & { openapiOptions?: OpenapiOptions }>().context<TRPCContext>().create({
   transformer: superjson,
   errorFormatter,
   // tRPC's isDev only adds the stack to the error shape, which no response sends, in development too

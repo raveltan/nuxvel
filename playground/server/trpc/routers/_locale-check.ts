@@ -3,7 +3,6 @@ import { z } from "zod";
 const titleInput = z.object({ title: z.string().min(3) });
 
 const localeOfAction = probeNamed("_locale-check.localeOfAction", defineAction({
-  input: z.object({}),
   handler: (_input, { locale }) => ({ action: locale, inAction: currentLocale() }),
 }));
 

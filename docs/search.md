@@ -57,7 +57,7 @@ const { searchVector: _searchVector, ...postColumns } = getTableColumns(postTabl
 const rows = await useDb().select(postColumns).from(postTable);
 ```
 
-`audited()` does not record changes to `searchVector`.
+The [`audit` option](./audit.md#auditing-an-action) of an action does not record changes to `searchVector`.
 
 ## Searching rows
 

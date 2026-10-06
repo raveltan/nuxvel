@@ -32,7 +32,7 @@ export const createPostAction = defineAction({
 - `target` is the row that the action changed. Its `id` becomes `targetId`, as a string. Its `type` becomes `targetType`.
 - Without a `type`, the first segment of the action becomes `targetType`: `"post.created"` gives `"post"`.
 
-Give the table name as `type` when [`audited()`](#auditing-a-mutation) also audits the same rows. `audited()` records the table name, so the two kinds of row then agree.
+Give the table name as `type` when the [`audit` option](#auditing-an-action) with a `target` also audits the same rows. It records the table name, so the two kinds of row then agree.
 
 `audit()` reads the actor and the request ID from the current action and request. It throws when no actor is in scope, for example in a server route that does not call an action.
 
@@ -60,63 +60,34 @@ await audit("post.updated", { type: "post", id: post.id }, {
 | `requestId` | The ID of the current request, or `null`. |
 | `prevHash`, `hash` | The hash chain. See [Tamper evidence](#tamper-evidence). |
 
-## Auditing a mutation
+## Auditing an action
 
 ```ts
-// server/trpc/routers/post.router.ts
-import { updatePostAction } from "#server/actions/posts/update-post.action";
+// server/actions/posts/update-post.action.ts
+import { eq } from "drizzle-orm";
 import { postTable } from "#nuxvel/schema";
 
-export const postRouter = {
-  update: authedProcedure
-    .input(updatePostInput)
-    .use(audited("post.updated", { target: postTable }))
-    .output(postSchema)
-    .mutation(({ input, ctx }) => updatePostAction(input, { actor: ctx.actor })),
-};
+export const updatePostAction = defineAction({
+  input: updatePostInput,
+  audit: { name: "post.updated", target: postTable },
+  handler: async (input) =>
+    useDb().update(postTable).set({ title: input.title }).where(eq(postTable.id, input.id)).returning().then(firstOrFail),
+});
 ```
 
-`audited(action, { target })` is a tRPC middleware. It is auto-imported on the server. It writes the audit row for you:
+The `audit` option of `defineAction()` writes the audit row for you, in the transaction of the action, after the handler returns. A handler that throws writes no row.
 
-1. It starts a transaction and runs the procedure as `ctx.actor`.
-2. It loads the row of `target` with the ID `input.id`. If the row does not exist, the call fails as not found.
-3. It runs the mutation. If the mutation fails, it writes no audit row.
-4. It loads the row again.
-5. It calls `audit()` with the columns that changed, as `{ column: { from, to } }`.
+- `audit: "post.created"` targets the row that the handler returns. Its `id` becomes `targetId`, and the first segment of the name becomes `targetType`. The handler must return a row with an `id`.
+- `audit: { name, target }` targets the row of the `target` table with the ID `input.id`. It loads the row before and after the handler, and writes the columns that changed as `{ column: { from, to } }`. The `targetType` is the table name. If the row does not exist, the call fails as not found. The input must have an `id`.
 
-The `targetType` of the row is the table name, `"post"`. `audited()` writes a row also when no column changed. The `changes` are then `{}`.
-
-- Put `.use(audited(...))` after `.input(...)`. The middleware reads `input.id` to find the row.
-- It compiles only on an `authedProcedure`. The input must have an `id` of the type of the table ID: a number for a `serial` key, a string for a `text` key.
-- It compares values by content. A date or JSON column that the mutation did not change is not a change.
-- It ignores `createdAt` and `updatedAt`. These change on each update. It also ignores `searchVector`, which Postgres builds from the other columns. See [Full-text search](./search.md).
-
-### Soft deletes and restores
-
-```ts
-// server/trpc/routers/post.router.ts
-export const postRouter = {
-  delete: authedProcedure
-    .input(postIdInput)
-    .use(audited("post.deleted", { target: postTable }))
-    .output(postIdInput)
-    .mutation(({ input, ctx }) => deletePostAction(input, { actor: ctx.actor })),
-  restore: authedProcedure
-    .input(postIdInput)
-    .use(audited("post.restored", { target: postTable }))
-    .output(postSchema)
-    .mutation(({ input, ctx }) => restorePostAction(input, { actor: ctx.actor })),
-};
-```
-
-`audited()` also loads a trashed row, so it can audit a [soft delete](./soft-deletes.md) and a restore. Give each mutation its own action name. The `changes` then hold the `deletedAt` column:
+`{ name, target }` compares values by content, so a date or JSON column that the handler did not change is not a change. It ignores `createdAt` and `updatedAt`, which change on each update, and `searchVector`, which Postgres builds from the other columns. See [Full-text search](./search.md). It also loads a trashed row, so it can audit a [soft delete](./soft-deletes.md) and a restore. Give each action its own name. The `changes` then hold the `deletedAt` column:
 
 | Action | `changes` |
 |---|---|
 | `post.deleted` | `{ deletedAt: { from: null, to: "2026-09-25T10:00:00.000Z" } }` |
 | `post.restored` | `{ deletedAt: { from: "2026-09-25T10:00:00.000Z", to: null } }` |
 
-`audited()` cannot audit a `forceDelete()`, because the row is gone after the mutation. Call `audit("post.force-deleted", { type: "post", id })` in the action instead.
+`{ name, target }` cannot audit a `forceDelete()`, because the row is gone after the handler. Call `audit("post.force-deleted", { type: "post", id })` in the handler instead.
 
 ## Redaction
 

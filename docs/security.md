@@ -321,9 +321,8 @@ export default defineEventHandler({
 // server/trpc/routers/post.router.ts
 create: authedProcedure
   .use(rateLimit({ points: 5, window: { minutes: 1 }, by: "user" }))
-  .input(createPostInput)
   .output(postSchema)
-  .mutation(({ input, ctx }) => createPostAction(input, { actor: ctx.actor })),
+  .action($actions.posts.createPost),
 ```
 
 ```ts

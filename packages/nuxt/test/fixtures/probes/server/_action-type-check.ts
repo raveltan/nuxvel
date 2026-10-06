@@ -1,6 +1,7 @@
 import { runAction } from "@nuxvel/nuxt/testing";
 import { z } from "zod";
 import * as testNamespaces from "#build/nuxvel/test-namespaces.mjs";
+import { postsTable } from "~~/server/database/schema/posts.schema";
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
@@ -29,7 +30,6 @@ const archivePost = defineAction({
 });
 
 export const noErrorsDeclared = defineAction({
-  input: z.object({}),
   // @ts-expect-error an action that declares no errors cannot fail() with a code
   handler: (_input, _ctx, fail) => fail("anything"),
 });
@@ -85,8 +85,31 @@ export const invalidatesFromTheResult = defineAction({
 });
 
 export const invalidatesTakesTags = defineAction({
-  input: z.object({}),
   // @ts-expect-error a tag is a string or an array of parts
   invalidates: [1],
   handler: () => null,
+});
+
+const noInputAction = defineAction({ handler: () => 1 });
+
+export async function callsWithoutInput() {
+  return [await noInputAction({}), await noInputAction(undefined)];
+}
+
+export const auditsReturnedRow = defineAction({
+  audit: "post.created",
+  handler: () => ({ id: 1 }),
+});
+
+export const auditWithoutReturnedId = defineAction({
+  // @ts-expect-error audit: "<name>" targets the returned row, so the handler must return one with an id
+  audit: "post.created",
+  handler: () => undefined,
+});
+
+export const auditTargetWithoutInputId = defineAction({
+  input: z.object({ title: z.string() }),
+  // @ts-expect-error audit: { name, target } loads the row with the id input.id, so the input must have one
+  audit: { name: "post.updated", target: postsTable },
+  handler: () => ({ id: 1 }),
 });

@@ -1088,8 +1088,8 @@ export const orderRouter = {
   place: authedProcedure
     .input(placeOrderInput)
     .output(z.object({ id: z.number() }))
-    .mutation(async ({ input, ctx }) => {
-      const order = await placeOrderAction(input, { actor: ctx.actor });
+    .mutation(async ({ input }) => {
+      const order = await placeOrderAction(input);
       return { id: order.id };
     }),
 };

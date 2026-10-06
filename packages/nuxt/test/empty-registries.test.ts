@@ -9,6 +9,7 @@ import { buildDiscoveredModuleCode } from "../src/discovered-module";
 import { buildEventsModuleCode } from "../src/events";
 import { buildTaskNamesModuleCode } from "../src/task-names";
 import { buildTranslationsModuleCode } from "../src/translations";
+import { buildUserDataModuleCode } from "../src/user-data";
 
 const fixturesDir = fileURLToPath(new URL("./type-fixtures", import.meta.url));
 const runtimeDir = fileURLToPath(new URL("../src/runtime/server", import.meta.url));
@@ -40,6 +41,7 @@ const emptyModules = {
   "task-names": buildTaskNamesModuleCode([]),
   "error-classifiers": buildDiscoveredModuleCode("errors", []),
   translations: buildTranslationsModuleCode({ en: [] }),
+  "user-data": buildUserDataModuleCode([]),
 };
 
 const registries = [

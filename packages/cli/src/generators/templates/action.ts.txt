@@ -1,6 +1,3 @@
-import { z } from "zod";
-
-export const {{exportName}} = defineAction({
-  input: {{schema}},
-  handler: async () => {},
+{{zodImport}}export const {{exportName}} = defineAction({
+{{inputLine}}  handler: async () => {},
 });

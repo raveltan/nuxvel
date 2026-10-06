@@ -15,6 +15,7 @@ import { requestCaller } from "../utils/use-auth";
 import { failureDetails } from "./failure-details";
 import { collectInvalidated } from "../actions/invalidation-scope";
 import { currentLocale } from "../i18n/current-locale";
+import { withProcedureMethods } from "./procedure-methods";
 import { type TRPCContext, t } from "./trpc";
 
 function isSameOrigin(origin: string | undefined, host: string | undefined) {
@@ -40,7 +41,7 @@ async function signedIn(ctx: TRPCContext): Promise<{ user: SessionUser; actor: A
   return requestCaller();
 }
 
-const baseProcedure = t.procedure
+const baseProcedure = withProcedureMethods(t.procedure
   .use(({ ctx, next }) => next({ ctx: { locale: ctx.locale ?? currentLocale() } }))
   .use(async ({ path, type, next }) => {
     if (!isObserved("trpc:call")) return next();
@@ -76,7 +77,7 @@ const baseProcedure = t.procedure
 
     return next();
   })
-  .use(({ type, next }) => (type === "mutation" ? collectInvalidated(currentEvent(), () => next()) : next()));
+  .use(({ type, next }) => (type === "mutation" ? collectInvalidated(currentEvent(), () => next()) : next())));
 
 /**
  * Base procedure for endpoints that do not require a session.
@@ -142,8 +143,7 @@ export const publicProcedure = baseProcedure.use(async ({ ctx, next }) => {
  *     useDb().select().from(postsTable).where(eq(postsTable.authorId, ctx.user.id)),
  *   ),
  *   create: authedProcedure
- *     .input(createPostInput)
- *     .mutation(({ input, ctx }) => createPostAction(input, { actor: ctx.actor })),
+ *     .action($actions.posts.createPost),
  * };
  * ```
  */
@@ -176,8 +176,7 @@ export const authedProcedure = baseProcedure.use(async ({ ctx, next }) => {
  * export const ticketRouter = {
  *   list: agentProcedure.query(() => useDb().select().from(ticketTable)),
  *   assign: agentProcedure
- *     .input(assignTicketInput)
- *     .mutation(({ input, ctx }) => assignTicketAction(input, { actor: ctx.actor })),
+ *     .action($actions.tickets.assignTicket),
  * };
  * ```
  */
@@ -233,8 +232,7 @@ export const adminProcedure = roleProcedure(["admin"]).use(async ({ ctx, next })
  * ```ts
  * export const accountRouter = {
  *   changeEmail: freshProcedure
- *     .input(changeEmailSchema)
- *     .mutation(({ input, ctx }) => changeEmailAction(input, { actor: ctx.actor })),
+ *     .action($actions.account.changeEmail),
  * };
  * ```
  */

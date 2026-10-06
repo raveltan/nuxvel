@@ -26,7 +26,7 @@ export const postNotifyFollowersJob = defineJob({
 });
 ```
 
-The test, `notify-followers.job.test.ts`, runs the job with `runJob` and a sample value for each field, here `{ postId: 1 }`. Without fields, the `input` schema is empty.
+The test, `notify-followers.job.test.ts`, runs the job with `runJob` and a sample value for each field, here `{ postId: 1 }`. Without fields, the `input` schema is empty. A job that takes no payload can leave `input` out. It then takes `{}` or `undefined`.
 
 Replace the `console.log` with the work of the job:
 

@@ -13,5 +13,5 @@ export interface Codemod {
   version: string;
   description: string;
   files: string[];
-  rewrite(source: string, file: string): Rewrite;
+  rewrite(source: string, file: string, cwd: string): Rewrite;
 }

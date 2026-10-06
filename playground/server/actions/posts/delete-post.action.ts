@@ -3,6 +3,7 @@ import { postsTable } from "#nuxvel/schema";
 
 export const deletePostAction = defineAction({
   input: postIdInput,
+  audit: { name: "post.deleted", target: postsTable },
   invalidates: ["post"],
   handler: async (input, ctx) => {
     const post = await findOrFail(postsTable, input.id);

@@ -3,6 +3,7 @@ import { postsTable } from "#nuxvel/schema";
 
 export const updatePostAction = defineAction({
   input: updatePostInput,
+  audit: { name: "post.updated", target: postsTable },
   invalidates: ["post"],
   errors: {
     "post.body-empty": "Body cannot be empty after trimming",

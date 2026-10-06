@@ -281,13 +281,11 @@ export const createBookingAction = defineAction({
 
 ```ts
 // server/trpc/routers/booking.router.ts
-import { createBookingAction } from "#server/actions/booking/create-booking.action";
 
 export const bookingRouter = {
   create: authedProcedure
-    .input(createBookingInput)
     .output(bookingSchema)
-    .mutation(({ input, ctx }) => createBookingAction(input, { actor: ctx.actor })),
+    .action($actions.booking.createBooking),
 };
 ```
 
@@ -634,19 +632,15 @@ export const cancelBookingAction = defineAction({
 ```ts
 // server/trpc/routers/booking.router.ts
 import { z } from "zod";
-import { cancelBookingAction } from "#server/actions/booking/cancel-booking.action";
-import { createBookingAction } from "#server/actions/booking/create-booking.action";
 
 export const bookingRouter = {
   create: authedProcedure
-    .input(createBookingInput)
     .output(bookingSchema)
-    .mutation(({ input, ctx }) => createBookingAction(input, { actor: ctx.actor })),
+    .action($actions.booking.createBooking),
 
   cancel: authedProcedure
-    .input(bookingIdInput)
     .output(z.void())
-    .mutation(({ input, ctx }) => cancelBookingAction(input, { actor: ctx.actor })),
+    .action($actions.booking.cancelBooking),
 };
 ```
 
@@ -1061,8 +1055,6 @@ Move the select of the list into a function, so that `byId` uses the same column
 // server/trpc/routers/booking.router.ts
 import { eq, ilike } from "drizzle-orm";
 import { z } from "zod";
-import { cancelBookingAction } from "#server/actions/booking/cancel-booking.action";
-import { createBookingAction } from "#server/actions/booking/create-booking.action";
 import { userTable, bookingTable, roomTable } from "#nuxvel/schema";
 
 function bookingRows() {
@@ -1102,14 +1094,12 @@ export const bookingRouter = {
     }),
 
   create: authedProcedure
-    .input(createBookingInput)
     .output(bookingSchema)
-    .mutation(({ input, ctx }) => createBookingAction(input, { actor: ctx.actor })),
+    .action($actions.booking.createBooking),
 
   cancel: authedProcedure
-    .input(bookingIdInput)
     .output(z.void())
-    .mutation(({ input, ctx }) => cancelBookingAction(input, { actor: ctx.actor })),
+    .action($actions.booking.cancelBooking),
 };
 ```
 

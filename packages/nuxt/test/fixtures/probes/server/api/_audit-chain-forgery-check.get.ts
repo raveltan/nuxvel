@@ -1,11 +1,9 @@
 import { createHash } from "node:crypto";
 import { type SQL, sql } from "drizzle-orm";
-import { z } from "zod";
 import { auditContent } from "../../../../../src/runtime/server/audit/chain/hash";
 import { auditLogTable } from "~~/server/database/schema/audit-log.schema";
 
 const writeTwo = probeNamed("_audit-chain-forgery-check.writeTwo", defineAction({
-  input: z.object({}),
   handler: async () => {
     await audit("post.created", { id: 1 });
     await audit("post.published", { id: 1 });

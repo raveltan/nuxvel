@@ -18,6 +18,10 @@ describe("defineAction", async () => {
     );
   });
 
+  it("takes an empty object or undefined when the action declares no input", () => {
+    expect(probe().withoutInput).toEqual([{}, "undefined"]);
+  });
+
   it("validates a schema with an async refinement", () => {
     expect(probe()).toMatchObject({
       claimed: "ravel",
