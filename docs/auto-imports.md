@@ -42,6 +42,8 @@ export default [
 ];
 ```
 
+`nuxvel upgrade --only imports` makes the same rewrite in every file of the app, see [`nuxvel upgrade`](./cli.md#nuxvel-upgrade).
+
 ## Naming scheme
 
 The form of a name tells you what the name does:

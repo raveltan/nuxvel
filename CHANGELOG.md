@@ -33,3 +33,6 @@ applies each step below that names a codemod.
 - The ESLint rule `nuxvel/no-parent-imports` reports a `../` import into
   another kind folder and fixes it to `#nuxvel/schema`, `#nuxvel/factories`,
   `#server/*`, `#shared/*`, `~/*` or `#layers/<name>/*`.
+- The codemod `imports` of `nuxvel upgrade` rewrites each `../` import
+  into another kind folder to its alias, as `nuxvel/no-parent-imports`
+  fixes it.

@@ -27,11 +27,11 @@ function insideProject(cwd: string, file: string) {
   return !isAbsolute(path) && path !== ".." && !path.startsWith(`..${sep}`);
 }
 
-function tsConfig(config: Linter.Config): Linter.Config {
+export function tsConfig(config: Linter.Config): Linter.Config {
   return { ...config, files: ["**/*.ts"], languageOptions: { parser: typescriptParser } };
 }
 
-function vueConfig(config: Linter.Config): Linter.Config {
+export function vueConfig(config: Linter.Config): Linter.Config {
   return { ...config, files: ["**/*.vue"], languageOptions: { parser: vueParser, parserOptions: { parser: typescriptParser } } };
 }
 

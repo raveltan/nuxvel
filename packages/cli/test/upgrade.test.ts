@@ -25,7 +25,7 @@ describe("nuxvel upgrade", () => {
 
     expect(unknown.exitCode).toBe(2);
     expect(unknown.stdout).toBe("");
-    expect(stripAnsi(unknown.stderr)).toContain("✖ No codemod named nope\n  → The codemods are test-aliases");
+    expect(stripAnsi(unknown.stderr)).toContain("✖ No codemod named nope\n  → The codemods are test-aliases, imports");
 
     writeFileSync(join(appDir, "package.json"), "{ not json");
 
@@ -42,7 +42,7 @@ describe("nuxvel upgrade", () => {
       const manifestPath = join(appDir, "package.json");
       writeFileSync(manifestPath, oldManifest(testNamespaces));
 
-      const dryRun = await runCliAt(appDir, "upgrade", "--dry-run");
+      const dryRun = await runCliAt(appDir, "upgrade", "--dry-run", "--only", "test-aliases");
 
       expect(dryRun.exitCode, dryRun.stderr).toBe(0);
       expect(dryRun.stdout).toBe(
@@ -78,7 +78,7 @@ describe("nuxvel upgrade", () => {
       expect(stripAnsi(applied.stderr)).toBe("✔ Updated 1 file\n");
       expect(readFileSync(manifestPath, "utf8")).toBe(oldManifest({ ...testNamespaces, ...testAliases }));
 
-      const again = await runCliAt(appDir, "upgrade");
+      const again = await runCliAt(appDir, "upgrade", "--only", "test-aliases");
 
       expect(again.exitCode).toBe(0);
       expect(again.stdout).toBe("");
@@ -121,7 +121,7 @@ describe("nuxvel upgrade", () => {
       const manifest = oldManifest({ ...testNamespaces, ...testAliases, "#server/*": "./src/server/*" });
       writeFileSync(manifestPath, manifest);
 
-      const { stdout, stderr, exitCode } = await runCliAt(appDir, "upgrade");
+      const { stdout, stderr, exitCode } = await runCliAt(appDir, "upgrade", "--only", "test-aliases");
 
       expect(exitCode).toBe(0);
       expect(stdout).toBe("");
@@ -130,5 +130,78 @@ describe("nuxvel upgrade", () => {
       );
       expect(readFileSync(manifestPath, "utf8")).toBe(manifest);
     });
+  });
+
+  describe("imports", () => {
+    it("--dry-run prints the alias of each ../ import, the upgrade writes it once, and an import it cannot fix is a manual step", async () => {
+      const appDir = scratchPlayground("upgrade-imports");
+      const job = join(appDir, "server", "jobs", "report", "weekly.job.ts");
+      const component = join(appDir, "app", "components", "report", "WeeklyReport.vue");
+      const namespaced = join(appDir, "server", "jobs", "report", "monthly.job.ts");
+      const oldJob = [
+        'import { userTable } from "../../database/schema/auth.schema";',
+        'import { slugify } from "../../utils/slug";',
+        "",
+        "export const weeklyReport = [userTable, slugify];",
+        "",
+      ].join("\n");
+      const oldComponent = [
+        '<script setup lang="ts">',
+        'import { reportTitle } from "../../../shared/utils/report";',
+        "</script>",
+        "",
+        "<template>",
+        "  <h1>{{ reportTitle }}</h1>",
+        "</template>",
+        "",
+      ].join("\n");
+      const oldNamespaced = 'import * as auth from "../../database/schema/auth.schema";\n\nexport const monthlyReport = auth;\n';
+      mkdirSync(join(appDir, "server", "jobs", "report"), { recursive: true });
+      mkdirSync(join(appDir, "app", "components", "report"), { recursive: true });
+      writeFileSync(job, oldJob);
+      writeFileSync(component, oldComponent);
+      writeFileSync(namespaced, oldNamespaced);
+      const manualStep =
+        "▲ server/jobs/report/monthly.job.ts:1: ../../database/schema/auth.schema leaves server/jobs/ for server/database/schema/: import it from #nuxvel/schema";
+
+      const dryRun = await runCliAt(appDir, "upgrade", "--dry-run", "--only", "imports");
+
+      expect(dryRun.exitCode, dryRun.stderr).toBe(0);
+      expect(dryRun.stdout).toContain(
+        [
+          "--- a/server/jobs/report/weekly.job.ts",
+          "+++ b/server/jobs/report/weekly.job.ts",
+          "@@ -1,4 +1,4 @@",
+          '-import { userTable } from "../../database/schema/auth.schema";',
+          '-import { slugify } from "../../utils/slug";',
+          '+import { userTable } from "#nuxvel/schema";',
+          '+import { slugify } from "#server/utils/slug";',
+          " ",
+          " export const weeklyReport = [userTable, slugify];",
+        ].join("\n"),
+      );
+      expect(dryRun.stdout).toContain('+import { reportTitle } from "#shared/utils/report";');
+      expect(dryRun.stdout).not.toContain("monthly.job.ts");
+      expect(stripAnsi(dryRun.stderr)).toContain(manualStep);
+      expect(readFileSync(job, "utf8")).toBe(oldJob);
+
+      const applied = await runCliAt(appDir, "upgrade", "--only", "imports");
+
+      expect(applied.exitCode, applied.stderr).toBe(0);
+      expect(applied.stdout).toContain("updated: server/jobs/report/weekly.job.ts\n");
+      expect(applied.stdout).toContain("updated: app/components/report/WeeklyReport.vue\n");
+      expect(readFileSync(job, "utf8")).toBe(
+        oldJob.replace("../../database/schema/auth.schema", "#nuxvel/schema").replace("../../utils/slug", "#server/utils/slug"),
+      );
+      expect(readFileSync(component, "utf8")).toBe(oldComponent.replace("../../../shared/utils/report", "#shared/utils/report"));
+      expect(readFileSync(namespaced, "utf8")).toBe(oldNamespaced);
+
+      const again = await runCliAt(appDir, "upgrade", "--only", "imports");
+
+      expect(again.exitCode).toBe(0);
+      expect(again.stdout).toBe("");
+      expect(stripAnsi(again.stderr)).toContain(`${manualStep}\n`);
+      expect(stripAnsi(again.stderr)).toContain("✔ No codemod changed a file\n");
+    }, 60000);
   });
 });

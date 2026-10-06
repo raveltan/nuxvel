@@ -1503,6 +1503,7 @@ updated: package.json
 | Codemod | Since | What it changes |
 | --- | --- | --- |
 | `test-aliases` | 0.3.0 | Adds `#nuxvel/schema`, `#nuxvel/factories`, `#server/*` and `#shared/*` to the `imports` of `package.json`, so tests can import them |
+| `imports` | 0.3.0 | Rewrites a `../` import into another kind folder to its alias, as `eslint --fix` with `nuxvel/no-parent-imports` does, see [Imports](./auto-imports.md#imports). It leaves a namespace or default import of a table or a factory, and an import of server code from `app/`, as manual steps |
 
 The command runs every codemod, oldest first. A codemod changes only the code that still needs it, so a second run changes nothing and prints `✔ No codemod changed a file`. `--only <codemod>` runs one codemod. An unknown name exits `2` and lists the codemods.
 
@@ -1510,6 +1511,7 @@ A codemod leaves code that it cannot rewrite safely as it is, and prints the fil
 
 ```
 ▲ package.json:9: #server/* maps to "./src/server/*": map it to "./server/*" so tests can import it
+▲ server/jobs/report/monthly.job.ts:1: ../../database/schema/auth.schema leaves server/jobs/ for server/database/schema/: import it from #nuxvel/schema
 ```
 
 `--dry-run` writes nothing. It prints what the codemods would change as a unified diff on stdout:
