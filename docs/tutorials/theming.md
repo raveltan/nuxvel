@@ -49,6 +49,7 @@ The journal needs one table. Generate it with its pages, then make the migration
 ```
 ✔ Created server/database/schema/plant.schema.ts
 ✔ Created shared/schemas/plant.ts
+✔ Created server/privacy/plant.user-data.ts
 ✔ Created server/policies/plant.policy.ts
 ✔ Created server/actions/plant/create-plant.action.ts
 ✔ Created server/actions/plant/update-plant.action.ts
@@ -62,14 +63,7 @@ The journal needs one table. Generate it with its pages, then make the migration
 
 The list page at `/plant` shows the plants in a `<DataTable>` with a `<SearchInput>`. Each row has a **Delete** button that opens the confirm dialog of `useConfirm()`. See [CLI: make:resource](../cli.md#nuxvel-makeresource-name).
 
-The `plant` table has an `ownerId` column, so it holds user data. Declare it, or `npm run test:arch` fails. See [Privacy: declaring user data](../privacy.md#declaring-user-data):
-
-```ts
-// server/privacy/plants.user-data.ts
-import { plantTable } from "#nuxvel/schema";
-
-export const plantsUserData = defineUserData(plantTable);
-```
+The `plant` table has an `ownerId` column, so it holds user data. `make:resource` declares it in `server/privacy/plant.user-data.ts`. Without that file, `npm run test:arch` fails. See [Privacy: declaring user data](../privacy.md#declaring-user-data).
 
 The server is done. The rest of the tutorial changes only the UI.
 
