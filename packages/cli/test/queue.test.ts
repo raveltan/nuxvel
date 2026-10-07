@@ -13,6 +13,7 @@ import { runCliWithEnv, runCliWithInput, stripAnsi, tableRows } from "./helpers/
 import { playgroundDir, scratchDir, scratchPlayground, sharedPlayground } from "./helpers/scratch.ts";
 import { TEST_MAILPIT_URL, TEST_MAIL_URL } from "@nuxvel/test-helpers/services";
 import { emptyWorkerRedis, waitFor } from "./helpers/services.ts";
+import { parseBroadcast } from "../../nuxt/src/runtime/shared/realtime/channel-message";
 
 async function unscheduledWaiting(queue: Queue) {
   return (await queue.getWaiting()).filter((job) => job.repeatJobKey === undefined);
@@ -413,7 +414,7 @@ describe("nuxvel queue, schedule and task commands", () => {
       });
 
       expect(
-        messages.map((published) => JSON.parse(published.slice(published.indexOf("\n") + 1))),
+        messages.map((published) => parseBroadcast(published.slice(published.indexOf("\n") + 1))),
       ).toEqual([
         { event: "from-job", payload: { title: "From a job" } },
       ]);
