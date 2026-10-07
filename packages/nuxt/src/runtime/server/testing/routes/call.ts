@@ -17,7 +17,7 @@ interface CallRequest {
 }
 
 function procedureAt(caller: object, path: string) {
-  if (!(path in appRouter._def.procedures)) throw new Error(`No tRPC procedure at "${path}"`);
+  if (!(path in appRouter()._def.procedures)) throw new Error(`No tRPC procedure at "${path}"`);
 
   let target: unknown = caller;
 
@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
 
   const settled = await settle(async () => {
     const user = userId ? await sessionUser(userId) : undefined;
-    const caller = appRouter.createCaller({ ...createContext(event), user }, { onError: reportUnexpectedError });
+    const caller = appRouter().createCaller({ ...createContext(event), user }, { onError: reportUnexpectedError });
 
     try {
       return await procedureAt(caller, path)(input);

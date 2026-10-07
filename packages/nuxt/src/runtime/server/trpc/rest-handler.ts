@@ -1,4 +1,4 @@
-import { defineEventHandler, getRequestHeader, readBody } from "h3";
+import { defineEventHandler, defineLazyEventHandler, getRequestHeader, readBody } from "h3";
 import { useEvent } from "nitropack/runtime";
 import { createOpenApiNuxtHandler } from "trpc-to-openapi";
 import { createContext } from "./request/create-context";
@@ -6,12 +6,14 @@ import { reportUnexpectedError } from "./report-unexpected-error";
 import { retryAfterHeader } from "./retry-after-header";
 import { appRouter } from "./router";
 
-const openApiHandler = createOpenApiNuxtHandler({
-  router: appRouter,
-  createContext: () => createContext(useEvent()),
-  onError: reportUnexpectedError,
-  responseMeta: retryAfterHeader,
-});
+const openApiHandler = defineLazyEventHandler(() =>
+  createOpenApiNuxtHandler({
+    router: appRouter(),
+    createContext: () => createContext(useEvent()),
+    onError: reportUnexpectedError,
+    responseMeta: retryAfterHeader,
+  }),
+);
 
 export default defineEventHandler(async (event) => {
   // trpc-to-openapi parses the request stream itself, which nuxt-security's XSS validator has already read

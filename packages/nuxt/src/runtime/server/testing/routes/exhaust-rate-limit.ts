@@ -17,7 +17,7 @@ async function spendShared(name: string, key: string) {
 
 async function spendProcedure(path: string, userId: string | undefined, event: H3Event) {
   // the router type keeps middlewares private; the runtime procedure holds them in _def
-  const procedure = Reflect.get(appRouter._def.procedures, path) as { _def: { middlewares: unknown[] } } | undefined;
+  const procedure = Reflect.get(appRouter()._def.procedures, path) as { _def: { middlewares: unknown[] } } | undefined;
 
   if (!procedure) throw new Error(`exhaustRateLimit: no tRPC procedure at "${path}"`);
 

@@ -7,7 +7,7 @@ export function openApiDocument(): OpenAPIObject | undefined {
 
   if (!api?.openapi || !api.restPrefix) return undefined;
 
-  return generateOpenApiDocument(appRouter, {
+  return generateOpenApiDocument(appRouter(), {
     ...api.openapi,
     baseUrl: api.restPrefix,
     securitySchemes: { apiKey: { type: "http", scheme: "bearer", description: "An API key, nxk_…" } },

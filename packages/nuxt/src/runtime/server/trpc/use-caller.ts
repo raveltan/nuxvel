@@ -21,5 +21,5 @@ import { type AppRouter, appRouter } from "./router";
  * ```
  */
 export function useCaller(): ReturnType<AppRouter["createCaller"]> {
-  return appRouter.createCaller({}, { onError: reportUnexpectedError });
+  return appRouter().createCaller({}, { onError: reportUnexpectedError });
 }

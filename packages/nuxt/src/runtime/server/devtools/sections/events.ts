@@ -5,9 +5,8 @@ import { readableSchema } from "../readable-schema";
 import type { DomainEvent } from "../../events/define-event";
 import type { EventsSectionData } from "../../../shared/devtools/sections/events";
 
-const registered: readonly DomainEvent[] = events;
-
 function catalog(): EventsSectionData {
+  const registered: readonly DomainEvent[] = events;
   const aliases = listenerAliases();
 
   return [...registered]

@@ -2,9 +2,8 @@ import { getTableColumns, getTableName } from "drizzle-orm";
 import userData from "#nuxvel/user-data";
 import type { UserData } from "./define-user-data";
 
-const declarations: readonly UserData[] = userData;
-
 export function personalColumnKeys(tableName: string): Set<string> {
+  const declarations: readonly UserData[] = userData;
   const keys = new Set<string>();
 
   for (const { table, personal } of declarations) {

@@ -3,8 +3,6 @@ import { useDb } from "../database/client";
 import type { UserData } from "./define-user-data";
 import { userDataTables } from "./user-data-tables";
 
-const declarations: readonly UserData[] = userData;
-
 /**
  * Collects every row declared as the user's personal data with
  * {@link defineUserData}, keyed by table name.
@@ -21,6 +19,7 @@ const declarations: readonly UserData[] = userData;
  * ```
  */
 export async function exportUserData(userId: string): Promise<Record<string, unknown[]>> {
+  const declarations: readonly UserData[] = userData;
   const archive: Record<string, unknown[]> = {};
 
   for (const { name, table, belongsTo } of userDataTables(declarations)) {

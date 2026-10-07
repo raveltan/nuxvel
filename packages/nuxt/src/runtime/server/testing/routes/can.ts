@@ -9,8 +9,6 @@ import { sessionUser } from "../session-user";
 import { settle } from "../settle";
 import { readSuperjsonBody } from "../read-superjson-body";
 
-const registered: readonly Policy[] = discoveredPolicies;
-
 interface CanRequest {
   userId: string;
   action: string;
@@ -25,6 +23,7 @@ export default defineEventHandler(async (event) => {
 
   return superjson.serialize(
     await settle(async () => {
+      const registered: readonly Policy[] = discoveredPolicies;
       const policy = registered.find((candidate) => candidate.tableName === tableName);
       if (!policy) throw new Error(`No policy covers table "${tableName}"`);
 

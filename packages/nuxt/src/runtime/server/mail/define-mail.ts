@@ -42,9 +42,8 @@ type Fitting<Props> = {
 
 type TemplateFor<Props> = [Fitting<Props>] extends [never] ? "no mail template takes this input" : Fitting<Props>;
 
-const registered: Readonly<Record<string, Component>> = templates;
-
 function templateVNode(name: string | undefined, props: object) {
+  const registered: Readonly<Record<string, Component>> = templates;
   const template = name && registered[name];
 
   if (!template) throw new Error(`No mail template is named "${name}"`);

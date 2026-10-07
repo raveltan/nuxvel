@@ -22,7 +22,7 @@ function routerFile(path: string) {
 
 export function appProcedures() {
   // tRPC types _def.procedures as the nested router record, but at runtime it is flattened by dotted path
-  return Object.entries(appRouter._def.procedures).flatMap(([path, value]) =>
+  return Object.entries(appRouter()._def.procedures).flatMap(([path, value]) =>
     isProcedure(value) ? [{ path, type: value._def.type, procedure: value }] : [],
   );
 }

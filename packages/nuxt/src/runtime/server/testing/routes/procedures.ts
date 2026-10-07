@@ -6,5 +6,5 @@ import { refuseOutsideVitest } from "../refuse-outside-vitest";
 export default defineEventHandler(() => {
   refuseOutsideVitest();
 
-  return superjson.serialize(Object.keys(appRouter._def.procedures));
+  return superjson.serialize(Object.keys(appRouter()._def.procedures));
 });

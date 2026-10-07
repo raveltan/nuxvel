@@ -1,5 +1,4 @@
 import type { z } from "zod";
-import "#nuxvel/events";
 import type events from "#nuxvel/events";
 import listeners from "#nuxvel/listeners";
 import { aliasesIn, definitionsIn, resolveName } from "../discovery/aliases";

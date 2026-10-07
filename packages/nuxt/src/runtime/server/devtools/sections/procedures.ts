@@ -13,7 +13,7 @@ function isProcedure(value: unknown): value is AnyProcedure {
 function discoveredProcedures() {
   procedures ??=
     // tRPC types _def.procedures as the nested router record, but at runtime it is flattened by dotted path
-    Object.entries(appRouter._def.procedures)
+    Object.entries(appRouter()._def.procedures)
       .flatMap(([path, value]) => (isProcedure(value) ? [{ path, type: value._def.type, input: procedureInputSchema(value) }] : []))
       .sort((a, b) => a.path.localeCompare(b.path));
 

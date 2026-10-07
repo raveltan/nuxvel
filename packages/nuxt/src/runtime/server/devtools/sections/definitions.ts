@@ -15,19 +15,18 @@ import type { RateLimit } from "../../security/define-rate-limit";
 import type { Renamed } from "../../discovery/renamed";
 import type { DefinitionsSectionData } from "../../../shared/devtools/sections/definitions";
 
-const registeredMails: readonly Mail[] = mails;
-const registeredBackfills: readonly (Backfill | Renamed<Backfill>)[] = backfillEntries;
-const registeredRateLimits: readonly RateLimit[] = rateLimits;
-
 function byName<Entry extends { name: string }>(entries: Entry[]) {
   return entries.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function mailCatalog() {
+  const registeredMails: readonly Mail[] = mails;
+
   return byName(registeredMails.map((mail) => ({ name: mail.name, input: readableSchema(mail.input) })));
 }
 
 async function backfillCatalog() {
+  const registeredBackfills: readonly (Backfill | Renamed<Backfill>)[] = backfillEntries;
   const progress = new Map((await useDb().select().from(schemaTable("backfills"))).map((row) => [row.name, row]));
 
   return byName(
@@ -48,6 +47,7 @@ async function backfillCatalog() {
 }
 
 function rateLimitCatalog() {
+  const registeredRateLimits: readonly RateLimit[] = rateLimits;
   const names = new Set([...registeredRateLimits.map((limit) => limit.name), ...BUILT_IN_RATE_LIMITS.keys()]);
 
   return byName([...names].map(sharedLimit));

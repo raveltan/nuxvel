@@ -13,7 +13,6 @@ import type { UserData } from "./define-user-data";
 import { userDataTables } from "./user-data-tables";
 import { runErasureSteps } from "./erasure-steps";
 
-const declarations: readonly UserData[] = userData;
 const execFileAsync = promisify(execFile);
 
 async function recordErasure(command: string, userId: string) {
@@ -53,6 +52,7 @@ async function recordErasure(command: string, userId: string) {
  * ```
  */
 export async function eraseUserData(userId: string): Promise<Record<string, number>> {
+  const declarations: readonly UserData[] = userData;
   const tables = userDataTables(declarations);
 
   if (tables.length === 0) {

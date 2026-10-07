@@ -11,13 +11,12 @@ export type Translate = (key: string, params?: Record<string, unknown>) => strin
 
 export const translateKey: InjectionKey<Translate> = Symbol("nuxvel:translate");
 
-const translations: Readonly<Record<string, readonly object[]>> = appTranslations;
-
 function lookup(messages: unknown, key: string): unknown {
   return key.split(".").reduce<unknown>((node, part) => (typeof node === "object" && node !== null ? Reflect.get(node, part) : undefined), messages);
 }
 
 export function translator(locale: string): Translate {
+  const translations: Readonly<Record<string, readonly object[]>> = appTranslations;
   const fallbacks = new Set([locale, useRuntimeConfig().i18nLocales.defaultLocale, "en"]);
   const sources = [...fallbacks].flatMap((code) => [...(translations[code] ?? []), nuxvelMessages[code] ?? {}]);
 
