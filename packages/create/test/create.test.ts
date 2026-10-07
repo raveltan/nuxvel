@@ -305,6 +305,15 @@ describe("create-nuxvel", () => {
 
       const twoLocales = await run(join(repoNodeModules, ".bin", "nuxt"), ["typecheck"], appDir);
       expect(twoLocales.exitCode, twoLocales.output).toBe(0);
+      expect(JSON.parse(readFileSync(join(appDir, ".nuxt", "tsconfig.app.json"), "utf8")).exclude).toContain("../app/**/*.stories.ts");
+      expect(JSON.parse(readFileSync(join(appDir, ".nuxt", "tsconfig.storybook.json"), "utf8")).include).toContain("../app/**/*.stories.ts");
+
+      const brokenStory = join(appDir, "app", "components", "Broken.stories.ts");
+      writeFileSync(brokenStory, 'import { mockUser } from "@nuxvel/nuxt/storybook/mocks";\n\nexport const user = mockUser({ email: 1 });\n');
+      const storyError = await run(join(repoNodeModules, ".bin", "nuxt"), ["typecheck"], appDir);
+      expect(storyError.exitCode).not.toBe(0);
+      expect(storyError.output).toContain("Broken.stories.ts");
+      rmSync(brokenStory);
 
       const config = join(appDir, "nuxt.config.ts");
       writeFileSync(config, readFileSync(config, "utf8").replace("      { code: 'zh', iso: 'zh-CN', displayName: '中文' },\n", ""));

@@ -194,6 +194,11 @@ applies each step below that names a codemod.
 - The translation key `nuxvel.authForm.codeFailed` is now
   `nuxvel.auth.verifyFailed`. By hand: if a locale file of the app sets
   `nuxvel.authForm.codeFailed`, rename it to `nuxvel.auth.verifyFailed`.
+- Optional: keep story files out of the app tsconfig, so the editor
+  loads the types of Storybook and MSW only for stories. By hand: add
+  `{ "path": "./.nuxt/tsconfig.storybook.json" }` to the `references`
+  of `tsconfig.json`. Until then the stories stay in the app tsconfig,
+  as before.
 
 ### Changes
 

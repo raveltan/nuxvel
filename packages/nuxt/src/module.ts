@@ -17,7 +17,7 @@ import { applyRouteRules } from "./setup/route-rules";
 import { trackNitroScan } from "./setup/nitro-scan";
 import { setupPwa } from "./setup/pwa";
 import { type PageGroupMeta, setupPageGroups } from "./setup/page-groups";
-import { dropFontsPluginInStorybook, includeStorybookTypes, localizeStorybook, prebundleSanitizeHtmlInStorybook, isStorybookBuild, storybookI18nOverrides } from "./setup/storybook";
+import { dropFontsPluginInStorybook, includeStorybookTypes, typecheckStoriesApart, localizeStorybook, prebundleSanitizeHtmlInStorybook, isStorybookBuild, storybookI18nOverrides } from "./setup/storybook";
 import { addAutoImports, addSharedSchemaImports } from "./setup/auto-imports";
 import { addComponents } from "./setup/components";
 import { addFormInputs } from "./setup/form-inputs";
@@ -612,6 +612,7 @@ export default defineNuxtModule<ModuleOptions>().with({
     setupPwa(nuxt, options, runtimeFile);
     setupPageGroups(nuxt, options.pages.groups, runtimeFile);
     includeStorybookTypes(nuxt);
+    typecheckStoriesApart(nuxt);
     dropFontsPluginInStorybook(nuxt);
     prebundleSanitizeHtmlInStorybook(nuxt);
     localizeStorybook(nuxt, nuxvelLocalesDir(nuxt));

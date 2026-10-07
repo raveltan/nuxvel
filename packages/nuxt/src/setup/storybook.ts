@@ -1,6 +1,6 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
-import { addPluginTemplate } from "@nuxt/kit";
+import { addPluginTemplate, getLayerDirectories } from "@nuxt/kit";
 import type { Nuxt } from "@nuxt/schema";
 import { defu } from "defu";
 import { i18nOptions } from "./i18n-options";
@@ -12,6 +12,21 @@ export function includeStorybookTypes(nuxt: Nuxt) {
   nuxt.hook("prepare:types", ({ nodeTsConfig }) => {
     nodeTsConfig.include ||= [];
     nodeTsConfig.include.push(relative(nuxt.options.buildDir, join(nuxt.options.rootDir, ".storybook/**/*")));
+  });
+}
+
+export function typecheckStoriesApart(nuxt: Nuxt) {
+  const { buildDir, rootDir } = nuxt.options;
+  const stories = getLayerDirectories(nuxt).map((dirs) => relative(buildDir, join(dirs.app, "**/*.stories.ts")));
+  const rootTsConfig = join(rootDir, "tsconfig.json");
+  const referenced = existsSync(rootTsConfig) && readFileSync(rootTsConfig, "utf8").includes("tsconfig.storybook.json");
+  nuxt.hook("modules:done", () => {
+    nuxt.hook("prepare:types", ({ tsConfig }) => {
+      const declarations = (tsConfig.include ?? []).filter((path) => path.endsWith(".d.ts"));
+      if (referenced) tsConfig.exclude = [...(tsConfig.exclude ?? []), ...stories];
+      mkdirSync(buildDir, { recursive: true });
+      writeFileSync(join(buildDir, "tsconfig.storybook.json"), JSON.stringify({ extends: "./tsconfig.app.json", include: [...declarations, ...stories], exclude: [] }, null, 2));
+    });
   });
 }
 
