@@ -44,6 +44,10 @@ export default {
   entries: subpathEntries.map((entry) => `${entry}.ts`),
   externals: [/^#nuxvel\//],
   hooks: {
+    // rollup hoists the side-effect imports of every entry into each declaration file, so @nuxvel/nuxt/database loaded the types of BullMQ, ioredis and the AWS SDK
+    "rollup:dts:options"(_ctx: unknown, options: { plugins: unknown[] }) {
+      options.plugins.push({ name: "nuxvel:declaration-imports", outputOptions: (output: object) => ({ ...output, hoistTransitiveImports: false }) });
+    },
     // nuxt-module-build leaves *.stories.* out of dist/runtime, but nuxvelStories() serves the framework stories from there
     "mkdist:entry:options"(_ctx: unknown, _entry: unknown, options: MkdistOptions) {
       if (Array.isArray(options.pattern)) options.pattern = options.pattern.filter((pattern) => !pattern.includes(".stories."));

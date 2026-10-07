@@ -214,6 +214,8 @@ applies each step below that names a codemod.
 
 ### Changes
 
+- The types of `@nuxvel/nuxt/database` no longer load BullMQ, ioredis
+  and the AWS SDK, so the editor is faster in each file that imports it.
 - `@nuxvel/nuxt/testing` exports `describe` and `it`, so one import line
   serves a test file. Importing them from `vitest` still works.
 - `defineFlag()` takes no argument: `default` is `false`. `make:flag`
