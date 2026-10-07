@@ -1107,17 +1107,15 @@ export const subscribeAction = defineAction({
 ```ts
 // server/trpc/routers/subscriber.router.ts
 import { z } from "zod";
-import { subscribeAction } from "#server/actions/subscribers/subscribe.action";
 
 export const subscriberRouter = {
   subscribe: publicProcedure
-    .input(subscribeInput)
     .output(z.void())
-    .mutation(({ input }) => subscribeAction(input, { actor: systemActor("subscribe-form") })),
+    .action($actions.subscribers.subscribe),
 };
 ```
 
-`onConflictDoNothing()` keeps the first row when an address subscribes again. A visitor has no account, so the router calls the action as `systemActor("subscribe-form")`. `.output(z.void())` says that the procedure sends nothing to the browser. `nuxvel test:arch` refuses a procedure without an output schema. The router test replaces the generated action test:
+`onConflictDoNothing()` keeps the first row when an address subscribes again. A visitor has no account, so `.action()` runs the action as the guest actor. `.output(z.void())` says that the procedure sends nothing to the browser. `nuxvel test:arch` refuses a procedure without an output schema. The router test replaces the generated action test:
 
 ```ts
 // server/trpc/routers/subscriber.router.test.ts
@@ -1276,7 +1274,7 @@ export const incidentUpdateMail = defineMail({
 });
 ```
 
-`input` is the schema of the data that the mail needs. `to` is the recipient, and `render` gets the input without it. `preview` is the input that the mail preview of the DevTools starts with. Test the mail:
+`input` is the schema of the data that the mail needs. `to` is the recipient, and the template gets the rest of the input as its props. `preview` is the input that the mail preview of the DevTools starts with. Test the mail:
 
 ```ts
 // server/mail/incident/update.mail.test.ts
