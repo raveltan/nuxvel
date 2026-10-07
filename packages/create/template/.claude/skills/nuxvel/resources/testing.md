@@ -14,8 +14,8 @@ One check, one layer. No unit-test layer.
 
 ```ts
 import { actingAs, describe, expect, expectRow, guest, it, runAction } from "@nuxvel/nuxt/testing";
-import { postTable } from "../../server/database/schema/post.schema";
-import { userFactory } from "../../server/factories/users.factory";
+import { postTable } from "#nuxvel/schema";
+import { userFactory } from "#nuxvel/factories";
 
 describe("post router", () => {
   it("creates a post", async () => {
