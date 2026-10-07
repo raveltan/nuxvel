@@ -25,7 +25,7 @@ describe("nuxvel upgrade", () => {
 
     expect(unknown.exitCode).toBe(2);
     expect(unknown.stdout).toBe("");
-    expect(stripAnsi(unknown.stderr)).toContain("✖ No codemod named nope\n  → The codemods are test-aliases, imports, use-trpc, invalidate, mutation-options, audit");
+    expect(stripAnsi(unknown.stderr)).toContain("✖ No codemod named nope\n  → The codemods are test-aliases, imports, use-trpc, explicit-imports, invalidate, mutation-options, audit");
 
     writeFileSync(join(appDir, "package.json"), "{ not json");
 
@@ -1711,6 +1711,163 @@ describe("nuxvel upgrade", () => {
       const again = await runCliAt(appDir, "upgrade", "--only", "explicit-namespace-imports");
 
       expect(again.stdout).not.toContain("updated:");
+    }, 60000);
+  });
+
+  describe("explicit-imports", () => {
+    it("imports each nuxvel name a server file or a .vue script uses from its topic path, and leaves a name the file declares itself", async () => {
+      const appDir = scratchPlayground("upgrade-explicit-imports");
+      const api = join(appDir, "server", "api");
+      mkdirSync(api, { recursive: true });
+      const server = [
+        'import { postsTable } from "#nuxvel/schema";',
+        "",
+        'const useDb = () => "local";',
+        "",
+        "export default defineEventHandler(async () => {",
+        "  const message = useDb();",
+        "  const post = await findOrFail(postsTable, 1);",
+        "",
+        '  return { message, post, parsed: createPostInput.parse({ title: "Hi", body: "" }) };',
+        "});",
+        "",
+      ];
+      const vue = [
+        "<template>",
+        "  <div>{{ user?.name }}</div>",
+        "</template>",
+        "",
+        '<script setup lang="ts">',
+        "const user = useUser();",
+        "const posts = useLiveQuery(() => $api.post.list.queryOptions());",
+        'const rows: RouterOutputs["post"]["list"] = [];',
+        "</script>",
+        "",
+      ];
+      writeFileSync(join(api, "topic-imports.get.ts"), server.join("\n"));
+      writeFileSync(join(appDir, "app", "pages", "topic-imports.vue"), vue.join("\n"));
+
+      const applied = await runCliAt(appDir, "upgrade", "--only", "explicit-imports");
+
+      expect(applied.exitCode, applied.stderr).toBe(0);
+      expect(applied.stdout).toContain("updated: server/api/topic-imports.get.ts\n");
+      expect(applied.stdout).toContain("updated: app/pages/topic-imports.vue\n");
+      expect(readFileSync(join(api, "topic-imports.get.ts"), "utf8")).toBe(
+        [
+          server[0],
+          'import { createPostInput } from "#shared/schemas/post";',
+          'import { findOrFail } from "@nuxvel/nuxt/server/database";',
+          ...server.slice(1),
+        ].join("\n"),
+      );
+      expect(readFileSync(join(appDir, "app", "pages", "topic-imports.vue"), "utf8")).toBe(
+        [
+          ...vue.slice(0, 5),
+          'import { $api, useLiveQuery } from "@nuxvel/nuxt/app/api";',
+          'import type { RouterOutputs } from "@nuxvel/nuxt/app/api";',
+          'import { useUser } from "@nuxvel/nuxt/app/auth";',
+          "",
+          ...vue.slice(5),
+        ].join("\n"),
+      );
+
+      const again = await runCliAt(appDir, "upgrade", "--only", "explicit-imports");
+
+      expect(again.exitCode, again.stderr).toBe(0);
+      expect(again.stdout).toBe("");
+    }, 60000);
+
+    it("rewrites a $<kind> member to the imported definition, imports a shared schema, and prints a key with no definition as a manual step", async () => {
+      const appDir = scratchPlayground("upgrade-explicit-imports-namespaces");
+      const api = join(appDir, "server", "api");
+      const seeders = join(appDir, "server", "seeders");
+      const schemas = join(appDir, "shared", "schemas");
+      const jobs = join(appDir, "server", "jobs");
+      mkdirSync(api, { recursive: true });
+      mkdirSync(join(jobs, "r5"), { recursive: true });
+      const namespaced = [
+        "export default defineEventHandler(async () => {",
+        "  await $jobs.post.notifyFollowers.dispatch({ postId: 1 });",
+        "  await $jobs.r5.queueEmail.dispatch({ postId: 2 });",
+        "",
+        "  return $policies.post.update;",
+        "});",
+        "",
+      ];
+      const defaultJob = [
+        "export default defineJob({",
+        "  handler: async () => {",
+        '    useLogger("r5").info("queued");',
+        "  },",
+        "});",
+        "",
+      ];
+      const seedersFile = [
+        'import * as $seeders from "#nuxvel/seeders-namespace";',
+        "",
+        "export default defineSeeder(async ({ call }) => {",
+        '  await call("demo", $seeders.database);',
+        "});",
+        "",
+      ];
+      const gone = ["export default defineEventHandler(() => $jobs.post.gone.dispatch({ postId: 1 }));", ""];
+      const schema = ['export default defineEventHandler(() => createPostInput.parse({ title: "Hi", body: "" }));', ""];
+      const ambiguous = ["export default defineEventHandler(() => r5SharedInput);", ""];
+      writeFileSync(join(api, "namespaces.get.ts"), namespaced.join("\n"));
+      writeFileSync(join(seeders, "namespaces.ts"), seedersFile.join("\n"));
+      writeFileSync(join(jobs, "r5", "queue-email.ts"), defaultJob.join("\n"));
+      writeFileSync(join(api, "gone.get.ts"), gone.join("\n"));
+      writeFileSync(join(api, "schema.get.ts"), schema.join("\n"));
+      writeFileSync(join(api, "ambiguous.get.ts"), ambiguous.join("\n"));
+      writeFileSync(join(schemas, "r5-a.ts"), "export const r5SharedInput = 1;\n");
+      writeFileSync(join(schemas, "r5-b.ts"), "export const r5SharedInput = 2;\n");
+
+      const applied = await runCliAt(appDir, "upgrade", "--only", "explicit-imports");
+
+      expect(applied.exitCode, applied.stderr).toBe(0);
+      expect(readFileSync(join(api, "namespaces.get.ts"), "utf8")).toBe(
+        [
+          'import { postNotifyFollowersJob } from "#server/jobs/post/notify-followers.job";',
+          'import queueEmailJob from "#server/jobs/r5/queue-email";',
+          'import { postPolicy } from "#server/policies/post.policy";',
+          "",
+          "export default defineEventHandler(async () => {",
+          "  await postNotifyFollowersJob.dispatch({ postId: 1 });",
+          "  await queueEmailJob.dispatch({ postId: 2 });",
+          "",
+          "  return postPolicy.update;",
+          "});",
+          "",
+        ].join("\n"),
+      );
+      expect(readFileSync(join(seeders, "namespaces.ts"), "utf8")).toBe(
+        [
+          seedersFile[0],
+          'import { databaseSeeder } from "#server/seeders/database.seeder";',
+          'import { defineSeeder } from "@nuxvel/nuxt/server/database";',
+          "",
+          "export default defineSeeder(async ({ call }) => {",
+          '  await call("demo", databaseSeeder);',
+          "});",
+          "",
+        ].join("\n"),
+      );
+      expect(readFileSync(join(api, "schema.get.ts"), "utf8")).toBe(
+        ['import { createPostInput } from "#shared/schemas/post";', "", ...schema].join("\n"),
+      );
+      expect(readFileSync(join(api, "gone.get.ts"), "utf8")).toBe(gone.join("\n"));
+      expect(readFileSync(join(api, "ambiguous.get.ts"), "utf8")).toBe(ambiguous.join("\n"));
+      expect(stripAnsi(applied.stderr)).toContain(
+        "▲ server/api/gone.get.ts:1: $jobs.post.gone.dispatch is not a definition: import the definition from its file and call it directly",
+      );
+      expect(stripAnsi(applied.stderr)).toContain(
+        "▲ server/api/ambiguous.get.ts:1: r5SharedInput is exported by #shared/schemas/r5-a and #shared/schemas/r5-b: import it from the file that exports it",
+      );
+
+      const again = await runCliAt(appDir, "upgrade", "--only", "explicit-imports");
+
+      expect(again.exitCode, again.stderr).toBe(0);
+      expect(again.stdout).toBe("");
     }, 60000);
   });
 });

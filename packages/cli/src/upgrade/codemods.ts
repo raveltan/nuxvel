@@ -5,6 +5,7 @@ import { audit } from "./codemods/audit.ts";
 import { cliNames } from "./codemods/cli-names.ts";
 import { definitionMethods } from "./codemods/definition-methods.ts";
 import { durations } from "./codemods/durations.ts";
+import { explicitImports } from "./codemods/explicit-imports.ts";
 import { explicitNamespaceImports } from "./codemods/explicit-namespace-imports.ts";
 import { explicitSdkImports } from "./codemods/explicit-sdk-imports.ts";
 import { imports } from "./codemods/imports.ts";
@@ -19,4 +20,4 @@ import { testClientApi } from "./codemods/test-client-api.ts";
 import { uploadPending } from "./codemods/upload-pending.ts";
 import { useTrpc } from "./codemods/use-trpc.ts";
 
-export const codemods: Codemod[] = [testAliases, imports, useTrpc, invalidate, mutationOptions, audit, actionForm, actorArg, removedGlobals, definitionMethods, durations, presenceParams, notificationInput, uploadPending, liveQueryReactive, testClientApi, cliNames, explicitSdkImports, explicitNamespaceImports];
+export const codemods: Codemod[] = [testAliases, imports, useTrpc, explicitImports, invalidate, mutationOptions, audit, actionForm, actorArg, removedGlobals, definitionMethods, durations, presenceParams, notificationInput, uploadPending, liveQueryReactive, testClientApi, cliNames, explicitSdkImports, explicitNamespaceImports];

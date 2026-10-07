@@ -23,6 +23,38 @@ function definitionExport(file: string, suffixes: string[]) {
   );
 }
 
+/** One definition a generated `$<kind>` namespace reaches: the file that holds it and the name that file exports it under. */
+export interface NamespaceLeaf {
+  file: string;
+  name: string;
+}
+
+/**
+ * Maps the path of each definition in `definitions` to its file and its
+ * export name. The key is the definition name in camelCase
+ * (`post.notify-followers` is `post.notifyFollowers`), which is the path
+ * under the `$<kind>` namespace root (`$jobs.post.notifyFollowers`).
+ *
+ * Use it to rewrite a namespace member to the imported definition. A file
+ * whose definition is a `renamed()` alias gets no entry, and with `define`
+ * a file whose definition comes from another call gets none either. A file
+ * that default-exports its definition has the name `"default"`.
+ *
+ * @internal Shared by the module's codegen and `@nuxvel/cli`.
+ */
+export function namespaceLeaves(folder: string, definitions: NamedFile[], define?: string) {
+  const suffixes = exportSuffixes(folder);
+
+  return new Map(
+    definitions.flatMap(({ file, name }): [string, NamespaceLeaf][] => {
+      const definition = definitionExport(file, suffixes);
+      if (definition.call === "renamed" || (define && definition.call !== define)) return [];
+
+      return [[name.split(".").map(camelCase).join("."), { file, name: definition.name }]];
+    }),
+  );
+}
+
 /**
  * Builds the modules of a generated `$<kind>` namespace such as `$jobs`:
  * one module for `root` and one for each folder under it, keyed by

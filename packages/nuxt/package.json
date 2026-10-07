@@ -112,6 +112,7 @@
       "default": "./dist/testing/changes-reporter.mjs"
     },
     "./ui.css": "./dist/runtime/app/ui-overrides.css",
+    "./public-imports.json": "./dist/public-imports.json",
     "./package.json": "./package.json"
   },
   "files": [

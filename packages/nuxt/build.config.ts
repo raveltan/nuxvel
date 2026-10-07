@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, relative } from "node:path";
 
 const topicEntries = ["src/server", "src/app", "src/shared"].flatMap((dir) =>
@@ -62,6 +62,8 @@ export default {
     },
     // the declaration pass types each story's `component` as any, and nothing imports a story's types
     "build:done"(ctx: StubContext) {
+      // unbuild copies only the entries and runtime/, and the CLI reads @nuxvel/nuxt/public-imports.json from the package
+      copyFileSync(join(ctx.options.rootDir, "src/public-imports.json"), join(ctx.options.outDir, "public-imports.json"));
       const runtime = join(ctx.options.outDir, "runtime");
       if (!existsSync(runtime)) return;
       for (const file of readdirSync(runtime, { recursive: true, encoding: "utf8" })) {
