@@ -1275,7 +1275,7 @@ Generate the factory:
 ◇ Updated types (nuxt prepare) (1.2s)
 ```
 
-The command writes the two files. Its last step, `factory:sync`, finds the table and fills the definition. The `enrollmentId` column references the `enrollment` table of the app, so the definition calls the enrollment factory:
+The command writes the two files. Its last step, `factory:sync`, finds the table and fills the definition. The `enrollmentId` column references the `enrollment` table of the app. A factory creates a missing parent row with the factory of its table, so the definition stays empty:
 
 ```ts
 // layers/certificates/server/domains/certificate/factories/certificate.factory.ts
@@ -1399,7 +1399,7 @@ defineProps<{ name: string; courseTitle: string; url: string }>();
 </template>
 ```
 
-`render` gets the input without `to`, so the address does not go into the HTML. The DevTools preview of the mail starts from `preview`. See [Mail](../mail.md).
+The template gets the input without `to` as its props, so the address does not go into the HTML. The DevTools preview of the mail starts from `preview`. See [Mail](../mail.md).
 
 ### The certificate page
 
@@ -1586,7 +1586,7 @@ const teaches = computed(() => user.value?.role === "instructor" || user.value?.
 
 ```vue
 <!-- app/layouts/app.vue, the nav -->
-        <nav aria-label="Main" class="flex items-center gap-2">
+        <nav :aria-label="$ts('app.mainNav')" class="flex items-center gap-2">
           <AppLogo />
           <UButton :to="{ name: 'courses' }" variant="ghost" color="neutral" label="Courses" />
           <UButton v-if="user" :to="{ name: 'learning' }" variant="ghost" color="neutral" label="My learning" />
@@ -2253,7 +2253,7 @@ Add the imports and the procedure builder at the top of the file:
 // server/domains/learning/routers/learning.router.ts
 import { and, count, desc, eq, gte, isNotNull } from "drizzle-orm";
 import { z } from "zod";
-import { userTable } from "#nuxvel/schema";
+import { courseTable, enrollmentTable, lessonProgressTable, userTable } from "#nuxvel/schema";
 ```
 
 ```ts
