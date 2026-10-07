@@ -225,6 +225,9 @@ applies each step below that names a codemod.
 
 - The types of `@nuxvel/nuxt/database` no longer load BullMQ, ioredis
   and the AWS SDK, so the editor is faster in each file that imports it.
+- The app tsconfig no longer loads the `webworker` lib, so the editor
+  loads 13,000 fewer lines of types. A file in `app/` that needs the
+  worker types adds `/// <reference lib="webworker" />`.
 - `@nuxvel/nuxt/testing` exports `describe` and `it`, so one import line
   serves a test file. Importing them from `vitest` still works.
 - `defineFlag()` takes no argument: `default` is `false`. `make:flag`

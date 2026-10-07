@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
@@ -34,5 +34,14 @@ describe("nuxt prepare in an app with no pages", () => {
     await promisify(execFile)(process.execPath, [nuxtBin, "prepare"], { cwd: appDir, env: { ...process.env, NUXVEL_EDITOR_TYPES_DIR: typesDir } });
 
     expect(typeFilesImportingSource(join(appDir, ".nuxt"))).toContain("types/imports.d.ts");
+  }, 60_000);
+
+  it("leaves the webworker lib out of the app tsconfig", async () => {
+    await promisify(execFile)(process.execPath, [nuxtBin, "prepare"], { cwd: appDir });
+
+    const { compilerOptions } = JSON.parse(readFileSync(join(appDir, ".nuxt/tsconfig.app.json"), "utf8")) as { compilerOptions: { lib: string[] } };
+
+    expect(compilerOptions.lib).toContain("dom");
+    expect(compilerOptions.lib.map((lib) => lib.toLowerCase())).not.toContain("webworker");
   }, 60_000);
 });

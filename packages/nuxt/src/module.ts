@@ -31,6 +31,7 @@ import { registerNamespaces } from "./setup/namespaces";
 import { addRouteTypes } from "./setup/route-types";
 import { editorTypes } from "./setup/editor-types";
 import { registerServerOnlyModules } from "./setup/server-only-modules";
+import { dropWebworkerLib } from "./setup/app-lib";
 import { reloadOnDefinitionChanges } from "./setup/dev-reload";
 import { allowUiThemeStyle } from "./setup/ui-theme-csp";
 import { configureNitro } from "./setup/nitro-config";
@@ -644,6 +645,7 @@ export default defineNuxtModule<ModuleOptions>().with({
     const modules = generatedModules(options, discovery, nitroScan, socialProviders, runtimeFile);
     const { namespaces, namespaceModules } = await registerNamespaces(discovery);
     addRouteTypes(nitroScan, runtimeFile);
+    dropWebworkerLib(nuxt);
     registerServerOnlyModules(nuxt, { ...modules, ...namespaceModules }, editorTypes(nuxt, runtimeFile("./runtime")));
     addProcedureInputs(nuxt, discovery);
     reloadOnDefinitionChanges(nuxt, discovery, namespaces);
