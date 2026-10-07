@@ -36,6 +36,7 @@ Give `--domain` to a `make:*` command to write into a domain folder:
 ```
 ✔ Created server/domains/link/schema/link.schema.ts
 ✔ Created shared/schemas/link.ts
+✔ Created server/privacy/link.user-data.ts
 ✔ Created server/domains/link/policies/link.policy.ts
 ✔ Created server/domains/link/actions/create-link.action.ts
 ✔ Created server/domains/link/actions/update-link.action.ts
@@ -63,7 +64,7 @@ server/domains/link/
 
 The domain name is the first word of each name. So the action in `actions/create-link.action.ts` is `link.create-link`, as it is for `server/actions/link/create-link.action.ts`. The router file has the name of its domain, so it is the namespace `link` itself, not `link.link`. A domain can have one such file of each kind. The Zod inputs stay in `shared/schemas/link.ts`, because the pages import them too.
 
-The files of a domain import each other with relative paths:
+The files of a domain import a table from `#nuxvel/schema`, as the other files of the app do:
 
 ```ts
 // server/domains/link/actions/create-link.action.ts
@@ -221,25 +222,14 @@ The structure of the app is a set of rules. For example, a router calls an actio
 ```
 
 ```
+✔ All architecture rules pass
+```
+
+A link belongs to a user, so `nuxvel user:export` and `nuxvel user:erase` must find it. `make:router --crud` declared it in `server/privacy/link.user-data.ts`. The privacy declarations stay in that folder, also for a table of a domain. Without that file, the command fails and exits `1`:
+
+```
 ✖ server/domains/link/schema/link.schema.ts: column ownerId of table linkTable references the user table but no defineUserData() in server/privacy/, declare it so exportUserData() and eraseUserData() find its rows
 ✖ 1 architecture violation
-```
-
-The command exits `1`. A link belongs to a user, so `nuxvel user:export` and `nuxvel user:erase` must find it. Declare it in `server/privacy/`. The privacy declarations stay in that folder, also for a table of a domain:
-
-```ts
-// server/privacy/link.user-data.ts
-import { linkTable } from "#nuxvel/schema";
-
-export const linkUserData = defineUserData(linkTable);
-```
-
-```bash
-./nv test:arch
-```
-
-```
-✔ All architecture rules pass
 ```
 
 Chapter 9 needs this declaration: an erased user must stay erased after a restore.
@@ -997,7 +987,7 @@ Answer yes. Give the app a user and two links. An action takes an actor, so pass
 
 ```
 nuxvel> const ada = await insertOne(userTable, { id: "u_ada", name: "Ada", email: "ada@example.com", emailVerified: true })
-nuxvel> const actor = { type: "user", id: ada.id, role: "user" }
+nuxvel> const actor = userActor(ada)
 nuxvel> await createLinkAction({ url: "https://nuxt.com/docs", title: "Nuxt docs" }, { actor })
 nuxvel> await createLinkAction({ url: "https://orm.drizzle.team", title: "Drizzle" }, { actor })
 nuxvel> await markAllReadAction({}, { actor })
@@ -1066,7 +1056,7 @@ nuxvel> await eraseUserData("u_ada")
 }
 ```
 
-The erasure deleted her 2 links, because chapter 3 declared the `link` table in `server/privacy/`. Before it deleted a row, it appended her ID to the erasure log of the server, `/srv/nuxvel/erasures/shelf.jsonl`, and uploaded the record to the off-site bucket. When that upload fails, the erasure fails too, and deletes nothing.
+The erasure deleted her 2 links, because `server/privacy/link.user-data.ts` declares the `link` table. Before it deleted a row, it appended her ID to the erasure log of the server, `/srv/nuxvel/erasures/shelf.jsonl`, and uploaded the record to the off-site bucket. When that upload fails, the erasure fails too, and deletes nothing.
 
 ### Restoring a backup
 
