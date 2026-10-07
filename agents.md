@@ -336,6 +336,13 @@ average 31-39 from other agents, so expect less on an idle machine);
 `npm run test:release` adds the docker image build, the
 `create-nuxvel` install check and the VPS check and runs before a
 release.
+The declarations check
+(`packages/create/test/packed-declarations.release.test.ts`) packs
+`@nuxvel/nuxt`, runs `nuxt prepare` on a scratch app and fails when
+the declarations of the auto-imports it lists or
+of `@nuxvel/nuxt/database` load a server SDK (the AWS SDK, BullMQ,
+ioredis, Stripe, Nodemailer, Faker, Sentry, Storybook or MSW), and
+prints the import chain that loads it.
 The VPS check, also `npm run test:deploy` on its own
 (`packages/cli/test/deploy.release.test.ts`), runs `server:setup` once
 on an Ubuntu 26.04 container and then the app, deploy, backup and
