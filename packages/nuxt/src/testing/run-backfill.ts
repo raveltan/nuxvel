@@ -1,5 +1,5 @@
 import type { Backfill } from "../runtime/server/backfills/define-backfill";
-import type { BackfillName } from "../runtime/server/backfills/registry";
+import type { BackfillName } from "../runtime/server/backfills/backfill-name";
 import { callApp } from "./settled";
 
 /**

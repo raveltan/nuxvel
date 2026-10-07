@@ -1,6 +1,7 @@
 import { defineEventHandler } from "h3";
 import superjson from "superjson";
-import { type BackfillName, findBackfill } from "../../backfills/registry";
+import type { BackfillName } from "../../backfills/backfill-name";
+import { findBackfill } from "../../backfills/registry";
 import { runBackfill } from "../../backfills/run-backfill";
 import { refuseOutsideVitest } from "../refuse-outside-vitest";
 import { settle } from "../settle";

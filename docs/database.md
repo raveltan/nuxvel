@@ -620,7 +620,7 @@ The factories give each row [Faker](https://fakerjs.dev) values, so the seeded p
 
 A seeder fills the database with development or demo data. Put one seeder in each file under `server/seeders/`. nuxvel finds the file. The path of the file is the name of the seeder: `server/seeders/posts.seeder.ts` is the seeder `"posts"`, and `server/seeders/blog/tags.seeder.ts` is `"blog.tags"`. `defineSeeder` is auto-imported.
 
-The auto-imported `$seeders` namespace holds each seeder under its path. Each path segment is in camelCase and has no kind suffix. `$seeders.blog.tags` is the seeder in `server/seeders/blog/tags.seeder.ts`. Go to definition on `$seeders.blog.tags` opens the seeder file. `$seeders` is available on the server only.
+The `$seeders` namespace holds each seeder under its path. Import it with `import * as $seeders from "#nuxvel/seeders-namespace"`. Each path segment is in camelCase and has no kind suffix. `$seeders.blog.tags` is the seeder in `server/seeders/blog/tags.seeder.ts`. Go to definition on `$seeders.blog.tags` opens the seeder file. `$seeders` is available on the server only.
 
 A seeder can use the [factories](./testing.md#factories) of your tests. Import them from `server/factories/`. A seeder can also write with `useDb()`:
 

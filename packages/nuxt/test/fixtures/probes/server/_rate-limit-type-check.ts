@@ -1,3 +1,5 @@
+import * as $backfills from "#nuxvel/backfills-namespace";
+
 import { z } from "zod";
 import sharedProbe from "~~/server/rate-limits/_shared-probe";
 

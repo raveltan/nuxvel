@@ -1,13 +1,7 @@
 import backfills from "#nuxvel/backfills";
-import { type Defined, definitionsIn, storedName } from "../discovery/aliases";
+import { definitionsIn, storedName } from "../discovery/aliases";
 import type { Renamed } from "../discovery/renamed";
 import type { Backfill } from "./define-backfill";
-
-/**
- * The name of every backfill defined under `server/database/backfills/`:
- * what {@link runBackfill} takes.
- */
-export type BackfillName = Defined<(typeof backfills)[number]>["name"];
 
 function entries(): readonly (Backfill | Renamed<Backfill>)[] {
   return backfills;

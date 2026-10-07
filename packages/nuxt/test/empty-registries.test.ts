@@ -8,6 +8,7 @@ import { buildActionsModuleCode } from "../src/actions";
 import { buildDiscoveredModuleCode } from "../src/discovered-module";
 import { buildEventsModuleCode } from "../src/events";
 import { buildMailTemplatesModuleCode } from "../src/mail-templates";
+import { buildNamesModuleCode } from "../src/names-module";
 import { buildTaskNamesModuleCode } from "../src/task-names";
 import { buildTranslationsModuleCode } from "../src/translations";
 import { buildUserDataModuleCode } from "../src/user-data";
@@ -31,6 +32,8 @@ const emptyModules = {
   channels: buildDiscoveredModuleCode("channels", []),
   backfills: buildDiscoveredModuleCode("database/backfills", []),
   seeders: buildDiscoveredModuleCode("seeders", [], "seeder"),
+  "backfill-names": buildNamesModuleCode("BackfillName", []),
+  "seeder-names": buildNamesModuleCode("SeederName", []),
   uploads: buildDiscoveredModuleCode("uploads", []),
   webhooks: buildDiscoveredModuleCode("webhooks", []),
   events: buildEventsModuleCode([]),

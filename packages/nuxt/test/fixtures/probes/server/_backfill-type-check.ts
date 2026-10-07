@@ -1,3 +1,5 @@
+import * as $backfills from "#nuxvel/backfills-namespace";
+
 import type probeNames from "~~/server/database/backfills/_probe-names";
 
 type IsAny<T> = 0 extends 1 & T ? true : false;

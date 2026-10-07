@@ -1,3 +1,5 @@
+import * as $seeders from "#nuxvel/seeders-namespace";
+
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
 type NamespacedSeeder = typeof $seeders._probe.author;

@@ -1,5 +1,5 @@
 import type { Seeder } from "../runtime/server/seeders/define-seeder";
-import type { SeederName } from "../runtime/server/seeders/registry";
+import type { SeederName } from "../runtime/server/seeders/seeder-name";
 import { callApp } from "./settled";
 
 /**

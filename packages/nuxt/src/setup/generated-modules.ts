@@ -5,6 +5,7 @@ import type { NamedFile } from "../named-files";
 import { buildNitroRoutesModuleCode } from "../nitro-routes";
 import { buildTaskNamesModuleCode } from "../task-names";
 import { buildDiscoveredModuleCode } from "../discovered-module";
+import { buildNamesModuleCode } from "../names-module";
 import { buildMailTemplatesModuleCode, discoverMailTemplates } from "../mail-templates";
 import { buildActionsModuleCode } from "../actions";
 import { buildEventsModuleCode } from "../events";
@@ -94,6 +95,8 @@ export function generatedModules(
     "#nuxvel/factories": async () => buildSchemaModuleCode(await discover("factories")),
     "#nuxvel/jobs": async () => buildDiscoveredModuleCode("jobs", await discoverNamed("job", "jobs", builtInJobs)),
     "#nuxvel/backfills": async () => buildDiscoveredModuleCode("database/backfills", await discoverNamed("backfill", "database/backfills")),
+    "#nuxvel/backfill-names": async () => buildNamesModuleCode("BackfillName", await discoverNamed("backfill", "database/backfills"), true),
+    "#nuxvel/seeder-names": async () => buildNamesModuleCode("SeederName", await discoverNamed("seeder", "seeders")),
     "#nuxvel/seeders": async () => buildDiscoveredModuleCode("seeders", await discoverNamed("seeder", "seeders"), "seeder"),
     "#nuxvel/flags": async () => buildDiscoveredModuleCode("flags", await discoverNamed("flag or experiment", "flags")),
     "#nuxvel/mails": async () => buildDiscoveredModuleCode("mail", await discoverNamed("mail", "mail", builtInMails), "mail"),

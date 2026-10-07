@@ -205,6 +205,12 @@ applies each step below that names a codemod.
   add `import { useS3 } from "@nuxvel/nuxt/storage"`, `import { useQueue
   } from "@nuxvel/nuxt/queue"` or `import { useRedis } from
   "@nuxvel/nuxt/redis"`. Codemod: `explicit-sdk-imports`.
+- `$seeders` and `$backfills` are no longer auto-imported, so the editor
+  no longer loads the seeders, the factories and faker in every file.
+  By hand: in each server file that uses one, add `import * as $seeders
+  from "#nuxvel/seeders-namespace"` or `import * as $backfills from
+  "#nuxvel/backfills-namespace"`. Test files keep both in
+  `#nuxvel/test-namespaces`. Codemod: `explicit-namespace-imports`.
 
 ### Changes
 

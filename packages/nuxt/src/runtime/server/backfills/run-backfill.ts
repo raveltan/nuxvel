@@ -4,7 +4,8 @@ import { firstOrFail } from "../database/first-or-fail";
 import { schemaTable } from "../database/schema-table";
 import { transaction } from "../database/transaction";
 import type { Backfill } from "./define-backfill";
-import { type BackfillName, backfillStoredName, findBackfill } from "./registry";
+import type { BackfillName } from "./backfill-name";
+import { backfillStoredName, findBackfill } from "./registry";
 import { now } from "../clock/now";
 
 function primaryKeyOf(backfill: Backfill) {

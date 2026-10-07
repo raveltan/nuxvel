@@ -8,7 +8,9 @@ No other name from nuxvel is auto-imported. The helpers that nuxvel uses interna
 
 The exports of `shared/schemas/` are also auto-imported, in `server/` and in the app. The pagination names are also auto-imported in the app. So are `SanitizedHtml` and `richText`, which are also auto-imported in `shared/`. For app-side names, such as `$api`, `useUser()` and `useFlag()`, see [Frontend](./frontend.md) and [Calling from the client](./api.md#calling-from-the-client). For `useMaintenance()` and `isMaintenanceError()`, see [Maintenance mode](./maintenance.md#in-the-app). For `isNetworkError()`, see [When the server cannot be reached](./api.md#when-the-server-cannot-be-reached). Test fixtures are not auto-imported. Import them from `@nuxvel/nuxt/testing`, as [Testing](./testing.md) shows.
 
-`useS3()`, `useQueue()` and `useRedis()` are not auto-imported either. Their types load the AWS SDK, BullMQ and ioredis, which makes the editor slow in every file. Import them on the server:
+`$seeders` and `$backfills` are not auto-imported either. They load the seeders, the factories and faker, which makes the editor slow in every file. Import them where you need them, as [Seeding](./database.md#seeding) and [Backfills](./backfills.md) show.
+
+`useS3()`, `useQueue()` and `useRedis()` are not auto-imported too. Their types load the AWS SDK, BullMQ and ioredis, which makes the editor slow in every file. Import them on the server:
 
 ```ts
 import { useS3 } from "@nuxvel/nuxt/storage";
@@ -477,7 +479,6 @@ Guide: [Backfills](./backfills.md).
 |---|---|---|
 | `defineBackfill` | function | Defines a resumable data migration that walks a table in batches. |
 | `runBackfill` | function | Runs a backfill to completion. |
-| `$backfills` | namespace | Holds each backfill definition under its path: `$backfills.postsContent`. Server only. |
 | `Backfill` | type | A backfill definition. |
 | `BackfillName` | type | The name of every backfill under `server/database/backfills/`. |
 
@@ -488,7 +489,6 @@ Guide: [Seeding](./database.md#seeding).
 | Name | Kind | Description |
 |---|---|---|
 | `defineSeeder` | function | Defines a seeder that fills the database with development or demo data. |
-| `$seeders` | namespace | Holds each seeder definition under its path: `$seeders.database`. Server only. |
 | `Seeder` | type | A seeder definition. |
 | `SeederContext` | type | What a seeder gets: `call()`, which runs other seeders. |
 | `SeederName` | type | The name of every seeder under `server/seeders/`. |

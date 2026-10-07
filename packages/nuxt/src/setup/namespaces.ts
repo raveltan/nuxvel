@@ -24,6 +24,8 @@ const NAMESPACE_ENTRIES: [namespace: string, kind: string, folder: DiscoveredFol
 
 const EMPTY_MODULE = "export {};\n";
 
+const EXPLICIT_IMPORT_NAMESPACES = ["$backfills", "$seeders"];
+
 const CLIENT_NAMESPACES = ["$flags", "$experiments", "$channels", "$jobs"];
 
 export async function registerNamespaces({ discoverNamed }: Discovery) {
@@ -32,7 +34,7 @@ export async function registerNamespaces({ discoverNamed }: Discovery) {
       const root = `#nuxvel/${namespace.slice(1)}-namespace`;
       const build = async (buildRoot = root, stub = false, known?: Set<string>) =>
         buildNamespaceModules(buildRoot, folder, await discoverNamed(kind, folder), define, stub, known);
-      addServerImports([{ name: "*", as: namespace, from: root }]);
+      if (!EXPLICIT_IMPORT_NAMESPACES.includes(namespace)) addServerImports([{ name: "*", as: namespace, from: root }]);
       const aliases = Object.keys(await build());
       const buildRegistered = (buildRoot = root, stub = false) =>
         build(buildRoot, stub, new Set(aliases.map((alias) => buildRoot + alias.slice(root.length))));

@@ -54,7 +54,7 @@ The name of a backfill is its path under `server/database/backfills/`. A `.` joi
 | `server/database/backfills/posts-content.backfill.ts` | `"posts-content"` |
 | `server/database/backfills/posts/content.backfill.ts` | `"posts.content"` |
 
-The auto-imported `$backfills` namespace holds each backfill under its path. Each path segment is in camelCase and has no kind suffix. `$backfills.posts.content` is the backfill in `server/database/backfills/posts/content.backfill.ts`. Go to definition on `$backfills.posts.content` opens the backfill file. `$backfills` is available on the server only.
+The `$backfills` namespace holds each backfill under its path. Import it with `import * as $backfills from "#nuxvel/backfills-namespace"`. Each path segment is in camelCase and has no kind suffix. `$backfills.posts.content` is the backfill in `server/database/backfills/posts/content.backfill.ts`. Go to definition on `$backfills.posts.content` opens the backfill file. `$backfills` is available on the server only.
 
 `runBackfill()`, the test fixture and `nuxvel backfill:status` use this name. nuxvel also stores the cursor under it. See [Names come from paths](./index.md#names-come-from-paths).
 
@@ -65,7 +65,7 @@ await runBackfill("posts-content");
 await runBackfill($backfills.postsContent);
 ```
 
-`runBackfill` is auto-imported on the server. Call it from a job, a Nitro task or `nuxvel tinker`. The name is typed from `server/database/backfills/`, so a misspelled name fails `nuxt typecheck`. A name that no backfill has throws at runtime. In place of the name, `runBackfill` also takes the definition, from `$backfills` or an import. Go to definition on the argument opens the file of the backfill.
+`runBackfill` is auto-imported on the server. Call it from a job, a Nitro task or `nuxvel tinker`. The name is typed from `server/database/backfills/`, so a misspelled name fails `nuxt typecheck`. A name that no backfill has throws at runtime. In place of the name, `runBackfill` also takes the definition, from `$backfills` or from an import of the file. Go to definition on the argument opens the file of the backfill.
 
 Each batch runs in its own transaction, together with the update to the cursor. A crash or a deploy during a run loses only the current batch. The next run continues after the last committed batch.
 

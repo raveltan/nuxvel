@@ -1,5 +1,5 @@
 import { awaitingName } from "../discovery/definition-name";
-import type { SeederName } from "./registry";
+import type { SeederName } from "./seeder-name";
 
 /** What a {@link defineSeeder} handler gets. */
 export interface SeederContext {

@@ -101,6 +101,11 @@ describe("server auto-imports", () => {
     expect(names).toContain("RedisPurpose");
   });
 
+  it("leaves the namespaces of the seeders and backfills to an explicit import", () => {
+    expect(names).not.toContain("$seeders");
+    expect(names).not.toContain("$backfills");
+  });
+
   it("lists every server auto-import in docs/auto-imports.md", () => {
     const documented = [
       ...readFileSync(autoImportsDoc, "utf8").matchAll(/^\| `(\w+)` \|/gm),

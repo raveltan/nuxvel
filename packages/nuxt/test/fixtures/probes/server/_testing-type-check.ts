@@ -1,3 +1,5 @@
+import * as $backfills from "#nuxvel/backfills-namespace";
+import * as $seeders from "#nuxvel/seeders-namespace";
 import {
   actingAs,
   can,

@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import * as $seeders from "#nuxvel/seeders-namespace";
 import { userTable } from "#nuxvel/schema";
 import { postsTable } from "#nuxvel/schema";
 import { postFactory } from "#nuxvel/factories";

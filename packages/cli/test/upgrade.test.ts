@@ -1653,4 +1653,48 @@ describe("nuxvel upgrade", () => {
       expect(again.stdout).not.toContain("updated:");
     }, 60000);
   });
+
+  describe("explicit-namespace-imports", () => {
+    it("imports $seeders and $backfills from their namespace modules where a file uses them, and leaves a file that imports or declares them", async () => {
+      const appDir = scratchPlayground("upgrade-explicit-namespace-imports");
+      const seeders = join(appDir, "server", "seeders");
+      mkdirSync(seeders, { recursive: true });
+      const usesBoth = [
+        'import { eq } from "drizzle-orm";',
+        "",
+        "export default defineSeeder(async ({ call }) => {",
+        '  await call("a", $seeders.a);',
+        "  await runBackfill($backfills.b);",
+        "});",
+        "",
+      ];
+      const usesSeeders = ['export default defineSeeder(({ call }) => call($seeders.a));', ""];
+      const imported = ['import * as $seeders from "#nuxvel/seeders-namespace";', "", "export default defineSeeder(({ call }) => call($seeders.a));", ""];
+      const declared = ["const $backfills = {};", "", "export default defineSeeder(() => $backfills);", ""];
+      writeFileSync(join(seeders, "uses-both.ts"), usesBoth.join("\n"));
+      writeFileSync(join(seeders, "uses-seeders.ts"), usesSeeders.join("\n"));
+      writeFileSync(join(seeders, "imported.ts"), imported.join("\n"));
+      writeFileSync(join(seeders, "declared.ts"), declared.join("\n"));
+
+      const applied = await runCliAt(appDir, "upgrade", "--only", "explicit-namespace-imports");
+
+      expect(applied.exitCode, applied.stderr).toBe(0);
+      expect(applied.stdout.match(/updated: /g)).toHaveLength(2);
+      expect(applied.stdout).toContain("updated: server/seeders/uses-both.ts\n");
+      expect(applied.stdout).toContain("updated: server/seeders/uses-seeders.ts\n");
+      expect(readFileSync(join(seeders, "uses-both.ts"), "utf8")).toBe(
+        [
+          usesBoth[0],
+          'import * as $seeders from "#nuxvel/seeders-namespace";',
+          'import * as $backfills from "#nuxvel/backfills-namespace";',
+          ...usesBoth.slice(1),
+        ].join("\n"),
+      );
+      expect(readFileSync(join(seeders, "uses-seeders.ts"), "utf8")).toBe(['import * as $seeders from "#nuxvel/seeders-namespace";', "", ...usesSeeders].join("\n"));
+
+      const again = await runCliAt(appDir, "upgrade", "--only", "explicit-namespace-imports");
+
+      expect(again.stdout).not.toContain("updated:");
+    }, 60000);
+  });
 });

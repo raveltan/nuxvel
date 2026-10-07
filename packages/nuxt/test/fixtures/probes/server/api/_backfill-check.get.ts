@@ -1,3 +1,4 @@
+import * as $backfills from "#nuxvel/backfills-namespace";
 import { asc, eq } from "drizzle-orm";
 import { backfillsTable } from "~~/server/database/schema/backfills.schema";
 import { healthChecksTable } from "~~/server/database/schema/health-check.schema";
