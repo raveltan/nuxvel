@@ -5,7 +5,7 @@ import { camelCase, definitionName, domainPatterns, exportSuffixes, namespaceLea
 import { globSync } from "tinyglobby";
 import type { Codemod } from "../codemod.ts";
 import { ruleRewrite } from "../rule-rewrite.ts";
-import { type DefinitionImport, type ExplicitImportsData, type TopicImport, explicitImports as rule } from "../rules/explicit-imports.ts";
+import { type ComponentImport, type DefinitionImport, type ExplicitImportsData, type TopicImport, explicitImports as rule } from "../rules/explicit-imports.ts";
 
 interface PublicImport {
   name: string;
@@ -31,17 +31,32 @@ const NAMESPACES: [root: string, folder: string][] = [
   ["$backfills", "database/backfills"],
 ];
 
+const CLIENT_ROOTS: [root: string, folder: string][] = [
+  ["$flags", "flags"],
+  ["$experiments", "flags"],
+  ["$channels", "channels"],
+  ["$jobs", "jobs"],
+];
+
 const dataByApp = new Map<string, ExplicitImportsData>();
-let topics: Map<string, TopicImport> | undefined;
+let entries: PublicImport[] | undefined;
+
+function publicImports() {
+  entries ??= JSON.parse(readFileSync(fileURLToPath(import.meta.resolve("@nuxvel/nuxt/public-imports.json")), "utf8")) as PublicImport[];
+
+  return entries;
+}
 
 function publicTopics() {
-  if (!topics) {
-    const file = fileURLToPath(import.meta.resolve("@nuxvel/nuxt/public-imports.json"));
-    const entries = JSON.parse(readFileSync(file, "utf8")) as PublicImport[];
-    topics = new Map(entries.map(({ name, kind, path }) => [name, { kind: kind === "type" ? "type" : "value", path }] as const));
-  }
+  return new Map(publicImports().map(({ name, kind, path }) => [name, { kind: kind === "type" ? "type" : "value", path }] as const));
+}
 
-  return topics;
+function componentTags() {
+  return new Map(
+    publicImports()
+      .filter((entry) => entry.kind === "component")
+      .map((entry) => [entry.name.replace(/-/g, "").toLowerCase(), { name: entry.name, path: entry.path } as ComponentImport] as const),
+  );
 }
 
 function exportNames(source: string) {
@@ -67,24 +82,43 @@ function schemaExports(cwd: string) {
   return exports;
 }
 
-function namespaceDefinitions(cwd: string, folder: string) {
+function definitions(cwd: string, folder: string) {
   const server = join(cwd, "server");
   const files = globSync([`${folder}/**/*.ts`, ...domainPatterns(folder).map((pattern) => `domains/${pattern}`)], {
     cwd: server,
     absolute: true,
     ignore: ignored,
   });
-  const definitions = files.map((file) => ({ file, name: definitionName(join(server, folder), file) }));
+
+  return files.map((file) => ({ file, name: definitionName(join(server, folder), file) }));
+}
+
+function namespaceDefinitions(cwd: string, folder: string) {
+  const server = join(cwd, "server");
   const suffix = exportSuffixes(folder)[0] ?? "";
   const leaves = new Map<string, DefinitionImport>();
 
-  for (const [key, leaf] of namespaceLeaves(folder, definitions)) {
+  for (const [key, leaf] of namespaceLeaves(folder, definitions(cwd, folder))) {
     const isDefault = leaf.name === "default";
     const name = isDefault ? `${camelCase(key.split(".").pop() ?? "")}${suffix}` : leaf.name;
     leaves.set(key, { path: `#server/${relative(server, leaf.file).split(sep).join("/").replace(/\.ts$/, "")}`, name, isDefault });
   }
 
   return leaves;
+}
+
+function clientNamespaces(cwd: string) {
+  return new Map(
+    CLIENT_ROOTS.map(([root, folder]) => {
+      const names = new Map<string, string>();
+
+      for (const key of namespaceLeaves(folder, definitions(cwd, folder)).keys()) {
+        names.set(key, key.split(".").map((segment) => segment.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)).join("."));
+      }
+
+      return [root, names] as const;
+    }),
+  );
 }
 
 function appData(cwd: string): ExplicitImportsData {
@@ -94,6 +128,8 @@ function appData(cwd: string): ExplicitImportsData {
     topics: publicTopics(),
     namespaces: new Map(NAMESPACES.map(([root, folder]) => [root, namespaceDefinitions(cwd, folder)] as const)),
     schemas: schemaExports(cwd),
+    components: componentTags(),
+    clientNamespaces: clientNamespaces(cwd),
   };
   dataByApp.set(cwd, data);
 
@@ -104,7 +140,7 @@ export const explicitImports: Codemod = {
   name: "explicit-imports",
   version: "0.3.0",
   description:
-    'Imports each nuxvel name a file uses from its topic path, rewrites a $jobs.post.notifyFollowers member to the imported definition, imports a shared schema from "#shared/schemas/<file>", and prints a name it cannot map as a manual step',
+    'Imports each nuxvel name a file uses from its topic path, imports the nuxvel components a template renders, rewrites a $jobs.post.notifyFollowers member to the imported definition and a client $jobs.post.notifyFollowers to the string "post.notify-followers", imports a shared schema from "#shared/schemas/<file>", rewrites the removed subpaths to their topic path, and prints a name it cannot map as a manual step',
   files: [folders, `layers/*/${folders}`],
   rewrite(source, file, cwd) {
     const plugin = { meta: { name: "nuxvel-upgrade" }, rules: { "explicit-imports": rule(appData(cwd)) } };

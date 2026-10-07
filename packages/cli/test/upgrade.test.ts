@@ -1869,5 +1869,125 @@ describe("nuxvel upgrade", () => {
       expect(again.exitCode, again.stderr).toBe(0);
       expect(again.stdout).toBe("");
     }, 60000);
+
+    it("imports a name a template alone uses, imports a component tag in PascalCase and in kebab-case, rewrites a client namespace, rewrites a removed subpath, and prints a plain script as a manual step", async () => {
+      const appDir = scratchPlayground("upgrade-explicit-imports-vue");
+      const components = join(appDir, "app", "components", "report");
+      const api = join(appDir, "server", "api");
+      mkdirSync(components, { recursive: true });
+      const templateOnly = ["<template>", '  <ActionForm :action="$api.post.update" />', "</template>", ""];
+      const kebab = [
+        '<script setup lang="ts">',
+        "const rows: unknown[] = [];",
+        "</script>",
+        "",
+        "<template>",
+        '  <data-table :rows="rows" />',
+        "</template>",
+        "",
+      ];
+      const plainScript = [
+        "<script>",
+        'export default { name: "PlainScript" };',
+        "</script>",
+        "",
+        "<template>",
+        "  <ActionForm />",
+        "</template>",
+        "",
+      ];
+      const client = [
+        '<script setup lang="ts">',
+        "const visible = useFlag($flags.probeRollout);",
+        "const variant = useExperiment($experiments.probeCta);",
+        "const posts = useChannel($channels.posts);",
+        "const job = useJobChannel($jobs.demo.countdown);",
+        "</script>",
+        "",
+        "<template>",
+        '  <div v-if="useFlag($flags.probeRollout)">on</div>',
+        "</template>",
+        "",
+      ];
+      const subpath = [
+        'import { useQueue } from "@nuxvel/nuxt/queue";',
+        'import { useRedis } from "@nuxvel/nuxt/redis";',
+        "",
+        "export default defineEventHandler(() => [useQueue, useRedis]);",
+        "",
+      ];
+      writeFileSync(join(components, "template-only.vue"), templateOnly.join("\n"));
+      writeFileSync(join(components, "kebab-table.vue"), kebab.join("\n"));
+      writeFileSync(join(components, "plain-script.vue"), plainScript.join("\n"));
+      writeFileSync(join(components, "client-names.vue"), client.join("\n"));
+      writeFileSync(join(api, "r6-subpath.get.ts"), subpath.join("\n"));
+
+      const applied = await runCliAt(appDir, "upgrade", "--only", "explicit-imports");
+
+      expect(applied.exitCode, applied.stderr).toBe(0);
+      expect(readFileSync(join(components, "template-only.vue"), "utf8")).toBe(
+        [
+          '<script setup lang="ts">',
+          'import { $api } from "@nuxvel/nuxt/app/api";',
+          'import { ActionForm } from "@nuxvel/nuxt/app/forms";',
+          "</script>",
+          "",
+          "<template>",
+          '  <ActionForm :action="$api.post.update" />',
+          "</template>",
+          "",
+        ].join("\n"),
+      );
+      expect(readFileSync(join(components, "kebab-table.vue"), "utf8")).toBe(
+        [
+          '<script setup lang="ts">',
+          'import { DataTable } from "@nuxvel/nuxt/app/ui";',
+          "",
+          "const rows: unknown[] = [];",
+          "</script>",
+          "",
+          "<template>",
+          '  <data-table :rows="rows" />',
+          "</template>",
+          "",
+        ].join("\n"),
+      );
+      expect(readFileSync(join(components, "plain-script.vue"), "utf8")).toBe(plainScript.join("\n"));
+      expect(readFileSync(join(components, "client-names.vue"), "utf8")).toBe(
+        [
+          '<script setup lang="ts">',
+          'import { useExperiment, useFlag } from "@nuxvel/nuxt/app/flags";',
+          'import { useChannel, useJobChannel } from "@nuxvel/nuxt/app/realtime";',
+          "",
+          'const visible = useFlag("probe-rollout");',
+          'const variant = useExperiment("probe-cta");',
+          'const posts = useChannel("posts");',
+          'const job = useJobChannel("demo.countdown");',
+          "</script>",
+          "",
+          "<template>",
+          '  <div v-if="useFlag(\'probe-rollout\')">on</div>',
+          "</template>",
+          "",
+        ].join("\n"),
+      );
+      expect(readFileSync(join(api, "r6-subpath.get.ts"), "utf8")).toBe(
+        [
+          'import { useQueue } from "@nuxvel/nuxt/server/queues";',
+          'import { useRedis } from "@nuxvel/nuxt/server/redis";',
+          "",
+          "export default defineEventHandler(() => [useQueue, useRedis]);",
+          "",
+        ].join("\n"),
+      );
+      expect(stripAnsi(applied.stderr)).toContain(
+        "▲ app/components/report/plain-script.vue:1: this file has a <script> block but no <script setup> block: add the imports to a new <script setup> block by hand",
+      );
+
+      const again = await runCliAt(appDir, "upgrade", "--only", "explicit-imports");
+
+      expect(again.exitCode, again.stderr).toBe(0);
+      expect(again.stdout).toBe("");
+    }, 60000);
   });
 });

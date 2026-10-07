@@ -78,3 +78,58 @@ export default defineEventHandler(() => postInput);
 ```
 
 Use the file that holds the schema the code means.
+
+## A client namespace in another position
+
+The `explicit-imports` codemod rewrites the first argument of `useFlag()`,
+`useExperiment()`, `useChannel()`, `usePresence()` and `useJobChannel()`
+from a client namespace to the string name of the definition. It does not
+rewrite any other use of the namespace. Pass the string name yourself.
+
+Before:
+
+```ts
+const name = $flags.newEditor;
+```
+
+After:
+
+```ts
+const name = "new-editor";
+```
+
+## A `.vue` file with a `<script>` block but no `<script setup>`
+
+The codemod adds the imports to an existing `<script setup>` block. It
+creates this block when the file has none. A file with only a `<script>`
+block gets no import, because a plain script does not expose a binding to
+the template. Add the `<script setup>` block by hand.
+
+Before:
+
+```vue
+<script>
+export default { name: "PostForm" };
+</script>
+
+<template>
+  <ActionForm :action="$api.post.update" />
+</template>
+```
+
+After:
+
+```vue
+<script setup lang="ts">
+import { $api } from "@nuxvel/nuxt/app/api";
+import { ActionForm } from "@nuxvel/nuxt/app/forms";
+</script>
+
+<script>
+export default { name: "PostForm" };
+</script>
+
+<template>
+  <ActionForm :action="$api.post.update" />
+</template>
+```
