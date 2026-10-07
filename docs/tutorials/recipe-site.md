@@ -913,7 +913,7 @@ In the `columns` of the `<DataTable>`, replace `{ accessorKey: 'body', header: '
       </template>
 ```
 
-The `toast` option shows a success toast when the mutation succeeds. The page stays open, so a [flash message](../frontend.md#flash-messages) would show only on the next page. `onSettled` fetches the list again, so the row shows its date. Each button has an `aria-label` with the title of the recipe. A screen reader thus tells the buttons apart, and a test finds one by its name.
+The `toast` option shows a success toast when the mutation succeeds. The page stays open, so a [flash message](../frontend.md#flash-messages) would show only on the next page. After the mutation, the client fetches the `recipe` queries again, so the row shows its date. Each button has an `aria-label` with the title of the recipe. A screen reader thus tells the buttons apart, and a test finds one by its name.
 
 ### The account page
 
@@ -1670,7 +1670,7 @@ export const recipePublishedMail = defineMail({
 });
 ```
 
-Send the mail from the publish action, after the push. Import `userTable` from `../../database/schema/auth.schema`:
+Send the mail from the publish action, after the push. Add `userTable` to the import from `#nuxvel/schema`:
 
 ```ts
 // server/actions/recipe/publish-recipe.action.ts
