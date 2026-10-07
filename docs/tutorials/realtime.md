@@ -65,6 +65,7 @@ A room has a name and an owner. A member is one user in one room. A message has 
 ```
 ✔ Created server/database/schema/room.schema.ts
 ✔ Created shared/schemas/room.ts
+✔ Created server/privacy/room.user-data.ts
 ✔ Created server/policies/room.policy.ts
 ✔ Created server/actions/room/create-room.action.ts
 ✔ Created server/actions/room/update-room.action.ts
@@ -127,14 +128,7 @@ Write the migration, apply it and check it:
 
 ### User data
 
-`nuxvel user:export` and `nuxvel user:erase` act on each table that a `defineUserData()` declares. Declare the three tables that hold a user ID:
-
-```ts
-// server/privacy/rooms.user-data.ts
-import { roomTable } from "#nuxvel/schema";
-
-export const roomsUserData = defineUserData(roomTable);
-```
+`nuxvel user:export` and `nuxvel user:erase` act on each table that a `defineUserData()` declares. Three tables hold a user ID. `make:resource` declared the room in `server/privacy/room.user-data.ts`. Declare the two other tables:
 
 ```ts
 // server/privacy/room-members.user-data.ts
@@ -861,7 +855,7 @@ The component emits `typing` with `true` while the field has text, and with `fal
 The page is a route with a param, so give the path in quotes:
 
 ```bash
-./nv make:page "room/[id]"
+./nv make:page "(app)/room/[id]"
 ```
 
 Replace the generated page:
@@ -937,7 +931,7 @@ Each realtime part of the page does one job:
 
 All of these share one connection to the server, an `EventSource` on `/api/channels`. They join the room when the page mounts, and leave it when the page unmounts. They do nothing during server rendering.
 
-The add form shows only to the owner. That is only for the user: the action calls `authorize()`, so a direct call by another member fails. The `toast` option shows the toast "Member added". The `field` of `room.member-unknown` puts its message under the email field.
+The add form shows only to the owner. That is only for the user: the action calls `findAuthorized()`, so a direct call by another member fails. The `toast` option shows the toast "Member added". The `field` of `room.member-unknown` puts its message under the email field.
 
 ### When the connection drops
 
