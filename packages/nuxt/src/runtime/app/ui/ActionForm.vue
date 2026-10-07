@@ -160,3 +160,8 @@ provide(actionFormKey, {
     </div>
   </UForm>
 </template>
+
+<script lang="ts">
+// a value and a type re-export of one name must come from one module
+export type { ActionForm } from "../composables/use-action-form";
+</script>
