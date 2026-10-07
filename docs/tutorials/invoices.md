@@ -138,6 +138,7 @@ Generate the team and the invoice with `make:resource`, and the membership table
 ```
 ✔ Created server/database/schema/team.schema.ts
 ✔ Created shared/schemas/team.ts
+✔ Created server/privacy/team.user-data.ts
 ✔ Created server/policies/team.policy.ts
 ✔ Created server/actions/team/create-team.action.ts
 ✔ Created server/actions/team/update-team.action.ts
@@ -153,6 +154,7 @@ Generate the team and the invoice with `make:resource`, and the membership table
 ◇ Updated types (nuxt prepare) (9.5s)
 ✔ Created server/database/schema/invoice.schema.ts
 ✔ Created shared/schemas/invoice.ts
+✔ Created server/privacy/invoice.user-data.ts
 ✔ Created server/policies/invoice.policy.ts
 ✔ Created server/actions/invoice/create-invoice.action.ts
 ✔ Created server/actions/invoice/update-invoice.action.ts
@@ -1075,19 +1077,14 @@ const form = useActionForm($api.team.addMember, {
 - `useActionForm($api.team.addMember)` checks the input in the browser with `addMemberInput`, then calls the mutation. The `field` of the typed failure `team.unknown-email` shows it under the email field. Any other refusal, such as `CONFLICT` or a rate limit, shows in `form.formError`.
 - The page hides the forms from a member and a viewer. The hidden form is only for the user: the actions still call `authorize()`.
 
-The starter's header has no links to these pages. In `app/layouts/default.vue`, add two links after `<AppLogo />`, and the user menu after `<NotificationBell />`:
+The pages in `app/pages/(app)/` use the starter's `app` layout, and its header has no links to these pages. In `app/layouts/app.vue`, add two links after `<AppLogo />`:
 
 ```vue
-<!-- app/layouts/default.vue -->
+<!-- app/layouts/app.vue -->
           <AppLogo />
           <UButton :to="{ name: 'team' }" color="neutral" variant="ghost" label="Teams" />
           <UButton :to="{ name: 'invoice' }" color="neutral" variant="ghost" label="Invoices" />
         </nav>
-        <div class="flex items-center gap-2">
-          <PwaInstallPrompt />
-          <NotificationBell />
-          <UserMenu />
-        </div>
 ```
 
 Sign in as `demo@example.com`. Open **Teams**. The list shows Acme and not Globex. Open Acme. Change the role of Grace Hopper to `member`. Change your own role to `viewer`. The alert "A team needs at least one admin" shows. Enter `nobody@example.com` under **Email** and select **Add member**. The message "Nobody with this email has signed up" shows under the field. Open **Invoices**. The list shows the five invoices of Acme.
