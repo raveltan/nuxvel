@@ -16,6 +16,17 @@ for (const entry of entries) {
   topics.get(key).push(entry);
 }
 
+// the component scan reads every .ts of runtime/app/components as a component, so those shims live in components-entries instead
+function shimFile(file) {
+  return file.startsWith("runtime/app/components/")
+    ? file.replace("runtime/app/components/", "runtime/app/components-entries/")
+    : file;
+}
+
+function specifierFor(file) {
+  return `../${shimFile(file).replace(/\.(ts|vue)$/, "")}`;
+}
+
 function lineFor(specifier, names, typeOnly) {
   const keyword = typeOnly ? "export type" : "export";
   return `${keyword} { ${names.join(", ")} } from "${specifier}";`;
@@ -51,7 +62,7 @@ for (const [key, topicEntries] of topics) {
     if (topicEntries.some(
       (other) => other.name === name && other.kind === "type" && other.file !== component.file,
     )) {
-      const specifier = `../${component.file.replace(/\.vue$/, "")}`;
+      const specifier = specifierFor(component.file);
       lines.push({ names: [name], text: `export * from "${specifier}";`, file: component.file });
       lines.push({ names: [name], text: `export { default as ${name} } from "${specifier}";`, file: component.file });
       covered.add(name);
@@ -59,7 +70,7 @@ for (const [key, topicEntries] of topics) {
   }
   for (const entry of topicEntries) {
     if (covered.has(entry.name)) continue;
-    const specifier = `../${entry.file.replace(/\.(ts|vue)$/, "")}`;
+    const specifier = specifierFor(entry.file);
     const names = topicEntries
       .filter((other) => other.file === entry.file && other.kind === entry.kind && !covered.has(other.name))
       .map((other) => other.name);

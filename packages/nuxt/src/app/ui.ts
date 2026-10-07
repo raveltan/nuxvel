@@ -1,5 +1,5 @@
-export { default as DateTime } from "../runtime/app/components/DateTime";
-export { default as SafeHtml } from "../runtime/app/components/SafeHtml";
+export { default as DateTime } from "../runtime/app/components-entries/DateTime";
+export { default as SafeHtml } from "../runtime/app/components-entries/SafeHtml";
 export { prependRow, removeRow, replaceRow } from "../runtime/app/composables/list-rows";
 export { useFlash } from "../runtime/app/composables/use-flash";
 export { useRouteInput } from "../runtime/app/composables/use-route-input";
