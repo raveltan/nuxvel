@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { CopyObjectCommand } from "@aws-sdk/client-s3";
-import { useS3 } from "@nuxvel/nuxt/storage";
+import { useS3 } from "@nuxvel/nuxt/server/storage";
 import { z } from "zod";
 
 export default {

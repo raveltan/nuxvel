@@ -1,4 +1,4 @@
-import { useRedis } from "@nuxvel/nuxt/redis";
+import { useRedis } from "@nuxvel/nuxt/server/redis";
 import { z } from "zod";
 import { healthChecksTable } from "#nuxvel/schema";
 

@@ -217,6 +217,13 @@
     "path": "@nuxvel/nuxt/server/database"
   },
   {
+    "name": "billingCustomersTable",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/billing/tables.ts",
+    "path": "@nuxvel/nuxt/server/billing"
+  },
+  {
     "name": "billingDisputedEvent",
     "kind": "value",
     "side": "server",
@@ -224,10 +231,24 @@
     "path": "@nuxvel/nuxt/server/billing"
   },
   {
+    "name": "billingEventsTable",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/billing/tables.ts",
+    "path": "@nuxvel/nuxt/server/billing"
+  },
+  {
     "name": "billingPaidEvent",
     "kind": "value",
     "side": "server",
     "file": "runtime/server/billing/events/paid.ts",
+    "path": "@nuxvel/nuxt/server/billing"
+  },
+  {
+    "name": "billingPaymentsTable",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/billing/tables.ts",
     "path": "@nuxvel/nuxt/server/billing"
   },
   {
@@ -249,6 +270,13 @@
     "kind": "value",
     "side": "server",
     "file": "runtime/server/billing/events/subscription-changed.ts",
+    "path": "@nuxvel/nuxt/server/billing"
+  },
+  {
+    "name": "billingSubscriptionsTable",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/billing/tables.ts",
     "path": "@nuxvel/nuxt/server/billing"
   },
   {
@@ -2240,11 +2268,25 @@
     "path": "@nuxvel/nuxt/app/pwa"
   },
   {
+    "name": "useQueue",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/jobs/queue.ts",
+    "path": "@nuxvel/nuxt/server/queues"
+  },
+  {
     "name": "userActor",
     "kind": "value",
     "side": "server",
     "file": "runtime/server/actions/user-actor.ts",
     "path": "@nuxvel/nuxt/server/actions"
+  },
+  {
+    "name": "useRedis",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/redis/client.ts",
+    "path": "@nuxvel/nuxt/server/redis"
   },
   {
     "name": "useResendVerification",
@@ -2259,6 +2301,13 @@
     "side": "app",
     "file": "runtime/app/composables/use-route-input.ts",
     "path": "@nuxvel/nuxt/app/ui"
+  },
+  {
+    "name": "useS3",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/storage/client.ts",
+    "path": "@nuxvel/nuxt/server/storage"
   },
   {
     "name": "useSecrets",
@@ -2280,6 +2329,13 @@
     "side": "app",
     "file": "runtime/app/composables/use-sessions.ts",
     "path": "@nuxvel/nuxt/app/auth"
+  },
+  {
+    "name": "useStripe",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/billing/use-stripe.ts",
+    "path": "@nuxvel/nuxt/server/billing"
   },
   {
     "name": "useTimezone",

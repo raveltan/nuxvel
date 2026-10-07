@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { HeadObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
-import { useS3 } from "@nuxvel/nuxt/storage";
+import { useS3 } from "@nuxvel/nuxt/server/storage";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
 const SWAP = "_swap-after-check";

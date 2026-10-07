@@ -1,1 +1,1 @@
-export { currentLocale } from "../../runtime/server/i18n/current-locale";
+export { currentLocale } from "../runtime/server/i18n/current-locale";

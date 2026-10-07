@@ -10,6 +10,19 @@ applies each step below that names a codemod.
 
 ### Upgrade
 
+- `@nuxvel/nuxt/server/<topic>`, `@nuxvel/nuxt/app/<topic>` and
+  `@nuxvel/nuxt/shared/<topic>` are now the public import paths, one per
+  docs topic, for example `import { defineAction } from "@nuxvel/nuxt/server/actions"`.
+  nuxvel removes the subpaths `@nuxvel/nuxt/storage`, `/queue`, `/redis`
+  and `/billing`: their names moved to the topic paths, for example
+  `import { useRedis } from "@nuxvel/nuxt/server/redis"`. The
+  `@nuxvel/nuxt/database` subpath stays, but it exports only the schema
+  helpers a `drizzle.config.ts` schema file needs (`now`, `timestamps`,
+  `belongsTo`, `searchable`, `searchIndex` and their types). The billing
+  tables stay on `@nuxvel/nuxt/database`, because schema files that
+  `drizzle.config.ts` loads import them. You can also import them from
+  `@nuxvel/nuxt/server/billing`. Codemod:
+  `explicit-imports`.
 - Optional, for a faster editor: add `"compilerOptions": {
   "disableReferencedProjectLoad": true }` to the root `tsconfig.json`,
   beside `"files": []`. The editor then loads the server, storybook, node

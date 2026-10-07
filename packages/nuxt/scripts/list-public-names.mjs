@@ -238,11 +238,23 @@ function sideFor(file) {
   return "app";
 }
 
+const publicFileEntries = [
+  ["billingCustomersTable", "runtime/server/billing/tables.ts", "billing"],
+  ["billingEventsTable", "runtime/server/billing/tables.ts", "billing"],
+  ["billingPaymentsTable", "runtime/server/billing/tables.ts", "billing"],
+  ["billingSubscriptionsTable", "runtime/server/billing/tables.ts", "billing"],
+  ["useRedis", "runtime/server/redis/client.ts", "redis"],
+  ["useS3", "runtime/server/storage/client.ts", "storage"],
+  ["useQueue", "runtime/server/jobs/queue.ts", "queues"],
+  ["useStripe", "runtime/server/billing/use-stripe.ts", "billing"],
+].map(([name, file, topic]) => ({ name, kind: "value", side: "server", file, path: `@nuxvel/nuxt/server/${topic}` }));
+
 const entries = [
   ...serverImportsEntries(),
   ...scanDirExports(composablesDir, "app", "app/composables"),
   ...scanDirExports(componentsDir, "app", "app/components"),
   ...setupEntries(),
+  ...publicFileEntries,
 ];
 
 entries.sort((a, b) => a.name.localeCompare(b.name) || a.file.localeCompare(b.file));

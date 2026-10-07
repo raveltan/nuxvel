@@ -51,7 +51,7 @@ for (const [key, topicEntries] of topics) {
     if (topicEntries.some(
       (other) => other.name === name && other.kind === "type" && other.file !== component.file,
     )) {
-      const specifier = `../../${component.file}`;
+      const specifier = `../${component.file.replace(/\.vue$/, "")}`;
       lines.push({ names: [name], text: `export * from "${specifier}";`, file: component.file });
       lines.push({ names: [name], text: `export { default as ${name} } from "${specifier}";`, file: component.file });
       covered.add(name);
@@ -59,7 +59,7 @@ for (const [key, topicEntries] of topics) {
   }
   for (const entry of topicEntries) {
     if (covered.has(entry.name)) continue;
-    const specifier = `../../${entry.file.replace(/\.ts$/, "")}`;
+    const specifier = `../${entry.file.replace(/\.(ts|vue)$/, "")}`;
     const names = topicEntries
       .filter((other) => other.file === entry.file && other.kind === entry.kind && !covered.has(other.name))
       .map((other) => other.name);

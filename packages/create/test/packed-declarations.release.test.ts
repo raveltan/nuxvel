@@ -10,6 +10,12 @@ import { run } from "@nuxvel/test-helpers/run";
 const repoDir = fileURLToPath(new URL("../../..", import.meta.url));
 const tsc = createRequire(import.meta.url).resolve("typescript/bin/tsc");
 const heavyPackage = /\/node_modules\/(@aws-sdk|@smithy|bullmq|ioredis|stripe|nodemailer|@faker-js|@sentry\/node|storybook|msw)\//;
+const allowedHeavyPackages: Record<string, string[]> = {
+  "server/storage": ["@aws-sdk", "@smithy"],
+  "server/billing": ["stripe"],
+  "server/queues": ["bullmq"],
+  "server/redis": ["ioredis"],
+};
 
 let scratchDir: string;
 let dist: string;
@@ -102,4 +108,27 @@ describe("the packed @nuxvel/nuxt", () => {
     expect(program.has(join(dist, "database.d.mts"))).toBe(true);
     expect([...firstFilePerPackage.values()].map((file) => chainTo(file, program))).toEqual([]);
   }, 60_000);
+
+  it("keeps every topic entry clear of heavy packages outside its own topic", async () => {
+    const topics = ["server", "app", "shared"].flatMap((side) =>
+      readdirSync(join(dist, side)).filter((file) => file.endsWith(".d.mts")).map((file) => `${side}/${file.replace(/\.d\.mts$/, "")}`),
+    );
+    expect(topics.length).toBeGreaterThan(0);
+
+    writeFileSync(join(scratchDir, "nitro.ts"), 'import "nitropack/types";\nimport "nitropack/runtime";\n');
+    const nitro = await explainProgram("topic-nitro", [join(scratchDir, "nitro.ts")]);
+
+    const failures: string[] = [];
+    for (const topic of topics) {
+      const allowed = allowedHeavyPackages[topic] ?? [];
+      const program = await explainProgram(`topic-${topic.replace("/", "-")}`, [join(dist, `${topic}.d.mts`)]);
+      expect(program.has(join(dist, `${topic}.d.mts`)), topic).toBe(true);
+      const heavyFiles = [...program.keys()].filter((file) => heavyPackage.test(file) && !nitro.has(file));
+      const firstFilePerPackage = new Map(heavyFiles.map((file) => [file.match(heavyPackage)?.[1] ?? "unknown", file] as const).reverse());
+      for (const [pkg, file] of firstFilePerPackage) {
+        if (!allowed.includes(pkg)) failures.push(`${topic} loads ${pkg}:\n  ${chainTo(file, program)}`);
+      }
+    }
+    expect(failures).toEqual([]);
+  }, 300_000);
 });

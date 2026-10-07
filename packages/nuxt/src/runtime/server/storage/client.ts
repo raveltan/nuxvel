@@ -7,7 +7,7 @@ let client: S3Client | undefined;
 /**
  * The app's S3 client, created once and reused.
  *
- * Server only, imported from `@nuxvel/nuxt/storage`: it is not
+ * Server only, imported from `@nuxvel/nuxt/server/storage`: it is not
  * auto-imported, so the app's types do not load the AWS SDK. Named `useS3` rather than `useStorage` so it
  * never shadows Nitro's own `useStorage()`. Reads `NUXT_STORAGE_URL`, an
  * S3-compatible endpoint with the access key and secret as its user and
@@ -21,7 +21,7 @@ let client: S3Client | undefined;
  * @example
  * ```ts
  * import { PutObjectCommand } from "@aws-sdk/client-s3";
- * import { useS3 } from "@nuxvel/nuxt/storage";
+ * import { useS3 } from "@nuxvel/nuxt/server/storage";
  *
  * await useS3().send(
  *   new PutObjectCommand({ Bucket: "avatars", Key: "ada.png", Body: bytes }),

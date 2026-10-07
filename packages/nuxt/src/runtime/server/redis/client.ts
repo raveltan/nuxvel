@@ -46,7 +46,7 @@ function logOncePerOutage(client: Redis, purpose: RedisPurpose) {
 /**
  * The app's Redis client for one purpose, created once and reused.
  *
- * Server only, imported from `@nuxvel/nuxt/redis`: it is not auto-imported,
+ * Server only, imported from `@nuxvel/nuxt/server/redis`: it is not auto-imported,
  * so the app's types do not load ioredis. Reads `NUXT_REDIS_URL`; outside
  * production it connects to `redis://localhost:6379` when that is unset,
  * and in production it throws instead. The `cache` purpose reads
@@ -72,7 +72,7 @@ function logOncePerOutage(client: Redis, purpose: RedisPurpose) {
  *
  * @example
  * ```ts
- * import { useRedis } from "@nuxvel/nuxt/redis";
+ * import { useRedis } from "@nuxvel/nuxt/server/redis";
  *
  * await useRedis("cache").set(redisKey("posts:count"), String(count));
  * ```

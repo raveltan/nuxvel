@@ -1,4 +1,4 @@
-import { useStripe } from "@nuxvel/nuxt/billing";
+import { useStripe } from "@nuxvel/nuxt/server/billing";
 
 export default defineEventHandler(async () => {
   try {

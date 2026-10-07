@@ -1,5 +1,6 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { createRequire } from "node:module";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
@@ -23,6 +24,9 @@ describe("@nuxvel/nuxt's exports", () => {
       "@nuxvel/nuxt/testing/setup",
       "@nuxvel/nuxt/testing/database",
       "@nuxvel/nuxt/testing/changes-reporter",
+      "@nuxvel/nuxt/server/database",
+      "@nuxvel/nuxt/app/api",
+      "@nuxvel/nuxt/shared/pagination",
     ]) {
       expect(fromApp.resolve(entry)).toMatch(/packages\/nuxt\/dist\/.*\.mjs$/);
     }
@@ -30,9 +34,19 @@ describe("@nuxvel/nuxt's exports", () => {
 
   it("point every entry at a module and its types in dist", () => {
     const manifest: { exports: Record<string, ExportTarget> } = JSON.parse(readFileSync(manifestPath, "utf8"));
+    const packageRoot = fileURLToPath(new URL("..", import.meta.url));
 
-    for (const target of Object.values(manifest.exports)) {
+    for (const [entry, target] of Object.entries(manifest.exports)) {
       if (typeof target === "string") continue;
+      if (entry.endsWith("/*")) {
+        const side = entry.slice(2, -2);
+        for (const file of readdirSync(join(packageRoot, "src", side))) {
+          const stem = file.replace(/\.ts$/, "");
+          expect(existsSync(join(packageRoot, "dist", side, `${stem}.mjs`)), `${entry}: ${stem}`).toBe(true);
+          expect(existsSync(join(packageRoot, "dist", side, `${stem}.d.mts`)), `${entry}: ${stem}`).toBe(true);
+        }
+        continue;
+      }
       for (const file of [target.types, target.default]) {
         expect(file).toMatch(/^\.\/dist\//);
         expect(existsSync(fileURLToPath(new URL(`../${file}`, import.meta.url))), file).toBe(true);

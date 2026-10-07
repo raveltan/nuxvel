@@ -20,7 +20,7 @@ describe("topic entries", () => {
     for (const file of files) {
       const lines = readFileSync(join(packageDir, file), "utf8").trim().split("\n");
       for (const line of lines) {
-        expect(line).toMatch(/^export (type )?(\{[^}]*\}|\*) from "\.\.\/\.\.\/runtime\//);
+        expect(line).toMatch(/^export (type )?(\{[^}]*\}|\*) from "\.\.\/runtime\//);
         expect(line).toMatch(/";$/);
       }
     }

@@ -1,5 +1,5 @@
 import { outboxTable } from "~~/server/database/schema/outbox.schema";
-import { useQueue } from "@nuxvel/nuxt/queue";
+import { useQueue } from "@nuxvel/nuxt/server/queues";
 
 const CLAIM_TIMEOUT_MS = 2000;
 

@@ -39,21 +39,17 @@
       "types": "./dist/database.d.mts",
       "default": "./dist/database.mjs"
     },
-    "./storage": {
-      "types": "./dist/storage.d.mts",
-      "default": "./dist/storage.mjs"
+    "./server/*": {
+      "types": "./dist/server/*.d.mts",
+      "default": "./dist/server/*.mjs"
     },
-    "./queue": {
-      "types": "./dist/queue.d.mts",
-      "default": "./dist/queue.mjs"
+    "./app/*": {
+      "types": "./dist/app/*.d.mts",
+      "default": "./dist/app/*.mjs"
     },
-    "./redis": {
-      "types": "./dist/redis.d.mts",
-      "default": "./dist/redis.mjs"
-    },
-    "./billing": {
-      "types": "./dist/billing.d.mts",
-      "default": "./dist/billing.mjs"
+    "./shared/*": {
+      "types": "./dist/shared/*.d.mts",
+      "default": "./dist/shared/*.mjs"
     },
     "./env": {
       "types": "./dist/env.d.mts",
@@ -123,9 +119,9 @@
     "client-dist"
   ],
   "scripts": {
-    "prepare": "nuxt-module-build build && npm run client:build",
+    "prepare": "NODE_OPTIONS=--max-old-space-size=8192 nuxt-module-build build && npm run client:build",
     "dev:prepare": "nuxt-module-build build --stub && npm run client:build",
-    "dev:types": "nuxt-module-build build --outDir .types",
+    "dev:types": "NODE_OPTIONS=--max-old-space-size=8192 nuxt-module-build build --outDir .types",
     "pretest": "node scripts/ensure-stub.mjs && npm run client:build && playwright-core install chromium-headless-shell chromium",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json && tsc -p test/type-fixtures/tsconfig.accessibility-page.json && tsc -p test/type-fixtures/tsconfig.e2e-expect.json && tsc -p test/type-fixtures/tsconfig.browser-timeout-config.json && tsc -p test/type-fixtures/tsconfig.action-fail-undeclared-code.json && tsc -p test/type-fixtures/tsconfig.fake-names.json && tsc -p test/type-fixtures/tsconfig.matcher-codes.json && tsc -p test/type-fixtures/tsconfig.schedule-timing.json && tsc -p test/type-fixtures/tsconfig.testing-source.json && tsc -p test/type-fixtures/tsconfig.storybook-source.json && tsc -p test/type-fixtures/tsconfig.trpc-reserved-names.json && nuxt typecheck client",

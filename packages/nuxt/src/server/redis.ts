@@ -1,2 +1,3 @@
-export { redisKey } from "../../runtime/server/redis/key";
-export type { RedisPurpose } from "../../runtime/server/redis/purpose";
+export { useRedis } from "../runtime/server/redis/client";
+export { redisKey } from "../runtime/server/redis/key";
+export type { RedisPurpose } from "../runtime/server/redis/purpose";

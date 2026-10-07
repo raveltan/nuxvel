@@ -321,6 +321,19 @@ describe("create-nuxvel", () => {
       const englishOnly = await run(join(repoNodeModules, ".bin", "nuxt"), ["typecheck"], appDir);
       expect(englishOnly.exitCode, englishOnly.output).toBe(0);
       expect(readFileSync(join(appDir, ".nuxt", "types", "typed-router.d.ts"), "utf8")).not.toContain("zh");
+
+      const topicsCheck = join(appDir, "app", "topic-imports-check.ts");
+      writeFileSync(topicsCheck, `import { $api } from "@nuxvel/nuxt/app/api";
+import { defineAction } from "@nuxvel/nuxt/server/actions";
+import { listQuery } from "@nuxvel/nuxt/shared/pagination";
+
+const usesApi: typeof $api | undefined = undefined;
+const usesDefineAction: typeof defineAction | undefined = undefined;
+const usesListQuery: typeof listQuery | undefined = undefined;
+export { usesApi, usesDefineAction, usesListQuery };
+`);
+      const topicsTypecheck = await run(join(repoNodeModules, ".bin", "nuxt"), ["typecheck"], appDir);
+      expect(topicsTypecheck.exitCode, topicsTypecheck.output).toBe(0);
     } finally {
       rmSync(scratchDir, { recursive: true, force: true });
     }

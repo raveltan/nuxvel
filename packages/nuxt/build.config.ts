@@ -1,13 +1,15 @@
 import { existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, relative } from "node:path";
 
+const topicEntries = ["src/server", "src/app", "src/shared"].flatMap((dir) =>
+  readdirSync(dir, { withFileTypes: true })
+    .filter((file) => file.isFile() && file.name.endsWith(".ts"))
+    .map((file) => `${dir}/${file.name.replace(/\.ts$/, "")}`),
+);
+
 const subpathEntries = [
   "src/cli",
   "src/database",
-  "src/storage",
-  "src/queue",
-  "src/redis",
-  "src/billing",
   "src/env",
   "src/migrations",
   "src/factories",
@@ -23,6 +25,7 @@ const subpathEntries = [
   "src/testing/global-setup",
   "src/testing/changes-reporter",
   "src/testing/factories/factory-defaults",
+  ...topicEntries,
 ];
 
 type StubContext = { options: { stub: boolean; rootDir: string; outDir: string; failOnWarn?: boolean } };

@@ -3,7 +3,7 @@ import { findListener } from "../../../../../src/runtime/server/events/registry"
 import { healthChecksTable } from "~~/server/database/schema/health-check.schema";
 import { outboxTable } from "~~/server/database/schema/outbox.schema";
 import { probeTransformed } from "~~/server/events/_probe/transformed";
-import { useQueue } from "@nuxvel/nuxt/queue";
+import { useQueue } from "@nuxvel/nuxt/server/queues";
 
 async function recorded() {
   const rows = await useDb()

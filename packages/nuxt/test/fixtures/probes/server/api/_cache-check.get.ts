@@ -1,4 +1,4 @@
-import { useRedis } from "@nuxvel/nuxt/redis";
+import { useRedis } from "@nuxvel/nuxt/server/redis";
 
 async function remembered() {
   let calls = 0;

@@ -1,5 +1,5 @@
-import { useQueue } from "@nuxvel/nuxt/queue";
-import { useRedis } from "@nuxvel/nuxt/redis";
+import { useQueue } from "@nuxvel/nuxt/server/queues";
+import { useRedis } from "@nuxvel/nuxt/server/redis";
 import { goDown, goUp } from "../../../../../src/runtime/server/maintenance/state";
 import { channelTopic, revokedSessionsTopic } from "../../../../../src/runtime/server/realtime/streams/channel-topic";
 

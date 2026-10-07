@@ -1,6 +1,6 @@
 import { isNull } from "drizzle-orm";
 import { outboxTable } from "~~/server/database/schema/outbox.schema";
-import { useQueue } from "@nuxvel/nuxt/queue";
+import { useQueue } from "@nuxvel/nuxt/server/queues";
 
 export default defineEventHandler(async () => {
   await useQueue().obliterate({ force: true });
