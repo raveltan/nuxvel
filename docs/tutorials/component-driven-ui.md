@@ -64,6 +64,7 @@ One `make:resource` command writes the table, the Zod inputs, a policy, the acti
 ```
 ✔ Created server/database/schema/product.schema.ts
 ✔ Created shared/schemas/product.ts
+✔ Created server/privacy/product.user-data.ts
 ✔ Created server/policies/product.policy.ts
 ✔ Created server/actions/product/create-product.action.ts
 ✔ Created server/actions/product/update-product.action.ts
@@ -384,7 +385,7 @@ const { mutate: remove, error: removeError } = $api.product.delete.useMutation({
   optimistic: { key: () => $api.product.list.key(input.value), apply: removeRow() },
   confirm: ({ id }) => ({
     title: "Delete product?",
-    description: `"${products.data.value?.rows.find((row) => row.id === id)?.name}" will be deleted.`,
+    description: `"${products.data?.rows.find((row) => row.id === id)?.name}" will be deleted.`,
     confirmLabel: "Delete",
     color: "error",
   }),
@@ -1100,6 +1101,6 @@ npm run test:arch
 
 ## What this tutorial leaves out
 
-- An edit form. `ProductForm` creates only. An edit form takes `updateProductInput` and a `defaults` with the `id` of the row, and `useActionForm()` then asks before the user leaves with unsaved changes. See [Frontend: unsaved changes](../frontend.md#unsaved-changes).
+- An edit form. `ProductForm` creates only. An edit form passes `$api.product.update` and a `defaults` with the `id` of the row, and `useActionForm()` then asks before the user leaves with unsaved changes. See [Frontend: unsaved changes](../frontend.md#unsaved-changes).
 - The image on the details page. Sign a read URL with `signedReadUrl()` in the procedure, and add the storage origin to `img-src`. See [Storage: showing a stored file](../storage.md#showing-a-stored-file).
 - `richText()` in the shared schema. In this version of nuxvel, a component that imports `richText()` through a shared schema does not load in Storybook. The HTML sanitizer does not load there. The action calls `sanitizeHtml()` on the server in its place.
