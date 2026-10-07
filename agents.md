@@ -327,6 +327,16 @@ change, so parallel runs never delete `dist/` under each other. Never run a
 plain `nuxt-module-build build` there while tests run. A new package entry
 still needs `npm run dev:prepare`.
 
+With the stub, an editor loads the whole framework source, so the
+playground's app program has about 5,300 files and uses 1.6 GB. `npm run
+dev:types` (about 20 s) builds the framework declarations into
+`packages/nuxt/.types` and never touches `dist/`. While `.types` exists,
+`nuxt dev` of the playground, or of any app linked to the workspace,
+writes .nuxt type files that load those declarations (about 2,900 files,
+0.9 GB). `nuxt prepare`, `nuxt typecheck`, builds and tests keep the
+source. The declarations are stale until you run `npm run dev:types`
+again. To go back to the source, delete `packages/nuxt/.types`.
+
 Run tests before every commit. A step is not done until its test passes.
 
 **Run only the changed tests** while working (`npx vitest run <file>...`

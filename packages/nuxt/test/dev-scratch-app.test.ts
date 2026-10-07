@@ -1,5 +1,6 @@
 import { afterAll, beforeAll } from "vitest";
 import { addWatchedAction } from "./dev-scratch-app/action-mount-watch";
+import { useEditorTypes } from "./dev-scratch-app/editor-types";
 import { addExtraLocales } from "./dev-scratch-app/extra-locales";
 import { addMailWithoutTemplate } from "./dev-scratch-app/mail-template-watch";
 import { addGreetingsRouter } from "./dev-scratch-app/procedure-inputs-watch";
@@ -21,7 +22,11 @@ beforeAll(() => {
   addWatchedAction(appDir);
   addGreetingsRouter(appDir);
   addMailWithoutTemplate(appDir);
+  useEditorTypes(appDir);
 });
-afterAll(() => removeScratchApp(appDir));
+afterAll(() => {
+  removeScratchApp(appDir);
+  delete process.env.NUXVEL_EDITOR_TYPES_DIR;
+});
 
 await setupApp({ rootDir: appDir, dev: true });

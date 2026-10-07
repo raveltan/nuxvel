@@ -14,6 +14,7 @@
     "deps:upgrade": "npm update && npm run typecheck && npm test",
     "test:coverage": "NODE_OPTIONS=--enable-source-maps mcr \"npm test\"",
     "typecheck": "npm run typecheck --workspace packages/nuxt --workspace packages/cli --workspace packages/create --workspace packages/test-helpers --workspace playground",
+    "dev:types": "npm run dev:types --workspace packages/nuxt",
     "lint": "npm run lint --workspace playground",
     "postinstall": "npm run dev:prepare --workspace packages/nuxt"
   },

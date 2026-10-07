@@ -125,6 +125,7 @@
   "scripts": {
     "prepare": "nuxt-module-build build && npm run client:build",
     "dev:prepare": "nuxt-module-build build --stub && npm run client:build",
+    "dev:types": "nuxt-module-build build --outDir .types",
     "pretest": "node scripts/ensure-stub.mjs && npm run client:build && playwright-core install chromium-headless-shell chromium",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json && tsc -p test/type-fixtures/tsconfig.accessibility-page.json && tsc -p test/type-fixtures/tsconfig.e2e-expect.json && tsc -p test/type-fixtures/tsconfig.browser-timeout-config.json && tsc -p test/type-fixtures/tsconfig.action-fail-undeclared-code.json && tsc -p test/type-fixtures/tsconfig.fake-names.json && tsc -p test/type-fixtures/tsconfig.matcher-codes.json && tsc -p test/type-fixtures/tsconfig.schedule-timing.json && tsc -p test/type-fixtures/tsconfig.testing-source.json && tsc -p test/type-fixtures/tsconfig.storybook-source.json && tsc -p test/type-fixtures/tsconfig.trpc-reserved-names.json && nuxt typecheck client",

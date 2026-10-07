@@ -29,6 +29,7 @@ import { generatedModules } from "./setup/generated-modules";
 import { addProcedureInputs } from "./setup/procedure-inputs";
 import { registerNamespaces } from "./setup/namespaces";
 import { addRouteTypes } from "./setup/route-types";
+import { editorTypes } from "./setup/editor-types";
 import { registerServerOnlyModules } from "./setup/server-only-modules";
 import { reloadOnDefinitionChanges } from "./setup/dev-reload";
 import { allowUiThemeStyle } from "./setup/ui-theme-csp";
@@ -643,7 +644,7 @@ export default defineNuxtModule<ModuleOptions>().with({
     const modules = generatedModules(options, discovery, nitroScan, socialProviders, runtimeFile);
     const { namespaces, namespaceModules } = await registerNamespaces(discovery);
     addRouteTypes(nitroScan, runtimeFile);
-    registerServerOnlyModules(nuxt, { ...modules, ...namespaceModules });
+    registerServerOnlyModules(nuxt, { ...modules, ...namespaceModules }, editorTypes(nuxt, runtimeFile("./runtime")));
     addProcedureInputs(nuxt, discovery);
     reloadOnDefinitionChanges(nuxt, discovery, namespaces);
     configureNitro(nuxt, runtimeFile);

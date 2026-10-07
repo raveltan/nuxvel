@@ -1,13 +1,20 @@
+import { join } from "node:path";
 import { addServerTemplate, addTemplate, addVitePlugin } from "@nuxt/kit";
 import type { Nuxt } from "@nuxt/schema";
+import type { RedirectTypes } from "./editor-types";
 import type { GeneratedModule } from "./generated-modules";
 
-export function registerServerOnlyModules(nuxt: Nuxt, modules: Record<string, GeneratedModule>) {
+// an app's package.json imports load these two written files at runtime
+const RUNTIME_READ = new Set(["#nuxvel/schema", "#nuxvel/factories"]);
+
+export function registerServerOnlyModules(nuxt: Nuxt, modules: Record<string, GeneratedModule>, redirectTypes?: RedirectTypes) {
   const serverOnlyModules: Record<string, string> = {};
 
   // nitro resolves these in memory: @nuxt/test-utils shares one build dir across workers, so a written template can vanish mid-build
   for (const [alias, getContents] of Object.entries(modules)) {
-    const { dst } = addTemplate({ filename: `${alias.slice(1)}.ts`, getContents, write: true });
+    const filename = `${alias.slice(1)}.ts`;
+    const written = redirectTypes && !RUNTIME_READ.has(alias) ? async () => redirectTypes(await getContents(), join(nuxt.options.buildDir, filename)) : getContents;
+    const { dst } = addTemplate({ filename, getContents: written, write: true });
     addServerTemplate({ filename: alias, getContents });
     serverOnlyModules[alias] = dst;
   }

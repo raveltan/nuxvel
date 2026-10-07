@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
-import { dirname, join, relative } from "node:path";
+import { basename, dirname, join, relative } from "node:path";
 
 const subpathEntries = [
   "src/cli",
@@ -25,7 +25,7 @@ const subpathEntries = [
   "src/testing/factories/factory-defaults",
 ];
 
-type StubContext = { options: { stub: boolean; rootDir: string; outDir: string } };
+type StubContext = { options: { stub: boolean; rootDir: string; outDir: string; failOnWarn?: boolean } };
 type MkdistOptions = { pattern?: string | string[] };
 
 function reexportSource(rootDir: string, outDir: string, entry: string) {
@@ -45,6 +45,10 @@ export default {
   entries: subpathEntries.map((entry) => `${entry}.ts`),
   externals: [/^#nuxvel\//],
   hooks: {
+    // `npm run dev:types` builds into .types, and unbuild reports every import of .types/runtime as an implicit dependency
+    "build:prepare"(ctx: StubContext) {
+      if (basename(ctx.options.outDir) === ".types") ctx.options.failOnWarn = false;
+    },
     // rollup hoists the side-effect imports of every entry into each declaration file, so @nuxvel/nuxt/database loaded the types of BullMQ, ioredis and the AWS SDK
     "rollup:dts:options"(_ctx: unknown, options: { plugins: unknown[] }) {
       options.plugins.push({ name: "nuxvel:declaration-imports", outputOptions: (output: object) => ({ ...output, hoistTransitiveImports: false }) });
