@@ -928,7 +928,7 @@ The first version of the list is the one that many apps write first. It loads th
     }),
 ```
 
-Import `ilike` from `drizzle-orm`, and `userTable`, `bookingTable` and `roomTable` from their schema files.
+Import `ilike` from `drizzle-orm`, and `userTable`, `bookingTable` and `roomTable` from `#nuxvel/schema`.
 
 ```bash
 ./nv test:functional tests/functional/booking-list.test.ts
@@ -1391,14 +1391,14 @@ const cancel = $api.booking.cancel.useMutation({ toast: "Booking cancelled" });
     <div class="space-y-1">
       <ULink :to="{ name: 'bookings-id', params: { id: booking.id } }" class="font-medium">{{ booking.title }}</ULink>
       <p class="text-sm text-muted">{{ booking.room }} · {{ booking.booker }} · <DateTime :value="booking.startsAt" /></p>
-      <p v-if="cancel.error.value" role="alert" class="text-sm text-error">{{ cancel.error.value.message }}</p>
+      <p v-if="cancel.error" role="alert" class="text-sm text-error">{{ cancel.error.message }}</p>
     </div>
     <UTooltip text="Cancels the booking and frees the room">
       <UButton
         icon="i-lucide-x"
         color="neutral"
         variant="ghost"
-        :loading="cancel.isLoading.value"
+        :loading="cancel.isLoading"
         @click="cancel.mutate({ id: props.booking.id })"
       />
     </UTooltip>
@@ -1441,7 +1441,7 @@ Give the button a name, and make the root a `<div>`:
     <div class="space-y-1">
       <ULink :to="{ name: 'bookings-id', params: { id: booking.id } }" class="font-medium">{{ booking.title }}</ULink>
       <p class="text-sm text-muted">{{ booking.room }} · {{ booking.booker }} · <DateTime :value="booking.startsAt" /></p>
-      <p v-if="cancel.error.value" role="alert" class="text-sm text-error">{{ cancel.error.value.message }}</p>
+      <p v-if="cancel.error" role="alert" class="text-sm text-error">{{ cancel.error.message }}</p>
     </div>
     <UTooltip text="Cancels the booking and frees the room">
       <UButton
@@ -1449,7 +1449,7 @@ Give the button a name, and make the root a `<div>`:
         color="neutral"
         variant="ghost"
         :aria-label="`Cancel ${booking.title}`"
-        :loading="cancel.isLoading.value"
+        :loading="cancel.isLoading"
         @click="cancel.mutate({ id: props.booking.id })"
       />
     </UTooltip>
@@ -1477,18 +1477,19 @@ The stories checked each state with a fake server. An end-to-end test checks the
 import {
   actingAs,
   button,
+  describe,
   expect,
   expectAccessible,
   expectNoRow,
   field,
   fillForm,
   heading,
+  it,
   link,
   text,
   toast,
   trpcSpy,
 } from "@nuxvel/nuxt/testing";
-import { describe, it } from "@nuxvel/nuxt/testing";
 import { bookingTable } from "#nuxvel/schema";
 import { bookingFactory, roomFactory, userFactory } from "#nuxvel/factories";
 
