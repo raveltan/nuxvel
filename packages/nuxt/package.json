@@ -51,6 +51,10 @@
       "types": "./dist/redis.d.mts",
       "default": "./dist/redis.mjs"
     },
+    "./billing": {
+      "types": "./dist/billing.d.mts",
+      "default": "./dist/billing.mjs"
+    },
     "./env": {
       "types": "./dist/env.d.mts",
       "default": "./dist/env.mjs"

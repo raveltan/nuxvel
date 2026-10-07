@@ -7,6 +7,7 @@ const subpathEntries = [
   "src/storage",
   "src/queue",
   "src/redis",
+  "src/billing",
   "src/env",
   "src/migrations",
   "src/factories",

@@ -239,9 +239,11 @@ The billing rows stay: payment records are kept for accounting. They hold the ID
 
 ## The Stripe client
 
-`useStripe()` returns the app's Stripe client, for a call that the billing helpers do not make. It is auto-imported on the server when billing is on:
+`useStripe()` returns the app's Stripe client, for a call that the billing helpers do not make. Import it from `@nuxvel/nuxt/billing`. It is not auto-imported, so that the types of Stripe load only in the files that use it:
 
 ```ts
+import { useStripe } from "@nuxvel/nuxt/billing";
+
 const invoices = await useStripe().invoices.list({ customer: customerId, limit: 10 });
 ```
 

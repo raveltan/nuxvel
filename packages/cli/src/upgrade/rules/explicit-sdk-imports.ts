@@ -4,13 +4,14 @@ const SUBPATHS: Record<string, string> = {
   useS3: "@nuxvel/nuxt/storage",
   useQueue: "@nuxvel/nuxt/queue",
   useRedis: "@nuxvel/nuxt/redis",
+  useStripe: "@nuxvel/nuxt/billing",
 };
 
 export const explicitSdkImports: Rule.RuleModule = {
   meta: {
     type: "problem",
     fixable: "code",
-    docs: { description: "Imports useS3(), useQueue() and useRedis() from their subpaths of @nuxvel/nuxt." },
+    docs: { description: "Imports useS3(), useQueue(), useRedis() and useStripe() from their subpaths of @nuxvel/nuxt." },
     messages: { missing: "no longer auto-imported: {{names}}, import each from its subpath of @nuxvel/nuxt" },
     schema: [],
   },

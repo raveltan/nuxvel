@@ -1,3 +1,5 @@
+import { useStripe } from "@nuxvel/nuxt/billing";
+
 export default defineEventHandler(async () => {
   try {
     const balance = await useStripe().balance.retrieve();

@@ -12,8 +12,9 @@ function sendThroughFetch(...request: Parameters<typeof fetch>) {
 /**
  * The app's Stripe client, created once and reused.
  *
- * Auto-imported on the server when `nuxvel.billing` is on. Reads
- * `NUXT_STRIPE_SECRET_KEY`. A failed request is retried twice with the
+ * Import it from `@nuxvel/nuxt/billing`, with `nuxvel.billing` on. It
+ * is not auto-imported, so the types of Stripe load only in the files
+ * that use it. Reads `NUXT_STRIPE_SECRET_KEY`. A failed request is retried twice with the
  * same idempotency key. Reach for it for a Stripe call that nuxvel's
  * billing helpers do not make. In a test build, every request goes to
  * nuxvel's in-memory Stripe and never reaches the network; `fakeFetch`
@@ -23,6 +24,8 @@ function sendThroughFetch(...request: Parameters<typeof fetch>) {
  *
  * @example
  * ```ts
+ * import { useStripe } from "@nuxvel/nuxt/billing";
+ *
  * const invoices = await useStripe().invoices.list({ customer: customerId, limit: 10 });
  * ```
  */

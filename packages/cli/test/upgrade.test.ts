@@ -1652,6 +1652,22 @@ describe("nuxvel upgrade", () => {
 
       expect(again.stdout).not.toContain("updated:");
     }, 60000);
+
+    it("imports useStripe() from @nuxvel/nuxt/billing where a file uses it", async () => {
+      const appDir = scratchPlayground("upgrade-explicit-stripe-import");
+      const api = join(appDir, "server", "api");
+      mkdirSync(api, { recursive: true });
+      const usesStripe = ["export default defineEventHandler(() => useStripe().balance.retrieve());", ""];
+      writeFileSync(join(api, "uses-stripe.get.ts"), usesStripe.join("\n"));
+
+      const applied = await runCliAt(appDir, "upgrade", "--only", "explicit-sdk-imports");
+
+      expect(applied.exitCode, applied.stderr).toBe(0);
+      expect(applied.stdout).toContain("updated: server/api/uses-stripe.get.ts\n");
+      expect(readFileSync(join(api, "uses-stripe.get.ts"), "utf8")).toBe(
+        ['import { useStripe } from "@nuxvel/nuxt/billing";', "", ...usesStripe].join("\n"),
+      );
+    }, 60000);
   });
 
   describe("explicit-namespace-imports", () => {

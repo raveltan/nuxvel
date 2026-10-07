@@ -205,6 +205,10 @@ applies each step below that names a codemod.
   add `import { useS3 } from "@nuxvel/nuxt/storage"`, `import { useQueue
   } from "@nuxvel/nuxt/queue"` or `import { useRedis } from
   "@nuxvel/nuxt/redis"`. Codemod: `explicit-sdk-imports`.
+- `useStripe()` is no longer auto-imported, so the editor no longer
+  loads the types of Stripe in every file of an app with billing on. By
+  hand: in each server file that calls it, add `import { useStripe }
+  from "@nuxvel/nuxt/billing"`. Codemod: `explicit-sdk-imports`.
 - `$seeders` and `$backfills` are no longer auto-imported, so the editor
   no longer loads the seeders, the factories and faker in every file.
   By hand: in each server file that uses one, add `import * as $seeders

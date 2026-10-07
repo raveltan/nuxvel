@@ -98,6 +98,8 @@ describe("server auto-imports", () => {
     expect(names).not.toContain("useS3");
     expect(names).not.toContain("useQueue");
     expect(names).not.toContain("useRedis");
+    expect(names).not.toContain("useStripe");
+    expect(names).toContain("checkout");
     expect(names).toContain("RedisPurpose");
   });
 

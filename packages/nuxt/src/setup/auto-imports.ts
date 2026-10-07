@@ -63,7 +63,6 @@ export function addAutoImports(options: ResolvedOptions, runtimeFile: RuntimeFil
   if (options.billing) {
     const billing = (file: string) => runtimeFile(`./runtime/server/billing/${file}`);
     addServerImports([
-      { name: "useStripe", from: billing("use-stripe") },
       { name: "defineProduct", from: billing("define-product") },
       { name: "Product", from: billing("define-product"), type: true },
       { name: "ProductName", from: billing("products"), type: true },

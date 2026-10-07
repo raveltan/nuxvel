@@ -10,12 +10,13 @@ The exports of `shared/schemas/` are also auto-imported, in `server/` and in the
 
 `$seeders` and `$backfills` are not auto-imported either. They load the seeders, the factories and faker, which makes the editor slow in every file. Import them where you need them, as [Seeding](./database.md#seeding) and [Backfills](./backfills.md) show.
 
-`useS3()`, `useQueue()` and `useRedis()` are not auto-imported too. Their types load the AWS SDK, BullMQ and ioredis, which makes the editor slow in every file. Import them on the server:
+`useS3()`, `useQueue()`, `useRedis()` and `useStripe()` are not auto-imported too. Their types load the AWS SDK, BullMQ, ioredis and Stripe, which makes the editor slow in every file. Import them on the server:
 
 ```ts
 import { useS3 } from "@nuxvel/nuxt/storage";
 import { useQueue } from "@nuxvel/nuxt/queue";
 import { useRedis } from "@nuxvel/nuxt/redis";
+import { useStripe } from "@nuxvel/nuxt/billing";
 ```
 
 ## Imports
@@ -356,7 +357,6 @@ Guide: [Billing](./billing.md). These names are auto-imported only when `nuxvel.
 
 | Name | Kind | Description |
 |---|---|---|
-| `useStripe` | function | Returns the app's Stripe client. |
 | `defineProduct` | function | Defines a product that a user can buy: a Stripe price and whether it renews. |
 | `Product` | type | A product definition. |
 | `ProductName` | type | The name of every product under `server/products/`. |
