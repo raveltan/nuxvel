@@ -1,0 +1,2417 @@
+[
+  {
+    "name": "$api",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/trpc/api.ts",
+    "path": "@nuxvel/nuxt/app/api"
+  },
+  {
+    "name": "AbilityRef",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/policies/define-policy.ts",
+    "path": "@nuxvel/nuxt/server/authorization"
+  },
+  {
+    "name": "Action",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/actions/define-action.ts",
+    "path": "@nuxvel/nuxt/server/actions"
+  },
+  {
+    "name": "ActionContext",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/actions/define-action.ts",
+    "path": "@nuxvel/nuxt/server/actions"
+  },
+  {
+    "name": "ActionError",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/actions/action-error.ts",
+    "path": "@nuxvel/nuxt/server/actions"
+  },
+  {
+    "name": "ActionErrorCode",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/actions/action-error.ts",
+    "path": "@nuxvel/nuxt/server/actions"
+  },
+  {
+    "name": "ActionField",
+    "kind": "component",
+    "side": "app",
+    "file": "runtime/app/ui/ActionField.vue",
+    "path": "@nuxvel/nuxt/app/forms"
+  },
+  {
+    "name": "ActionForm",
+    "kind": "type",
+    "side": "app",
+    "file": "runtime/app/composables/use-action-form.ts",
+    "path": "@nuxvel/nuxt/app/forms"
+  },
+  {
+    "name": "ActionForm",
+    "kind": "component",
+    "side": "app",
+    "file": "runtime/app/ui/ActionForm.vue",
+    "path": "@nuxvel/nuxt/app/forms"
+  },
+  {
+    "name": "ActionFormOptions",
+    "kind": "type",
+    "side": "app",
+    "file": "runtime/app/composables/use-action-form.ts",
+    "path": "@nuxvel/nuxt/app/forms"
+  },
+  {
+    "name": "Actor",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/actions/system-actor.ts",
+    "path": "@nuxvel/nuxt/server/actions"
+  },
+  {
+    "name": "addWebhookEndpoint",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/webhooks/outbound/webhook-endpoints.ts",
+    "path": "@nuxvel/nuxt/server/webhooks"
+  },
+  {
+    "name": "adminProcedure",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/trpc/procedures.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "allowGuest",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/policies/define-policy.ts",
+    "path": "@nuxvel/nuxt/server/authorization"
+  },
+  {
+    "name": "allowRepeatedQueries",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/database/allow-repeated-queries.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "allowSystem",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/policies/define-policy.ts",
+    "path": "@nuxvel/nuxt/server/authorization"
+  },
+  {
+    "name": "apiKeyActor",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/actions/api-key-actor.ts",
+    "path": "@nuxvel/nuxt/server/actions"
+  },
+  {
+    "name": "AppRouter",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/trpc/router.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "audit",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/utils/audit.ts",
+    "path": "@nuxvel/nuxt/server/audit"
+  },
+  {
+    "name": "AuditChainBreak",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/audit/verify-audit-chain.ts",
+    "path": "@nuxvel/nuxt/server/audit"
+  },
+  {
+    "name": "authClient",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/auth/client.ts",
+    "path": "@nuxvel/nuxt/app/auth"
+  },
+  {
+    "name": "authedProcedure",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/trpc/procedures.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "AuthForm",
+    "kind": "component",
+    "side": "app",
+    "file": "runtime/app/ui/AuthForm.vue",
+    "path": "@nuxvel/nuxt/app/auth"
+  },
+  {
+    "name": "AuthMutation",
+    "kind": "type",
+    "side": "app",
+    "file": "runtime/app/composables/unwrap-auth.ts",
+    "path": "@nuxvel/nuxt/app/auth"
+  },
+  {
+    "name": "authorize",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/policies/authorize.ts",
+    "path": "@nuxvel/nuxt/server/authorization"
+  },
+  {
+    "name": "AuthResult",
+    "kind": "type",
+    "side": "app",
+    "file": "runtime/app/composables/unwrap-auth.ts",
+    "path": "@nuxvel/nuxt/app/auth"
+  },
+  {
+    "name": "AuthSession",
+    "kind": "type",
+    "side": "app",
+    "file": "runtime/app/composables/use-sessions.ts",
+    "path": "@nuxvel/nuxt/app/auth"
+  },
+  {
+    "name": "AuthStatus",
+    "kind": "type",
+    "side": "app",
+    "file": "runtime/app/composables/unwrap-auth.ts",
+    "path": "@nuxvel/nuxt/app/auth"
+  },
+  {
+    "name": "Backfill",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/backfills/define-backfill.ts",
+    "path": "@nuxvel/nuxt/server/backfills"
+  },
+  {
+    "name": "BackfillName",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/backfills/backfill-name.ts",
+    "path": "@nuxvel/nuxt/server/backfills"
+  },
+  {
+    "name": "beforeCommit",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/database/transaction.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "billingDisputedEvent",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/billing/events/disputed.ts",
+    "path": "@nuxvel/nuxt/server/billing"
+  },
+  {
+    "name": "billingPaidEvent",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/billing/events/paid.ts",
+    "path": "@nuxvel/nuxt/server/billing"
+  },
+  {
+    "name": "billingPortal",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/billing/billing-portal.ts",
+    "path": "@nuxvel/nuxt/server/billing"
+  },
+  {
+    "name": "billingRefundedEvent",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/billing/events/refunded.ts",
+    "path": "@nuxvel/nuxt/server/billing"
+  },
+  {
+    "name": "billingSubscriptionChangedEvent",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/billing/events/subscription-changed.ts",
+    "path": "@nuxvel/nuxt/server/billing"
+  },
+  {
+    "name": "BillingUser",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/billing/customer.ts",
+    "path": "@nuxvel/nuxt/server/billing"
+  },
+  {
+    "name": "BroadcastPayload",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/realtime/registry.ts",
+    "path": "@nuxvel/nuxt/server/realtime"
+  },
+  {
+    "name": "cacheFlush",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/cache/cache.ts",
+    "path": "@nuxvel/nuxt/server/cache"
+  },
+  {
+    "name": "cacheForget",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/cache/cache.ts",
+    "path": "@nuxvel/nuxt/server/cache"
+  },
+  {
+    "name": "cacheGet",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/cache/cache.ts",
+    "path": "@nuxvel/nuxt/server/cache"
+  },
+  {
+    "name": "CacheKey",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/cache/cache.ts",
+    "path": "@nuxvel/nuxt/server/cache"
+  },
+  {
+    "name": "CacheOptions",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/cache/cache.ts",
+    "path": "@nuxvel/nuxt/server/cache"
+  },
+  {
+    "name": "cachePut",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/cache/cache.ts",
+    "path": "@nuxvel/nuxt/server/cache"
+  },
+  {
+    "name": "CacheTtl",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/cache/cache.ts",
+    "path": "@nuxvel/nuxt/server/cache"
+  },
+  {
+    "name": "can",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/policies/can.ts",
+    "path": "@nuxvel/nuxt/server/authorization"
+  },
+  {
+    "name": "canMany",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/policies/can.ts",
+    "path": "@nuxvel/nuxt/server/authorization"
+  },
+  {
+    "name": "Channel",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/realtime/define-channel.ts",
+    "path": "@nuxvel/nuxt/server/realtime"
+  },
+  {
+    "name": "ChannelConnection",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/realtime/define-channel.ts",
+    "path": "@nuxvel/nuxt/server/realtime"
+  },
+  {
+    "name": "ChannelEvent",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/realtime/registry.ts",
+    "path": "@nuxvel/nuxt/server/realtime"
+  },
+  {
+    "name": "ChannelEvents",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/realtime/define-channel.ts",
+    "path": "@nuxvel/nuxt/server/realtime"
+  },
+  {
+    "name": "ChannelMessage",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/realtime/registry.ts",
+    "path": "@nuxvel/nuxt/server/realtime"
+  },
+  {
+    "name": "ChannelName",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/realtime/registry.ts",
+    "path": "@nuxvel/nuxt/server/realtime"
+  },
+  {
+    "name": "ChannelPresence",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/realtime/define-channel.ts",
+    "path": "@nuxvel/nuxt/server/realtime"
+  },
+  {
+    "name": "ChannelUser",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/realtime/define-channel.ts",
+    "path": "@nuxvel/nuxt/server/realtime"
+  },
+  {
+    "name": "checkout",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/billing/checkout.ts",
+    "path": "@nuxvel/nuxt/server/billing"
+  },
+  {
+    "name": "CheckoutOptions",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/billing/checkout.ts",
+    "path": "@nuxvel/nuxt/server/billing"
+  },
+  {
+    "name": "checkUpload",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/storage/promote-upload.ts",
+    "path": "@nuxvel/nuxt/server/storage"
+  },
+  {
+    "name": "CheckUploadOptions",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/storage/promote-upload.ts",
+    "path": "@nuxvel/nuxt/server/storage"
+  },
+  {
+    "name": "chunkById",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/database/chunk-by-id.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "clientIp",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/security/client-ip.ts",
+    "path": "@nuxvel/nuxt/server/security"
+  },
+  {
+    "name": "ConflictError",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/errors/taxonomy.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "csvSafe",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/security/csv-safe.ts",
+    "path": "@nuxvel/nuxt/server/security"
+  },
+  {
+    "name": "currentLocale",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/i18n/current-locale.ts",
+    "path": "@nuxvel/nuxt/server/i18n"
+  },
+  {
+    "name": "currentRequestId",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/trpc/context.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "CursorPage",
+    "kind": "type",
+    "side": "shared",
+    "file": "runtime/shared/pagination/pagination.ts",
+    "path": "@nuxvel/nuxt/shared/pagination"
+  },
+  {
+    "name": "DataTable",
+    "kind": "component",
+    "side": "app",
+    "file": "runtime/app/ui/DataTable.vue",
+    "path": "@nuxvel/nuxt/app/ui"
+  },
+  {
+    "name": "DateTime",
+    "kind": "component",
+    "side": "app",
+    "file": "runtime/app/components/DateTime.vue",
+    "path": "@nuxvel/nuxt/app/ui"
+  },
+  {
+    "name": "defineAction",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/actions/define-action.ts",
+    "path": "@nuxvel/nuxt/server/actions"
+  },
+  {
+    "name": "defineBackfill",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/backfills/define-backfill.ts",
+    "path": "@nuxvel/nuxt/server/backfills"
+  },
+  {
+    "name": "defineChannel",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/realtime/define-channel.ts",
+    "path": "@nuxvel/nuxt/server/realtime"
+  },
+  {
+    "name": "defineErrorClassifier",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/errors/define-error-classifier.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "defineEvent",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/events/define-event.ts",
+    "path": "@nuxvel/nuxt/server/events"
+  },
+  {
+    "name": "defineExperiment",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/flags/define-experiment.ts",
+    "path": "@nuxvel/nuxt/server/flags"
+  },
+  {
+    "name": "defineFlag",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/flags/define-flag.ts",
+    "path": "@nuxvel/nuxt/server/flags"
+  },
+  {
+    "name": "defineJob",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/jobs/define-job.ts",
+    "path": "@nuxvel/nuxt/server/queues"
+  },
+  {
+    "name": "defineListener",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/events/define-listener.ts",
+    "path": "@nuxvel/nuxt/server/events"
+  },
+  {
+    "name": "defineMail",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/mail/define-mail.ts",
+    "path": "@nuxvel/nuxt/server/mail"
+  },
+  {
+    "name": "defineMailWebhook",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/mail/define-mail-webhook.ts",
+    "path": "@nuxvel/nuxt/server/mail"
+  },
+  {
+    "name": "defineNotification",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/notifications/define-notification.ts",
+    "path": "@nuxvel/nuxt/server/notifications"
+  },
+  {
+    "name": "definePolicy",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/policies/define-policy.ts",
+    "path": "@nuxvel/nuxt/server/authorization"
+  },
+  {
+    "name": "defineProduct",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/billing/define-product.ts",
+    "path": "@nuxvel/nuxt/server/billing"
+  },
+  {
+    "name": "defineRateLimit",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/security/define-rate-limit.ts",
+    "path": "@nuxvel/nuxt/server/security"
+  },
+  {
+    "name": "defineSchedule",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/jobs/define-schedule.ts",
+    "path": "@nuxvel/nuxt/server/queues"
+  },
+  {
+    "name": "defineSeeder",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/seeders/define-seeder.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "defineStreamHandler",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/realtime/define-stream-handler.ts",
+    "path": "@nuxvel/nuxt/server/realtime"
+  },
+  {
+    "name": "defineUpload",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/storage/define-upload.ts",
+    "path": "@nuxvel/nuxt/server/storage"
+  },
+  {
+    "name": "defineUserData",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/privacy/define-user-data.ts",
+    "path": "@nuxvel/nuxt/server/privacy"
+  },
+  {
+    "name": "defineValidatedHandler",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/utils/define-validated-handler.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "defineWebhook",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/webhooks/define-webhook.ts",
+    "path": "@nuxvel/nuxt/server/webhooks"
+  },
+  {
+    "name": "deleteStoredFiles",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/storage/delete-stored-files.ts",
+    "path": "@nuxvel/nuxt/server/storage"
+  },
+  {
+    "name": "DispatchOptions",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/jobs/dispatch-job.ts",
+    "path": "@nuxvel/nuxt/server/queues"
+  },
+  {
+    "name": "DomainEvent",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/events/define-event.ts",
+    "path": "@nuxvel/nuxt/server/events"
+  },
+  {
+    "name": "Duration",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/security/rate-limit-window.ts",
+    "path": "@nuxvel/nuxt/server/security"
+  },
+  {
+    "name": "eraseUserData",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/privacy/erase-user-data.ts",
+    "path": "@nuxvel/nuxt/server/privacy"
+  },
+  {
+    "name": "ErrorClassifier",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/errors/define-error-classifier.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "EventName",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/events/registry.ts",
+    "path": "@nuxvel/nuxt/server/events"
+  },
+  {
+    "name": "EventPayload",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/events/registry.ts",
+    "path": "@nuxvel/nuxt/server/events"
+  },
+  {
+    "name": "experiment",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/flags/experiment.ts",
+    "path": "@nuxvel/nuxt/server/flags"
+  },
+  {
+    "name": "Experiment",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/flags/define-experiment.ts",
+    "path": "@nuxvel/nuxt/server/flags"
+  },
+  {
+    "name": "ExperimentMetric",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/flags/registry.ts",
+    "path": "@nuxvel/nuxt/server/flags"
+  },
+  {
+    "name": "ExperimentName",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/flags/registry.ts",
+    "path": "@nuxvel/nuxt/server/flags"
+  },
+  {
+    "name": "experimentReport",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/flags/experiment-report.ts",
+    "path": "@nuxvel/nuxt/server/flags"
+  },
+  {
+    "name": "ExperimentReport",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/flags/experiment-report.ts",
+    "path": "@nuxvel/nuxt/server/flags"
+  },
+  {
+    "name": "experimentState",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/flags/experiment-state.ts",
+    "path": "@nuxvel/nuxt/server/flags"
+  },
+  {
+    "name": "ExperimentState",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/flags/experiment-state.ts",
+    "path": "@nuxvel/nuxt/server/flags"
+  },
+  {
+    "name": "ExperimentVariant",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/flags/registry.ts",
+    "path": "@nuxvel/nuxt/server/flags"
+  },
+  {
+    "name": "exportUserData",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/privacy/export-user-data.ts",
+    "path": "@nuxvel/nuxt/server/privacy"
+  },
+  {
+    "name": "FileSize",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/storage/define-upload.ts",
+    "path": "@nuxvel/nuxt/server/storage"
+  },
+  {
+    "name": "findAuthorized",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/policies/find-authorized.ts",
+    "path": "@nuxvel/nuxt/server/authorization"
+  },
+  {
+    "name": "findOrFail",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/database/find-or-fail.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "firstOrFail",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/database/first-or-fail.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "flag",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/flags/flag.ts",
+    "path": "@nuxvel/nuxt/server/flags"
+  },
+  {
+    "name": "Flag",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/flags/define-flag.ts",
+    "path": "@nuxvel/nuxt/server/flags"
+  },
+  {
+    "name": "FlagName",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/flags/registry.ts",
+    "path": "@nuxvel/nuxt/server/flags"
+  },
+  {
+    "name": "FlagSubject",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/flags/flag.ts",
+    "path": "@nuxvel/nuxt/server/flags"
+  },
+  {
+    "name": "flagTargeting",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/flags/targeting.ts",
+    "path": "@nuxvel/nuxt/server/flags"
+  },
+  {
+    "name": "FlagTargeting",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/flags/targeting.ts",
+    "path": "@nuxvel/nuxt/server/flags"
+  },
+  {
+    "name": "flash",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/flash/flash.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "ForbiddenError",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/errors/forbidden-error.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "forceDelete",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/database/soft-deletes.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "forgotPasswordSchema",
+    "kind": "value",
+    "side": "shared",
+    "file": "runtime/shared/auth/schemas.ts",
+    "path": "@nuxvel/nuxt/shared/auth"
+  },
+  {
+    "name": "FormProcedure",
+    "kind": "type",
+    "side": "app",
+    "file": "runtime/app/composables/use-action-form.ts",
+    "path": "@nuxvel/nuxt/app/forms"
+  },
+  {
+    "name": "freshProcedure",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/trpc/procedures.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "highlight",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/database/search.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "hmac",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/webhooks/verifiers.ts",
+    "path": "@nuxvel/nuxt/server/webhooks"
+  },
+  {
+    "name": "idempotent",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/trpc/idempotent.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "insertOne",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/database/insert-one.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "InvalidationTag",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/actions/define-action.ts",
+    "path": "@nuxvel/nuxt/server/actions"
+  },
+  {
+    "name": "isActionError",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/actions/action-error.ts",
+    "path": "@nuxvel/nuxt/server/actions"
+  },
+  {
+    "name": "isMailSuppressed",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/mail/suppress-mail.ts",
+    "path": "@nuxvel/nuxt/server/mail"
+  },
+  {
+    "name": "isMaintenanceError",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/maintenance/is-maintenance-error.ts",
+    "path": "@nuxvel/nuxt/app/maintenance"
+  },
+  {
+    "name": "isNetworkError",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/trpc/is-network-error.ts",
+    "path": "@nuxvel/nuxt/app/api"
+  },
+  {
+    "name": "isTaxonomyError",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/errors/taxonomy.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "Job",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/jobs/define-job.ts",
+    "path": "@nuxvel/nuxt/server/queues"
+  },
+  {
+    "name": "JobChannel",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/jobs/define-job.ts",
+    "path": "@nuxvel/nuxt/server/queues"
+  },
+  {
+    "name": "JobChannelName",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/jobs/registry.ts",
+    "path": "@nuxvel/nuxt/server/queues"
+  },
+  {
+    "name": "JobContext",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/jobs/define-job.ts",
+    "path": "@nuxvel/nuxt/server/queues"
+  },
+  {
+    "name": "JobInput",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/jobs/registry.ts",
+    "path": "@nuxvel/nuxt/server/queues"
+  },
+  {
+    "name": "JobMessage",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/jobs/registry.ts",
+    "path": "@nuxvel/nuxt/server/queues"
+  },
+  {
+    "name": "JobName",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/jobs/registry.ts",
+    "path": "@nuxvel/nuxt/server/queues"
+  },
+  {
+    "name": "JobRunStatus",
+    "kind": "type",
+    "side": "app",
+    "file": "runtime/app/composables/use-job-channel.ts",
+    "path": "@nuxvel/nuxt/app/realtime"
+  },
+  {
+    "name": "Listener",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/events/define-listener.ts",
+    "path": "@nuxvel/nuxt/server/events"
+  },
+  {
+    "name": "ListFilterKind",
+    "kind": "type",
+    "side": "shared",
+    "file": "runtime/shared/pagination/list-query.ts",
+    "path": "@nuxvel/nuxt/shared/pagination"
+  },
+  {
+    "name": "ListFilters",
+    "kind": "type",
+    "side": "shared",
+    "file": "runtime/shared/pagination/list-query.ts",
+    "path": "@nuxvel/nuxt/shared/pagination"
+  },
+  {
+    "name": "listOrderBy",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/database/list-query.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "listQuery",
+    "kind": "value",
+    "side": "shared",
+    "file": "runtime/shared/pagination/list-query.ts",
+    "path": "@nuxvel/nuxt/shared/pagination"
+  },
+  {
+    "name": "ListQuery",
+    "kind": "type",
+    "side": "shared",
+    "file": "runtime/shared/pagination/list-query.ts",
+    "path": "@nuxvel/nuxt/shared/pagination"
+  },
+  {
+    "name": "listQueryParams",
+    "kind": "value",
+    "side": "shared",
+    "file": "runtime/shared/pagination/list-query.ts",
+    "path": "@nuxvel/nuxt/shared/pagination"
+  },
+  {
+    "name": "ListSort",
+    "kind": "type",
+    "side": "shared",
+    "file": "runtime/shared/pagination/list-query.ts",
+    "path": "@nuxvel/nuxt/shared/pagination"
+  },
+  {
+    "name": "listWebhookEndpoints",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/webhooks/outbound/webhook-endpoints.ts",
+    "path": "@nuxvel/nuxt/server/webhooks"
+  },
+  {
+    "name": "listWhere",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/database/list-query.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "LiveQueryUpdates",
+    "kind": "type",
+    "side": "app",
+    "file": "runtime/app/composables/use-live-query.ts",
+    "path": "@nuxvel/nuxt/app/api"
+  },
+  {
+    "name": "loader",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/database/loader.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "Mail",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/mail/define-mail.ts",
+    "path": "@nuxvel/nuxt/server/mail"
+  },
+  {
+    "name": "MailI18n",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/mail/define-mail.ts",
+    "path": "@nuxvel/nuxt/server/mail"
+  },
+  {
+    "name": "MailInput",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/mail/registry.ts",
+    "path": "@nuxvel/nuxt/server/mail"
+  },
+  {
+    "name": "MailName",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/mail/registry.ts",
+    "path": "@nuxvel/nuxt/server/mail"
+  },
+  {
+    "name": "MailSchema",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/mail/define-mail.ts",
+    "path": "@nuxvel/nuxt/server/mail"
+  },
+  {
+    "name": "MailSuppressionReason",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/mail/suppress-mail.ts",
+    "path": "@nuxvel/nuxt/server/mail"
+  },
+  {
+    "name": "MailTemplateName",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/mail/define-mail.ts",
+    "path": "@nuxvel/nuxt/server/mail"
+  },
+  {
+    "name": "MailTemplateProps",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/mail/define-mail.ts",
+    "path": "@nuxvel/nuxt/server/mail"
+  },
+  {
+    "name": "MailWebhookProvider",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/mail/define-mail-webhook.ts",
+    "path": "@nuxvel/nuxt/server/mail"
+  },
+  {
+    "name": "maintainAuditPartitions",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/audit/maintain-audit-partitions.ts",
+    "path": "@nuxvel/nuxt/server/audit"
+  },
+  {
+    "name": "Maintenance",
+    "kind": "component",
+    "side": "app",
+    "file": "runtime/app/maintenance/Maintenance.vue",
+    "path": "@nuxvel/nuxt/app/maintenance"
+  },
+  {
+    "name": "MaintenanceBanner",
+    "kind": "component",
+    "side": "app",
+    "file": "runtime/app/maintenance/MaintenanceBanner.vue",
+    "path": "@nuxvel/nuxt/app/maintenance"
+  },
+  {
+    "name": "MaintenanceStatus",
+    "kind": "type",
+    "side": "app",
+    "file": "runtime/app/composables/use-maintenance.ts",
+    "path": "@nuxvel/nuxt/app/maintenance"
+  },
+  {
+    "name": "MetricResult",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/flags/experiment-report.ts",
+    "path": "@nuxvel/nuxt/server/flags"
+  },
+  {
+    "name": "NotFoundError",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/errors/taxonomy.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "Notification",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/notifications/define-notification.ts",
+    "path": "@nuxvel/nuxt/server/notifications"
+  },
+  {
+    "name": "NotificationBell",
+    "kind": "component",
+    "side": "app",
+    "file": "runtime/app/ui/NotificationBell.vue",
+    "path": "@nuxvel/nuxt/app/notifications"
+  },
+  {
+    "name": "NotificationChannel",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/notifications/define-notification.ts",
+    "path": "@nuxvel/nuxt/server/notifications"
+  },
+  {
+    "name": "NotificationData",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/notifications/registry.ts",
+    "path": "@nuxvel/nuxt/server/notifications"
+  },
+  {
+    "name": "NotificationEntry",
+    "kind": "type",
+    "side": "app",
+    "file": "runtime/app/composables/use-notifications.ts",
+    "path": "@nuxvel/nuxt/app/notifications"
+  },
+  {
+    "name": "NotificationMail",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/notifications/define-notification.ts",
+    "path": "@nuxvel/nuxt/server/notifications"
+  },
+  {
+    "name": "NotificationMessage",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/notifications/notification-message.ts",
+    "path": "@nuxvel/nuxt/server/notifications"
+  },
+  {
+    "name": "NotificationName",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/notifications/registry.ts",
+    "path": "@nuxvel/nuxt/server/notifications"
+  },
+  {
+    "name": "notTrashed",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/database/soft-deletes.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "now",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/clock/now.ts",
+    "path": "@nuxvel/nuxt/server/observability"
+  },
+  {
+    "name": "NuxvelDb",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/database/client.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "nuxvelFlagProvider",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/flags/openfeature-provider.ts",
+    "path": "@nuxvel/nuxt/server/flags"
+  },
+  {
+    "name": "NuxvelTx",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/database/client.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "onCommit",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/database/transaction.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "onlyTrashed",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/database/soft-deletes.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "OptimisticUpdate",
+    "kind": "type",
+    "side": "app",
+    "file": "runtime/app/composables/optimistic.ts",
+    "path": "@nuxvel/nuxt/app/api"
+  },
+  {
+    "name": "paginate",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/database/paginate.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "paginateCursor",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/database/paginate-cursor.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "paginated",
+    "kind": "value",
+    "side": "shared",
+    "file": "runtime/shared/pagination/pagination.ts",
+    "path": "@nuxvel/nuxt/shared/pagination"
+  },
+  {
+    "name": "Paginated",
+    "kind": "type",
+    "side": "shared",
+    "file": "runtime/shared/pagination/pagination.ts",
+    "path": "@nuxvel/nuxt/shared/pagination"
+  },
+  {
+    "name": "PaginationInput",
+    "kind": "type",
+    "side": "shared",
+    "file": "runtime/shared/pagination/pagination.ts",
+    "path": "@nuxvel/nuxt/shared/pagination"
+  },
+  {
+    "name": "paginationSchema",
+    "kind": "value",
+    "side": "shared",
+    "file": "runtime/shared/pagination/pagination.ts",
+    "path": "@nuxvel/nuxt/shared/pagination"
+  },
+  {
+    "name": "paid",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/billing/paid.ts",
+    "path": "@nuxvel/nuxt/server/billing"
+  },
+  {
+    "name": "Policy",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/policies/define-policy.ts",
+    "path": "@nuxvel/nuxt/server/authorization"
+  },
+  {
+    "name": "PolicyAction",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/policies/can.ts",
+    "path": "@nuxvel/nuxt/server/authorization"
+  },
+  {
+    "name": "PolicyPreload",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/policies/define-policy.ts",
+    "path": "@nuxvel/nuxt/server/authorization"
+  },
+  {
+    "name": "PolicyRule",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/policies/define-policy.ts",
+    "path": "@nuxvel/nuxt/server/authorization"
+  },
+  {
+    "name": "prependRow",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/composables/list-rows.ts",
+    "path": "@nuxvel/nuxt/app/ui"
+  },
+  {
+    "name": "PresenceAvatars",
+    "kind": "component",
+    "side": "app",
+    "file": "runtime/app/ui/PresenceAvatars.vue",
+    "path": "@nuxvel/nuxt/app/realtime"
+  },
+  {
+    "name": "PresenceChannelName",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/realtime/registry.ts",
+    "path": "@nuxvel/nuxt/server/realtime"
+  },
+  {
+    "name": "PresenceMember",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/realtime/presence.ts",
+    "path": "@nuxvel/nuxt/server/realtime"
+  },
+  {
+    "name": "presenceOf",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/realtime/presence-of.ts",
+    "path": "@nuxvel/nuxt/server/realtime"
+  },
+  {
+    "name": "PresenceParams",
+    "kind": "type",
+    "side": "shared",
+    "file": "runtime/shared/realtime/presence-room.ts",
+    "path": "@nuxvel/nuxt/shared/realtime"
+  },
+  {
+    "name": "PresenceRoom",
+    "kind": "type",
+    "side": "app",
+    "file": "runtime/app/composables/use-presence.ts",
+    "path": "@nuxvel/nuxt/app/realtime"
+  },
+  {
+    "name": "PresenceRoomOf",
+    "kind": "type",
+    "side": "app",
+    "file": "runtime/app/composables/use-presence.ts",
+    "path": "@nuxvel/nuxt/app/realtime"
+  },
+  {
+    "name": "PresenceState",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/realtime/registry.ts",
+    "path": "@nuxvel/nuxt/server/realtime"
+  },
+  {
+    "name": "PresignedUpload",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/storage/define-upload.ts",
+    "path": "@nuxvel/nuxt/server/storage"
+  },
+  {
+    "name": "Product",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/billing/define-product.ts",
+    "path": "@nuxvel/nuxt/server/billing"
+  },
+  {
+    "name": "ProductName",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/billing/products.ts",
+    "path": "@nuxvel/nuxt/server/billing"
+  },
+  {
+    "name": "promoteUpload",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/storage/promote-upload.ts",
+    "path": "@nuxvel/nuxt/server/storage"
+  },
+  {
+    "name": "PromoteUploadOptions",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/storage/promote-upload.ts",
+    "path": "@nuxvel/nuxt/server/storage"
+  },
+  {
+    "name": "pruneOutbox",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/jobs/prune-outbox.ts",
+    "path": "@nuxvel/nuxt/server/queues"
+  },
+  {
+    "name": "publicProcedure",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/trpc/procedures.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "purgeTrashed",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/database/purge-trashed.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "PushNotification",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/push/push-notification.ts",
+    "path": "@nuxvel/nuxt/server/push"
+  },
+  {
+    "name": "PushToggle",
+    "kind": "component",
+    "side": "app",
+    "file": "runtime/app/ui/PushToggle.vue",
+    "path": "@nuxvel/nuxt/app/pwa"
+  },
+  {
+    "name": "PwaInstallPrompt",
+    "kind": "component",
+    "side": "app",
+    "file": "runtime/app/ui/PwaInstallPrompt.vue",
+    "path": "@nuxvel/nuxt/app/pwa"
+  },
+  {
+    "name": "QueryState",
+    "kind": "component",
+    "side": "app",
+    "file": "runtime/app/query-state/QueryState.vue",
+    "path": "@nuxvel/nuxt/app/api"
+  },
+  {
+    "name": "rateLimit",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/security/point-of-use.ts",
+    "path": "@nuxvel/nuxt/server/security"
+  },
+  {
+    "name": "RateLimit",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/security/define-rate-limit.ts",
+    "path": "@nuxvel/nuxt/server/security"
+  },
+  {
+    "name": "RateLimitedError",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/errors/taxonomy.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "rateLimiter",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/security/rate-limit.ts",
+    "path": "@nuxvel/nuxt/server/security"
+  },
+  {
+    "name": "RateLimitName",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/security/rate-limit.ts",
+    "path": "@nuxvel/nuxt/server/security"
+  },
+  {
+    "name": "RateLimitOptions",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/security/point-of-use.ts",
+    "path": "@nuxvel/nuxt/server/security"
+  },
+  {
+    "name": "RateLimitWindow",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/security/rate-limit-window.ts",
+    "path": "@nuxvel/nuxt/server/security"
+  },
+  {
+    "name": "redisKey",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/redis/key.ts",
+    "path": "@nuxvel/nuxt/server/redis"
+  },
+  {
+    "name": "RedisPurpose",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/redis/purpose.ts",
+    "path": "@nuxvel/nuxt/server/redis"
+  },
+  {
+    "name": "relayOutbox",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/jobs/outbox-relay.ts",
+    "path": "@nuxvel/nuxt/server/queues"
+  },
+  {
+    "name": "remember",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/cache/cache.ts",
+    "path": "@nuxvel/nuxt/server/cache"
+  },
+  {
+    "name": "removeRow",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/composables/list-rows.ts",
+    "path": "@nuxvel/nuxt/app/ui"
+  },
+  {
+    "name": "removeWebhookEndpoint",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/webhooks/outbound/webhook-endpoints.ts",
+    "path": "@nuxvel/nuxt/server/webhooks"
+  },
+  {
+    "name": "renamed",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/discovery/renamed.ts",
+    "path": "@nuxvel/nuxt/server/observability"
+  },
+  {
+    "name": "RenderedMail",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/mail/define-mail.ts",
+    "path": "@nuxvel/nuxt/server/mail"
+  },
+  {
+    "name": "replaceRow",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/composables/list-rows.ts",
+    "path": "@nuxvel/nuxt/app/ui"
+  },
+  {
+    "name": "RequestSchemas",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/utils/define-validated-handler.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "requireAuth",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/utils/auth.ts",
+    "path": "@nuxvel/nuxt/server/auth"
+  },
+  {
+    "name": "requireSignature",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/security/signed-url.ts",
+    "path": "@nuxvel/nuxt/server/security"
+  },
+  {
+    "name": "resetPasswordSchema",
+    "kind": "value",
+    "side": "shared",
+    "file": "runtime/shared/auth/schemas.ts",
+    "path": "@nuxvel/nuxt/shared/auth"
+  },
+  {
+    "name": "restore",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/database/soft-deletes.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "richText",
+    "kind": "value",
+    "side": "shared",
+    "file": "runtime/shared/ugc/rich-text.ts",
+    "path": "@nuxvel/nuxt/shared/html"
+  },
+  {
+    "name": "roleProcedure",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/trpc/procedures.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "RouterInputs",
+    "kind": "type",
+    "side": "app",
+    "file": "runtime/app/composables/router-types.ts",
+    "path": "@nuxvel/nuxt/app/api"
+  },
+  {
+    "name": "RouterOutputs",
+    "kind": "type",
+    "side": "app",
+    "file": "runtime/app/composables/router-types.ts",
+    "path": "@nuxvel/nuxt/app/api"
+  },
+  {
+    "name": "runBackfill",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/backfills/run-backfill.ts",
+    "path": "@nuxvel/nuxt/server/backfills"
+  },
+  {
+    "name": "SafeHtml",
+    "kind": "component",
+    "side": "app",
+    "file": "runtime/app/components/SafeHtml.vue",
+    "path": "@nuxvel/nuxt/app/ui"
+  },
+  {
+    "name": "SanitizedHtml",
+    "kind": "type",
+    "side": "shared",
+    "file": "runtime/shared/ugc/sanitize-html.ts",
+    "path": "@nuxvel/nuxt/shared/html"
+  },
+  {
+    "name": "sanitizeHtml",
+    "kind": "value",
+    "side": "shared",
+    "file": "runtime/shared/ugc/sanitize-html.ts",
+    "path": "@nuxvel/nuxt/shared/html"
+  },
+  {
+    "name": "Schedule",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/jobs/define-schedule.ts",
+    "path": "@nuxvel/nuxt/server/queues"
+  },
+  {
+    "name": "ScheduleName",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/jobs/schedule-registry.ts",
+    "path": "@nuxvel/nuxt/server/queues"
+  },
+  {
+    "name": "SchemaCheck",
+    "kind": "type",
+    "side": "app",
+    "file": "runtime/app/composables/use-action-form.ts",
+    "path": "@nuxvel/nuxt/app/forms"
+  },
+  {
+    "name": "search",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/database/search.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "SearchInput",
+    "kind": "component",
+    "side": "app",
+    "file": "runtime/app/ui/SearchInput.vue",
+    "path": "@nuxvel/nuxt/app/ui"
+  },
+  {
+    "name": "searchRank",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/database/search.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "Seeder",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/seeders/define-seeder.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "SeederContext",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/seeders/define-seeder.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "SeederName",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/seeders/seeder-name.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "sendMailNow",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/mail/send-mail-now.ts",
+    "path": "@nuxvel/nuxt/server/mail"
+  },
+  {
+    "name": "SendMailOptions",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/mail/send-mail.ts",
+    "path": "@nuxvel/nuxt/server/mail"
+  },
+  {
+    "name": "sendPush",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/push/send-push.ts",
+    "path": "@nuxvel/nuxt/server/push"
+  },
+  {
+    "name": "sendWebhook",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/webhooks/outbound/send-webhook.ts",
+    "path": "@nuxvel/nuxt/server/webhooks"
+  },
+  {
+    "name": "SeoMeta",
+    "kind": "type",
+    "side": "app",
+    "file": "runtime/app/seo/use-seo.ts",
+    "path": "@nuxvel/nuxt/app/seo"
+  },
+  {
+    "name": "Sessions",
+    "kind": "type",
+    "side": "app",
+    "file": "runtime/app/composables/use-sessions.ts",
+    "path": "@nuxvel/nuxt/app/auth"
+  },
+  {
+    "name": "SessionUser",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/utils/auth.ts",
+    "path": "@nuxvel/nuxt/server/auth"
+  },
+  {
+    "name": "setFlagTargeting",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/flags/targeting.ts",
+    "path": "@nuxvel/nuxt/server/flags"
+  },
+  {
+    "name": "SharedSchemaOf",
+    "kind": "type",
+    "side": "app",
+    "file": "runtime/app/composables/use-action-form.ts",
+    "path": "@nuxvel/nuxt/app/forms"
+  },
+  {
+    "name": "signedProcedure",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/trpc/signed-procedure.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "signedReadUrl",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/storage/signed-read-url.ts",
+    "path": "@nuxvel/nuxt/server/storage"
+  },
+  {
+    "name": "signedUrl",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/security/signed-url.ts",
+    "path": "@nuxvel/nuxt/server/security"
+  },
+  {
+    "name": "signInSchema",
+    "kind": "value",
+    "side": "shared",
+    "file": "runtime/shared/auth/schemas.ts",
+    "path": "@nuxvel/nuxt/shared/auth"
+  },
+  {
+    "name": "signUpSchema",
+    "kind": "value",
+    "side": "shared",
+    "file": "runtime/shared/auth/schemas.ts",
+    "path": "@nuxvel/nuxt/shared/auth"
+  },
+  {
+    "name": "SocialSignIn",
+    "kind": "component",
+    "side": "app",
+    "file": "runtime/app/ui/SocialSignIn.vue",
+    "path": "@nuxvel/nuxt/app/auth"
+  },
+  {
+    "name": "softDelete",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/database/soft-deletes.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "softDeletes",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/database/columns.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "startExperiment",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/flags/experiment-state.ts",
+    "path": "@nuxvel/nuxt/server/flags"
+  },
+  {
+    "name": "stopExperiment",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/flags/experiment-state.ts",
+    "path": "@nuxvel/nuxt/server/flags"
+  },
+  {
+    "name": "StreamMessage",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/realtime/define-stream-handler.ts",
+    "path": "@nuxvel/nuxt/server/realtime"
+  },
+  {
+    "name": "StreamWriter",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/realtime/define-stream-handler.ts",
+    "path": "@nuxvel/nuxt/server/realtime"
+  },
+  {
+    "name": "subscribed",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/billing/subscribed.ts",
+    "path": "@nuxvel/nuxt/server/billing"
+  },
+  {
+    "name": "suppressMail",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/mail/suppress-mail.ts",
+    "path": "@nuxvel/nuxt/server/mail"
+  },
+  {
+    "name": "SvgHandling",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/storage/define-upload.ts",
+    "path": "@nuxvel/nuxt/server/storage"
+  },
+  {
+    "name": "systemActor",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/actions/system-actor.ts",
+    "path": "@nuxvel/nuxt/server/actions"
+  },
+  {
+    "name": "TableId",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/database/find-or-fail.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "TaxonomyCode",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/errors/taxonomy.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "TaxonomyError",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/errors/taxonomy.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "timestamps",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/database/columns.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "toValidationError",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/errors/validation.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "track",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/flags/track.ts",
+    "path": "@nuxvel/nuxt/server/flags"
+  },
+  {
+    "name": "transaction",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/database/transaction.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "TransientError",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/errors/taxonomy.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "TRPCContext",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/trpc/trpc.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "TwoFactor",
+    "kind": "type",
+    "side": "app",
+    "file": "runtime/app/composables/use-two-factor.ts",
+    "path": "@nuxvel/nuxt/app/auth"
+  },
+  {
+    "name": "TwoFactorSetup",
+    "kind": "type",
+    "side": "app",
+    "file": "runtime/app/composables/use-two-factor.ts",
+    "path": "@nuxvel/nuxt/app/auth"
+  },
+  {
+    "name": "TypingIndicator",
+    "kind": "component",
+    "side": "app",
+    "file": "runtime/app/ui/TypingIndicator.vue",
+    "path": "@nuxvel/nuxt/app/realtime"
+  },
+  {
+    "name": "UnauthenticatedError",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/errors/unauthenticated-error.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "UnknownError",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/errors/taxonomy.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "unwrapAuth",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/composables/unwrap-auth.ts",
+    "path": "@nuxvel/nuxt/app/auth"
+  },
+  {
+    "name": "updateOne",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/database/update-one.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "Upload",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/storage/define-upload.ts",
+    "path": "@nuxvel/nuxt/server/storage"
+  },
+  {
+    "name": "UploadField",
+    "kind": "component",
+    "side": "app",
+    "file": "runtime/app/ui/UploadField.vue",
+    "path": "@nuxvel/nuxt/app/storage"
+  },
+  {
+    "name": "UploadName",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/storage/registry.ts",
+    "path": "@nuxvel/nuxt/server/storage"
+  },
+  {
+    "name": "UploadRequest",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/storage/define-upload.ts",
+    "path": "@nuxvel/nuxt/server/storage"
+  },
+  {
+    "name": "useActionForm",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/composables/use-action-form.ts",
+    "path": "@nuxvel/nuxt/app/forms"
+  },
+  {
+    "name": "useAuth",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/utils/use-auth.ts",
+    "path": "@nuxvel/nuxt/server/auth"
+  },
+  {
+    "name": "useBucket",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/storage/bucket.ts",
+    "path": "@nuxvel/nuxt/server/storage"
+  },
+  {
+    "name": "useCaller",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/trpc/use-caller.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "useChangeEmail",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/composables/use-change-email.ts",
+    "path": "@nuxvel/nuxt/app/auth"
+  },
+  {
+    "name": "useChannel",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/composables/use-channel.ts",
+    "path": "@nuxvel/nuxt/app/realtime"
+  },
+  {
+    "name": "useConfirm",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/ui/use-confirm.ts",
+    "path": "@nuxvel/nuxt/app/ui"
+  },
+  {
+    "name": "useDb",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/database/client.ts",
+    "path": "@nuxvel/nuxt/server/database"
+  },
+  {
+    "name": "useExperiment",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/composables/use-experiment.ts",
+    "path": "@nuxvel/nuxt/app/flags"
+  },
+  {
+    "name": "useFlag",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/composables/use-flag.ts",
+    "path": "@nuxvel/nuxt/app/flags"
+  },
+  {
+    "name": "useFlash",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/composables/use-flash.ts",
+    "path": "@nuxvel/nuxt/app/ui"
+  },
+  {
+    "name": "useFormErrors",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/composables/use-form-errors.ts",
+    "path": "@nuxvel/nuxt/app/forms"
+  },
+  {
+    "name": "useJobChannel",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/composables/use-job-channel.ts",
+    "path": "@nuxvel/nuxt/app/realtime"
+  },
+  {
+    "name": "useLiveQuery",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/composables/use-live-query.ts",
+    "path": "@nuxvel/nuxt/app/api"
+  },
+  {
+    "name": "useLogger",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/logging/logger.ts",
+    "path": "@nuxvel/nuxt/server/observability"
+  },
+  {
+    "name": "useMaintenance",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/composables/use-maintenance.ts",
+    "path": "@nuxvel/nuxt/app/maintenance"
+  },
+  {
+    "name": "useNotifications",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/composables/use-notifications.ts",
+    "path": "@nuxvel/nuxt/app/notifications"
+  },
+  {
+    "name": "useNuxvelConfig",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/utils/config.ts",
+    "path": "@nuxvel/nuxt/server/observability"
+  },
+  {
+    "name": "usePresence",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/composables/use-presence.ts",
+    "path": "@nuxvel/nuxt/app/realtime"
+  },
+  {
+    "name": "usePush",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/pwa/use-push.ts",
+    "path": "@nuxvel/nuxt/app/pwa"
+  },
+  {
+    "name": "userActor",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/actions/user-actor.ts",
+    "path": "@nuxvel/nuxt/server/actions"
+  },
+  {
+    "name": "useResendVerification",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/composables/use-resend-verification.ts",
+    "path": "@nuxvel/nuxt/app/auth"
+  },
+  {
+    "name": "useRouteInput",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/composables/use-route-input.ts",
+    "path": "@nuxvel/nuxt/app/ui"
+  },
+  {
+    "name": "useSecrets",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/security/secrets.ts",
+    "path": "@nuxvel/nuxt/server/security"
+  },
+  {
+    "name": "useSeo",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/seo/use-seo.ts",
+    "path": "@nuxvel/nuxt/app/seo"
+  },
+  {
+    "name": "useSessions",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/composables/use-sessions.ts",
+    "path": "@nuxvel/nuxt/app/auth"
+  },
+  {
+    "name": "useTimezone",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/composables/use-timezone.ts",
+    "path": "@nuxvel/nuxt/app/ui"
+  },
+  {
+    "name": "useTwoFactor",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/composables/use-two-factor.ts",
+    "path": "@nuxvel/nuxt/app/auth"
+  },
+  {
+    "name": "useUiLocale",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/ui/use-ui-locale.ts",
+    "path": "@nuxvel/nuxt/app/ui"
+  },
+  {
+    "name": "useUpload",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/composables/use-upload.ts",
+    "path": "@nuxvel/nuxt/app/storage"
+  },
+  {
+    "name": "useUser",
+    "kind": "value",
+    "side": "app",
+    "file": "runtime/app/composables/use-user.ts",
+    "path": "@nuxvel/nuxt/app/auth"
+  },
+  {
+    "name": "ValidatedHandler",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/utils/define-validated-handler.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "ValidatedRequest",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/utils/define-validated-handler.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "ValidationError",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/errors/validation.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "ValidationFailedError",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/errors/taxonomy.ts",
+    "path": "@nuxvel/nuxt/server/api"
+  },
+  {
+    "name": "verifyAuditChain",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/audit/verify-audit-chain.ts",
+    "path": "@nuxvel/nuxt/server/audit"
+  },
+  {
+    "name": "Webhook",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/webhooks/define-webhook.ts",
+    "path": "@nuxvel/nuxt/server/webhooks"
+  },
+  {
+    "name": "WebhookDelivery",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/webhooks/define-webhook.ts",
+    "path": "@nuxvel/nuxt/server/webhooks"
+  },
+  {
+    "name": "WebhookEndpoint",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/webhooks/outbound/webhook-endpoints.ts",
+    "path": "@nuxvel/nuxt/server/webhooks"
+  },
+  {
+    "name": "WebhookName",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/webhooks/registry.ts",
+    "path": "@nuxvel/nuxt/server/webhooks"
+  },
+  {
+    "name": "WebhookProvider",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/webhooks/verifiers.ts",
+    "path": "@nuxvel/nuxt/server/webhooks"
+  },
+  {
+    "name": "WebhookRequest",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/webhooks/define-webhook.ts",
+    "path": "@nuxvel/nuxt/server/webhooks"
+  },
+  {
+    "name": "WebhookVerifier",
+    "kind": "type",
+    "side": "server",
+    "file": "runtime/server/webhooks/verifiers.ts",
+    "path": "@nuxvel/nuxt/server/webhooks"
+  },
+  {
+    "name": "withAbilities",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/policies/with-abilities.ts",
+    "path": "@nuxvel/nuxt/server/authorization"
+  },
+  {
+    "name": "withLock",
+    "kind": "value",
+    "side": "server",
+    "file": "runtime/server/cache/lock.ts",
+    "path": "@nuxvel/nuxt/server/cache"
+  }
+]
