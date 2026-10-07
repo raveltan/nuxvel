@@ -938,7 +938,7 @@ Chapter 8 adds the page. Until then, place an order from `nuxvel tinker`. Tinker
 
 ```
 nuxvel> const demo = (await useDb().select().from(userTable)).find((user) => user.email === "demo@example.com")
-nuxvel> const order = await placeOrderAction({ productId: 1, quantity: 2 }, { actor: { type: "user", id: demo.id, role: "user" } })
+nuxvel> const order = await placeOrderAction({ productId: 1, quantity: 2 }, { actor: userActor(demo) })
 01:49:41 INFO  action  order.place-order ok (29ms)  actor=user:60327c2d-4024-4fd9-84ee-64cc35026334 ok=true
 nuxvel> order.id
 1
@@ -1174,7 +1174,7 @@ defineProps<{ orders: OrderSummary[] }>();
 ### The page
 
 ```bash
-./nv make:page shop
+./nv make:page "(app)/shop"
 ```
 
 ```vue
@@ -1537,7 +1537,7 @@ Then change each read and write of `total`. `nuxt typecheck` lists each place th
 
 ```ts
 // server/actions/order/place-order.action.ts
-      .values({ buyerId: ctx.actor.id, productId, quantity, totalCents: product.priceCents * quantity })
+    const order = await insertOne(orderTable, { buyerId: ctx.actor.id, productId, quantity, totalCents: product.priceCents * quantity });
 
 // server/listeners/order/record-sale.listener.ts
         revenueCents: order.totalCents,
