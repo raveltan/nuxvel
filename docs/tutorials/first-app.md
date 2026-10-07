@@ -251,7 +251,7 @@ import { z } from "zod";
 Write the page. The file name `[id].vue` gives the route `event-id`, with the param `id`:
 
 ```bash
-./nv make:page "event/[id]"
+./nv make:page "(app)/event/[id]"
 ```
 
 ```vue
@@ -428,7 +428,7 @@ import { rsvpTable, userTable } from "#nuxvel/schema";
     }),
 ```
 
-`authorize()` is the strict form of `can()`. It throws `FORBIDDEN` when the rule says no. `paginate()` runs one page of the query, and `paginated()` is the shape of that page.
+`findAuthorized()` loads the row and checks the `host` rule. It throws `NOT_FOUND` when no row has the ID, and `FORBIDDEN` when the rule says no. `paginate()` runs one page of the query, and `paginated()` is the shape of that page.
 
 `<DataTable>` shows a paginated query, with the page number in the URL:
 
