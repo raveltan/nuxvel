@@ -23,11 +23,6 @@ applies each step below that names a codemod.
   `drizzle.config.ts` loads import them. You can also import them from
   `@nuxvel/nuxt/server/billing`. Codemod:
   `explicit-imports`.
-- Optional, for a faster editor: add `"compilerOptions": {
-  "disableReferencedProjectLoad": true }` to the root `tsconfig.json`,
-  beside `"files": []`. The editor then loads the server, storybook, node
-  and shared projects only when you open one of their files. Nothing
-  breaks without it, and `nuxt typecheck` is the same.
 - Tests can import `#nuxvel/schema`, `#nuxvel/factories`, `#server/*`
   and `#shared/*`. Add them to the `imports` of `package.json`, after
   `#nuxvel/test-namespaces`:

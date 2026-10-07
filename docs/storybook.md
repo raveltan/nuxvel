@@ -106,7 +106,7 @@ The generated story types its story with `StoryObj<typeof Component>`, not `Stor
 
 The component itself is a normal Nuxt component. Inside it, auto-imports, composables and Nuxt UI components work.
 
-Story files have their own tsconfig, `.nuxt/tsconfig.storybook.json`, which `tsconfig.json` lists in its `references`. The app tsconfig leaves them out, so the types of Storybook and MSW do not slow down the editor in the rest of the app. `nuxt typecheck` still checks every story. Without that reference, the stories stay in the app tsconfig. The root `tsconfig.json` sets `disableReferencedProjectLoad`, so the editor loads each referenced project only when you open one of its files.
+Story files have their own tsconfig, `.nuxt/tsconfig.storybook.json`, which `tsconfig.json` lists in its `references`. The app tsconfig leaves them out, so the types of Storybook and MSW do not slow down the editor in the rest of the app. `nuxt typecheck` still checks every story. Without that reference, the stories stay in the app tsconfig.
 
 ## The nuxvel stories
 
