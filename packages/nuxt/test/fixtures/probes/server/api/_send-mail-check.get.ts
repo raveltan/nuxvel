@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { findJob } from "../../../../../src/runtime/server/jobs/registry";
 import { outboxTable } from "~~/server/database/schema/outbox.schema";
+import { useQueue } from "@nuxvel/nuxt/queue";
 
 const query = z.object({ rolledBack: z.email(), committed: z.email() });
 

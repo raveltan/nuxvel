@@ -1607,4 +1607,50 @@ describe("nuxvel upgrade", () => {
       expect(again.stdout).not.toContain("updated:");
     }, 60000);
   });
+
+  describe("explicit-sdk-imports", () => {
+    it("imports useS3(), useQueue() and useRedis() from their subpaths where a file uses them, and leaves a file that imports or declares them", async () => {
+      const appDir = scratchPlayground("upgrade-explicit-sdk-imports");
+      const api = join(appDir, "server", "api");
+      mkdirSync(api, { recursive: true });
+      const usesAll = [
+        'import { HeadObjectCommand } from "@aws-sdk/client-s3";',
+        "",
+        "export default defineEventHandler(async () => {",
+        '  await useS3().send(new HeadObjectCommand({ Bucket: useBucket(), Key: "a" }));',
+        '  await useRedis("cache").get(redisKey("a"));',
+        "  return useQueue().getFailed();",
+        "});",
+        "",
+      ];
+      const usesRedis = ['export default defineEventHandler(() => useRedis("cache").ping());', ""];
+      const imported = ['import { useRedis } from "@nuxvel/nuxt/redis";', "", 'export default defineEventHandler(() => useRedis("cache").ping());', ""];
+      const declared = ["function useS3() {", "  return 1;", "}", "", "export default defineEventHandler(() => useS3());", ""];
+      writeFileSync(join(api, "uses-all.get.ts"), usesAll.join("\n"));
+      writeFileSync(join(api, "uses-redis.get.ts"), usesRedis.join("\n"));
+      writeFileSync(join(api, "imported.get.ts"), imported.join("\n"));
+      writeFileSync(join(api, "declared.get.ts"), declared.join("\n"));
+
+      const applied = await runCliAt(appDir, "upgrade", "--only", "explicit-sdk-imports");
+
+      expect(applied.exitCode, applied.stderr).toBe(0);
+      expect(applied.stdout.match(/updated: /g)).toHaveLength(2);
+      expect(applied.stdout).toContain("updated: server/api/uses-all.get.ts\n");
+      expect(applied.stdout).toContain("updated: server/api/uses-redis.get.ts\n");
+      expect(readFileSync(join(api, "uses-all.get.ts"), "utf8")).toBe(
+        [
+          usesAll[0],
+          'import { useS3 } from "@nuxvel/nuxt/storage";',
+          'import { useQueue } from "@nuxvel/nuxt/queue";',
+          'import { useRedis } from "@nuxvel/nuxt/redis";',
+          ...usesAll.slice(1),
+        ].join("\n"),
+      );
+      expect(readFileSync(join(api, "uses-redis.get.ts"), "utf8")).toBe(['import { useRedis } from "@nuxvel/nuxt/redis";', "", ...usesRedis].join("\n"));
+
+      const again = await runCliAt(appDir, "upgrade", "--only", "explicit-sdk-imports");
+
+      expect(again.stdout).not.toContain("updated:");
+    }, 60000);
+  });
 });

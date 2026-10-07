@@ -1217,7 +1217,7 @@ describe("the outbox", () => {
 });
 ```
 
-`useRealQueue()` turns off the queue fake for the whole file. Relays then add jobs to the real BullMQ queue, as in production. Use it for a test that reads the queue itself, for example `useQueue().getWaiting()` after `relayOutbox()`. `expectQueued` records nothing after you call it.
+`useRealQueue()` turns off the queue fake for the whole file. Relays then add jobs to the real BullMQ queue, as in production. Use it for a test that reads the queue itself, for example `useQueue().getWaiting()` of `@nuxvel/nuxt/queue` after `relayOutbox()`. `expectQueued` records nothing after you call it.
 
 Call it in the `describe` body. It applies again before every test, so a restart of the test server does not bring the fake back.
 

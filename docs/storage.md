@@ -59,6 +59,7 @@ The command writes, reads and deletes a file in the bucket. It also checks that 
 
 ```ts
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { useS3 } from "@nuxvel/nuxt/storage";
 
 await useS3().send(
   new PutObjectCommand({ Bucket: useBucket(), Key: "exports/posts.csv", Body: csv }),
@@ -69,7 +70,7 @@ const object = await useS3().send(
 );
 ```
 
-`useS3()` returns the S3 client of the app. nuxvel creates it one time and uses it again for each call. Send it any `@aws-sdk/client-s3` command. It throws when `NUXT_STORAGE_URL` is not set or is not a URL.
+`useS3()` returns the S3 client of the app. Import it from `@nuxvel/nuxt/storage`. It is not auto-imported, so that the types of the AWS SDK load only in the files that use it. nuxvel creates it one time and uses it again for each call. Send it any `@aws-sdk/client-s3` command. It throws when `NUXT_STORAGE_URL` is not set or is not a URL.
 
 A call throws a `TimeoutError` when the connection to storage takes more than 5 seconds, or when the connection sends and receives no data for 30 seconds. A long upload or download that continues to send data does not time out.
 

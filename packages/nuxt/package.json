@@ -39,6 +39,18 @@
       "types": "./dist/database.d.mts",
       "default": "./dist/database.mjs"
     },
+    "./storage": {
+      "types": "./dist/storage.d.mts",
+      "default": "./dist/storage.mjs"
+    },
+    "./queue": {
+      "types": "./dist/queue.d.mts",
+      "default": "./dist/queue.mjs"
+    },
+    "./redis": {
+      "types": "./dist/redis.d.mts",
+      "default": "./dist/redis.mjs"
+    },
     "./env": {
       "types": "./dist/env.d.mts",
       "default": "./dist/env.mjs"

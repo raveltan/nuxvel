@@ -70,3 +70,18 @@ export async function takesDurations() {
   // @ts-expect-error an expiry is a duration, not seconds
   signedUrl("/invites/1", { expiresIn: 60 });
 }
+
+type JobBackoff = Exclude<Job["backoff"], number | undefined>;
+type JobLimiter = NonNullable<Job["limiter"]>;
+
+export const backoffIsTyped: IsAny<JobBackoff> extends true ? never : JobBackoff extends { type: "fixed" | "exponential" } ? true : never = true;
+export const limiterIsTyped: IsAny<JobLimiter> extends true ? never : JobLimiter extends { max: number; duration: number } ? true : never = true;
+
+export function takesBackoffAndLimiter() {
+  defineJob({ backoff: { type: "fixed", delay: 500, jitter: 0.5 }, limiter: { max: 10, duration: 1000 }, handler: () => undefined });
+
+  // @ts-expect-error a backoff has no field named wait
+  defineJob({ backoff: { type: "fixed", wait: 500 }, handler: () => undefined });
+  // @ts-expect-error a limiter has no field named per
+  defineJob({ limiter: { max: 10, per: 1000 }, handler: () => undefined });
+}

@@ -4,6 +4,9 @@ import { dirname, join, relative } from "node:path";
 const subpathEntries = [
   "src/cli",
   "src/database",
+  "src/storage",
+  "src/queue",
+  "src/redis",
   "src/env",
   "src/migrations",
   "src/factories",

@@ -94,6 +94,13 @@ describe("server auto-imports", () => {
     }
   });
 
+  it("leaves the clients whose types load an SDK to their subpaths", () => {
+    expect(names).not.toContain("useS3");
+    expect(names).not.toContain("useQueue");
+    expect(names).not.toContain("useRedis");
+    expect(names).toContain("RedisPurpose");
+  });
+
   it("lists every server auto-import in docs/auto-imports.md", () => {
     const documented = [
       ...readFileSync(autoImportsDoc, "utf8").matchAll(/^\| `(\w+)` \|/gm),

@@ -187,9 +187,11 @@ Put slow work on its own queue. Then a long report does not delay the mail. See 
 
 In BullMQ, the `default` queue is named `nuxvel`. Another queue is named `nuxvel-<queue>`, for example `nuxvel-mail`.
 
-`useQueue(name?)` returns the BullMQ `Queue` of a queue, `default` when you give no name. Use it only to inspect or manage a queue directly:
+`useQueue(name?)` from `@nuxvel/nuxt/queue` returns the BullMQ `Queue` of a queue, `default` when you give no name. It is not auto-imported, so that the types of BullMQ load only in the files that use it. Use it only to inspect or manage a queue directly:
 
 ```ts
+import { useQueue } from "@nuxvel/nuxt/queue";
+
 const failed = await useQueue().getFailed();
 const waitingMail = await useQueue("mail").getWaiting();
 ```

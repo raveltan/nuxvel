@@ -1,5 +1,6 @@
 import { gunzipSync } from "node:zlib";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { useS3 } from "@nuxvel/nuxt/storage";
 import { eq, sql } from "drizzle-orm";
 import { auditLogTable } from "~~/server/database/schema/audit-log.schema";
 

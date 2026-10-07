@@ -65,7 +65,7 @@ describe("nuxvel queue, schedule and task commands", () => {
         [
           `await transaction(() => $mails.welcome.send({ to: ${JSON.stringify(recipient)}, name: "Ada" }));`,
           'console.log("mail queued");',
-          'console.log("upload", typeof defineUpload, typeof useS3);',
+          'console.log("upload", typeof defineUpload, typeof useBucket);',
           "",
         ].join("\n"),
         env,

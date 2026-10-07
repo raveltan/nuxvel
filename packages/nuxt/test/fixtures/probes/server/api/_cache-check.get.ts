@@ -1,3 +1,5 @@
+import { useRedis } from "@nuxvel/nuxt/redis";
+
 async function remembered() {
   let calls = 0;
   const compute = () => {

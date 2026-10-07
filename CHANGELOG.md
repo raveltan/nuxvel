@@ -199,6 +199,12 @@ applies each step below that names a codemod.
   `{ "path": "./.nuxt/tsconfig.storybook.json" }` to the `references`
   of `tsconfig.json`. Until then the stories stay in the app tsconfig,
   as before.
+- `useS3()`, `useQueue()` and `useRedis()` are no longer auto-imported,
+  so the editor no longer loads the types of the AWS SDK, BullMQ and
+  ioredis in every file. By hand: in each server file that calls one,
+  add `import { useS3 } from "@nuxvel/nuxt/storage"`, `import { useQueue
+  } from "@nuxvel/nuxt/queue"` or `import { useRedis } from
+  "@nuxvel/nuxt/redis"`. Codemod: `explicit-sdk-imports`.
 
 ### Changes
 

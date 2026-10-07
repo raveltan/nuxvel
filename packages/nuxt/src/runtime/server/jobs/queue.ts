@@ -42,7 +42,8 @@ export function queueNames(): string[] {
 /**
  * One of the app's BullMQ queues, created once and reused.
  *
- * Auto-imported on the server. Prefer {@link Job.dispatch} for
+ * Server only, imported from `@nuxvel/nuxt/queue`: it is not
+ * auto-imported, so the app's types do not load BullMQ. Prefer {@link Job.dispatch} for
  * dispatching work — reach for this only to inspect or manage a queue
  * itself. Jobs added through it carry {@link JOB_OPTIONS}.
  *
@@ -52,6 +53,8 @@ export function queueNames(): string[] {
  *
  * @example
  * ```ts
+ * import { useQueue } from "@nuxvel/nuxt/queue";
+ *
  * const failed = await useQueue().getFailed();
  * const waitingMail = await useQueue("mail").getWaiting();
  * ```

@@ -2,9 +2,7 @@ import { envHint } from "../../shared/env/env-hints";
 import { Redis } from "ioredis";
 import { useRuntimeConfig } from "nitropack/runtime";
 import { useLogger } from "../logging/logger";
-
-/** What a Redis connection is used for, one connection per purpose. */
-export type RedisPurpose = "queue" | "cache" | "pubsub" | "durable";
+import type { RedisPurpose } from "./purpose";
 
 const clients = new Map<RedisPurpose, Redis>();
 
@@ -48,7 +46,8 @@ function logOncePerOutage(client: Redis, purpose: RedisPurpose) {
 /**
  * The app's Redis client for one purpose, created once and reused.
  *
- * Auto-imported on the server. Reads `NUXT_REDIS_URL`; outside
+ * Server only, imported from `@nuxvel/nuxt/redis`: it is not auto-imported,
+ * so the app's types do not load ioredis. Reads `NUXT_REDIS_URL`; outside
  * production it connects to `redis://localhost:6379` when that is unset,
  * and in production it throws instead. The `cache` purpose reads
  * `NUXT_REDIS_CACHE_URL` when it is set, so cached values can live on a
@@ -73,6 +72,8 @@ function logOncePerOutage(client: Redis, purpose: RedisPurpose) {
  *
  * @example
  * ```ts
+ * import { useRedis } from "@nuxvel/nuxt/redis";
+ *
  * await useRedis("cache").set(redisKey("posts:count"), String(count));
  * ```
  */

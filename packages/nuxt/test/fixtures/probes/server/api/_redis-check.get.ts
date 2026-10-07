@@ -1,3 +1,5 @@
+import { useRedis } from "@nuxvel/nuxt/redis";
+
 export default defineEventHandler(async () => {
   const queue = useRedis("queue");
   const cache = useRedis("cache");

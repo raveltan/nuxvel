@@ -8,6 +8,14 @@ No other name from nuxvel is auto-imported. The helpers that nuxvel uses interna
 
 The exports of `shared/schemas/` are also auto-imported, in `server/` and in the app. The pagination names are also auto-imported in the app. So are `SanitizedHtml` and `richText`, which are also auto-imported in `shared/`. For app-side names, such as `$api`, `useUser()` and `useFlag()`, see [Frontend](./frontend.md) and [Calling from the client](./api.md#calling-from-the-client). For `useMaintenance()` and `isMaintenanceError()`, see [Maintenance mode](./maintenance.md#in-the-app). For `isNetworkError()`, see [When the server cannot be reached](./api.md#when-the-server-cannot-be-reached). Test fixtures are not auto-imported. Import them from `@nuxvel/nuxt/testing`, as [Testing](./testing.md) shows.
 
+`useS3()`, `useQueue()` and `useRedis()` are not auto-imported either. Their types load the AWS SDK, BullMQ and ioredis, which makes the editor slow in every file. Import them on the server:
+
+```ts
+import { useS3 } from "@nuxvel/nuxt/storage";
+import { useQueue } from "@nuxvel/nuxt/queue";
+import { useRedis } from "@nuxvel/nuxt/redis";
+```
+
 ## Imports
 
 Import your own code through aliases, never through `../`:
@@ -50,7 +58,7 @@ The form of a name tells you what the name does:
 
 | Form | Meaning | Examples |
 |---|---|---|
-| `use*` | returns a handle that you call methods on | `useDb()`, `useLogger()`, `useQueue()` |
+| `use*` | returns a handle that you call methods on | `useDb()`, `useLogger()`, `useSecrets()` |
 | `current*` | returns an ambient value of the running request or action | `currentRequestId()` |
 | `define*` | defines one discovered file, as a named export with the kind at the end (`postNotifySubscribersJob`) | `defineAction()`, `defineJob()`, `definePolicy()` |
 | a verb | does one thing now | `authorize()`, `audit()`, `sendMailNow()`, `flash()` |
@@ -280,7 +288,6 @@ Guide: [Queues](./queues.md).
 | `defineSchedule` | function | Defines a task that `nuxvel queue:work` runs on a clock. |
 | `relayOutbox` | function | Adds every waiting `outbox` row to the queue. |
 | `pruneOutbox` | function | Deletes the `outbox` rows that reached the queue longer ago than an interval. |
-| `useQueue` | function | Returns the BullMQ queue of a named queue, `default` when no name is given. |
 | `$jobs` | namespace | Holds each job definition under its path: `$jobs.post.notifyFollowers`. `$jobs.post.notifyFollowers.dispatch(input)` queues it after the surrounding transaction commits. In the app, each key holds only the job name, for `useJobChannel()`. |
 | `Job` | type | A job definition. |
 | `JobContext` | type | What a job's handler gets besides its input. |
@@ -369,7 +376,6 @@ Guide: [Storage](./storage.md).
 
 | Name | Kind | Description |
 |---|---|---|
-| `useS3` | function | Returns the app's S3 client. |
 | `useBucket` | function | Returns the name of the app's bucket. |
 | `defineUpload` | function | Defines a kind of file that the browser sends to storage. |
 | `promoteUpload` | function | Moves an uploaded file from `tmp/` to a permanent key. |
@@ -514,7 +520,6 @@ Guide: [Redis](./redis.md).
 
 | Name | Kind | Description |
 |---|---|---|
-| `useRedis` | function | Returns the app's Redis client for one purpose. |
 | `redisKey` | function | Returns a Redis key under the app's key prefix, `NUXT_REDIS_PREFIX`. |
 | `RedisPurpose` | type | What a Redis connection is used for. |
 

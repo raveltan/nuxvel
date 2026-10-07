@@ -1,3 +1,5 @@
+import { useRedis } from "@nuxvel/nuxt/redis";
+
 export default defineEventHandler(() => ({
   queue: useRedis("queue").options.db,
   cache: useRedis("cache").options.db,

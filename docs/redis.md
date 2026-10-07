@@ -51,6 +51,8 @@ await useRedis("cache").set(redisKey("posts:count"), String(count));
 ## Using Redis
 
 ```ts
+import { useRedis } from "@nuxvel/nuxt/redis";
+
 await useRedis("cache").set(redisKey("posts:count"), String(count));
 
 const cached = await useRedis("cache").get(redisKey("posts:count"));
@@ -60,7 +62,7 @@ Use `useRedis("durable")` for a value that must not be evicted, for example a co
 
 To cache the result of a function, use [`remember()`](./cache.md). It adds a key prefix, an expiry time and tags.
 
-`useRedis(purpose)` is auto-imported on the server. It returns a long-lived ioredis client for one purpose. It creates the client on the first call and returns the same client after that. The client opens its connection when you run the first command.
+`useRedis(purpose)` comes from `@nuxvel/nuxt/redis`. It is not auto-imported, so that the types of ioredis load only in the files that use it. It returns a long-lived ioredis client for one purpose. It creates the client on the first call and returns the same client after that. The client opens its connection when you run the first command.
 
 ## Connection purposes
 
@@ -76,6 +78,8 @@ Each purpose has its own connection. They cannot share one. A subscriber connect
 Each server process subscribes to realtime events on a separate copy of the `pubsub` connection. This keeps `useRedis("pubsub")` free to publish. To subscribe from your own code, make a copy:
 
 ```ts
+import { useRedis } from "@nuxvel/nuxt/redis";
+
 const subscriber = useRedis("pubsub").duplicate();
 
 await subscriber.subscribe("posts");

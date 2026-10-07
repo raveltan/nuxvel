@@ -1,4 +1,3 @@
-import type { BackoffOptions, RateLimiterOptions } from "bullmq";
 import type { z } from "zod";
 import { actorContext } from "../actions/context";
 import type { Actor } from "../actions/system-actor";
@@ -17,6 +16,30 @@ import { classifyError } from "../errors/classify";
 import { noInput } from "../actions/no-input";
 import { type Duration, windowSeconds } from "../security/rate-limit-window";
 import type { DispatchOptions } from "./dispatch-job";
+
+/**
+ * BullMQ's backoff between the attempts of a job: the `backoff` option of
+ * {@link defineJob} in BullMQ's own shape.
+ */
+export interface JobBackoff {
+  /** `fixed` waits `delay` each time, `exponential` doubles it after each attempt. */
+  type: "fixed" | "exponential";
+  /** The wait in milliseconds. */
+  delay?: number;
+  /** The share of the wait, from 0 to 1, that is randomized. */
+  jitter?: number;
+}
+
+/**
+ * BullMQ's worker rate limiter: the `limiter` option of {@link defineJob}.
+ * At most `max` jobs of the queue run every `duration` milliseconds.
+ */
+export interface JobLimiter {
+  /** The number of jobs that can run in each `duration`. */
+  max: number;
+  /** The window in milliseconds. */
+  duration: number;
+}
 
 /**
  * Who may follow a job on its channel: the `channel` option of
@@ -47,10 +70,10 @@ export interface Job<
   input: Schema;
   channel?: JobChannel;
   attempts?: number;
-  backoff?: number | BackoffOptions;
+  backoff?: number | JobBackoff;
   timeout?: number;
   unique?(payload: unknown): string;
-  limiter?: RateLimiterOptions;
+  limiter?: JobLimiter;
   run: (data: unknown, attempt?: JobAttempt) => Promise<void>;
   /**
    * Queues this job with `input`, to run once the surrounding
@@ -84,10 +107,10 @@ interface JobConfig<Schema extends z.ZodType, Result> {
   version?: number;
   upcasters?: Record<number, JobUpcaster>;
   attempts?: number;
-  backoff?: Duration | BackoffOptions;
+  backoff?: Duration | JobBackoff;
   timeout?: Duration;
   unique?: (payload: z.input<Schema>) => string;
-  limiter?: RateLimiterOptions;
+  limiter?: JobLimiter;
   input?: Schema;
   handler: (input: z.infer<Schema>, context: JobContext) => Result;
 }

@@ -134,7 +134,7 @@ Targeting without a deploy: `setFlagTargeting(name, { percentage, roles })`, `./
 - `remember(["posts", "list", input], { minutes: 5 }, fn, { tags: ["posts"] })`, `cacheGet`, `cachePut`, `cacheForget(key)` (`["posts"]` also forgets every key under it), `cacheFlush("posts")`. A key is a string or an array of parts joined with `:`.
 - `withLock(key, { seconds: 30 }, fn)`: `ConflictError` when another caller holds it.
 - Every duration is an object of `seconds`, `minutes`, `hours`, `days` (`{ days: 7 }`), never a number: cache TTL, lock, `signedUrl` `expiresIn`, job `timeout`, `backoff`, `delay`, rate limit `window`.
-- `useRedis(purpose)`, `redisKey(key)`.
+- `redisKey(key)`. Not auto-imported: `import { useRedis } from "@nuxvel/nuxt/redis"` (`useRedis(purpose)`), `useS3` from `@nuxvel/nuxt/storage`, `useQueue` from `@nuxvel/nuxt/queue`.
 
 ## Other
 

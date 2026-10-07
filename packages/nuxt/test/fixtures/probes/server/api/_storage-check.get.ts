@@ -4,6 +4,7 @@ import {
   HeadBucketCommand,
   PutObjectCommand,
 } from "@aws-sdk/client-s3";
+import { useS3 } from "@nuxvel/nuxt/storage";
 
 const bucket = "nuxvel-storage-check";
 
