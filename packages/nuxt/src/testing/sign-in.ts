@@ -5,7 +5,7 @@ import { withSessionCookie } from "./session";
 /** Options for {@link signIn}. */
 export interface SignInOptions {
   /**
-   * Headers that the sign-in request and each later `trpc`, `fetch` and
+   * Headers that the sign-in request and each later `api`, `fetch` and
    * `$fetch` call send, for example `x-forwarded-for` to sign in from an
    * IP or `user-agent` to name the device of the session. A header that a
    * `fetch` or `$fetch` call gives itself wins. `visit` and `login` do not
@@ -29,8 +29,8 @@ export interface SignInOptions {
  * @example
  * ```ts
  * const author = await userFactory.withPassword("secret-password")();
- * const { trpc } = await signIn(author.email, "secret-password");
- * await trpc.post.create({ title: "Hello", body: "" });
+ * const { api } = await signIn(author.email, "secret-password");
+ * await api.post.create({ title: "Hello", body: "" });
  * const phone = await signIn(author.email, "secret-password", { headers: { "user-agent": "Phone" } });
  * ```
  */

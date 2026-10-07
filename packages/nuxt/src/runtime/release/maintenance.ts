@@ -1,3 +1,4 @@
+import { envHint } from "../shared/env/env-hints";
 import { drizzle } from "drizzle-orm/postgres-js";
 import type { Sql } from "postgres";
 import type { ArchivePartition } from "../server/audit/audit-export";
@@ -14,7 +15,7 @@ const archiveToStorage: ArchivePartition = async (partition, gzippedJsonl) => {
   const archive = archiveTo(
     () => storageClient(process.env.NUXT_STORAGE_URL),
     () => {
-      if (!process.env.NUXT_STORAGE_BUCKET) throw new Error("NUXT_STORAGE_BUCKET is not set");
+      if (!process.env.NUXT_STORAGE_BUCKET) throw new Error(`NUXT_STORAGE_BUCKET is not set. ${envHint("NUXT_STORAGE_BUCKET")}`);
 
       return process.env.NUXT_STORAGE_BUCKET;
     },

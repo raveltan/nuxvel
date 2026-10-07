@@ -1,5 +1,5 @@
-import { type MaybeRefOrGetter, toValue } from "vue";
-import { useQuery, useQueryCache, type EntryKeyTagged } from "@pinia/colada";
+import { type MaybeRefOrGetter, type Reactive, reactive, toValue } from "vue";
+import { useQuery, useQueryCache, type EntryKeyTagged, type UseQueryReturn } from "@pinia/colada";
 import type {
   ChannelEvent,
   ChannelMessage,
@@ -48,8 +48,11 @@ export interface LiveQueryUpdates<TData, Name extends ChannelName> {
  * Runs a tRPC query and keeps it up to date from a realtime channel,
  * by patching its cached result or by refetching it.
  *
- * Auto-imported, and returns what `useQuery()` returns, so
- * `<QueryState>` works unchanged. It joins the channel when the
+ * Auto-imported, and returns what `$api.<path>.useQuery()` returns:
+ * Pinia Colada's `useQuery()` result wrapped in `reactive()`, so
+ * `posts.data` needs no `.value` and `<QueryState>` works unchanged.
+ * Do not destructure the result: wrap it in `toRefs()` first, so the
+ * fields stay reactive. It joins the channel when the
  * component mounts, over the connection `useChannel()` shares, and
  * leaves it on unmount. Each broadcast whose event name has a patch in
  * `on` replaces the query's cache entry with what the patch returns —
@@ -104,7 +107,7 @@ export function useLiveQuery<TData, TError, Name extends ChannelName>(
     enabled?: boolean;
   }>,
   updates: LiveQueryUpdates<TData, Name>,
-) {
+): Reactive<UseQueryReturn<TData>> {
   const queryCache = useQueryCache();
   const query = useQuery(() => toValue(queryOptions));
 
@@ -142,5 +145,5 @@ export function useLiveQuery<TData, TError, Name extends ChannelName>(
     refetch,
   );
 
-  return query;
+  return reactive(query);
 }

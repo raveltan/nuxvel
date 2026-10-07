@@ -18,7 +18,7 @@ async function printStatus(cwd: string) {
 export default defineCommand({
   meta: {
     name: "services",
-    description: "Start (up), stop (down) or show (status) the docker compose services that nuxvel dev and nuxvel test use.",
+    description: "Start (up), stop (down) or show (status) the docker compose services that nuxvel dev and nuxvel test:functional use.",
   },
   args: {
     action: {

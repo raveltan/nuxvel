@@ -92,7 +92,7 @@ export const updatePostAction = defineAction({
 });
 ```
 
-With `procedure`, the action is also a tRPC mutation at its path, with no router: `server/actions/posts/update-post.action.ts` is `posts.updatePost`. The client calls it as `$api.posts.updatePost`, with the types of the action, and `nuxvel routes` lists it with the action file.
+With `procedure`, the action is also a tRPC mutation at its path, with no router: `server/actions/posts/update-post.action.ts` is `posts.updatePost`. The client calls it as `$api.posts.updatePost`, with the types of the action, and `nuxvel route:list` lists it with the action file.
 
 | `procedure` | The mutation is |
 |---|---|
@@ -347,8 +347,7 @@ export const publishPostAction = defineAction({
 ## Testing
 
 ```ts
-import { expect, runAction } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, it, runAction } from "@nuxvel/nuxt/testing";
 import { userFactory } from "#nuxvel/factories";
 
 describe("update post", () => {
@@ -373,10 +372,10 @@ import { $actions } from "#nuxvel/test-namespaces";
 const post = await runAction($actions.posts.createPost, { title: "Hi", body: "" }, { actingAs: author });
 ```
 
-To test an action through the procedure that calls it, use `actingAs(user).trpc`. `expectActionCalled(name, { actingAs?, asSystem? })` then proves that the procedure called the action as that actor:
+To test an action through the procedure that calls it, use `actingAs(user).api`. `expectActionCalled(name, { actingAs?, asSystem? })` then proves that the procedure called the action as that actor:
 
 ```ts
-await actingAs(author).trpc.post.update({ id: post.id, title: "New", body: "Text" });
+await actingAs(author).api.post.update({ id: post.id, title: "New", body: "Text" });
 await expectActionCalled("posts.update-post", { actingAs: author });
 ```
 

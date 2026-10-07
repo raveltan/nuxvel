@@ -604,8 +604,7 @@ A functional test reads the head tags with `getMeta()`, and fetches the English 
 ```ts
 // tests/functional/seo.test.ts
 import { url } from "@nuxt/test-utils/e2e";
-import { expect, getMeta, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, getMeta, guest, it } from "@nuxvel/nuxt/testing";
 import { publishedRecipeFactory, recipeFactory } from "#nuxvel/factories";
 
 describe("SEO", () => {
@@ -661,7 +660,7 @@ describe("SEO", () => {
 The test server gets its own address as `NUXT_SITE_URL`. So the canonical link starts with the address of the test server, and `url()` from `@nuxt/test-utils/e2e` gives the same address. The test build is a production build, so `/robots.txt` allows the crawlers.
 
 ```bash
-./nv test tests/functional/seo.test.ts
+./nv test:functional tests/functional/seo.test.ts
 ```
 
 ```
@@ -701,8 +700,7 @@ The `client` preset renders a whole page only in the browser: the server sends a
 
 ```ts
 // tests/functional/rendering.test.ts
-import { actingAs, expect, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, guest, it } from "@nuxvel/nuxt/testing";
 import { publishedRecipeFactory, recipeFactory, userFactory } from "#nuxvel/factories";
 
 describe("rendering", () => {
@@ -728,7 +726,7 @@ describe("rendering", () => {
 
     expect((await guest().fetch("/recipes/lentil-stew")).status).toBe(404);
 
-    await actingAs(author).trpc.recipe.publish({ id: draft.id });
+    await actingAs(author).api.recipe.publish({ id: draft.id });
 
     expect((await guest().fetch("/recipes/lentil-stew")).status).toBe(200);
   });
@@ -765,15 +763,14 @@ The two caches work together. The page cache keeps a page for one minute. When t
 
 ```ts
 // tests/functional/recipe-cache.test.ts
-import { actingAs, expect, expectCached, expectCacheHit, expectCacheMiss, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, expectCached, expectCacheHit, expectCacheMiss, guest, it } from "@nuxvel/nuxt/testing";
 import { publishedRecipeFactory, recipeFactory, userFactory } from "#nuxvel/factories";
 
 describe("the recipe cache", () => {
   it("keeps one value for each recipe", async () => {
     await publishedRecipeFactory({ slug: "tomato-soup", title: "Tomato soup" });
 
-    await guest().trpc.recipe.bySlug({ slug: "tomato-soup" });
+    await guest().api.recipe.bySlug({ slug: "tomato-soup" });
 
     const cached = await expectCached("recipe:by-slug:tomato-soup");
     expect(cached).toMatchObject({ title: "Tomato soup" });
@@ -783,14 +780,14 @@ describe("the recipe cache", () => {
     const author = await userFactory();
     const draft = await recipeFactory({ ownerId: author.id, slug: "lentil-stew" });
 
-    await guest().trpc.recipe.latest();
-    await guest().trpc.recipe.latest();
+    await guest().api.recipe.latest();
+    await guest().api.recipe.latest();
 
     await expectCacheMiss("recipe:latest", { times: 1 });
     await expectCacheHit("recipe:latest", { times: 1 });
 
-    await actingAs(author).trpc.recipe.publish({ id: draft.id });
-    const latest = await guest().trpc.recipe.latest();
+    await actingAs(author).api.recipe.publish({ id: draft.id });
+    const latest = await guest().api.recipe.latest();
 
     await expectCacheMiss("recipe:latest", { times: 2 });
     expect(latest.map((recipe) => recipe.slug)).toEqual(["lentil-stew"]);
@@ -800,10 +797,10 @@ describe("the recipe cache", () => {
     const author = await userFactory();
     const draft = await recipeFactory({ ownerId: author.id, slug: "lentil-stew" });
 
-    await expect(guest().trpc.recipe.bySlug({ slug: "lentil-stew" })).rejects.toBeTrpcError("NOT_FOUND");
-    await actingAs(author).trpc.recipe.publish({ id: draft.id });
+    await expect(guest().api.recipe.bySlug({ slug: "lentil-stew" })).rejects.toBeTrpcError("NOT_FOUND");
+    await actingAs(author).api.recipe.publish({ id: draft.id });
 
-    await expect(guest().trpc.recipe.bySlug({ slug: "lentil-stew" })).resolves.toMatchObject({ slug: "lentil-stew" });
+    await expect(guest().api.recipe.bySlug({ slug: "lentil-stew" })).resolves.toMatchObject({ slug: "lentil-stew" });
   });
 });
 ```
@@ -821,7 +818,7 @@ An author publishes a draft from `/recipe`. Each reader who turned on push notif
 The push services accept a notification only when the server signs it with a VAPID key pair. Write a pair into `.env`:
 
 ```bash
-./nv push:keys
+./nv key:push
 ```
 
 ```
@@ -949,8 +946,7 @@ The generated test of the action checks nothing useful now. Replace it:
 
 ```ts
 // server/actions/recipe/publish-recipe.action.test.ts
-import { expect, expectNoPushSent, expectPushSent, runAction } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectNoPushSent, expectPushSent, it, runAction } from "@nuxvel/nuxt/testing";
 import { pushSubscriptionsFactory, publishedRecipeFactory, recipeFactory, userFactory } from "#nuxvel/factories";
 
 describe("recipe/publish-recipe action", () => {
@@ -990,8 +986,8 @@ describe("recipe/publish-recipe action", () => {
 `expectPushSent(user, match)` passes when `sendPush()` notified the user with a notification that has the `match` fields. A test never sends to a real push service. See [Progressive web app: testing push notifications](../pwa.md#testing-push-notifications).
 
 ```bash
-./nv test server/actions/recipe/publish-recipe.action.test.ts
-./nv test tests/functional/rendering.test.ts tests/functional/recipe-cache.test.ts
+./nv test:functional server/actions/recipe/publish-recipe.action.test.ts
+./nv test:functional tests/functional/rendering.test.ts tests/functional/recipe-cache.test.ts
 ```
 
 ```
@@ -1052,8 +1048,7 @@ Stop the server. Change the text of `app/pages/about.vue`, build again and start
 
 ```ts
 // tests/functional/pwa.test.ts
-import { expect, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, guest, it } from "@nuxvel/nuxt/testing";
 
 describe("the installable app", () => {
   it("serves the manifest and the service worker", async () => {
@@ -1069,7 +1064,7 @@ describe("the installable app", () => {
 The test app is a production build, so it serves both files.
 
 ```bash
-./nv test tests/functional/pwa.test.ts
+./nv test:functional tests/functional/pwa.test.ts
 ```
 
 ```
@@ -1241,8 +1236,7 @@ In the 404 test, the **Go home** button now opens a page with the heading "Recip
 
 ```ts
 // tests/e2e/site.test.ts
-import { actingAs, button, expect, expectAccessible, expectPushSent, expectRow, heading, link, text, toast, visit } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, button, describe, expect, expectAccessible, expectPushSent, expectRow, heading, it, link, text, toast, visit } from "@nuxvel/nuxt/testing";
 import { pushSubscriptionsTable } from "#nuxvel/schema";
 import { publishedRecipeFactory, recipeFactory, userFactory } from "#nuxvel/factories";
 
@@ -1329,8 +1323,7 @@ The first and the third test open the pages as a guest. The fourth opens two pag
 // tests/e2e/offline.test.ts
 // eslint-disable-next-line nuxvel/test-client -- the page goes offline, so visit() would record each failed request
 import { createPage, url } from "@nuxt/test-utils/e2e";
-import { expect, heading } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, heading, it } from "@nuxvel/nuxt/testing";
 import { publishedRecipeFactory } from "#nuxvel/factories";
 
 describe("offline", () => {
@@ -1696,8 +1689,7 @@ A functional test checks the head tags of a Chinese page, the sitemaps, the cach
 ```ts
 // tests/functional/i18n.test.ts
 import { url } from "@nuxt/test-utils/e2e";
-import { expect, getMeta, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, getMeta, guest, it } from "@nuxvel/nuxt/testing";
 import { publishedRecipeFactory } from "#nuxvel/factories";
 
 describe("English and Chinese", () => {
@@ -1733,7 +1725,7 @@ describe("English and Chinese", () => {
   });
 
   it("answers a Chinese visitor with the validation messages in Chinese", async () => {
-    await expect(guest({ locale: "zh" }).trpc.recipe.bySlug({ slug: "a".repeat(256) })).rejects.toHaveValidationErrors({
+    await expect(guest({ locale: "zh" }).api.recipe.bySlug({ slug: "a".repeat(256) })).rejects.toHaveValidationErrors({
       slug: "数值过大：期望 string <=255 字符",
     });
   });
@@ -1744,8 +1736,7 @@ The generated test of the mail checks the text of the generated template. Replac
 
 ```ts
 // server/mail/recipe/published.mail.test.ts
-import { expect, renderMail } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, it, renderMail } from "@nuxvel/nuxt/testing";
 
 describe("recipe.published mail", () => {
   it.for([
@@ -1768,7 +1759,7 @@ In the first test of `server/actions/recipe/publish-recipe.action.test.ts`, chec
 ```
 
 ```bash
-./nv test tests/functional/i18n.test.ts server/mail/recipe/published.mail.test.ts server/actions/recipe/publish-recipe.action.test.ts
+./nv test:functional tests/functional/i18n.test.ts server/mail/recipe/published.mail.test.ts server/actions/recipe/publish-recipe.action.test.ts
 ```
 
 ```
@@ -1799,8 +1790,7 @@ The **Locale** menu in the toolbar of Storybook shows each story in the locale t
 ```ts
 // tests/e2e/i18n.test.ts
 import { url } from "@nuxt/test-utils/e2e";
-import { button, expect, expectAccessible, fillForm, heading, link, visit } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { button, describe, expect, expectAccessible, fillForm, heading, it, link, visit } from "@nuxvel/nuxt/testing";
 import { publishedRecipeFactory } from "#nuxvel/factories";
 
 describe("the site in Chinese", () => {

@@ -9,7 +9,7 @@ describe("withAbilities()", async () => {
   await setupPlayground();
 
   it("adds can to each row of a paginated list like can() would, and runs the policy preload once for the list", async () => {
-    const admin = actingAs(await userFactory({ role: "admin" })).trpc;
+    const admin = actingAs(await userFactory({ role: "admin" })).api;
     let answers: { id: number; can: unknown }[] = [];
     let expected: { id: number; can: unknown }[] = [];
 
@@ -33,14 +33,14 @@ describe("withAbilities()", async () => {
     const author = await userFactory();
     const post = await postFactory({ authorId: author.id });
 
-    expect((await actingAs(author).trpc.post.byId({ id: post.id })).can).toEqual({ update: true, delete: true });
-    expect((await actingAs(await userFactory()).trpc.post.byId({ id: post.id })).can).toEqual({ update: false, delete: false });
-    expect((await guest().trpc.post.byId({ id: post.id })).can).toEqual({ update: false, delete: false });
+    expect((await actingAs(author).api.post.byId({ id: post.id })).can).toEqual({ update: true, delete: true });
+    expect((await actingAs(await userFactory()).api.post.byId({ id: post.id })).can).toEqual({ update: false, delete: false });
+    expect((await guest().api.post.byId({ id: post.id })).can).toEqual({ update: false, delete: false });
   });
 
   it("returns an empty list for no rows", async () => {
-    const { trpc } = actingAs(await userFactory());
+    const { api } = actingAs(await userFactory());
 
-    expect((await trpc.post.list({ q: "no post has this title" })).rows).toEqual([]);
+    expect((await api.post.list({ q: "no post has this title" })).rows).toEqual([]);
   });
 });

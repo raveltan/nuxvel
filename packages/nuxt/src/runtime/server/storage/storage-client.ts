@@ -1,7 +1,8 @@
+import { envHint } from "../../shared/env/env-hints";
 import { S3Client } from "@aws-sdk/client-s3";
 
 export function storageClient(value: string | undefined) {
-  if (!value) throw new Error("NUXT_STORAGE_URL is not set");
+  if (!value) throw new Error(`NUXT_STORAGE_URL is not set. ${envHint("NUXT_STORAGE_URL")}`);
   if (!URL.canParse(value)) throw new Error("NUXT_STORAGE_URL is not a valid URL");
 
   const url = new URL(value);

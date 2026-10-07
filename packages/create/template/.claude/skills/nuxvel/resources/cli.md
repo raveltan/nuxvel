@@ -8,12 +8,12 @@
 |---|---|
 | `npm run dev` | dev server + queue worker, starts the Docker services |
 | `./nv services up` / `down` | start / stop the Docker services |
-| `./nv test` | functional tests. `--changes-only`, `--watch` |
+| `./nv test:functional` | functional tests. `--changes-only`, `--watch` |
 | `./nv test:ui` | component tests (stories) |
 | `./nv test:e2e` | end-to-end tests |
 | `./nv test:arch` | architecture rules |
 | `npm run typecheck` | types |
-| `./nv routes`, `./nv events`, `./nv channels` | list routes, events, channels |
+| `./nv route:list`, `./nv event:list`, `./nv channel:list` | list routes, events, channels |
 | `./nv tinker` | REPL in the app, factories in scope |
 
 ## Database
@@ -78,4 +78,4 @@ Modifiers: `nullable` (FK `set null`), `unique`, `index`, `default=<value>`. Res
 
 ## Other
 
-`queue:work`, `queue:failed`, `queue:retry <id|all>`, `schedule:list`, `schedule:run <name>`, `task:run <name>`, `backfill:status`, `flags:list`, `flags:set <name>`, `audit:verify`, `user:export <id>`, `user:erase <id>`, `key:issue <userId> --name <name>`, `down`, `up`, `build`, `doctor`.
+`queue:work`, `queue:failed`, `queue:retry <id|all>`, `schedule:list`, `schedule:run <name>`, `task:run <name>`, `backfill:status`, `flag:list`, `flag:set <name>`, `audit:verify`, `user:export <id>`, `user:erase <id>`, `key:issue <userId> --name <name>`, `down`, `up`, `build`, `doctor`.

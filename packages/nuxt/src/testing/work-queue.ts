@@ -12,7 +12,7 @@ import { callApp } from "./settled";
  *
  * @example
  * ```ts
- * await actingAs(author).trpc.post.publish({ id: post.id });
+ * await actingAs(author).api.post.publish({ id: post.id });
  * await workQueue();
  * await expectMailSent("post.published", { to: follower.email });
  * ```

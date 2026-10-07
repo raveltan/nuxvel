@@ -11,7 +11,7 @@ const PRIVATE_KEY_BYTES = 32;
 
 export default defineCommand({
   meta: {
-    name: "push:keys",
+    name: "key:push",
     description: "Write a new VAPID key pair for web push into .env, unless one is already set.",
   },
   run() {

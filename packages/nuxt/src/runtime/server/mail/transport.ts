@@ -1,3 +1,4 @@
+import { envHint } from "../../shared/env/env-hints";
 import { useRuntimeConfig } from "nitropack/runtime";
 import { type Transporter, createTransport } from "nodemailer";
 
@@ -14,7 +15,7 @@ let transporter: Transporter | undefined;
 function mailUrl() {
   const url = useRuntimeConfig().mailUrl;
 
-  if (!url) throw new Error("NUXT_MAIL_URL is not set");
+  if (!url) throw new Error(`NUXT_MAIL_URL is not set. ${envHint("NUXT_MAIL_URL")}`);
 
   return url;
 }

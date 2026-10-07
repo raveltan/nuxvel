@@ -598,8 +598,7 @@ A production build does not have this route. Like the [DevTools tab](./devtools.
 
 ```ts
 // server/jobs/post/notify-followers.job.test.ts
-import { expectQueued, runAction, runJob } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expectQueued, it, runAction, runJob } from "@nuxvel/nuxt/testing";
 import { postFactory, userFactory } from "#nuxvel/factories";
 
 describe("post.notify-followers job", () => {

@@ -33,7 +33,7 @@ Run `./nv storage:setup` once, to create the storage bucket. Mail lands in Mailp
 ./nv --help
 ./nv db:migrate
 ./nv db:fresh --seed --force
-./nv routes
+./nv route:list
 ./nv dev --no-https    # plain nuxt dev at http://localhost:3000
 ```
 
@@ -82,7 +82,7 @@ users.
 
 **Flags** — `/flags`
 - [ ] `probe-rollout` shows `off` and "Use the classic flow".
-- [ ] `npx nuxvel flags:set probe-rollout --role user --value true`
+- [ ] `npx nuxvel flag:set probe-rollout --role user --value true`
       flips it to `on` and "Try the new flow" without a reload.
 - [ ] `probe-cta` shows `control` until `npx nuxvel experiment:start
       probe-cta`, then your assigned variant (`control` or `green`),

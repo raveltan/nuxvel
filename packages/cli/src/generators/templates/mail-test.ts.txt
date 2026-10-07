@@ -1,5 +1,4 @@
-import { expect, renderMail } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, it, renderMail } from "@nuxvel/nuxt/testing";
 
 describe("{{name}} mail", () => {
   it("renders its template to HTML and text", async () => {

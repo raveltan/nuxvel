@@ -1,9 +1,9 @@
 import { useRoute } from "#app";
 import { useI18n } from "#imports";
 import { useMutation } from "@pinia/colada";
-import { computed, reactive } from "vue";
+import { computed, type ComputedRef, reactive, type Reactive } from "vue";
 import { authClient } from "../auth/client";
-import { unwrapAuth } from "./unwrap-auth";
+import { type AuthMutation, type AuthStatus, unwrapAuth } from "./unwrap-auth";
 
 /**
  * Asks Better Auth to change the signed-in user's email address.
@@ -33,11 +33,11 @@ import { unwrapAuth } from "./unwrap-auth";
  * </template>
  * ```
  */
-export function useChangeEmail() {
+export function useChangeEmail(): AuthMutation<AuthStatus, string> & Reactive<{ requested: ComputedRef<boolean> }> {
   const { ts } = useI18n();
   const route = useRoute();
   const mutation = useMutation({
-    mutation: async (newEmail: string) =>
+    mutation: async (newEmail: string): Promise<AuthStatus> =>
       unwrapAuth(await authClient.changeEmail({ newEmail, callbackURL: route.fullPath }), ts("nuxvel.auth.changeEmailFailed")),
   });
 

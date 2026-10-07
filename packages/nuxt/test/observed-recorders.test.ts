@@ -27,7 +27,7 @@ describe("the observed recorders", async () => {
     const other = await userFactory();
     const post = await postFactory.for("authorId", author)();
 
-    await actingAs(author).trpc.post.update({ id: post.id, title: "New", body: "Text" });
+    await actingAs(author).api.post.update({ id: post.id, title: "New", body: "Text" });
 
     expect(await expectPolicyChecked("update", postsTable, { allowed: true })).toMatchObject({ actor: `user:${author.id}` });
     expect(await expectActionCalled("posts.update-post", { actingAs: author })).toMatchObject({ ok: true });
@@ -39,14 +39,14 @@ describe("the observed recorders", async () => {
     const other = await userFactory();
     const post = await postFactory.for("authorId", author)();
 
-    await expect(actingAs(other).trpc.post.update({ id: post.id, title: "New", body: "Text" })).rejects.toBeTrpcError("FORBIDDEN");
+    await expect(actingAs(other).api.post.update({ id: post.id, title: "New", body: "Text" })).rejects.toBeTrpcError("FORBIDDEN");
 
     await expectPolicyChecked("update", postsTable, { allowed: false });
     await expect(expectPolicyChecked("update", postsTable, { allowed: true })).rejects.toThrow("found 0");
   });
 
   it("finds nothing when no procedure asked the policy", async () => {
-    await guest().trpc.post.list();
+    await guest().api.post.list();
 
     await expect(expectPolicyChecked("update", postsTable)).rejects.toThrow("found 0");
   });
@@ -54,7 +54,7 @@ describe("the observed recorders", async () => {
   it("records an unexpected error of a test caller and only that", async () => {
     await expectNoErrorReported();
 
-    await expect(guest().trpc.health.explode()).rejects.toThrow();
+    await expect(guest().api.health.explode()).rejects.toThrow();
 
     expect(await expectErrorReported("procedure exploded")).toMatchObject({ name: "Error" });
     await expect(expectNoErrorReported()).rejects.toThrow("procedure exploded");
@@ -94,14 +94,14 @@ describe("the observed recorders", async () => {
     const key = ["post", "list", null];
     const author = await userFactory();
 
-    await guest().trpc.post.list();
-    await guest().trpc.post.list();
+    await guest().api.post.list();
+    await guest().api.post.list();
 
     await expectCacheMiss(key, { times: 1 });
     await expectCacheHit(key, { times: 1 });
 
-    await actingAs(author).trpc.post.create({ title: "Hello", body: "Text" });
-    await guest().trpc.post.list();
+    await actingAs(author).api.post.create({ title: "Hello", body: "Text" });
+    await guest().api.post.list();
 
     await expectCacheMiss(key, { times: 2 });
     await expect(expectCacheHit(["post", "never-read"])).rejects.toThrow("found 0");

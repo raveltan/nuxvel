@@ -25,7 +25,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: cp .env.example .env
-      - run: npx nuxvel test --shard=${{ matrix.shard }}/3
+      - run: npx nuxvel test:functional --shard=${{ matrix.shard }}/3
 
   check:
     runs-on: ubuntu-latest
@@ -48,10 +48,10 @@ jobs:
           mkdir -p ~/.ssh
           printf '%s\n' "$NUXVEL_SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-      - run: npx nuxvel routes --diff-env={{ env }}
+      - run: npx nuxvel route:list --diff-env={{ env }}
       - name: Run the tests of the live release against the new migrations
         run: |
-          releases=$(npx nuxvel releases {{ env }} --json)
+          releases=$(npx nuxvel release:list {{ env }} --json)
           live=$(printf '%s' "$releases" | jq -r '.releases[] | select(.live) | .commit // empty')
           if [ -z "$live" ]; then
             echo "No live release with a commit, so there is no release to test against"

@@ -1,3 +1,4 @@
+import { envHint } from "../../../shared/env/env-hints";
 import { createHmac } from "node:crypto";
 import { useSecrets } from "../../security/secrets";
 
@@ -50,7 +51,7 @@ function chainSecret() {
   const secret = process.env.NUXT_AUDIT_CHAIN_SECRET;
 
   if (secret) return secret;
-  if (process.env.NODE_ENV === "production") throw new Error("NUXT_AUDIT_CHAIN_SECRET is not set");
+  if (process.env.NODE_ENV === "production") throw new Error(`NUXT_AUDIT_CHAIN_SECRET is not set. ${envHint("NUXT_AUDIT_CHAIN_SECRET")}`);
 
   return useSecrets("NUXT_AUTH_SECRET")[0];
 }

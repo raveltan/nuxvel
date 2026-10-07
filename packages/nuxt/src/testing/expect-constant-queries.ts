@@ -32,7 +32,7 @@ function extraQueries(sql: string[], baseline: string[]) {
  * ```ts
  * await expectConstantQueries(async (size) => {
  *   await userFactory.has(size, (user) => postFactory.for("authorId", user))();
- *   await guest().trpc.post.list();
+ *   await guest().api.post.list();
  * });
  * ```
  */

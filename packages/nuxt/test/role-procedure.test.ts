@@ -9,17 +9,17 @@ describe("roleProcedure()", async () => {
   it("lets a user with one of the roles through", async () => {
     const agent = await userFactory({ role: "agent" });
 
-    await expect(actingAs(agent).trpc._roleCheck.staff({ id: 7 })).resolves.toEqual({ email: agent.email, id: 7 });
+    await expect(actingAs(agent).api._roleCheck.staff({ id: 7 })).resolves.toEqual({ email: agent.email, id: 7 });
   });
 
   it("refuses a user with another role before it reads the input, and a guest", async () => {
-    await expectRefused(actingAs(await userFactory()).trpc._roleCheck, "FORBIDDEN");
-    await expectRefused(guest().trpc._roleCheck, "UNAUTHORIZED");
+    await expectRefused(actingAs(await userFactory()).api._roleCheck, "FORBIDDEN");
+    await expectRefused(guest().api._roleCheck, "UNAUTHORIZED");
   });
 
   it("refuses an API key of a user with the role unless the procedure accepts keys", async () => {
     const admin = await userFactory({ role: "admin" });
-    const { key } = await actingAs(admin).trpc.apiKeys.create({ name: "ci" });
+    const { key } = await actingAs(admin).api.apiKeys.create({ name: "ci" });
     const headers = { authorization: `Bearer ${key}` };
 
     const refused = await guest().fetch(`/api/trpc/_roleCheck.staff?input=${encodeURIComponent(JSON.stringify({ json: { id: 1 } }))}`, { headers });

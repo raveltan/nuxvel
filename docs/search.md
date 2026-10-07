@@ -161,15 +161,14 @@ The snippet is HTML. `highlight()` escapes the text of the column, so you can sh
 ## Testing
 
 ```ts
-import { expect, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, guest, it } from "@nuxvel/nuxt/testing";
 import { postFactory } from "#nuxvel/factories";
 
 describe("post search", () => {
   it("finds a post by a stemmed word", async () => {
     const post = await postFactory({ title: "Running shoes", body: "A review" });
 
-    const rows = await guest().trpc.post.list({ q: "run" });
+    const rows = await guest().api.post.list({ q: "run" });
 
     expect(rows.map((row) => row.id)).toEqual([post.id]);
   });

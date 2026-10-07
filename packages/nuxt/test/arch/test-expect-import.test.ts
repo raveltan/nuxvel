@@ -34,6 +34,7 @@ describe("arch: the framework tests take expect from @nuxvel/nuxt/testing, as an
     ['import { expect } from "@playwright/test";', 1],
     ['import { describe, it } from "vitest";', 0],
     ['import { expect } from "@nuxvel/nuxt/testing";', 0],
+    ['import { describe, it } from "@nuxvel/nuxt/testing";', 0],
   ] as const)("counts %s as %i", async ([source, found]) => {
     expect(restrictedExpectImports(await eslint.lintText(source, { filePath: "sample.test.ts" }))).toHaveLength(found);
   });

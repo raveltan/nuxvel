@@ -127,8 +127,8 @@ import { userTable } from "../../server/database/schema/auth.schema";
 const userFactory = defineFactory(userTable);
 
 describe("make:router --crud (widget-item)", () => {
-  it("lists, creates, and updates through the trpc caller, enforcing authorization", async () => {
-    const owner = actingAs(await userFactory()).trpc;
+  it("lists, creates, and updates through the api caller, enforcing authorization", async () => {
+    const owner = actingAs(await userFactory()).api;
 
     const created = await owner.widgetItem.create({});
     const listed = await owner.widgetItem.list();
@@ -137,27 +137,27 @@ describe("make:router --crud (widget-item)", () => {
     expect(listed.rows.map((row) => row.id)).toContain(created.id);
     expect(updated.id).toBe(created.id);
     await expect(
-      actingAs(await userFactory()).trpc.widgetItem.update({ id: created.id }),
+      actingAs(await userFactory()).api.widgetItem.update({ id: created.id }),
     ).rejects.toBeTrpcError("FORBIDDEN");
   });
 
   it("gives a row created with an API key to the user of the key", async () => {
     const user = await userFactory();
-    const created = await actingAs(user, { apiKey: true }).trpc.widgetItem.create({});
+    const created = await actingAs(user, { apiKey: true }).api.widgetItem.create({});
 
     expect(created.ownerId).toBe(user.id);
-    await expect(actingAs(user, { apiKey: true }).trpc.widgetItem.update({ id: created.id })).resolves.toMatchObject({ id: created.id });
+    await expect(actingAs(user, { apiKey: true }).api.widgetItem.update({ id: created.id })).resolves.toMatchObject({ id: created.id });
   });
 
   it("shows a row to its owner only", async () => {
-    const owner = actingAs(await userFactory()).trpc;
-    const stranger = actingAs(await userFactory()).trpc;
+    const owner = actingAs(await userFactory()).api;
+    const stranger = actingAs(await userFactory()).api;
     const created = await owner.widgetItem.create({});
 
     expect((await stranger.widgetItem.list()).rows).toEqual([]);
     await expect(stranger.widgetItem.byId({ id: created.id })).rejects.toBeTrpcError("NOT_FOUND");
-    await expect(guest().trpc.widgetItem.list()).rejects.toBeTrpcError("UNAUTHORIZED");
-    await expect(guest().trpc.widgetItem.byId({ id: created.id })).rejects.toBeTrpcError("UNAUTHORIZED");
+    await expect(guest().api.widgetItem.list()).rejects.toBeTrpcError("UNAUTHORIZED");
+    await expect(guest().api.widgetItem.byId({ id: created.id })).rejects.toBeTrpcError("UNAUTHORIZED");
   });
 });
 `;
@@ -176,7 +176,7 @@ const invoiceFactory = defineFactory(invoiceTable, {
 describe("make:resource with a reference to an owned table", () => {
   it("writes a row only under a parent row of the same user", async () => {
     const user = await userFactory();
-    const owner = actingAs(user).trpc;
+    const owner = actingAs(user).api;
     const mine = await invoiceFactory({ ownerId: user.id });
     const theirs = await invoiceFactory();
 
@@ -184,7 +184,7 @@ describe("make:resource with a reference to an owned table", () => {
     const created = await owner.receipt.create({ invoiceId: mine.id });
     await expect(owner.receipt.update({ id: created.id, invoiceId: theirs.id })).rejects.toBeTrpcError("NOT_FOUND");
     expect(await owner.receipt.update({ id: created.id, invoiceId: mine.id })).toMatchObject({ invoiceId: mine.id });
-    const byKey = await actingAs(user, { apiKey: true }).trpc.receipt.create({ invoiceId: mine.id });
+    const byKey = await actingAs(user, { apiKey: true }).api.receipt.create({ invoiceId: mine.id });
     expect(byKey).toMatchObject({ invoiceId: mine.id, ownerId: user.id });
   });
 });
@@ -449,7 +449,7 @@ describe("nuxvel make:* output running in an app", () => {
     expect(source(`${domain}/routers/crate.router.ts`)).toContain('import { createCrateAction } from "#server/domains/parcel/actions/create-crate.action";');
     expect(source(`${domain}/routers/crate.router.ts`)).toContain("export const parcelCrateRouter = {");
     expect(source(`${domain}/actions/update-crate.action.ts`)).toContain('import { crateTable } from "#nuxvel/schema";');
-    expect(source(`${domain}/routers/crate.router.test.ts`)).toContain("actingAs(owner).trpc.parcel.crate.list()");
+    expect(source(`${domain}/routers/crate.router.test.ts`)).toContain("actingAs(owner).api.parcel.crate.list()");
 
     for (const file of [
       "actions/cancel-parcel.action.test.ts",
@@ -556,7 +556,7 @@ describe("nuxvel make:* output running in an app", () => {
 
   it("make:test's job and router scaffolds run and pass against real target files", () => {
     expect(source("server/jobs/post/notify-followers.job.test.ts")).toContain("runJob()");
-    expect(source("server/trpc/routers/post.router.test.ts")).toContain("actingAs(user).trpc.post");
+    expect(source("server/trpc/routers/post.router.test.ts")).toContain("actingAs(user).api.post");
     expectAppTestPassed("server/jobs/post/notify-followers.job.test.ts");
     expectAppTestPassed("server/trpc/routers/post.router.test.ts");
   });

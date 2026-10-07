@@ -12,17 +12,17 @@ A Nuxt app with nuxvel: database, typed API, validation, auth and actions. The [
 ```bash
 npm install
 ./nv services up
-./nv test
+./nv test:functional
 ./nv db:migrate
 ./nv db:seed
 npm run dev
 ```
 
 - `./nv services up` starts the dev services from `docker-compose.yml` and leaves them running. `./nv services down` stops them.
-- `./nv test` runs the tests in `tests/`, except the end-to-end tests in `tests/e2e/`.
+- `./nv test:functional` runs the tests in `tests/`, except the end-to-end tests in `tests/e2e/`.
 - `./nv db:migrate` creates the tables in the dev database from `.env`.
 - `./nv db:seed` runs `server/seeders/database.seeder.ts`. It creates the demo user `demo@example.com` and prints its password, `demo-password`.
-- `npm run dev` starts the Nuxt dev server and the queue worker. `./nv test`, `./nv test:e2e` and `npm run dev` start the dev services themselves when they are not running, and stop them again when they end.
+- `npm run dev` starts the Nuxt dev server and the queue worker. `./nv test:functional`, `./nv test:e2e` and `npm run dev` start the dev services themselves when they are not running, and stop them again when they end.
 
 The app runs at `https://<name>.localhost`. `<name>` is the `name` in `package.json`. The first run asks for your password to trust a local certificate. To serve plain `nuxt dev` at `http://localhost:3000`, run `./nv dev --no-https`.
 
@@ -148,7 +148,7 @@ A missing page or a failed render shows `app/error.vue`, with the status, the me
 ./nv make:test actions/post/create-post.action
 ```
 
-This creates `server/actions/post/create-post.action.test.ts`. Replace its `it.todo` with a test that calls the action with the fixtures from `@nuxvel/nuxt/testing`. Run `./nv test` to run it.
+This creates `server/actions/post/create-post.action.test.ts`. Replace its `it.todo` with a test that calls the action with the fixtures from `@nuxvel/nuxt/testing`. Run `./nv test:functional` to run it.
 
 ```bash
 ./nv make:test post --e2e

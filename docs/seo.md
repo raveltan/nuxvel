@@ -182,8 +182,7 @@ Remove `public/robots.txt` from the app. When `@nuxtjs/robots` builds, it moves 
 ## Testing
 
 ```ts
-import { expect, getMeta, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, getMeta, guest, it } from "@nuxvel/nuxt/testing";
 import { postFactory } from "#nuxvel/factories";
 
 describe("SEO", () => {

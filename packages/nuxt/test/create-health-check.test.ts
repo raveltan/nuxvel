@@ -9,9 +9,9 @@ describe("create-health-check action", async () => {
   await setupPlayground();
 
   it("creates a health check through actingAs's caller", async () => {
-    const { trpc } = actingAs(await userFactory());
+    const { api } = actingAs(await userFactory());
 
-    const created = await trpc.health.create({});
+    const created = await api.health.create({});
 
     expect(created.id).toEqual(expect.any(Number));
     await expectRow(healthChecksTable, { id: created.id });

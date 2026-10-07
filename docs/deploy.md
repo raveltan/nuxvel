@@ -498,11 +498,11 @@ The alert is a JSON `POST` with `app`, `environment`, `event` (`deploy.switched-
 `nuxvel make:ci <env>` writes `.github/workflows/deploy.yml`. On each push to `main`, it:
 
 1. Runs the tests in 3 shards.
-2. Runs `nuxvel db:check`, `nuxvel routes --diff-env=<env>` against the live release, and, when a migration changed since the live release's commit, `nuxvel test:compat` against that commit.
+2. Runs `nuxvel db:check`, `nuxvel route:list --diff-env=<env>` against the live release, and, when a migration changed since the live release's commit, `nuxvel test:compat` against that commit.
 3. Builds the archive with `nuxvel build --artifact` on a runner of the server's `arch`.
 4. After all three, runs `nuxvel deploy <env> --artifact=...` in the GitHub environment `<env>`.
 
-The workflow reads the live release with `nuxvel releases <env> --json`. When that command fails, for example because the server does not answer, the check job fails and the deploy does not start. When no release is live yet, the check job skips `nuxvel test:compat`.
+The workflow reads the live release with `nuxvel release:list <env> --json`. When that command fails, for example because the server does not answer, the check job fails and the deploy does not start. When no release is live yet, the check job skips `nuxvel test:compat`.
 
 The workflow does not run `npm run typecheck`. The `ci.yml` of the starter runs it, and it also runs on each push to `main`. So a push to `main` runs the tests two times, one time in each workflow, and the deploy does not wait for `ci.yml`. To run the typecheck before the deploy, add `- run: npm run typecheck` to the `check` job of `deploy.yml`. To run the tests only one time, remove `push` from the `on` block of `ci.yml`, so that it runs only on pull requests.
 
@@ -526,10 +526,10 @@ The CI key cannot log in as root. So run the first deploy of the app, which runs
 
 ## Releases and the deploy lock
 
-`nuxvel releases <env>` lists the releases on the server, newest first. For each release, it shows the commit and the build source from its build manifest, and the deploy time from its name. `--json` prints them as JSON:
+`nuxvel release:list <env>` lists the releases on the server, newest first. For each release, it shows the commit and the build source from its build manifest, and the deploy time from its name. `--json` prints them as JSON:
 
 ```bash
-npx nuxvel releases production
+npx nuxvel release:list production
 # RELEASE                    COMMIT   SOURCE  DEPLOYED                 COLOR
 # 20260927T100000Z-abc1234   abc1234  ci      2026-09-27 10:00:00 UTC  green (live)
 # 20260926T160000Z-9f8e7d6   9f8e7d6  local   2026-09-26 16:00:00 UTC  blue

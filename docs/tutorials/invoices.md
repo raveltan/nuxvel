@@ -10,7 +10,7 @@ The generators write most of the code. Each chapter tells what a generator wrote
 
 | Layer | Command | Checks |
 |---|---|---|
-| Functional | `./nv test` | the server: procedures, policies, rows, mails, the audit log, rate limits |
+| Functional | `./nv test:functional` | the server: procedures, policies, rows, mails, the audit log, rate limits |
 | Component | `npm run test:ui` | the states of one component, with a mocked server |
 | End-to-end | `npm run test:e2e` | a journey across pages in a browser, with real auth |
 
@@ -28,7 +28,7 @@ See [Starting a new app](../create.md) for what the command writes. Start the de
 
 ```bash
 ./nv services up
-./nv test
+./nv test:functional
 ```
 
 ```
@@ -65,8 +65,7 @@ Do not put the variable in `.env`. The test setup loads `.env`, so the variable 
 
 ```ts
 // tests/functional/sign-up.test.ts
-import { expect, expectMailSent, expectRow, guest, signIn } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectMailSent, expectRow, guest, it, signIn } from "@nuxvel/nuxt/testing";
 import { userTable } from "#nuxvel/schema";
 
 process.env.NUXT_AUTH_REQUIRE_EMAIL_VERIFICATION = "true";
@@ -119,7 +118,7 @@ These fixtures come from `@nuxvel/nuxt/testing`:
 `expect` comes from `@nuxvel/nuxt/testing` too, see [Testing: expect](../testing.md#expect). Run the file:
 
 ```bash
-./nv test tests/functional/sign-up.test.ts
+./nv test:functional tests/functional/sign-up.test.ts
 ```
 
 Chapter 14 tests the same journey in a browser. See [Authentication: email verification](../auth.md#email-verification).
@@ -379,8 +378,7 @@ Replace the starter's seeder test, so that it checks the teams too:
 
 ```ts
 // tests/functional/seeders.test.ts
-import { expect, expectCount, expectRow, runSeeder, signIn } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectCount, expectRow, it, runSeeder, signIn } from "@nuxvel/nuxt/testing";
 import { userTable, invoiceTable, teamTable } from "#nuxvel/schema";
 
 describe("the database seeder", () => {
@@ -391,8 +389,8 @@ describe("the database seeder", () => {
     const acme = await expectRow(teamTable, { name: "Acme" });
     await expectCount(invoiceTable, 8);
 
-    const { trpc } = await signIn("demo@example.com", "demo-password");
-    const page = await trpc.invoice.list();
+    const { api } = await signIn("demo@example.com", "demo-password");
+    const page = await api.invoice.list();
 
     expect(page.total).toBe(5);
     expect(page.rows.every((row) => row.teamId === acme.id)).toBe(true);
@@ -692,8 +690,7 @@ Replace the generated test of each new action:
 
 ```ts
 // server/actions/team/add-member.action.test.ts
-import { actingAs, expect, runAction } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, it, runAction } from "@nuxvel/nuxt/testing";
 import { team } from "../../../tests/scenarios/team";
 
 describe("team/add-member action", () => {
@@ -717,7 +714,7 @@ describe("team/add-member action", () => {
     const t = await team();
 
     await expect(
-      actingAs(t.admin).trpc.team.addMember({ teamId: t.team.id, email: t.viewer.email, role: "member" }),
+      actingAs(t.admin).api.team.addMember({ teamId: t.team.id, email: t.viewer.email, role: "member" }),
     ).rejects.toBeTrpcError("CONFLICT");
   });
 });
@@ -725,8 +722,7 @@ describe("team/add-member action", () => {
 
 ```ts
 // server/actions/team/change-role.action.test.ts
-import { expect, expectRow, runAction } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectRow, it, runAction } from "@nuxvel/nuxt/testing";
 import { team } from "../../../tests/scenarios/team";
 import { membershipTable } from "#nuxvel/schema";
 
@@ -755,21 +751,20 @@ describe("team/change-role action", () => {
 
 ```ts
 // server/actions/team/create-team.action.test.ts
-import { actingAs, expect } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, it } from "@nuxvel/nuxt/testing";
 import { userFactory } from "#nuxvel/factories";
 
 describe("team/create-team action", () => {
   it("makes the user who creates a team its admin", async () => {
     const ada = await userFactory();
-    const { trpc } = actingAs(ada);
+    const { api } = actingAs(ada);
 
-    const created = await trpc.team.create({ name: "Acme" });
+    const created = await api.team.create({ name: "Acme" });
 
-    expect(await trpc.team.members({ id: created.id })).toEqual([
+    expect(await api.team.members({ id: created.id })).toEqual([
       expect.objectContaining({ userId: ada.id, role: "admin", email: ada.email }),
     ]);
-    expect((await trpc.team.byId({ id: created.id })).can).toEqual({ manage: true, createInvoice: true });
+    expect((await api.team.byId({ id: created.id })).can).toEqual({ manage: true, createInvoice: true });
   });
 });
 ```
@@ -905,36 +900,35 @@ The rules of chapter 4 are a table of roles and procedures. Test them as a table
 
 ```ts
 // tests/functional/authorization.test.ts
-import { actingAs, expect, expectRefused, guest, type TestCaller } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, expectRefused, guest, it, type TestCaller } from "@nuxvel/nuxt/testing";
 import { everyRole, team } from "../scenarios/team";
 
 type Team = Awaited<ReturnType<typeof team>>;
 type Role = (typeof everyRole)[number];
 
-const procedures: { name: string; allowed: Role[]; call: (trpc: TestCaller, t: Team) => Promise<unknown> }[] = [
-  { name: "read the team", allowed: ["admin", "member", "viewer"], call: (trpc, t) => trpc.team.members({ id: t.team.id }) },
-  { name: "read an invoice", allowed: ["admin", "member", "viewer"], call: (trpc, t) => trpc.invoice.byId({ id: t.invoice.id }) },
+const procedures: { name: string; allowed: Role[]; call: (api: TestCaller, t: Team) => Promise<unknown> }[] = [
+  { name: "read the team", allowed: ["admin", "member", "viewer"], call: (api, t) => api.team.members({ id: t.team.id }) },
+  { name: "read an invoice", allowed: ["admin", "member", "viewer"], call: (api, t) => api.invoice.byId({ id: t.invoice.id }) },
   {
     name: "create an invoice",
     allowed: ["admin", "member"],
-    call: (trpc, t) => trpc.invoice.create({ teamId: t.team.id, customer: "Initech", amount: 120_000 }),
+    call: (api, t) => api.invoice.create({ teamId: t.team.id, customer: "Initech", amount: 120_000 }),
   },
-  { name: "update an invoice", allowed: ["admin", "member"], call: (trpc, t) => trpc.invoice.update({ id: t.invoice.id, status: "sent" }) },
-  { name: "delete an invoice", allowed: ["admin"], call: (trpc, t) => trpc.invoice.delete({ id: t.invoice.id }) },
-  { name: "rename the team", allowed: ["admin"], call: (trpc, t) => trpc.team.update({ id: t.team.id, name: "Renamed" }) },
+  { name: "update an invoice", allowed: ["admin", "member"], call: (api, t) => api.invoice.update({ id: t.invoice.id, status: "sent" }) },
+  { name: "delete an invoice", allowed: ["admin"], call: (api, t) => api.invoice.delete({ id: t.invoice.id }) },
+  { name: "rename the team", allowed: ["admin"], call: (api, t) => api.team.update({ id: t.team.id, name: "Renamed" }) },
   {
     name: "add a member",
     allowed: ["admin"],
-    call: (trpc, t) => trpc.team.addMember({ teamId: t.team.id, email: t.outsider.email, role: "viewer" }),
+    call: (api, t) => api.team.addMember({ teamId: t.team.id, email: t.outsider.email, role: "viewer" }),
   },
-  { name: "delete the team", allowed: ["admin"], call: (trpc, t) => trpc.team.delete({ id: t.team.id }) },
+  { name: "delete the team", allowed: ["admin"], call: (api, t) => api.team.delete({ id: t.team.id }) },
 ];
 
 describe.for(procedures)("$name", ({ allowed, call }) => {
   it.for(everyRole)("as a team %s", async (role) => {
     const t = await team();
-    const result = call(actingAs(t[role]).trpc, t);
+    const result = call(actingAs(t[role]).api, t);
 
     if (allowed.includes(role)) await expect(result).resolves.toBeDefined();
     else await expect(result).rejects.toBeTrpcError("FORBIDDEN");
@@ -943,7 +937,7 @@ describe.for(procedures)("$name", ({ allowed, call }) => {
   it("as a user of another team", async () => {
     const t = await team();
 
-    await expect(call(actingAs(t.outsider).trpc, t)).rejects.toBeTrpcError("NOT_FOUND");
+    await expect(call(actingAs(t.outsider).api, t)).rejects.toBeTrpcError("NOT_FOUND");
   });
 });
 
@@ -952,31 +946,31 @@ describe("tenant isolation", () => {
     const ours = await team();
     const theirs = await team();
 
-    const { trpc } = actingAs(ours.viewer);
+    const { api } = actingAs(ours.viewer);
 
-    expect((await trpc.team.list()).rows.map((row) => row.id)).toEqual([ours.team.id]);
-    expect((await trpc.invoice.list()).rows.map((row) => row.id)).toEqual([ours.invoice.id]);
-    expect((await actingAs(theirs.viewer).trpc.invoice.list()).rows.map((row) => row.id)).toEqual([theirs.invoice.id]);
+    expect((await api.team.list()).rows.map((row) => row.id)).toEqual([ours.team.id]);
+    expect((await api.invoice.list()).rows.map((row) => row.id)).toEqual([ours.invoice.id]);
+    expect((await actingAs(theirs.viewer).api.invoice.list()).rows.map((row) => row.id)).toEqual([theirs.invoice.id]);
   });
 
   it("refuses a guest on every procedure", async () => {
-    await expectRefused(guest().trpc.team, "UNAUTHORIZED");
-    await expectRefused(guest().trpc.invoice, "UNAUTHORIZED");
+    await expectRefused(guest().api.team, "UNAUTHORIZED");
+    await expectRefused(guest().api.invoice, "UNAUTHORIZED");
   });
 });
 ```
 
 The table gives 32 tests from 8 cases, and a new procedure is one more line:
 
-- `actingAs(user).trpc` calls a procedure as that user, with the same `ctx.user` and `ctx.actor` as a real request. See [Testing: acting as a user](../testing.md#acting-as-a-user).
-- `TestCaller` is the type of `actingAs(user).trpc`, so each `call` is typed by the router.
+- `actingAs(user).api` calls a procedure as that user, with the same `ctx.user` and `ctx.actor` as a real request. See [Testing: acting as a user](../testing.md#acting-as-a-user).
+- `TestCaller` is the type of `actingAs(user).api`, so each `call` is typed by the router.
 - The case list holds functions, never rows. The setup empties the tables after each test, so each test makes its own team. See [Testing: values in the case list](../testing.md#values-in-the-case-list-are-data-or-functions-never-rows).
 - `expectRefused(router, code)` calls every procedure of a router and checks the code of each refusal. It reads the procedures from the app router, so it also checks a procedure that you add later. See [Testing: refusing a whole router](../testing.md#refusing-a-whole-router).
 
 The generated router tests check the old owner rule, so delete `server/trpc/routers/team.router.test.ts` and `server/trpc/routers/invoice.router.test.ts`. The table replaces them. Run the functional tests:
 
 ```bash
-./nv test
+./nv test:functional
 ```
 
 See [Testing: many cases in one test](../testing.md#many-cases-in-one-test).
@@ -1237,8 +1231,7 @@ The request answers the same for an email without an account, and sends no mail.
 
 ```ts
 // tests/functional/password-reset.test.ts
-import { expect, expectMailSent, expectNoMailSent, guest, signIn } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectMailSent, expectNoMailSent, guest, it, signIn } from "@nuxvel/nuxt/testing";
 import { userFactory } from "#nuxvel/factories";
 
 const post = (path: string, body: object) =>
@@ -1271,7 +1264,7 @@ describe("password reset", () => {
 });
 ```
 
-The link of the mail goes to `/api/auth/reset-password/<token>`, which sends the browser to `redirectTo` with the token in the query. The test follows the same steps without a browser. `userFactory.withPassword(password)` also writes the credential account, so the user can sign in. The starter's `tests/e2e/home.test.ts` already tests the same flow through the pages. Run `./nv test tests/functional/password-reset.test.ts`. See [Authentication: password reset](../auth.md#password-reset).
+The link of the mail goes to `/api/auth/reset-password/<token>`, which sends the browser to `redirectTo` with the token in the query. The test follows the same steps without a browser. `userFactory.withPassword(password)` also writes the credential account, so the user can sign in. The starter's `tests/e2e/home.test.ts` already tests the same flow through the pages. Run `./nv test:functional tests/functional/password-reset.test.ts`. See [Authentication: password reset](../auth.md#password-reset).
 
 ## 8. Two-factor sign-in
 
@@ -1414,8 +1407,7 @@ A functional test turns two-factor sign-in on through the same endpoints. It nee
 
 ```ts
 // tests/functional/two-factor.test.ts
-import { expect, expectMailSent, expectRow, guest, signIn, totpCode } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectMailSent, expectRow, guest, it, signIn, totpCode } from "@nuxvel/nuxt/testing";
 import { userTable } from "#nuxvel/schema";
 import { userFactory } from "#nuxvel/factories";
 
@@ -1536,7 +1528,7 @@ export const UserDoesNotSeeTheAdminPage: StoryObj<typeof meta> = {
 };
 ```
 
-`ada` is the `mockUser({ email: "ada@example.com" })` of the starter's stories, with the default role `user`. Run `./nv test tests/functional/two-factor.test.ts` and `npm run test:ui`.
+`ada` is the `mockUser({ email: "ada@example.com" })` of the starter's stories, with the default role `user`. Run `./nv test:functional tests/functional/two-factor.test.ts` and `npm run test:ui`.
 
 ## 9. Admin tools
 
@@ -1617,8 +1609,7 @@ A team admin deletes the team, and its invoices go with it. A stolen session mus
 
 ```ts
 // server/trpc/routers/admin.router.test.ts
-import { actingAs, expect, expectRefused, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, expectRefused, guest, it } from "@nuxvel/nuxt/testing";
 import { team } from "../../../tests/scenarios/team";
 import { userFactory } from "#nuxvel/factories";
 
@@ -1627,14 +1618,14 @@ describe("admin router", () => {
     const t = await team();
     const admin = await userFactory({ role: "admin", twoFactorEnabled: true });
 
-    expect(await actingAs(admin).trpc.admin.teams()).toEqual([expect.objectContaining({ id: t.team.id, members: 3 })]);
+    expect(await actingAs(admin).api.admin.teams()).toEqual([expect.objectContaining({ id: t.team.id, members: 3 })]);
   });
 
   it("refuses users and guests", async () => {
     const t = await team();
 
-    await expectRefused(actingAs(t.admin).trpc.admin, "FORBIDDEN");
-    await expectRefused(guest().trpc.admin, "UNAUTHORIZED");
+    await expectRefused(actingAs(t.admin).api.admin, "FORBIDDEN");
+    await expectRefused(guest().api.admin, "UNAUTHORIZED");
   });
 
   it.for([
@@ -1643,13 +1634,13 @@ describe("admin router", () => {
   ])("refuses an admin with $name", async ({ options }) => {
     const admin = await userFactory({ role: "admin", twoFactorEnabled: true });
 
-    await expect(actingAs(admin, options).trpc.admin.teams()).rejects.toBeTrpcError("FORBIDDEN");
+    await expect(actingAs(admin, options).api.admin.teams()).rejects.toBeTrpcError("FORBIDDEN");
   });
 
   it("refuses an admin without two-factor sign-in", async () => {
     const admin = await userFactory({ role: "admin" });
 
-    await expect(actingAs(admin).trpc.admin.teams()).rejects.toBeTrpcError("FORBIDDEN");
+    await expect(actingAs(admin).api.admin.teams()).rejects.toBeTrpcError("FORBIDDEN");
   });
 });
 ```
@@ -1662,8 +1653,7 @@ describe("admin router", () => {
 
 ```ts
 // tests/functional/fresh-sign-in.test.ts
-import { expect, expectNoRow, signIn, travelBy } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectNoRow, it, signIn, travelBy } from "@nuxvel/nuxt/testing";
 import { teamTable } from "#nuxvel/schema";
 import { membershipFactory, teamFactory, userFactory } from "#nuxvel/factories";
 
@@ -1680,26 +1670,26 @@ async function adminOfATeam() {
 describe("deleting a team", () => {
   it("works within 10 minutes of the sign-in", async () => {
     const { ada, team } = await adminOfATeam();
-    const { trpc } = await signIn(ada.email, PASSWORD);
+    const { api } = await signIn(ada.email, PASSWORD);
 
     await travelBy({ minutes: 9 });
-    await trpc.team.delete({ id: team.id });
+    await api.team.delete({ id: team.id });
 
     await expectNoRow(teamTable, { id: team.id });
   });
 
   it("asks for a new sign-in after 10 minutes", async () => {
     const { ada, team } = await adminOfATeam();
-    const { trpc } = await signIn(ada.email, PASSWORD);
+    const { api } = await signIn(ada.email, PASSWORD);
 
     await travelBy({ minutes: 11 });
 
-    await expect(trpc.team.delete({ id: team.id })).rejects.toBeTrpcError("FORBIDDEN");
+    await expect(api.team.delete({ id: team.id })).rejects.toBeTrpcError("FORBIDDEN");
   });
 });
 ```
 
-Run `./nv test server/trpc tests/functional/fresh-sign-in.test.ts`. See [Authentication: admin procedures](../auth.md#admin-procedures) and [Authentication: recent sign-in procedures](../auth.md#recent-sign-in-procedures).
+Run `./nv test:functional server/trpc tests/functional/fresh-sign-in.test.ts`. See [Authentication: admin procedures](../auth.md#admin-procedures) and [Authentication: recent sign-in procedures](../auth.md#recent-sign-in-procedures).
 
 ## 10. Social login
 
@@ -1734,8 +1724,7 @@ A test cannot sign in at GitHub. It can test the two halves of the flow in the a
 
 ```ts
 // tests/functional/social-login.test.ts
-import { expect, expectRow, fakeFetch, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectRow, fakeFetch, guest, it } from "@nuxvel/nuxt/testing";
 import { accountTable, userTable } from "#nuxvel/schema";
 
 const github = {
@@ -1785,7 +1774,7 @@ describe("sign-in with GitHub", () => {
 
 The start of the sign-in sets a cookie with the state of the flow. The browser sends it back with the callback, so the test sends it too. The `state` in the URL must match the cookie. `fakeFetch()` fakes every `fetch()` of the app under test with an absolute URL, for the rest of the test. A request that no key matches fails, so nothing reaches GitHub. See [Testing: faking outbound requests](../testing.md#faking-outbound-requests).
 
-The test does not check the GitHub page or your OAuth app. Sign in once with your OAuth app in the browser to check them. Run `./nv test tests/functional/social-login.test.ts`. See [Authentication: social login](../auth.md#social-login).
+The test does not check the GitHub page or your OAuth app. Sign in once with your OAuth app in the browser to check them. Run `./nv test:functional tests/functional/social-login.test.ts`. See [Authentication: social login](../auth.md#social-login).
 
 ## 11. Audit log
 
@@ -1815,8 +1804,7 @@ The log keeps no user ID. It stores a subject ID in place of each user, so `nuxv
 
 ```ts
 // tests/functional/audit.test.ts
-import { actingAs, expect, expectAudited, expectNotAudited, expectRow, runAction } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, expectAudited, expectNotAudited, expectRow, it, runAction } from "@nuxvel/nuxt/testing";
 import { membershipTable } from "#nuxvel/schema";
 import { team } from "../scenarios/team";
 
@@ -1824,7 +1812,7 @@ describe("the audit log", () => {
   it("records the columns that an invoice update changed", async () => {
     const t = await team();
 
-    await actingAs(t.member).trpc.invoice.update({ id: t.invoice.id, status: "paid" });
+    await actingAs(t.member).api.invoice.update({ id: t.invoice.id, status: "paid" });
 
     const entry = await expectAudited("invoice.updated", { actorId: t.member.id, targetId: String(t.invoice.id) });
     expect(entry.changes).toEqual({ status: { from: "draft", to: "paid" } });
@@ -1833,7 +1821,7 @@ describe("the audit log", () => {
   it("writes no row for an update that the policy refuses", async () => {
     const t = await team();
 
-    await expect(actingAs(t.viewer).trpc.invoice.update({ id: t.invoice.id, status: "paid" })).rejects.toBeTrpcError("FORBIDDEN");
+    await expect(actingAs(t.viewer).api.invoice.update({ id: t.invoice.id, status: "paid" })).rejects.toBeTrpcError("FORBIDDEN");
 
     await expectNotAudited("invoice.updated");
   });
@@ -1850,7 +1838,7 @@ describe("the audit log", () => {
 });
 ```
 
-Run `./nv test tests/functional/audit.test.ts`. See [Audit log](../audit.md).
+Run `./nv test:functional tests/functional/audit.test.ts`. See [Audit log](../audit.md).
 
 ## 12. Rate limits
 
@@ -1870,31 +1858,30 @@ The 11th call in an hour gets `TOO_MANY_REQUESTS`, and the form of chapter 6 sho
 
 ```ts
 // tests/functional/rate-limits.test.ts
-import { actingAs, exhaustRateLimit, expect, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, exhaustRateLimit, expect, guest, it } from "@nuxvel/nuxt/testing";
 import { userFactory } from "#nuxvel/factories";
 import { team } from "../scenarios/team";
 
 describe("rate limits", () => {
   it("lets one admin add at most 10 members an hour", async () => {
     const t = await team();
-    const { trpc } = actingAs(t.admin);
+    const { api } = actingAs(t.admin);
 
-    await exhaustRateLimit(trpc.team.addMember);
+    await exhaustRateLimit(api.team.addMember);
 
-    await expect(trpc.team.addMember({ teamId: t.team.id, email: t.outsider.email, role: "viewer" })).rejects.toBeTrpcError(
+    await expect(api.team.addMember({ teamId: t.team.id, email: t.outsider.email, role: "viewer" })).rejects.toBeTrpcError(
       "TOO_MANY_REQUESTS",
     );
   });
 
   it("counts the budget for each admin", async () => {
     const t = await team();
-    await exhaustRateLimit(actingAs(t.admin).trpc.team.addMember);
+    await exhaustRateLimit(actingAs(t.admin).api.team.addMember);
 
     const other = await userFactory();
-    const ours = await actingAs(other).trpc.team.create({ name: "Globex" });
+    const ours = await actingAs(other).api.team.create({ name: "Globex" });
 
-    await expect(actingAs(other).trpc.team.addMember({ teamId: ours.id, email: t.outsider.email, role: "viewer" })).resolves.toMatchObject({
+    await expect(actingAs(other).api.team.addMember({ teamId: ours.id, email: t.outsider.email, role: "viewer" })).resolves.toMatchObject({
       role: "viewer",
     });
   });
@@ -1914,7 +1901,7 @@ describe("rate limits", () => {
 });
 ```
 
-The test client reaches the server from `127.0.0.1`, so the third test spends the budget of that IP. The setup clears the counts after each test. Run `./nv test tests/functional/rate-limits.test.ts`. See [Security: testing](../security.md#testing).
+The test client reaches the server from `127.0.0.1`, so the third test spends the budget of that IP. The setup clears the counts after each test. Run `./nv test:functional tests/functional/rate-limits.test.ts`. See [Security: testing](../security.md#testing).
 
 ## 13. API keys and the OpenAPI document
 
@@ -2066,8 +2053,7 @@ The actor of both rows is the key, not the user. The `audit` option of the updat
 
 ```ts
 // tests/functional/api-keys.test.ts
-import { actingAs, expect, expectAudited, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, expectAudited, guest, it } from "@nuxvel/nuxt/testing";
 import { team } from "../scenarios/team";
 
 describe("the REST API with an API key", () => {
@@ -2111,7 +2097,7 @@ describe("the REST API with an API key", () => {
   it("does not let a key create more keys", async () => {
     const t = await team();
 
-    await expect(actingAs(t.admin, { apiKey: true }).trpc.apiKeys.create({ name: "ci" })).rejects.toBeTrpcError("FORBIDDEN");
+    await expect(actingAs(t.admin, { apiKey: true }).api.apiKeys.create({ name: "ci" })).rejects.toBeTrpcError("FORBIDDEN");
   });
 
   it("describes the invoice endpoints in the OpenAPI document", async () => {
@@ -2123,7 +2109,7 @@ describe("the REST API with an API key", () => {
 });
 ```
 
-The second test proves that the owner of a new invoice is the user, not the key. With `ctx.actor.id`, the action would write the ID of the key into `owner_id`, and the foreign key to `user` would refuse it. Run `./nv test tests/functional/api-keys.test.ts`.
+The second test proves that the owner of a new invoice is the user, not the key. With `ctx.actor.id`, the action would write the ID of the key into `owner_id`, and the foreign key to `user` would refuse it. Run `./nv test:functional tests/functional/api-keys.test.ts`.
 
 ## 14. Testing
 
@@ -2155,8 +2141,7 @@ The functional tests check each step of the auth flows on the server. One end-to
 
 ```ts
 // tests/e2e/two-factor.test.ts
-import { button, expect, expectMailSent, field, fillForm, heading, menuitem, text, totpCode, visit } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { button, describe, expect, expectMailSent, field, fillForm, heading, it, menuitem, text, totpCode, visit } from "@nuxvel/nuxt/testing";
 
 process.env.NUXT_AUTH_REQUIRE_EMAIL_VERIFICATION = "true";
 
@@ -2205,8 +2190,7 @@ Two more browser tests check the team page as a team admin, and the admin page a
 
 ```ts
 // tests/e2e/team.test.ts
-import { actingAs, button, cell, expect, fillForm, heading, text, toast } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, button, cell, describe, expect, fillForm, heading, it, text, toast } from "@nuxvel/nuxt/testing";
 import { userFactory } from "#nuxvel/factories";
 import { team } from "../scenarios/team";
 

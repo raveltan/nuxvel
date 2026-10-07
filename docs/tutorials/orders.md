@@ -404,8 +404,7 @@ Replace the generated test:
 ```ts
 // server/actions/order/place-order.action.test.ts
 import { defineFactory } from "@nuxvel/nuxt/factories";
-import { expect, expectCount, expectListenerQueued, expectListenerRan, expectNotQueued, expectQueued, expectRow, runAction } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectCount, expectListenerQueued, expectListenerRan, expectNotQueued, expectQueued, expectRow, it, runAction } from "@nuxvel/nuxt/testing";
 import { orderTable, outboxTable, productTable } from "#nuxvel/schema";
 import { orderFactory, productFactory, userFactory } from "#nuxvel/factories";
 
@@ -461,8 +460,7 @@ The generated test of the event emits `{ orderId: 1 }`, and no such order exists
 
 ```ts
 // server/events/order/placed.event.test.ts
-import { emit, expect, expectEmitted, expectListenerQueued, expectListenerRan } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, emit, expect, expectEmitted, expectListenerQueued, expectListenerRan, it } from "@nuxvel/nuxt/testing";
 import { orderFactory } from "#nuxvel/factories";
 
 describe("order.placed event", () => {
@@ -598,8 +596,7 @@ Replace the generated mail test:
 
 ```ts
 // server/mail/order/confirmation.mail.test.ts
-import { expect, renderMail } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, it, renderMail } from "@nuxvel/nuxt/testing";
 
 describe("order.confirmation mail", () => {
   it("shows the order", async () => {
@@ -623,8 +620,7 @@ describe("order.confirmation mail", () => {
 
 ```ts
 // server/listeners/order/record-sale.listener.test.ts
-import { expect, expectCount, expectRow, freezeTime, runListener, travelBy } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectCount, expectRow, freezeTime, it, runListener, travelBy } from "@nuxvel/nuxt/testing";
 import { saleTable } from "#nuxvel/schema";
 import { orderFactory } from "#nuxvel/factories";
 
@@ -656,8 +652,7 @@ The second test stops the clock 30 seconds before midnight. The factory writes t
 
 ```ts
 // server/listeners/order/send-confirmation.listener.test.ts
-import { expectMailSent, runListener } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expectMailSent, it, runListener } from "@nuxvel/nuxt/testing";
 import { orderFactory, userFactory } from "#nuxvel/factories";
 
 describe("order.send-confirmation listener", () => {
@@ -759,8 +754,7 @@ A retry cannot fix a refused order or a missing row, so these fail at once. Any 
 
 ```ts
 // server/jobs/invoice/issue.job.test.ts
-import { expect, expectFetched, expectLogged, expectNoRow, expectNotFetched, expectRow, fakeFetch, runJob } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectFetched, expectLogged, expectNoRow, expectNotFetched, expectRow, fakeFetch, it, runJob } from "@nuxvel/nuxt/testing";
 import { invoiceTable } from "#nuxvel/schema";
 import { orderFactory } from "#nuxvel/factories";
 
@@ -851,8 +845,7 @@ A buyer who asks for the order of another buyer gets `NOT_FOUND`, as if the orde
 
 ```ts
 // server/actions/invoice/request-invoice.action.test.ts
-import { expect, expectQueued, runAction } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectQueued, it, runAction } from "@nuxvel/nuxt/testing";
 import { orderFactory, userFactory } from "#nuxvel/factories";
 
 describe("invoice.request-invoice action", () => {
@@ -902,8 +895,7 @@ Add `expectMailSent`, `fakeFetch` and `workQueue` to the import from `@nuxvel/nu
 
 ```ts
 // server/actions/order/place-order.action.test.ts
-import { expect, expectCount, expectListenerQueued, expectListenerRan, expectMailSent, expectNotQueued, expectQueued, expectRow, fakeFetch, runAction, workQueue } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectCount, expectListenerQueued, expectListenerRan, expectMailSent, expectNotQueued, expectQueued, expectRow, fakeFetch, it, runAction, workQueue } from "@nuxvel/nuxt/testing";
 import { invoiceTable, orderTable, outboxTable, productTable, saleTable } from "#nuxvel/schema";
 ```
 
@@ -969,10 +961,10 @@ The terminal of the dev server shows each step of the chain:
 
 To follow one order through the logs, search for its ID. Log the ID in each listener and job that you write. A job has no request ID, because it runs outside the request. See [Observability: request ID and actor](../observability.md#request-id-and-actor).
 
-`nuxvel events` lists the event, the file that emits it and its listeners:
+`nuxvel event:list` lists the event, the file that emits it and its listeners:
 
 ```bash
-./nv events
+./nv event:list
 ```
 
 ```
@@ -1096,8 +1088,7 @@ Test the router. The last test checks that the list does not run one query for e
 
 ```ts
 // server/trpc/routers/order.router.test.ts
-import { actingAs, expect, expectConstantQueries, fakeFetch, runJob } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, expectConstantQueries, fakeFetch, it, runJob } from "@nuxvel/nuxt/testing";
 import { orderFactory, productFactory, userFactory } from "#nuxvel/factories";
 
 describe("order router", () => {
@@ -1107,17 +1098,17 @@ describe("order router", () => {
     const product = await productFactory({ name: "Desk lamp", priceCents: 1250 });
     await orderFactory();
 
-    const { id } = await actingAs(buyer).trpc.order.place({ productId: product.id, quantity: 1 });
-    expect(await actingAs(buyer).trpc.order.mine()).toMatchObject([{ id, productName: "Desk lamp", total: "12.50", invoiceNumber: null }]);
+    const { id } = await actingAs(buyer).api.order.place({ productId: product.id, quantity: 1 });
+    expect(await actingAs(buyer).api.order.mine()).toMatchObject([{ id, productName: "Desk lamp", total: "12.50", invoiceNumber: null }]);
 
     await runJob("invoice.issue", { orderId: id });
-    expect(await actingAs(buyer).trpc.order.mine()).toMatchObject([{ id, invoiceNumber: "INV-3001" }]);
+    expect(await actingAs(buyer).api.order.mine()).toMatchObject([{ id, invoiceNumber: "INV-3001" }]);
   });
 
   it("refuses more than the stock", async () => {
     const product = await productFactory({ stock: 1 });
 
-    await expect(actingAs(await userFactory()).trpc.order.place({ productId: product.id, quantity: 2 })).rejects.toBeTrpcError("CONFLICT");
+    await expect(actingAs(await userFactory()).api.order.place({ productId: product.id, quantity: 2 })).rejects.toBeTrpcError("CONFLICT");
   });
 
   it("lists the orders in the same number of queries for one order or for many", async () => {
@@ -1125,7 +1116,7 @@ describe("order router", () => {
 
     await expectConstantQueries(async (size) => {
       await orderFactory.count(size)({ buyerId: buyer.id });
-      await actingAs(buyer).trpc.order.mine();
+      await actingAs(buyer).api.order.mine();
     });
   });
 });
@@ -1280,8 +1271,7 @@ The browser test follows one buyer through the page, and works the queue in the 
 
 ```ts
 // tests/e2e/shop.test.ts
-import { actingAs, button, expect, expectMailSent, fakeFetch, fillForm, text, workQueue } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, button, describe, expect, expectMailSent, fakeFetch, fillForm, it, text, workQueue } from "@nuxvel/nuxt/testing";
 import { productFactory, userFactory } from "#nuxvel/factories";
 
 describe("the shop in a browser", () => {
@@ -1417,8 +1407,7 @@ Replace the generated test:
 
 ```ts
 // server/database/backfills/order-total-cents.backfill.test.ts
-import { expect, expectCount, expectQueryCount, expectRow, runBackfill } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectCount, expectQueryCount, expectRow, it, runBackfill } from "@nuxvel/nuxt/testing";
 import { backfillsTable, orderTable } from "#nuxvel/schema";
 import { orderFactory } from "#nuxvel/factories";
 

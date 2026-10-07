@@ -11,7 +11,7 @@ import { printTable } from "../ui/table.ts";
 
 export default defineCommand({
   meta: {
-    name: "routes",
+    name: "route:list",
     description: "List the app's tRPC procedures and Nitro routes, flagging colliding paths, or report breaking API changes since a git ref.",
   },
   args: {

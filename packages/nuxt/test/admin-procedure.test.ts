@@ -20,27 +20,27 @@ describe("adminProcedure", async () => {
   it("lets an admin with two-factor sign-in through", async () => {
     const admin = await userFactory({ role: "admin", twoFactorEnabled: true });
 
-    await expect(actingAs(admin).trpc.account.signUps()).resolves.toEqual(expect.any(Array));
+    await expect(actingAs(admin).api.account.signUps()).resolves.toEqual(expect.any(Array));
   });
 
   it("answers FORBIDDEN to actingAs with twoFactorVerified: false", async () => {
     const admin = await userFactory({ role: "admin", twoFactorEnabled: true });
     const client = actingAs(admin, { twoFactorVerified: false });
 
-    await expect(client.trpc.account.signUps()).rejects.toBeTrpcError("FORBIDDEN");
+    await expect(client.api.account.signUps()).rejects.toBeTrpcError("FORBIDDEN");
     expect((await client.fetch("/api/trpc/account.signUps")).status).toBe(403);
   });
 
   it("lets twoFactorVerified: true through for an admin without two-factor sign-in", async () => {
     const admin = await userFactory({ role: "admin", twoFactorEnabled: false });
 
-    await expect(actingAs(admin, { twoFactorVerified: true }).trpc.account.signUps()).resolves.toEqual(expect.any(Array));
+    await expect(actingAs(admin, { twoFactorVerified: true }).api.account.signUps()).resolves.toEqual(expect.any(Array));
   });
 
   it("answers FORBIDDEN to an admin without two-factor sign-in", async () => {
     const admin = await userFactory({ role: "admin", twoFactorEnabled: false });
 
-    await expect(actingAs(admin).trpc.account.signUps()).rejects.toBeTrpcError("FORBIDDEN");
+    await expect(actingAs(admin).api.account.signUps()).rejects.toBeTrpcError("FORBIDDEN");
   });
 
   it("answers FORBIDDEN to an admin with two-factor on whose session skipped the second factor", async () => {
@@ -65,7 +65,7 @@ describe("adminProcedure", async () => {
 
   it("answers FORBIDDEN to an admin's API key", async () => {
     const admin = await userFactory({ role: "admin", twoFactorEnabled: true });
-    const { key } = await actingAs(admin).trpc.apiKeys.create({ name: "ci" });
+    const { key } = await actingAs(admin).api.apiKeys.create({ name: "ci" });
 
     const response = await guest().fetch("/api/trpc/account.signUps", { headers: { authorization: `Bearer ${key}` } });
 
@@ -75,10 +75,10 @@ describe("adminProcedure", async () => {
   it("answers FORBIDDEN to a user without the admin role", async () => {
     const member = await userFactory({ twoFactorEnabled: true });
 
-    await expect(actingAs(member).trpc.account.signUps()).rejects.toBeTrpcError("FORBIDDEN");
+    await expect(actingAs(member).api.account.signUps()).rejects.toBeTrpcError("FORBIDDEN");
   });
 
   it("answers UNAUTHORIZED to a guest", async () => {
-    await expect(guest().trpc.account.signUps()).rejects.toBeTrpcError("UNAUTHORIZED");
+    await expect(guest().api.account.signUps()).rejects.toBeTrpcError("UNAUTHORIZED");
   });
 });

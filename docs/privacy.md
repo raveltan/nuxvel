@@ -179,8 +179,7 @@ export const eraseAccountAction = defineAction({
 ```
 
 ```ts
-import { expect, expectAudited, runAction } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectAudited, it, runAction } from "@nuxvel/nuxt/testing";
 import { postFactory, userFactory } from "#nuxvel/factories";
 
 describe("account.erase-account", () => {

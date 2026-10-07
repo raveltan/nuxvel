@@ -10,7 +10,7 @@ describe("procedure builder methods", async () => {
   it("runs an action with .action() as the caller, and carries its errors", async () => {
     const author = await userFactory();
     const post = await postFactory({ authorId: author.id });
-    const caller = actingAs(author).trpc._procedureMethodsCheck;
+    const caller = actingAs(author).api._procedureMethodsCheck;
 
     await expect(caller.update({ id: post.id, title: "Renamed", body: "Body" })).resolves.toMatchObject({ id: post.id, title: "Renamed" });
     await expect(caller.update({ id: post.id, title: "Renamed", body: "  " })).rejects.toBeActionError("post.body-empty");
@@ -18,11 +18,11 @@ describe("procedure builder methods", async () => {
   });
 
   it("sends only the fields of the action's output schema when the procedure has no .output()", async () => {
-    await expect(guest().trpc._procedureMethodsCheck.secret()).resolves.toEqual({ id: 1 });
+    await expect(guest().api._procedureMethodsCheck.secret()).resolves.toEqual({ id: 1 });
   });
 
   it("runs an action of a public procedure as the guest actor when nobody is signed in", async () => {
-    await expect(guest().trpc._procedureMethodsCheck.whoami()).resolves.toEqual({ type: "guest", id: "guest" });
+    await expect(guest().api._procedureMethodsCheck.whoami()).resolves.toEqual({ type: "guest", id: "guest" });
   });
 
   it("serves .openapi() with the method of the procedure, the path of the procedure and the tag of the router", async () => {

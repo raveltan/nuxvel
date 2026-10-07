@@ -24,17 +24,18 @@ export interface Flag<Name extends string = string> {
  * its targeting and buckets.
  *
  * @param config.default The value for anyone no targeting rule matches.
- * @param config.expiresAt ISO date after which `nuxvel flags:stale`
+ * Defaults to `false`, so `defineFlag()` is an off switch.
+ * @param config.expiresAt ISO date after which `nuxvel flag:stale`
  * reports the flag as due for removal.
  *
  * @example
  * ```ts
  * // server/flags/new-checkout.flag.ts
- * export const newCheckoutFlag = defineFlag({ default: false, expiresAt: "2026-12-31" });
+ * export const newCheckoutFlag = defineFlag({ expiresAt: "2026-12-31" });
  * ```
  */
-export function defineFlag(config: { default: boolean; expiresAt?: string }): Flag {
-  const definition: Flag = { kind: "flag", name: "", ...config };
+export function defineFlag(config: { default?: boolean; expiresAt?: string } = {}): Flag {
+  const definition: Flag = { kind: "flag", name: "", default: false, ...config };
 
   return awaitingName(definition, "flag");
 }

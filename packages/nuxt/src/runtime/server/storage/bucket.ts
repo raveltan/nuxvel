@@ -1,3 +1,4 @@
+import { envHint } from "../../shared/env/env-hints";
 import { useRuntimeConfig } from "nitropack/runtime";
 
 /**
@@ -17,7 +18,7 @@ import { useRuntimeConfig } from "nitropack/runtime";
 export function useBucket(): string {
   const bucket = useRuntimeConfig().storageBucket;
 
-  if (!bucket) throw new Error("NUXT_STORAGE_BUCKET is not set");
+  if (!bucket) throw new Error(`NUXT_STORAGE_BUCKET is not set. ${envHint("NUXT_STORAGE_BUCKET")}`);
 
   return bucket;
 }

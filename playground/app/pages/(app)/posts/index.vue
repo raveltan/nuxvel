@@ -9,7 +9,7 @@ const posts = useLiveQuery(() => $api.post.list.queryOptions(input.value), {
 const deletePost = $api.post.delete.useMutation({
   optimistic: { key: () => $api.post.list.key(input.value), apply: removeRow() },
   confirm: ({ id }) => {
-    const post = posts.data.value?.rows.find((row) => row.id === id);
+    const post = posts.data?.rows.find((row) => row.id === id);
 
     return {
       title: "Delete post?",

@@ -45,7 +45,7 @@ class FakeEventSource extends EventTarget {
 
 const list = defineComponent({
   setup() {
-    const { data } = useLiveQuery($api.post.list.queryOptions(), {
+    const query = useLiveQuery($api.post.list.queryOptions(), {
       channel: CHANNEL,
       on: {
         created: (posts, payload) => [
@@ -56,7 +56,7 @@ const list = defineComponent({
     });
 
     return () =>
-      h("p", (data.value ?? []).map((post) => post.title).join(", "));
+      h("p", (query.data ?? []).map((post) => post.title).join(", "));
   },
 });
 
@@ -64,25 +64,25 @@ const selectedId = ref(1);
 
 const single = defineComponent({
   setup() {
-    const { data } = useLiveQuery(() => $api.post.byId.queryOptions({ id: selectedId.value }), {
+    const query = useLiveQuery(() => $api.post.byId.queryOptions({ id: selectedId.value }), {
       channel: CHANNEL,
       on: {
         renamed: (post, { id }) => (post.id === id ? { ...post, title: `renamed ${id}` } : post),
       },
     });
 
-    return () => h("p", data.value?.title ?? "");
+    return () => h("p", query.data?.title ?? "");
   },
 });
 
 const refetched = defineComponent({
   setup() {
-    const { data } = useLiveQuery(() => ({ ...$api.post.list.queryOptions(), enabled: true }), {
+    const query = useLiveQuery(() => ({ ...$api.post.list.queryOptions(), enabled: true }), {
       channel: CHANNEL,
       refetch: { renamed: ({ id }) => id === 1 },
     });
 
-    return () => h("p", (data.value ?? []).map((post) => post.title).join(", "));
+    return () => h("p", (query.data ?? []).map((post) => post.title).join(", "));
   },
 });
 
@@ -90,13 +90,13 @@ const BOARD_ROOM = "_probe-board?boardId=7";
 
 const board = defineComponent({
   setup() {
-    const { data } = useLiveQuery($api.post.list.queryOptions(), {
+    const query = useLiveQuery($api.post.list.queryOptions(), {
       channel: "_probe-board",
       params: { boardId: 7 },
       refetch: { moved: true },
     });
 
-    return () => h("p", (data.value ?? []).map((post) => post.title).join(", "));
+    return () => h("p", (query.data ?? []).map((post) => post.title).join(", "));
   },
 });
 

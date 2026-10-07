@@ -7,7 +7,7 @@ import { printTable } from "../ui/table.ts";
 
 export default defineCommand({
   meta: {
-    name: "flags:list",
+    name: "flag:list",
     description: "List every flag with its default and current targeting, and every experiment with its variants.",
   },
   args: { ...jsonArg },

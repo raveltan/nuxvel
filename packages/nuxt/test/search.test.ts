@@ -18,7 +18,7 @@ describe("full-text search", async () => {
     const author = await userFactory();
     const post = await postFactory({ title: "Draft", body: "Body", authorId: author.id });
 
-    await actingAs(author).trpc.post.update({ id: post.id, title: "Final", body: "Body" });
+    await actingAs(author).api.post.update({ id: post.id, title: "Final", body: "Body" });
 
     const row = await expectAudited("post.updated", { targetId: String(post.id) });
     expect(row.changes).toEqual({ title: { from: "Draft", to: "Final" } });
@@ -28,9 +28,9 @@ describe("full-text search", async () => {
     const inBody = await postFactory({ title: "Weekly notes", body: "I run every morning" });
     const inTitle = await postFactory({ title: "Running shoes", body: "A review" });
     await postFactory({ title: "Cooking", body: "Bread and soup" });
-    const { trpc } = guest();
+    const { api } = guest();
 
-    const titles = async (q: string) => (await trpc.post.list({ q })).rows.map((post) => post.title);
+    const titles = async (q: string) => (await api.post.list({ q })).rows.map((post) => post.title);
 
     expect(await titles("running")).toEqual([inTitle.title, inBody.title]);
     expect(await titles("sho")).toEqual([inTitle.title]);
@@ -41,7 +41,7 @@ describe("full-text search", async () => {
   it("treats SQL in the query as search text", async () => {
     const post = await postFactory({ title: "Drop a table of posts", body: "" });
 
-    const list = await guest().trpc.post.list({ q: "'; drop table posts; --" });
+    const list = await guest().api.post.list({ q: "'; drop table posts; --" });
 
     expect(list.rows.map((row) => row.id)).toEqual([post.id]);
     await expectRow(postsTable, { id: post.id });

@@ -11,6 +11,7 @@ describe("defineFlag / defineExperiment", async () => {
     const body = probe();
 
     expect(body).toMatchObject({
+      noDefault: false,
       untargeted: 0,
       atZero: 0,
       atHundred: 200,

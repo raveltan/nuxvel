@@ -1,14 +1,24 @@
 import { useRequestFetch } from "#app";
 import { useI18n } from "#imports";
-import { useMutation, useQuery, useQueryCache } from "@pinia/colada";
+import { useMutation, useQuery, useQueryCache, type UseQueryReturn } from "@pinia/colada";
 import { parseJSON } from "better-auth/client";
-import { reactive } from "vue";
+import { type Reactive, reactive } from "vue";
 import { authClient } from "../auth/client";
 import type { Session } from "../auth/session";
-import { unwrapAuth } from "./unwrap-auth";
+import { type AuthMutation, type AuthStatus, unwrapAuth } from "./unwrap-auth";
 
 /** One session of the signed-in user, as {@link useSessions} lists it. */
 export type AuthSession = Session["session"];
+
+/** What {@link useSessions} returns. */
+export interface Sessions {
+  /** The sessions of the signed-in user, a query that loads in the browser only. */
+  list: Reactive<UseQueryReturn<AuthSession[], Error>>;
+  /** Ends the session of the token it takes. */
+  revoke: AuthMutation<AuthStatus, string>;
+  /** Ends every session but the current one. */
+  revokeOthers: AuthMutation<AuthStatus>;
+}
 
 const SESSIONS_KEY = ["nuxvel", "auth", "sessions"];
 
@@ -42,7 +52,7 @@ const SESSIONS_KEY = ["nuxvel", "auth", "sessions"];
  * </template>
  * ```
  */
-export function useSessions() {
+export function useSessions(): Sessions {
   const { ts } = useI18n();
   const requestFetch = useRequestFetch();
   const queryCache = useQueryCache();
@@ -55,12 +65,12 @@ export function useSessions() {
   });
 
   const revoke = useMutation({
-    mutation: async (token: string) => unwrapAuth(await authClient.revokeSession({ token }), ts("nuxvel.auth.revokeFailed")),
+    mutation: async (token: string): Promise<AuthStatus> => unwrapAuth(await authClient.revokeSession({ token }), ts("nuxvel.auth.revokeFailed")),
     onSettled: refresh,
   });
 
   const revokeOthers = useMutation({
-    mutation: async () => unwrapAuth(await authClient.revokeOtherSessions(), ts("nuxvel.auth.revokeOthersFailed")),
+    mutation: async (): Promise<AuthStatus> => unwrapAuth(await authClient.revokeOtherSessions(), ts("nuxvel.auth.revokeOthersFailed")),
     onSettled: refresh,
   });
 

@@ -1,3 +1,4 @@
+import { envHint } from "../../shared/env/env-hints";
 import { now } from "../clock/now";
 
 /**
@@ -28,7 +29,7 @@ import { now } from "../clock/now";
 export function useSecrets(name: string): [current: string, ...previous: string[]] {
   const current = process.env[name];
 
-  if (!current) throw new Error(`${name} is not set`);
+  if (!current) throw new Error(`${name} is not set. ${envHint(name)}`);
 
   const previous = process.env[`${name}_PREVIOUS`];
   const expiresAt = process.env[`${name}_PREVIOUS_EXPIRES_AT`];

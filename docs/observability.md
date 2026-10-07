@@ -291,8 +291,7 @@ The `docker-compose.yml` of the nuxvel repository runs this service for the play
 ## Testing
 
 ```ts
-import { describe, it } from "vitest";
-import { expect, guest } from "@nuxvel/nuxt/testing";
+import { describe, expect, guest, it } from "@nuxvel/nuxt/testing";
 
 describe("the app", () => {
   it("reaches its database and Redis", async () => {
@@ -311,7 +310,7 @@ import { expect, expectErrorReported, expectLogged, expectNoErrorReported, guest
 it("reports an unexpected error and logs a retry", async () => {
   await expectNoErrorReported();
 
-  await expect(guest().trpc.health.explode()).rejects.toThrow();
+  await expect(guest().api.health.explode()).rejects.toThrow();
 
   await expectErrorReported("procedure exploded");
   await expectLogged("warn", "charge retried");

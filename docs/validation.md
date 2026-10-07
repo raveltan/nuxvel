@@ -226,8 +226,7 @@ const error = toValidationError(result.error);
 ## Testing
 
 ```ts
-import { expect, runAction } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, it, runAction } from "@nuxvel/nuxt/testing";
 import { userFactory } from "#nuxvel/factories";
 
 describe("create post", () => {

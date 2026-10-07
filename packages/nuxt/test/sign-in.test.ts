@@ -14,7 +14,7 @@ describe("signIn()", async () => {
     const client = await signIn(user.email, PASSWORD);
 
     expect((await client.fetch("/api/trpc/profile.me")).status).toBe(200);
-    await expect(client.trpc.profile.me()).resolves.toMatchObject({ email: "sign-in-helper@example.com" });
+    await expect(client.api.profile.me()).resolves.toMatchObject({ email: "sign-in-helper@example.com" });
   });
 
   it("sends the headers with the sign-in and with each later call", async () => {

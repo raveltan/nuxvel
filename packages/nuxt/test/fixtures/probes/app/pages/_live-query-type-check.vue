@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { Ref } from "vue";
+
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
 const posts = useLiveQuery($api.post.list.queryOptions(), {
@@ -15,7 +17,17 @@ const posts = useLiveQuery($api.post.list.queryOptions(), {
   },
 });
 
-type LiveData = NonNullable<typeof posts.data.value>;
+type LiveData = NonNullable<typeof posts.data>;
+
+type LiveQuery = typeof posts;
+
+const liveQueryIsReactive: IsAny<LiveQuery> extends true
+  ? never
+  : LiveQuery["data"] extends Ref<unknown>
+    ? never
+    : LiveQuery["refetch"] extends () => Promise<unknown>
+      ? true
+      : never = true;
 
 type RenamedPayload = Parameters<
   NonNullable<NonNullable<LiveQueryUpdates<unknown, "_probe-public">["on"]>["renamed"]>
@@ -95,7 +107,7 @@ const selected = useLiveQuery(() => $api.post.byId.queryOptions({ id: selectedId
   on: { renamed: (post, payload) => (post.id === payload.id ? { ...post, title: "renamed" } : post) },
 });
 
-type SelectedData = NonNullable<typeof selected.data.value>;
+type SelectedData = NonNullable<typeof selected.data>;
 
 const getterLiveQueryIsTyped: IsAny<SelectedData> extends true
   ? never
@@ -105,5 +117,5 @@ const getterLiveQueryIsTyped: IsAny<SelectedData> extends true
 </script>
 
 <template>
-  <div>{{ liveQueryIsTyped }} {{ payloadIsTyped }} {{ posts.data.value?.total }} {{ getterLiveQueryIsTyped }} {{ refetchPayloadIsTyped }} {{ createdPayloadIsTyped }}</div>
+  <div>{{ liveQueryIsTyped }} {{ liveQueryIsReactive }} {{ payloadIsTyped }} {{ posts.data?.total }} {{ getterLiveQueryIsTyped }} {{ refetchPayloadIsTyped }} {{ createdPayloadIsTyped }}</div>
 </template>

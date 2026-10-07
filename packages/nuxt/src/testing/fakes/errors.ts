@@ -13,7 +13,7 @@ import { type TextMatch, textMatches } from "./text-match";
  *
  * @example
  * ```ts
- * await expect(trpc.post.publish({ id })).rejects.toThrow();
+ * await expect(api.post.publish({ id })).rejects.toThrow();
  * await expectErrorReported("stripe timeout");
  * ```
  */
@@ -34,7 +34,7 @@ export async function expectErrorReported(match?: TextMatch, options: { times?: 
  *
  * @example
  * ```ts
- * await trpc.post.list();
+ * await api.post.list();
  * await expectNoErrorReported();
  * ```
  */

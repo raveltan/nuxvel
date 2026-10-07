@@ -2,7 +2,7 @@ import { useI18n } from "#imports";
 import { useMutation } from "@pinia/colada";
 import { type MaybeRefOrGetter, reactive, toValue } from "vue";
 import { authClient } from "../auth/client";
-import { unwrapAuth } from "./unwrap-auth";
+import { type AuthMutation, type AuthStatus, unwrapAuth } from "./unwrap-auth";
 
 /**
  * Sends the mail that confirms an email address again.
@@ -29,12 +29,12 @@ import { unwrapAuth } from "./unwrap-auth";
  * </template>
  * ```
  */
-export function useResendVerification(email: MaybeRefOrGetter<string>) {
+export function useResendVerification(email: MaybeRefOrGetter<string>): AuthMutation<AuthStatus> {
   const { ts, localePath } = useI18n();
 
   return reactive(
     useMutation({
-      mutation: async () =>
+      mutation: async (): Promise<AuthStatus> =>
         unwrapAuth(
           await authClient.sendVerificationEmail({ email: toValue(email), callbackURL: localePath("/") }),
           ts("nuxvel.auth.resendFailed"),

@@ -63,8 +63,8 @@ nuxvel reads its settings from environment variables. The app's `.env.example` l
 | `NUXT_AUDIT_CHAIN_SECRET` | | Key of the audit hash chain, at least 32 characters. Required in production. Never change it. See [Audit log](./audit.md#the-chain-secret) |
 | `NUXT_OG_IMAGE_SECRET` | | Signing secret of the Open Graph image URLs. Required in production with `seo.ogImage`. `nuxvel app:create` writes a random one on a VPS. See [SEO](./seo.md#the-signing-secret) |
 | `NUXT_SITE_URL` | `siteUrl` | Public origin of the app. The auth mail links, canonical links and the sitemap start with it. It overrides `nuxvel.seo.siteUrl`. Required in production. See [Authentication](./auth.md#social-login) and [SEO](./seo.md#site-defaults) |
-| `NUXT_PUBLIC_PUSH_VAPID_PUBLIC_KEY` | `public.pushVapidPublicKey` | Public VAPID key that devices subscribe to push notifications with. `nuxvel push:keys` writes it. See [Progressive web app](./pwa.md#vapid-keys) |
-| `NUXT_PUSH_VAPID_PRIVATE_KEY` | `pushVapidPrivateKey` | Private VAPID key that signs push notifications. `nuxvel push:keys` writes it. See [Progressive web app](./pwa.md#vapid-keys) |
+| `NUXT_PUBLIC_PUSH_VAPID_PUBLIC_KEY` | `public.pushVapidPublicKey` | Public VAPID key that devices subscribe to push notifications with. `nuxvel key:push` writes it. See [Progressive web app](./pwa.md#vapid-keys) |
+| `NUXT_PUSH_VAPID_PRIVATE_KEY` | `pushVapidPrivateKey` | Private VAPID key that signs push notifications. `nuxvel key:push` writes it. See [Progressive web app](./pwa.md#vapid-keys) |
 | `NUXT_PUSH_VAPID_SUBJECT` | `pushVapidSubject` | A `mailto:` or `https:` URL where the push services can contact you. See [Progressive web app](./pwa.md#vapid-keys) |
 | `NUXT_MAILPIT_URL` | `mailpitUrl` | Dev server only. Mailpit address that the DevTools mail panel reads. The default is `http://localhost:8025`. See [Mail](./mail.md#configuration) |
 
@@ -270,7 +270,7 @@ Every server helper is auto-imported. There are no barrel files. [Server auto-im
 
 ## Testing
 
-- [Testing](./testing.md): the three layers (functional, component and end-to-end tests) and where a check goes, the scripts `test`, `test:functional`, `test:ui`, `test:e2e` and `test:arch`, factories, `actingAs()`, `signIn()`, `guest()`, fakes, `travelTo()`, `fakeFetch()`, `visit()`, locator helpers, `expect`, `trpcSpy()`, `it.for` and `nuxvel test --changes-only`
+- [Testing](./testing.md): the three layers (functional, component and end-to-end tests) and where a check goes, the scripts `test`, `test:functional`, `test:ui`, `test:e2e` and `test:arch`, factories, `actingAs()`, `signIn()`, `guest()`, fakes, `travelTo()`, `fakeFetch()`, `visit()`, locator helpers, `expect`, `trpcSpy()`, `it.for` and `nuxvel test:functional --changes-only`
 
 ## Operations
 
@@ -308,15 +308,15 @@ A file exports its definition as a named export whose name ends with the kind: `
 
 A name holds only `a-z`, `0-9`, `.`, `_` and `-`. For any other character, the build fails and suggests a name. For example, `a b.ts` and `sendMail.ts` fail.
 
-Discovery skips `*.test.ts`, `*.spec.ts` and `*.d.ts` files. `nuxvel events` and `nuxvel test:arch` also skip them. Tests can thus sit next to the code that they cover.
+Discovery skips `*.test.ts`, `*.spec.ts` and `*.d.ts` files. `nuxvel event:list` and `nuxvel test:arch` also skip them. Tests can thus sit next to the code that they cover.
 
 This rule names actions, events, listeners, jobs, schedules, mails, notifications, uploads, webhooks, channels, backfills, seeders, rate limits, flags and experiments. The generated `#nuxvel/*` types hold each name as a literal. Every API that takes a name accepts only names that exist. Examples are `dispatchAfterCommit()`, `sendMail()`, `useFlag()`, `useChannel()`, `$fetch("/api/uploads/<name>")` and the test fixtures.
 
-tRPC routers also follow their path. The path is camel-cased into the namespace that you call: `health-checks.ts` is `trpc.healthChecks`. The `.router.ts` suffix is not part of the namespace: `task.router.ts` is `trpc.task`. Policies and `defineUserData()` are keyed by their table and have no name.
+tRPC routers also follow their path. The path is camel-cased into the namespace that you call: `health-checks.ts` is `$api.healthChecks`. The `.router.ts` suffix is not part of the namespace: `task.router.ts` is `$api.task`. Policies and `defineUserData()` are keyed by their table and have no name.
 
 A definition gets its name when the app loads its folder. Read `.name` while the app runs, not while a module loads. Before that, reading it throws "has no name yet". A spread, `JSON.stringify` or a printed definition leaves the name out.
 
-A file in the app hides a file with the same name in a layer, as Nuxt layer overrides do. tRPC routers follow the same rule by namespace. An app router on `trpc.posts` replaces the layer's `posts` router and every layer router under it.
+A file in the app hides a file with the same name in a layer, as Nuxt layer overrides do. tRPC routers follow the same rule by namespace. An app router on `$api.posts` replaces the layer's `posts` router and every layer router under it.
 
 The build fails in these cases:
 

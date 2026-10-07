@@ -1,5 +1,4 @@
-import { expect, runJob } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, it, runJob } from "@nuxvel/nuxt/testing";
 
 describe("{{name}} job", () => {
   it("runs its handler on a valid payload", async () => {

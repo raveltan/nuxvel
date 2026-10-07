@@ -131,7 +131,7 @@ export const reportRouter = {
 };
 ```
 
-The module reads `linkTable` from `#nuxvel/schema`, which holds the tables of the app and of every module. It does not import a file of the app. The folder name `reports` is not part of a name: the router is `trpc.report`, from its domain. Two modules must not give the same name. Start each name in a module with a word that no other module uses, such as its domain.
+The module reads `linkTable` from `#nuxvel/schema`, which holds the tables of the app and of every module. It does not import a file of the app. The folder name `reports` is not part of a name: the router is `$api.report`, from its domain. Two modules must not give the same name. Start each name in a module with a word that no other module uses, such as its domain.
 
 The page of the module goes in `layers/reports/app/pages/`:
 
@@ -153,8 +153,7 @@ Keep each test next to the file that it tests. Vitest finds the tests in `layers
 
 ```ts
 // layers/reports/server/domains/report/routers/report.router.test.ts
-import { actingAs, expect } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, it } from "@nuxvel/nuxt/testing";
 import { userFactory, linkFactory } from "#nuxvel/factories";
 
 describe("report router", () => {
@@ -164,7 +163,7 @@ describe("report router", () => {
     await linkFactory({ ownerId: ada.id });
     await linkFactory();
 
-    expect(await actingAs(ada).trpc.report.summary()).toEqual({ saved: 2, read: 1 });
+    expect(await actingAs(ada).api.report.summary()).toEqual({ saved: 2, read: 1 });
   });
 });
 ```
@@ -172,7 +171,7 @@ describe("report router", () => {
 The test counts two links of Ada, one of them read. The third link belongs to another user, and the report leaves it out. Run the tests:
 
 ```bash
-./nv test
+./nv test:functional
 ```
 
 ```
@@ -194,8 +193,7 @@ Replace its contents:
 
 ```ts
 // tests/e2e/reports.test.ts
-import { actingAs, expect, heading, text } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, heading, it, text } from "@nuxvel/nuxt/testing";
 import { linkFactory, userFactory } from "#nuxvel/factories";
 
 describe("the /reports page in a browser", () => {
@@ -313,8 +311,7 @@ Replace the generated test with one that checks the rows:
 
 ```ts
 // server/domains/link/actions/mark-all-read.action.test.ts
-import { expect, expectRow, runAction } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectRow, it, runAction } from "@nuxvel/nuxt/testing";
 import { userFactory, linkFactory } from "#nuxvel/factories";
 import { linkTable } from "#nuxvel/schema";
 
@@ -346,7 +343,7 @@ Run the five checks of the app before you ship:
 
 ```bash
 npm run typecheck
-./nv test
+./nv test:functional
 npm run test:ui
 npm run test:e2e
 ./nv test:arch
@@ -357,14 +354,13 @@ npm run test:e2e
       Tests  9 passed (9)
 ```
 
-`./nv test` runs the functional tests in `tests/`, `server/` and `layers/`. `npm run test:ui` runs the stories of the components, and `npm run test:e2e` runs the browser tests in `tests/e2e/`. See [Testing](../testing.md) for the three layers.
+`./nv test:functional` runs the functional tests in `tests/`, `server/` and `layers/`. `npm run test:ui` runs the stories of the components, and `npm run test:e2e` runs the browser tests in `tests/e2e/`. See [Testing](../testing.md) for the three layers.
 
 Add one more functional test, for the maintenance mode of chapter 12:
 
 ```ts
 // tests/functional/maintenance.test.ts
-import { describe, it } from "vitest";
-import { expect, guest, startMaintenance } from "@nuxvel/nuxt/testing";
+import { describe, expect, guest, it, startMaintenance } from "@nuxvel/nuxt/testing";
 
 describe("maintenance mode", () => {
   it("answers 503 with a retry time, and keeps the health check ready", async () => {
@@ -494,8 +490,8 @@ The workflow has four jobs:
 
 | Job | Does |
 |---|---|
-| `test` | Runs `nuxvel test` in 3 shards. |
-| `check` | Runs `nuxvel db:check` and `nuxvel routes --diff-env=production`. When a migration changed since the live release, it runs `nuxvel test:compat` against the commit of that release. |
+| `test` | Runs `nuxvel test:functional` in 3 shards. |
+| `check` | Runs `nuxvel db:check` and `nuxvel route:list --diff-env=production`. When a migration changed since the live release, it runs `nuxvel test:compat` against the commit of that release. |
 | `build` | Builds the archive with `nuxvel build --artifact --platform=linux/arm64`, on an `ubuntu-24.04-arm` runner. |
 | `deploy` | After the three other jobs, runs `nuxvel deploy production --artifact=...` in the GitHub environment `production`. |
 
@@ -969,10 +965,10 @@ Once release `1.1.0` runs on its own, apply the contract migration:
   → It may read what they removed. Roll back to a newer release, or run it anyway with --force
 ```
 
-`nuxvel releases` lists the releases on the server:
+`nuxvel release:list` lists the releases on the server:
 
 ```bash
-./nv releases production
+./nv release:list production
 ```
 
 ```

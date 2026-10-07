@@ -8,7 +8,7 @@
 
 Nuxt turns on its `test` option when `NODE_ENV` is `test` or when `TEST` is set. A build with this option turns off email verification and the breached-password check. It also records jobs, mail and outbound fetches instead of sending them.
 
-A production build with the `test` option stops with an error, unless Vitest started it. `nuxvel test` and `nuxvel test:e2e` make their test build under Vitest. Before you run `nuxt build`, remove `NODE_ENV=test` and `TEST` from the environment.
+A production build with the `test` option stops with an error, unless Vitest started it. `nuxvel test:functional` and `nuxvel test:e2e` make their test build under Vitest. Before you run `nuxt build`, remove `NODE_ENV=test` and `TEST` from the environment.
 
 ## Docker images
 
@@ -78,7 +78,7 @@ The archive holds:
 | `.output/` | The built server and its dependencies, for that platform. |
 | `server/database/migrations/` | The migrations, for `nuxvel db:migrate`. |
 | `nuxvel-manifest.json` | The [build manifest](#build-manifest). |
-| `nuxvel-routes.json` | The output of [`nuxvel routes --json`](./cli.md#nuxvel-routes), which `nuxvel routes --diff-env` reads from the live release. The `Dockerfile` of a new app writes it; in an older app, add the step `RUN NUXT_DATABASE_URL=postgres://build@127.0.0.1/unused NUXT_AUTH_SECRET=build-time-route-list-only-not-a-secret npx nuxvel routes --json > nuxvel-routes.json` of the starter's `Dockerfile` to the `build` stage and copy the file into the `artifact` stage. The two variables in the step are placeholders: `nuxvel routes` needs them to load the app, and it does not connect to a database. |
+| `nuxvel-routes.json` | The output of [`nuxvel route:list --json`](./cli.md#nuxvel-routelist), which `nuxvel route:list --diff-env` reads from the live release. The `Dockerfile` of a new app writes it; in an older app, add the step `RUN NUXT_DATABASE_URL=postgres://build@127.0.0.1/unused NUXT_AUTH_SECRET=build-time-route-list-only-not-a-secret npx nuxvel route:list --json > nuxvel-routes.json` of the starter's `Dockerfile` to the `build` stage and copy the file into the `artifact` stage. The two variables in the step are placeholders: `nuxvel route:list` needs them to load the app, and it does not connect to a database. |
 
 ### Running an archive
 

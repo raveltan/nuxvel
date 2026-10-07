@@ -145,8 +145,7 @@ const purged = await purgeTrashed("30 days");
 ## Testing
 
 ```ts
-import { actingAs, expect, expectRow, expectSoftDeleted } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, expectRow, expectSoftDeleted, it } from "@nuxvel/nuxt/testing";
 import { postTable } from "#nuxvel/schema";
 import { postFactory, userFactory } from "#nuxvel/factories";
 
@@ -155,7 +154,7 @@ describe("post.delete", () => {
     const author = await userFactory();
     const post = await postFactory({ author });
 
-    await actingAs(author).trpc.post.delete({ id: post.id });
+    await actingAs(author).api.post.delete({ id: post.id });
 
     await expectSoftDeleted(postTable, { id: post.id });
   });
@@ -166,7 +165,7 @@ describe("post.restore", () => {
     const author = await userFactory();
     const post = await postFactory.trashed()({ author });
 
-    const restored = await actingAs(author).trpc.post.restore({ id: post.id });
+    const restored = await actingAs(author).api.post.restore({ id: post.id });
 
     expect(restored.deletedAt).toBeNull();
     await expectRow(postTable, { id: post.id, deletedAt: null });

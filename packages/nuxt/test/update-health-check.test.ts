@@ -13,11 +13,11 @@ describe("update-health-check action (owner-only via policy)", async () => {
     const owner = await userFactory();
     const row = await healthCheckFactory({ userId: owner.id });
 
-    const updated = await actingAs(owner).trpc.health.update({ id: row.id, name: "after" });
+    const updated = await actingAs(owner).api.health.update({ id: row.id, name: "after" });
 
     expect(updated.name).toBe("after");
     await expect(
-      actingAs(await userFactory()).trpc.health.update({ id: row.id, name: "hacked" }),
+      actingAs(await userFactory()).api.health.update({ id: row.id, name: "hacked" }),
     ).rejects.toBeTrpcError("FORBIDDEN");
 
     const stored = await expectRow(healthChecksTable, { id: row.id });

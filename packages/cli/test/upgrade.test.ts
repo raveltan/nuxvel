@@ -1371,4 +1371,240 @@ describe("nuxvel upgrade", () => {
       expect(readFileSync(file, "utf8")).toBe(before.join("\n"));
     }, 60000);
   });
+  describe("live-query-reactive", () => {
+    it("removes .value after the fields of useLiveQuery() in script and template, wraps a destructured one in toRefs(), and prints a field passed to watch() as a manual step", async () => {
+      const appDir = scratchPlayground("upgrade-live-query-reactive");
+      const page = join(appDir, "app", "pages", "live.vue");
+      const composable = join(appDir, "app", "composables", "use-live-posts.ts");
+      const watcher = join(appDir, "app", "composables", "use-post-watch.ts");
+      mkdirSync(join(appDir, "app", "composables"), { recursive: true });
+      const before = [
+        '<script setup lang="ts">',
+        'const posts = useLiveQuery($api.post.list.queryOptions(), { channel: "posts", refetch: { created: true } });',
+        "const titles = computed(() => posts.data.value?.rows.map((row) => row.title) ?? []);",
+        "const reload = () => posts.refetch();",
+        'const total = useLiveQuery($api.post.list.queryOptions(), { channel: "posts" }).data.value?.total;',
+        "</script>",
+        "",
+        "<template>",
+        '  <p v-if="posts.isPending.value">{{ titles }} {{ total }}</p>',
+        '  <QueryState :query="posts" @retry="reload" />',
+        "</template>",
+        "",
+      ];
+      const beforeComposable = [
+        "export function useLivePosts() {",
+        '  const { data } = useLiveQuery($api.post.list.queryOptions(), { channel: "posts" });',
+        "",
+        "  return computed(() => data.value?.rows ?? []);",
+        "}",
+        "",
+      ];
+      const beforeWatcher = [
+        "export function usePostWatch() {",
+        '  const posts = useLiveQuery($api.post.list.queryOptions(), { channel: "posts" });',
+        "",
+        "  watch(posts.data, () => posts.error.value);",
+        "}",
+        "",
+      ];
+      writeFileSync(page, before.join("\n"));
+      writeFileSync(composable, beforeComposable.join("\n"));
+      writeFileSync(watcher, beforeWatcher.join("\n"));
+
+      const applied = await runCliAt(appDir, "upgrade", "--only", "live-query-reactive");
+      const stderr = stripAnsi(applied.stderr);
+
+      expect(applied.exitCode, applied.stderr).toBe(0);
+      expect(applied.stdout).toContain("updated: app/pages/live.vue\n");
+      expect(applied.stdout).toContain("updated: app/composables/use-live-posts.ts\n");
+      expect(stderr).toContain(
+        "▲ app/composables/use-post-watch.ts:4: useLiveQuery() returns a reactive object, so posts.data is no longer a ref: pass () => posts.data",
+      );
+      expect(stderr.match(/▲ /g)).toHaveLength(1);
+      expect(readFileSync(page, "utf8")).toBe(
+        before.map((line) => line.replaceAll(".data.value", ".data").replace("posts.isPending.value", "posts.isPending")).join("\n"),
+      );
+      expect(readFileSync(composable, "utf8")).toBe(
+        beforeComposable
+          .map((line) => line.replace('useLiveQuery($api.post.list.queryOptions(), { channel: "posts" })', 'toRefs(useLiveQuery($api.post.list.queryOptions(), { channel: "posts" }))'))
+          .join("\n"),
+      );
+      expect(readFileSync(watcher, "utf8")).toBe(beforeWatcher.map((line) => line.replace("posts.error.value", "posts.error")).join("\n"));
+
+      const again = await runCliAt(appDir, "upgrade", "--only", "live-query-reactive");
+
+      expect(again.stdout).not.toContain("updated:");
+      expect(stripAnsi(again.stderr).match(/▲ /g)).toHaveLength(1);
+    }, 60000);
+    it("prints a binding of useLiveQuery() that is destructured or passed to a call other than toRefs() as a manual step", async () => {
+      const appDir = scratchPlayground("upgrade-live-query-reactive-uses");
+      const file = join(appDir, "app", "composables", "use-post-rows.ts");
+      mkdirSync(join(appDir, "app", "composables"), { recursive: true });
+      const before = [
+        "export function usePostRows() {",
+        '  const posts = useLiveQuery($api.post.list.queryOptions(), { channel: "posts" });',
+        "  const { data } = posts;",
+        "  const rows = toRefs(posts);",
+        "  const page = usePage(posts);",
+        "",
+        "  return { data, rows, page };",
+        "}",
+        "",
+      ];
+      writeFileSync(file, before.join("\n"));
+
+      const applied = await runCliAt(appDir, "upgrade", "--only", "live-query-reactive");
+      const stderr = stripAnsi(applied.stderr);
+
+      expect(applied.exitCode, applied.stderr).toBe(0);
+      const step = "useLiveQuery() returns a reactive object, so the fields of posts are no longer refs here: destructure toRefs(posts), or read posts.<field> without .value";
+      expect(stderr).toContain(`▲ app/composables/use-post-rows.ts:3: ${step}`);
+      expect(stderr).toContain(`▲ app/composables/use-post-rows.ts:5: ${step}`);
+      expect(stderr.match(/▲ /g)).toHaveLength(2);
+      expect(readFileSync(file, "utf8")).toBe(before.join("\n"));
+    }, 60000);
+  });
+
+ describe("test-client-api", () => {
+    it("renames trpc of the test client to api through a call, a const and a destructure, keeps the local name when api is taken, and prints a client it cannot follow as a manual step", async () => {
+      const appDir = scratchPlayground("upgrade-test-client-api");
+      const posts = join(appDir, "tests", "functional", "posts.test.ts");
+      const taken = join(appDir, "tests", "functional", "taken.test.ts");
+      mkdirSync(join(appDir, "tests", "functional"), { recursive: true });
+      const before = [
+        'import { userFactory } from "#nuxvel/factories";',
+        'import { actingAs, describe, guest, it, signIn } from "@nuxvel/nuxt/testing";',
+        "",
+        'describe("posts", () => {',
+        '  it("lists", async () => {',
+        "    const ada = actingAs(await userFactory());",
+        '    await ada.trpc.post.create({ title: "Hi", body: "" });',
+        "    await guest().trpc.post.list();",
+        '    const { trpc } = await signIn("ada@example.com", "secret-password");',
+        "    await trpc.post.list();",
+        "    const callers = { trpc };",
+        "    const { trpc: caller, fetch } = guest();",
+        "    await caller.post.list();",
+        '    await fetch("/");',
+        "    return callers;",
+        "  });",
+        "});",
+        "",
+      ];
+      const beforeTaken = [
+        'import { describe, guest, it } from "@nuxvel/nuxt/testing";',
+        "",
+        "const client = () => guest();",
+        "",
+        'describe("taken", () => {',
+        '  it("lists", async () => {',
+        '    const api = "unused";',
+        "    const { trpc } = guest();",
+        "    await trpc.post.list();",
+        "    await client().trpc.post.list();",
+        "    return api;",
+        "  });",
+        "});",
+        "",
+      ];
+      writeFileSync(posts, before.join("\n"));
+      writeFileSync(taken, beforeTaken.join("\n"));
+
+      const applied = await runCliAt(appDir, "upgrade", "--only", "test-client-api");
+      const stderr = stripAnsi(applied.stderr);
+
+      expect(applied.exitCode, applied.stderr).toBe(0);
+      expect(applied.stdout).toContain("updated: tests/functional/posts.test.ts\n");
+      expect(applied.stdout).toContain("updated: tests/functional/taken.test.ts\n");
+      expect(stderr).toContain(
+        "▲ tests/functional/taken.test.ts:10: The test client of actingAs(), guest() and signIn() exposes api in place of trpc: if this is one, read .api here by hand",
+      );
+      expect(stderr.match(/▲ /g)).toHaveLength(1);
+      expect(readFileSync(posts, "utf8")).toBe(
+        before
+          .map((line) =>
+            line
+              .replace(".trpc.", ".api.")
+              .replace("{ trpc } = await", "{ api } = await")
+              .replace("await trpc.", "await api.")
+              .replace("{ trpc };", "{ trpc: api };")
+              .replace("{ trpc: caller", "{ api: caller"),
+          )
+          .join("\n"),
+      );
+      expect(readFileSync(taken, "utf8")).toBe(beforeTaken.map((line) => line.replace("{ trpc } = guest()", "{ api: trpc } = guest()")).join("\n"));
+
+      const again = await runCliAt(appDir, "upgrade", "--only", "test-client-api");
+
+      expect(again.stdout).not.toContain("updated:");
+      expect(stripAnsi(again.stderr).match(/▲ /g)).toHaveLength(1);
+    }, 60000);
+  });
+  describe("cli-names", () => {
+    it("rewrites the renamed commands, also through ./nv and nv, in package.json, the workflows and the Dockerfile, and leaves the other commands", async () => {
+      const appDir = scratchPlayground("upgrade-cli-names");
+      const manifest = join(appDir, "package.json");
+      const workflow = join(appDir, ".github", "workflows", "deploy.yml");
+      const dockerfile = join(appDir, "Dockerfile");
+      mkdirSync(join(appDir, ".github", "workflows"), { recursive: true });
+      const scripts = {
+        "test:functional": "nuxvel test",
+        "test:ui": "nuxvel test:ui",
+        "test:changed": "nuxvel test --changes-only",
+        flags: "nuxvel flags:list && nuxvel flags:stale --json",
+        "flag:on": "nuxvel flags:set checkout --value true",
+        push: "nuxvel push:keys",
+        wrapped: "./nv test server && nv routes --json && ./nv flags:set checkout --value true",
+        kept: "./nv test:ui && dev-nv test && nv testing",
+        listings: "nuxvel channels && nuxvel events --json && nuxvel schedule:list",
+      };
+      writeFileSync(manifest, `${JSON.stringify({ ...JSON.parse(readFileSync(manifest, "utf8")), scripts }, null, 2)}\n`);
+      const beforeWorkflow = [
+        "jobs:",
+        "  test:",
+        "    steps:",
+        "      - run: npx nuxvel test --shard=${{ matrix.shard }}/3",
+        "      - run: npx nuxvel routes --diff-env=production",
+        "      - run: releases=$(npx nuxvel releases production --json)",
+        "      - run: npx nuxvel test:compat",
+        "",
+      ];
+      writeFileSync(workflow, beforeWorkflow.join("\n"));
+      writeFileSync(dockerfile, "RUN npx nuxvel routes --json > nuxvel-routes.json\n");
+
+      const applied = await runCliAt(appDir, "upgrade", "--only", "cli-names");
+
+      expect(applied.exitCode, applied.stderr).toBe(0);
+      expect(applied.stdout).toContain("updated: package.json\n");
+      expect(applied.stdout).toContain("updated: .github/workflows/deploy.yml\n");
+      expect(applied.stdout).toContain("updated: Dockerfile\n");
+      expect(JSON.parse(readFileSync(manifest, "utf8")).scripts).toEqual({
+        "test:functional": "nuxvel test:functional",
+        "test:ui": "nuxvel test:ui",
+        "test:changed": "nuxvel test:functional --changes-only",
+        flags: "nuxvel flag:list && nuxvel flag:stale --json",
+        "flag:on": "nuxvel flag:set checkout --value true",
+        push: "nuxvel key:push",
+        wrapped: "./nv test:functional server && nv route:list --json && ./nv flag:set checkout --value true",
+        kept: "./nv test:ui && dev-nv test && nv testing",
+        listings: "nuxvel channel:list && nuxvel event:list --json && nuxvel schedule:list",
+      });
+      expect(readFileSync(workflow, "utf8")).toBe(
+        beforeWorkflow
+          .map((line) =>
+            line
+              .replace("nuxvel test --shard", "nuxvel test:functional --shard")
+              .replace("nuxvel routes", "nuxvel route:list")
+              .replace("nuxvel releases", "nuxvel release:list"),
+          )
+          .join("\n"),
+      );
+      expect(readFileSync(dockerfile, "utf8")).toBe("RUN npx nuxvel route:list --json > nuxvel-routes.json\n");
+
+      const again = await runCliAt(appDir, "upgrade", "--only", "cli-names");
+
+      expect(again.stdout).not.toContain("updated:");
+    }, 60000);
+  });
 });

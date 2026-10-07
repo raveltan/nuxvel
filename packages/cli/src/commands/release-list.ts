@@ -25,7 +25,7 @@ function deployedAt(name: string) {
 
 export default defineCommand({
   meta: {
-    name: "releases",
+    name: "release:list",
     description: "List the releases of the app on the server of an environment, newest first.",
   },
   args: {

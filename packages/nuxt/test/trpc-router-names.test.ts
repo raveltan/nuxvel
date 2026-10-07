@@ -168,6 +168,6 @@ describe("a playground router file with the .router.ts suffix and a named export
   await setupPlayground();
 
   it("serves the procedures of its Router export under the namespace without the suffix", async () => {
-    expect(await guest().trpc._suffixedCheck.ping()).toBe("pong");
+    expect(await guest().api._suffixedCheck.ping()).toBe("pong");
   });
 });

@@ -180,22 +180,21 @@ In development, each `remember()` and `cacheGet()` call adds a `cache:lookup` li
 ## Testing
 
 ```ts
-import { actingAs, expectCacheHit, expectCacheMiss, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expectCacheHit, expectCacheMiss, guest, it } from "@nuxvel/nuxt/testing";
 import { userFactory } from "#nuxvel/factories";
 
 describe("post list", () => {
   it("reads the posts again after a new post", async () => {
     const key = ["posts", "list", undefined];
 
-    await guest().trpc.post.list();
-    await guest().trpc.post.list();
+    await guest().api.post.list();
+    await guest().api.post.list();
 
     await expectCacheMiss(key, { times: 1 });
     await expectCacheHit(key, { times: 1 });
 
-    await actingAs(await userFactory()).trpc.post.create({ title: "Hello", body: "World" });
-    await guest().trpc.post.list();
+    await actingAs(await userFactory()).api.post.create({ title: "Hello", body: "World" });
+    await guest().api.post.list();
 
     await expectCacheMiss(key, { times: 2 });
   });
@@ -209,7 +208,7 @@ To count the queries instead, use `expectConstantQueries(fn, [1])`. A read from 
 `expectCached(key)` asserts that the cache of the app holds a value for the key, and returns the value. It does not count as a cache read.
 
 ```ts
-await guest().trpc.post.list();
+await guest().api.post.list();
 const posts = await expectCached(["posts", "list", undefined]);
 ```
 

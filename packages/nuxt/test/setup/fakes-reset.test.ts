@@ -12,7 +12,7 @@ describe("the fake reset hooks", async () => {
     const owner = await userFactory();
     const healthCheck = await healthCheckFactory({ userId: owner.id });
 
-    await actingAs(owner).trpc.health.update({ id: healthCheck.id, name: "after" });
+    await actingAs(owner).api.health.update({ id: healthCheck.id, name: "after" });
     await guest().$fetch("/api/_sync-listener-check");
     await guest().$fetch("/api/_queue-fake-check", { query: { name: "reset-probe" } });
     await guest().$fetch("/api/_mail-suppression-check", {

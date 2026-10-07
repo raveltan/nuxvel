@@ -48,7 +48,7 @@ export async function prepareMail(name: string, input: unknown, locale = current
 
   const from = useNuxvelConfig().mail?.from;
 
-  if (!from) throw new Error("nuxvel.mail.from is not configured");
+  if (!from) throw new Error("nuxvel.mail.from is not configured. Add mail: { from: \"App <hello@example.com>\" } under nuxvel in nuxt.config.ts");
 
   const result = await mail.input.safeParseAsync(input);
 

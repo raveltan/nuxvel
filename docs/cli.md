@@ -43,24 +43,24 @@ An unknown command exits with code 2. The CLI writes the error and the command l
   → Did you mean nuxvel db:migrate?
 ```
 
-`nuxvel <command> --help` (or `-h`) shows the usage of one command. `nuxvel help <command>` shows the same usage. A passthrough command (`test`, `test:e2e`, `test:ui`, `dev`, `db:generate`, `db:studio`) gives `--help` to its tool instead. For example, `nuxvel test --help` shows the help of Vitest and starts no services. `nuxvel --help test` still shows the help of nuxvel.
+`nuxvel <command> --help` (or `-h`) shows the usage of one command. `nuxvel help <command>` shows the same usage. A passthrough command (`test:functional`, `test:e2e`, `test:ui`, `dev`, `db:generate`, `db:studio`) gives `--help` to its tool instead. For example, `nuxvel test:functional --help` shows the help of Vitest and starts no services. `nuxvel --help test:functional` still shows the help of nuxvel.
 
 ### Commands that run inside the app
 
 Some commands load the app and run inside its own Nitro server:
 
-- `tinker`, `task:run`, `routes`, `channels` and `openapi:export`
+- `tinker`, `task:run`, `route:list`, `channel:list` and `openapi:export`
 - `key:issue`
 - `db:seed`, and the seed step of `db:fresh --seed`
 - `queue:*` and `schedule:*`
-- `flags:*` and `experiment:*`
+- `flag:*` and `experiment:*`
 - `audit:*`, `user:*` and `backfill:status`
 - `down`, `up` and `maintenance:status`
 - `make:loadtest`, and the stored-names and maintenance checks of `doctor`
 
 The CLI builds the server part of the app and starts it with the command. The server stops when the command is done. Nuxt loads `nuxt.config.ts`, its modules and `.env` for this build, with no client bundle. Auto-imports, aliases such as `~~/`, runtime config with its `NUXT_*` overrides and anything that a module adds work the same as in `nuxt dev`.
 
-`events` and `test:arch` only load the config of the app to find its files. They do not build the server.
+`event:list` and `test:arch` only load the config of the app to find its files. They do not build the server.
 
 These commands need what the server needs at boot: `NUXT_DATABASE_URL`, and a `NUXT_AUTH_SECRET` of at least 32 characters. The CLI checks them before it builds anything, so a missing variable fails in about a second. A value that `runtimeConfig` in `nuxt.config.ts` sets counts too.
 
@@ -108,7 +108,7 @@ The hash covers the inputs of the server build:
 
 So an edit to a page, a component, a test or the README uses the cached build. An edit to a file under `server/` or `shared/`, to `nuxt.config.ts` or to the lockfile builds again. Two commands that start at the same time build once: the second waits for the build of the first. The CLI keeps the last two builds of each app. It removes an older build only when no command still runs from it, so a long `queue:work` is safe.
 
-The table shows `nuxvel flags:list` on a copy of the playground, on an Apple Silicon laptop at a load average of about 50:
+The table shows `nuxvel flag:list` on a copy of the playground, on an Apple Silicon laptop at a load average of about 50:
 
 | Run | Time |
 | --- | --- |
@@ -122,9 +122,9 @@ A command does not run in the dev server of Nuxt instead of a build. The dev ser
 
 ### Output and exit codes
 
-A command writes its result to stdout: a list, a created path, JSON. Progress, status lines and errors go to stderr, so `nuxvel routes > routes.txt` contains only the table.
+A command writes its result to stdout: a list, a created path, JSON. Progress, status lines and errors go to stderr, so `nuxvel route:list > routes.txt` contains only the table.
 
-The same applies to the commands that run inside the app. `flags:set` and `queue:retry` print their `✔` line on stderr. The log lines of the app also go to stderr, in the `pretty` format unless `NUXT_LOG_FORMAT` is set. So `nuxvel user:export <id> | jq` gets only the JSON. A command exits only after it writes all of its output, so a slow reader of `audit:export` or `user:export` loses no rows.
+The same applies to the commands that run inside the app. `flag:set` and `queue:retry` print their `✔` line on stderr. The log lines of the app also go to stderr, in the `pretty` format unless `NUXT_LOG_FORMAT` is set. So `nuxvel user:export <id> | jq` gets only the JSON. A command exits only after it writes all of its output, so a slow reader of `audit:export` or `user:export` loses no rows.
 
 An error is one line and a hint:
 
@@ -139,7 +139,7 @@ An error is one line and a hint:
 | `1` | Failed, or found problems |
 | `2` | Usage error: unknown command, missing or invalid argument |
 
-An invalid flag value is a usage error. For example, `nuxvel flags:set new-checkout --percentage 200` exits `2`:
+An invalid flag value is a usage error. For example, `nuxvel flag:set new-checkout --percentage 200` exits `2`:
 
 ```
 ✖ --percentage must be a number from 0 to 100
@@ -150,16 +150,16 @@ In a terminal, a command asks for a missing required argument. For example, `nux
 
 ```
 ✖ no flag named "nope"
-  → Run nuxvel flags:list to see the flags
+  → Run nuxvel flag:list to see the flags
 ```
 
-The listing commands print a table with a header row. Each one takes `--json` to print one JSON document to stdout instead, with the same exit code. The listing commands are `routes`, `channels`, `events`, `schedule:list`, `queue:failed`, `queue:versions`, `flags:list`, `flags:stale`, `experiment:report`, `backfill:status`, `maintenance:status`, `audit:verify`, `doctor`, `build:verify`, `releases`, `status` and `server:status`.
+The listing commands print a table with a header row. Each one takes `--json` to print one JSON document to stdout instead, with the same exit code. The listing commands are `route:list`, `channel:list`, `event:list`, `schedule:list`, `queue:failed`, `queue:versions`, `flag:list`, `flag:stale`, `experiment:report`, `backfill:status`, `maintenance:status`, `audit:verify`, `doctor`, `build:verify`, `release:list`, `status` and `server:status`.
 
 ```sh
-nuxvel routes --json | jq '.collisions'
+nuxvel route:list --json | jq '.collisions'
 ```
 
-A passthrough command (`nuxvel test`, `nuxvel test:e2e`, `nuxvel test:ui`, `nuxvel dev`, `db:generate`, `db:studio`) exits with the exit code of its tool. A non-zero code ends with a line such as `✖ vitest exited with code 1`. When a signal that nuxvel did not send stops the tool, for example an out-of-memory kill in CI, nuxvel exits `128` plus the number of the signal. For `SIGKILL` that is `137`, with `✖ vitest was killed by SIGKILL`. Ctrl-C (or `SIGTERM`) goes to the running tool, and nuxvel stops the same way after the tool exits.
+A passthrough command (`nuxvel test:functional`, `nuxvel test:e2e`, `nuxvel test:ui`, `nuxvel dev`, `db:generate`, `db:studio`) exits with the exit code of its tool. A non-zero code ends with a line such as `✖ vitest exited with code 1`. When a signal that nuxvel did not send stops the tool, for example an out-of-memory kill in CI, nuxvel exits `128` plus the number of the signal. For `SIGKILL` that is `137`, with `✖ vitest was killed by SIGKILL`. Ctrl-C (or `SIGTERM`) goes to the running tool, and nuxvel stops the same way after the tool exits.
 
 nuxvel runs the `nuxt`, `vitest` and `drizzle-kit` of the project from the entry file of their package, with the Node that runs nuxvel and no shell. So they work the same on Windows. When a tool is not installed, the error names it and says how to install it:
 
@@ -184,7 +184,7 @@ nuxvel dev [--https | --no-https] [--no-queue] [nuxt dev arguments]
 | `--no-https` | Run plain `nuxt dev`, with no proxy and no certificate. |
 | `--no-queue` | Start the dev server without the queue worker. |
 
-`nuxvel dev` starts the dev services of the app, waits until they are healthy, then starts the dev server. The dev services are the ones in `docker-compose.yml`, as for [`nuxvel test`](#nuxvel-test). The dev server is the `nuxt dev` of the project. Other arguments go to `nuxt dev`.
+`nuxvel dev` starts the dev services of the app, waits until they are healthy, then starts the dev server. The dev services are the ones in `docker-compose.yml`, as for [`nuxvel test:functional`](#nuxvel-testfunctional). The dev server is the `nuxt dev` of the project. Other arguments go to `nuxt dev`.
 
 ```sh
 nuxvel dev                          # https://blog.localhost
@@ -258,33 +258,35 @@ CI=1 nuxvel dev
 
 When the project has no `nuxt` installed, the command says so and exits `1`.
 
-### `nuxvel test`
+### `nuxvel test:functional`
 
 ```sh
-nuxvel test [vitest arguments]
+nuxvel test:functional [vitest arguments]
 ```
 
-`nuxvel test` starts the dev services, then runs the tests of the project with `vitest run`. Vitest uses the config that the project directory resolves. Other arguments go to Vitest, so you can run one file or filter by name. It runs only the `functional` project of the Vitest config (`vitest run --project functional`), so no end-to-end test runs, wherever its `tests/e2e/` folder is. `--changes-only` and `--watch` run that project too. Run the end-to-end tests with [`nuxvel test:e2e`](#nuxvel-teste2e). The test files run in parallel, and each file gets its own copy of the test database. See [Testing: Vitest configuration](./testing.md#vitest-configuration).
+`nuxvel test:functional` is the command that `npm run test:functional` runs. There is no `nuxvel test`: `npm test` of the starter runs `test:functional`, then `test:ui`.
+
+`nuxvel test:functional` starts the dev services, then runs the tests of the project with `vitest run`. Vitest uses the config that the project directory resolves. Other arguments go to Vitest, so you can run one file or filter by name. It runs only the `functional` project of the Vitest config (`vitest run --project functional`), so no end-to-end test runs, wherever its `tests/e2e/` folder is. `--changes-only` and `--watch` run that project too. Run the end-to-end tests with [`nuxvel test:e2e`](#nuxvel-teste2e). The test files run in parallel, and each file gets its own copy of the test database. See [Testing: Vitest configuration](./testing.md#vitest-configuration).
 
 ```sh
-nuxvel test
-nuxvel test server/actions/posts/create-post.action.test.ts
-nuxvel test -t "creates a post"
+nuxvel test:functional
+nuxvel test:functional server/actions/posts/create-post.action.test.ts
+nuxvel test:functional -t "creates a post"
 ```
 
 With `--changes-only`, the command runs only the test files that the changes since the last `--changes-only` run can affect. It prints how many test files it replays as passed. When it must run all test files, it prints the reason. When `CI` is set, it runs all test files. See [Run only the changed tests](./testing.md#run-only-the-changed-tests) for the rules.
 
 ```sh
-nuxvel test --changes-only
+nuxvel test:functional --changes-only
 ```
 
 With `--watch`, the command runs the affected test files, then waits. Each time a project file changes, it selects the affected test files again and runs them. It does not watch `node_modules`, `dist` and the folders whose names start with `.`. A new run starts only after the current run ends. Push Ctrl-C to stop the command.
 
 ```sh
-nuxvel test --watch
+nuxvel test:functional --watch
 ```
 
-The dev services are every service in the `docker-compose.yml` (or `compose.yml`) of the project. In the starter, these are Postgres, Redis, Mailpit and SeaweedFS. nuxvel starts them with `docker compose up -d --wait` and waits until they are healthy, so the tests run on a machine where nobody started them. When each service is already healthy, nuxvel does not run `docker compose up` and prints `◇ Dev services are already healthy (docker compose)`. When they run but were created from an older compose file, nuxvel runs `docker compose up -d --wait`, which recreates the changed ones, prints `◇ Updated dev services to the compose file (docker compose)` and leaves them running when it ends. When the command ends, Ctrl-C included, nuxvel stops the services that it started with `docker compose stop` and prints `◇ Stopping dev services (docker compose)`. The data in the volumes stays. Services that were already running stay running, so a `nuxvel dev` in one terminal is not stopped by a `nuxvel test` in another. `nuxvel dev`, `nuxvel test:e2e` and `nuxvel test:compat` do the same. The compose output scrolls under one status line, and the line collapses when the services are healthy.
+The dev services are every service in the `docker-compose.yml` (or `compose.yml`) of the project. In the starter, these are Postgres, Redis, Mailpit and SeaweedFS. nuxvel starts them with `docker compose up -d --wait` and waits until they are healthy, so the tests run on a machine where nobody started them. When each service is already healthy, nuxvel does not run `docker compose up` and prints `◇ Dev services are already healthy (docker compose)`. When they run but were created from an older compose file, nuxvel runs `docker compose up -d --wait`, which recreates the changed ones, prints `◇ Updated dev services to the compose file (docker compose)` and leaves them running when it ends. When the command ends, Ctrl-C included, nuxvel stops the services that it started with `docker compose stop` and prints `◇ Stopping dev services (docker compose)`. The data in the volumes stays. Services that were already running stay running, so a `nuxvel dev` in one terminal is not stopped by a `nuxvel test:functional` in another. `nuxvel dev`, `nuxvel test:e2e` and `nuxvel test:compat` do the same. The compose output scrolls under one status line, and the line collapses when the services are healthy.
 
 A project with no compose file skips this step with no output. When Docker is not installed, or compose fails, nuxvel prints the problem with the full compose output and runs the tests anyway:
 
@@ -295,7 +297,7 @@ A project with no compose file skips this step with no output. When Docker is no
 
 `docker compose --wait` has no timeout of its own. A service whose healthcheck never passes keeps the command waiting.
 
-Run `nuxvel test` from the project directory, the one that holds `vitest.config.ts`. nuxvel finds Vitest the way Node finds a package: in the `node_modules` of the project, or of a parent directory such as a workspace root. When Vitest is not installed there, the command says so and exits `1`.
+Run `nuxvel test:functional` from the project directory, the one that holds `vitest.config.ts`. nuxvel finds Vitest the way Node finds a package: in the `node_modules` of the project, or of a parent directory such as a workspace root. When Vitest is not installed there, the command says so and exits `1`.
 
 ### `nuxvel test:e2e`
 
@@ -327,7 +329,7 @@ nuxvel services status
 nuxvel services down
 ```
 
-`nuxvel services` controls the dev services of the project, from its `docker-compose.yml` (or `compose.yml`). `nuxvel dev`, `nuxvel test` and the `db:*` commands use them. Start them once, and then each `nuxvel dev` or `nuxvel test` run starts without the compose step and leaves them running.
+`nuxvel services` controls the dev services of the project, from its `docker-compose.yml` (or `compose.yml`). `nuxvel dev`, `nuxvel test:functional` and the `db:*` commands use them. Start them once, and then each `nuxvel dev` or `nuxvel test:functional` run starts without the compose step and leaves them running.
 
 - `up` starts the services with `docker compose up -d --wait` and waits until they are healthy.
 - `status` prints one line for each service with its state, for example `✔ postgres  healthy` or `✖ redis  not created`. It exits `1` when a service is not healthy.
@@ -359,7 +361,7 @@ nuxvel test:arch
 - A `.ts` or `.vue` file under `server/`, `app/`, `shared/` or `tests/` does not climb with `../` out of its kind folder (`server/actions/`, `server/database/schema/`, `app/components/`, `tests/`, ...) into another one. It imports a table from `#nuxvel/schema`, a factory from `#nuxvel/factories`, other server code from `#server/*`, `shared/` from `#shared/*` and `app/` from `~/*`. A file in `app/` or `server/` does not import `shared/schemas/`, whose exports are auto-imported there. `nuxvel upgrade --only imports` fixes both, see [Imports](./auto-imports.md#imports).
 - A test file or a story does not import `expect` from `vitest`, `playwright/test`, `@playwright/test` or `storybook/test`. A test imports `expect` from `@nuxvel/nuxt/testing`, and a story imports it from `@nuxvel/nuxt/storybook/test`. The built-in ESLint rule `no-restricted-imports` makes this check. It covers the `.ts` files under `tests/`, the `.test.ts` files under `server/` and the `.stories.ts` files under `app/`.
 
-The command prints one `✖` line for each violation on stderr, then a summary, and exits `1`. Add it to CI next to `nuxvel test`.
+The command prints one `✖` line for each violation on stderr, then a summary, and exits `1`. Add it to CI next to `nuxvel test:functional`.
 
 ```
 ✖ server/actions/posts/archive-post.action.ts: actions may not import h3, call requireAuth(), or read the request (useEvent, getHeader, readBody, ...)
@@ -401,7 +403,7 @@ nuxvel test:compat --against=v1.4.0
 
 1. It checks out the files of that ref into a temporary folder. Your working tree does not change.
 2. It replaces the migrations of that checkout with the migrations of the working tree, without `contract/`: a deploy runs the [contract migrations](./database.md#contract-migrations) only once the live release no longer runs.
-3. It starts the dev services, as `nuxvel test` does.
+3. It starts the dev services, as `nuxvel test:functional` does.
 4. It runs the tests of that checkout, except the end-to-end tests, with `vitest run --project functional`. Their test setup migrates the test database with the new migrations.
 
 A migration that drops or renames a column that the live release reads makes its tests fail. The command then exits with the exit code of Vitest:
@@ -561,13 +563,13 @@ The REPL is the REPL of Node (`node:repl`). Top-level `await` and statements on 
 
 Piped input runs one statement at a time, and each statement completes before the next starts. So `nuxvel tinker < script.js` works too. Piped input also goes to the history file. Ctrl-D exits. The command reads `NUXT_DATABASE_URL` from the environment and from `.env`, like the rest of the CLI. It closes the connections of the app when it exits.
 
-### `nuxvel routes`
+### `nuxvel route:list`
 
 ```sh
-nuxvel routes [--json] [--diff=<git ref> | --diff-env=<env>]
+nuxvel route:list [--json] [--diff=<git ref> | --diff-env=<env>]
 ```
 
-`nuxvel routes` lists the addresses that the app answers on. It reads them from the loaded app: the procedures of the tRPC router, and every route that Nitro serves. The routes include the `server/api` and `server/routes` files of the app and its layers, and the routes that modules add, such as `/api/health/live` and `/api/auth/**` of nuxvel.
+`nuxvel route:list` lists the addresses that the app answers on. It reads them from the loaded app: the procedures of the tRPC router, and every route that Nitro serves. The routes include the `server/api` and `server/routes` files of the app and its layers, and the routes that modules add, such as `/api/health/live` and `/api/auth/**` of nuxvel.
 
 ```
 METHOD  PATH                   SOURCE
@@ -592,7 +594,7 @@ Other collisions are `server/api/posts/[id].get.ts` next to `server/api/posts/[s
 `--json` prints `{ "procedures", "routes", "collisions" }`. Each procedure has `name`, `type`, `method`, `path` and `source`, and the JSON Schemas of its `input` and `output` (`null` without one). Each route has `method`, `path` and `source`. Each collision has `method`, `path` and `sources`.
 
 ```sh
-nuxvel routes --diff=<git ref> [--json]
+nuxvel route:list --diff=<git ref> [--json]
 ```
 
 `--diff` compares the tRPC procedures with the app at a git ref, for example the live release's tag, and exits `1` on a breaking change. It reads the app's files at that ref with `git archive`, loads that app with the current `node_modules`, and compares the two lists:
@@ -614,18 +616,18 @@ These changes are breaking, because a browser tab from the old build still sends
 Nested fields show with dots, for example `author.name`. With no breaking change, the command prints `✔ No breaking API changes since <ref>` and exits `0`. `--json` prints `{ "breaking": [...] }`.
 
 ```sh
-nuxvel routes --diff-env=<env> [--json]
+nuxvel route:list --diff-env=<env> [--json]
 ```
 
 `--diff-env` compares with the live release of an environment in `nuxvel.deploy.ts` instead of a git ref. It reads the release's `nuxvel-routes.json`, which the [build](./build.md#archives) puts in the archive, over SSH as the deploy user. It fails when the live release has no `nuxvel-routes.json`. The hint gives the routes step to add to the build stage of the Dockerfile. When nothing is live yet, it prints `<app> has no live release on <host>, so no call can break` and passes. See [API: calls from an older build](./api.md#calls-from-an-older-build).
 
-### `nuxvel channels`
+### `nuxvel channel:list`
 
 ```sh
-nuxvel channels [--json]
+nuxvel channel:list [--json]
 ```
 
-`nuxvel channels` lists the realtime channels of the loaded app. The list has each channel under `server/channels/`, the built-in `flags` channel, and the `job:<name>` channel of each job with a `channel` option.
+`nuxvel channel:list` lists the realtime channels of the loaded app. The list has each channel under `server/channels/`, the built-in `flags` channel, and the `job:<name>` channel of each job with a `channel` option.
 
 ```
 NAME            GUESTS   REPLAY BUFFER  SERVERS LISTENING
@@ -885,7 +887,7 @@ nuxvel make:job post.notify-subscribers
 # ◇ Updated types (nuxt prepare) (2.8s)
 ```
 
-The `make:*` commands write new files where the app keeps its code. In this section, `server/` means the `serverDir` of the app from `nuxt.config.ts`, and `shared/` means its `dir.shared`. A generated test finds the app root from its own location, so a custom `serverDir` needs no change. The introspection commands (`routes`, `events`, `test:arch`) read every layer that the app extends, as the module discovers them.
+The `make:*` commands write new files where the app keeps its code. In this section, `server/` means the `serverDir` of the app from `nuxt.config.ts`, and `shared/` means its `dir.shared`. A generated test finds the app root from its own location, so a custom `serverDir` needs no change. The introspection commands (`route:list`, `event:list`, `test:arch`) read every layer that the app extends, as the module discovers them.
 
 A generator lists each file that it wrote on stdout. Then it runs `nuxt prepare`, so the types of the new auto-imports are ready with no restart. When `nuxt prepare` fails, for example because of a broken `nuxt.config.ts`, the files stay written. The command prints the full output of `nuxt prepare` and exits `1`. `make:test`, `make:loadtest`, `make:page` and `make:story` do not run `nuxt prepare`.
 
@@ -1199,7 +1201,7 @@ it("lists in a constant number of queries", async () => {
 
   await expectConstantQueries(async (size) => {
     for (let row = 0; row < size; row++) await blogPostFactory({ ownerId: owner.id });
-    await actingAs(owner).trpc.blogPost.list();
+    await actingAs(owner).api.blogPost.list();
   });
 });
 ```
@@ -1333,7 +1335,7 @@ The folder of the target picks the fixture that the `it.todo` names:
 | Target folder | Kind | `it.todo` names |
 |---|---|---|
 | `actions/` | action | `runAction()` for `<domain>.<name>` |
-| `trpc/routers/` | router | `actingAs(user).trpc.<router>` and `guest().trpc.<router>` |
+| `trpc/routers/` | router | `actingAs(user).api.<router>` and `guest().api.<router>` |
 | `jobs/` | job | `runJob()` for the dotted job name |
 | `listeners/` | listener | `runListener()` for the dotted listener name |
 | any other | none | `runAction`, `runJob`, `actingAs`, `emit` |
@@ -1435,7 +1437,7 @@ The command leaves the columns that you already cover alone, so a second run cha
 nuxvel make:loadtest [--force]
 ```
 
-`nuxvel make:loadtest` writes a [k6](https://k6.io) script to `tests/load/procedures.js`. The script requests every query procedure of the tRPC router of the app. The command reads the router from the loaded app, as `nuxvel routes` does. It leaves out mutations, so you can point the script at staging. Run it against a server with realistic data before a launch or a large change:
+`nuxvel make:loadtest` writes a [k6](https://k6.io) script to `tests/load/procedures.js`. The script requests every query procedure of the tRPC router of the app. The command reads the router from the loaded app, as `nuxvel route:list` does. It leaves out mutations, so you can point the script at staging. Run it against a server with realistic data before a launch or a large change:
 
 ```sh
 nuxvel make:loadtest
@@ -1516,6 +1518,9 @@ updated: package.json
 | `presence-params` | 0.3.0 | Wraps an object literal room of `usePresence(channel, room)` in its `params` option: `usePresence(channel, { params: room })`, as [`useChannel()`](./realtime.md#listening-from-a-component) takes it. It leaves a call that already passes `{ params }`, and prints any other second argument, such as a variable or a call, as a manual step |
 | `notification-input` | 0.3.0 | Renames `schema` to `input` in [`defineNotification()`](./notifications.md#defining-a-notification), and in each object that its `toMail` returns, `data` to `input` and a mail name to its `$mails` definition (`"post.published"` becomes `$mails.post.published`). It leaves a `toMail` that does not return object literals, such as a variable, a mail name it cannot map, a `mail` that is a variable, a shorthand or a template literal, a config that is not an object literal, and a config with a spread, as manual steps |
 | `upload-pending` | 0.3.0 | Renames `uploading` of [`useUpload()`](./frontend.md#uploading-without-the-field) to `isPending`. A destructured `uploading` becomes `isPending`, or `isPending: uploading` when the file uses the name elsewhere, and `.uploading` on the result of `useUpload()` becomes `.isPending`. It leaves `uploading` on any other object, and prints a destructured `uploading` with a default, such as `{ uploading = false }`, as a manual step |
+| `live-query-reactive` | 0.3.0 | Removes the `.value` after a field of a `const` bound to [`useLiveQuery()`](./frontend.md#live-lists), in the script and in the template, and after a field of a `useLiveQuery()` call: `posts.data.value` becomes `posts.data`, as `useLiveQuery()` now returns the `reactive()` shape of `$api.<path>.useQuery()`. It wraps a destructured `useLiveQuery()` in `toRefs()`, so the destructured fields stay refs. It prints a field passed to `watch()`, `unref()` or `toValue()`, a write to a field's `.value`, and a `const` bound to `useLiveQuery()` that is destructured or passed to a call other than `toRefs()`, as manual steps |
+| `test-client-api` | 0.3.0 | Renames `trpc` of the [test client](./testing.md#acting-as-a-user) of `actingAs()`, `guest()` and `signIn()` to `api`. `.trpc` on the call, or on a `const` bound to it, becomes `.api`. A destructured `trpc` becomes `api`, and each use of it too, or `api: trpc` when the file already uses the name `api`, and `{ trpc: caller }` becomes `{ api: caller }`. In a file that calls one of them, it prints any other `.trpc`, such as one on a client that a helper returns, and a destructured `trpc` with a default, as manual steps |
+| `cli-names` | 0.3.0 | Rewrites the renamed commands, also run through `./nv` or `nv`, in `package.json`, the workflows in `.github/workflows/` and the `Dockerfile`: `nuxvel test` becomes `nuxvel test:functional`, `channels`, `events`, `routes` and `releases` become `channel:list`, `event:list`, `route:list` and `release:list`, `flags:list`, `flags:set` and `flags:stale` become `flag:list`, `flag:set` and `flag:stale`, and `push:keys` becomes `key:push` |
 
 The command runs every codemod, oldest first. A codemod changes only the code that still needs it, so a second run changes nothing and prints `✔ No codemod changed a file`. `--only <codemod>` runs one codemod. An unknown name exits `2` and lists the codemods.
 
@@ -1815,10 +1820,10 @@ nuxvel make:experiment checkout-cta   # server/flags/checkout-cta.experiment.ts,
 
 `nuxvel make:experiment` writes an experiment under `server/flags/`, with the variants `control` and `treatment` at 50/50.
 
-### `nuxvel flags:list`
+### `nuxvel flag:list`
 
 ```sh
-nuxvel flags:list [--json]
+nuxvel flag:list [--json]
 ```
 
 ```
@@ -1827,14 +1832,14 @@ new-checkout  flag        false    10%, role beta-tester=true  -
 checkout-cta  experiment  -        control:50 green:50         running
 ```
 
-`nuxvel flags:list` lists every flag with its default and its current targeting, and every experiment with its variants. A flag with no targeting shows `untargeted`. The status of an experiment is `not started`, `running` or `stopped`.
+`nuxvel flag:list` lists every flag with its default and its current targeting, and every experiment with its variants. A flag with no targeting shows `untargeted`. The status of an experiment is `not started`, `running` or `stopped`.
 
 `--json` prints `{ "flags": [{ "name", "default", "percentage", "roles", "targeting", "updatedAt", "expiresAt" }], "experiments": [{ "name", "variants", "status" }] }`.
 
-### `nuxvel flags:set <name>`
+### `nuxvel flag:set <name>`
 
 ```sh
-nuxvel flags:set <name> [--percentage <0-100>] [--role <role>] [--value true|false]
+nuxvel flag:set <name> [--percentage <0-100>] [--role <role>] [--value true|false]
 ```
 
 | Flag | Description |
@@ -1844,18 +1849,18 @@ nuxvel flags:set <name> [--percentage <0-100>] [--role <role>] [--value true|fal
 | `--value` | `true` or `false`. With `--role`, the value for that role. Alone, on (100%) or off (0%) for everyone. |
 
 ```sh
-nuxvel flags:set new-checkout --percentage 10
+nuxvel flag:set new-checkout --percentage 10
 # ✔ new-checkout  10%
-nuxvel flags:set new-checkout --role beta-tester --value true
-nuxvel flags:set new-checkout --value false   # off for everyone (0%)
+nuxvel flag:set new-checkout --role beta-tester --value true
+nuxvel flag:set new-checkout --value false   # off for everyone (0%)
 ```
 
-`nuxvel flags:set` merges the change into the current targeting. It goes through `setFlagTargeting()`, so the audit log records it as `flag.targeted` and open pages update live.
+`nuxvel flag:set` merges the change into the current targeting. It goes through `setFlagTargeting()`, so the audit log records it as `flag.targeted` and open pages update live.
 
-### `nuxvel flags:stale`
+### `nuxvel flag:stale`
 
 ```sh
-nuxvel flags:stale [--json]
+nuxvel flag:stale [--json]
 ```
 
 ```
@@ -1864,7 +1869,7 @@ new-checkout  expired       2026-12-31
 old-banner    unreferenced  -
 ```
 
-`nuxvel flags:stale` lists the flags that are past their `expiresAt`, at 100% for more than 30 days, or referenced by no code. `--json` prints `{ "flags": [{ "name", "reason", "since" }] }`. `reason` is `expired`, `fully rolled out` or `unreferenced`. `since` is `null` for an unreferenced flag.
+`nuxvel flag:stale` lists the flags that are past their `expiresAt`, at 100% for more than 30 days, or referenced by no code. `--json` prints `{ "flags": [{ "name", "reason", "since" }] }`. `reason` is `expired`, `fully rolled out` or `unreferenced`. `since` is `null` for an unreferenced flag.
 
 ### `nuxvel experiment:start <name>`
 
@@ -2027,10 +2032,10 @@ nuxvel make:listener post.notify-subscribers --event post.published   # server/l
 
 `nuxvel make:listener` writes a queued listener for the event under `server/listeners/`, and a functional test that checks it with `expectListenerQueued`. The event file must exist. The test emits the event with the sample payload from `<event>.event.test.ts`, the test that `make:event` writes. When that test does not exist, the test emits `{}`. If the payload schema refuses `{}`, the test does not compile. Then write a valid payload in the test.
 
-### `nuxvel events`
+### `nuxvel event:list`
 
 ```sh
-nuxvel events [--json]
+nuxvel event:list [--json]
 ```
 
 ```
@@ -2040,7 +2045,7 @@ post.published  server/events/post/published.event.ts  server/actions/posts/publ
 ▲ post.archived has no listener, nothing reacts to this event
 ```
 
-`nuxvel events` lists the events under `server/events/`, the files that emit them and the listeners that react to them. It warns about each event that nothing listens for. An emitter can be any file under `server/`: an action, a job or a route. An `emit()` call counts with the event name, as in `emit("post.published", ...)`, or with the imported event. An aliased import such as `import { postPublishedEvent as published }` counts too. The namespace form `$events.post.published` counts in `emit()` and in the `event` of a listener.
+`nuxvel event:list` lists the events under `server/events/`, the files that emit them and the listeners that react to them. It warns about each event that nothing listens for. An emitter can be any file under `server/`: an action, a job or a route. An `emit()` call counts with the event name, as in `emit("post.published", ...)`, or with the imported event. An aliased import such as `import { postPublishedEvent as published }` counts too. The namespace form `$events.post.published` counts in `emit()` and in the `event` of a listener.
 
 The command parses the files with the syntax of TypeScript, so only real `defineEvent`, `emit()` and `defineListener` calls count. `--json` prints `{ "events": [{ "name", "source", "emitters", "listeners": [{ "name", "sync" }] }] }`.
 
@@ -2119,10 +2124,10 @@ nuxvel make:ci <env> [--force]
 
 `nuxvel make:ci` writes a GitHub Actions workflow to `.github/workflows/deploy.yml` that tests, checks and builds each push to `main`, then deploys it to the environment `<env>` of `nuxvel.deploy.ts`. The build runs on a runner of the environment's `arch`. See [Deploying to a VPS](./deploy.md#deploying-from-github-actions).
 
-### `nuxvel releases <env>`
+### `nuxvel release:list <env>`
 
 ```sh
-nuxvel releases <env> [--json]
+nuxvel release:list <env> [--json]
 ```
 
 Lists the releases of the app on the server of an environment, newest first: the release, its commit and build source from its build manifest, its deploy time and the colors that run it (`(live)` for the live one). `--json` prints `{ "releases": [{ "name", "commit", "source", "colors", "live", "deployedAt" }] }`. See [Deploying to a VPS](./deploy.md#releases-and-the-deploy-lock).
@@ -2442,14 +2447,14 @@ pbpaste | nuxvel key:rotate NUXT_BILLING_WEBHOOK_SECRET --stdin
 
 The command exits `1` when `.env` does not set the variable. Run `key:generate` first for `NUXT_AUTH_SECRET`. It also exits `1` when the new value is empty or has more than one line. It exits `1` for `NUXT_AUDIT_CHAIN_SECRET` and `NUXT_OG_IMAGE_SECRET`, which cannot rotate.
 
-### `nuxvel push:keys`
+### `nuxvel key:push`
 
 ```sh
-nuxvel push:keys
+nuxvel key:push
 # ✔ Wrote NUXT_PUBLIC_PUSH_VAPID_PUBLIC_KEY and NUXT_PUSH_VAPID_PRIVATE_KEY to .env
 ```
 
-`nuxvel push:keys` writes a new VAPID key pair for web push into the `.env` at the app root. It creates the file if it does not exist. The public key goes to `NUXT_PUBLIC_PUSH_VAPID_PUBLIC_KEY` and the private key to `NUXT_PUSH_VAPID_PRIVATE_KEY`. See [Progressive web app](./pwa.md#vapid-keys).
+`nuxvel key:push` writes a new VAPID key pair for web push into the `.env` at the app root. It creates the file if it does not exist. The public key goes to `NUXT_PUBLIC_PUSH_VAPID_PUBLIC_KEY` and the private key to `NUXT_PUSH_VAPID_PRIVATE_KEY`. See [Progressive web app](./pwa.md#vapid-keys).
 
 When `.env` already sets one of the two keys, the command does not overwrite it and exits `1`. New keys end every push subscription, so the command does not rotate keys. To replace them, delete both lines from `.env` first.
 

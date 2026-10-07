@@ -276,8 +276,7 @@ The channel sends a `changed` event with an empty payload after each change:
 ## Testing
 
 ```ts
-import { expectNotified, runAction } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expectNotified, it, runAction } from "@nuxvel/nuxt/testing";
 import { postFactory, userFactory } from "#nuxvel/factories";
 
 describe("posts.publish-post", () => {

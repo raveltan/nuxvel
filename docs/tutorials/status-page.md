@@ -26,7 +26,7 @@ npm create nuxvel@latest status-page
 cd status-page
 npm install
 ./nv services up
-./nv test
+./nv test:functional
 ```
 
 ```
@@ -229,8 +229,7 @@ export const databaseSeeder = defineSeeder(async () => {
 
 ```ts
 // tests/functional/seeders.test.ts
-import { expectCount, expectRow, runSeeder, signIn } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expectCount, expectRow, it, runSeeder, signIn } from "@nuxvel/nuxt/testing";
 import { userTable, incidentTable, incidentUpdateTable, subscriberTable } from "#nuxvel/schema";
 
 describe("the database seeder", () => {
@@ -250,7 +249,7 @@ describe("the database seeder", () => {
 `.has(1, ...)` inserts one update for each incident. `.count(12)` inserts twelve incidents. Run the tests and seed the dev database:
 
 ```bash
-./nv test tests/functional/seeders.test.ts server/factories
+./nv test:functional tests/functional/seeders.test.ts server/factories
 ./nv db:seed
 ```
 
@@ -264,7 +263,7 @@ The status page is public. It shows the open incidents, one page for each incide
 ./nv make:router status
 ```
 
-`make:router` writes an empty router, `export const statusRouter = {}`. The file name gives the namespace, so the browser calls `trpc.status.current`. An incident and its updates come from two tables. Put the function that joins them in `server/utils/`, where nuxvel auto-imports it on the server:
+`make:router` writes an empty router, `export const statusRouter = {}`. The file name gives the namespace, so the browser calls `$api.status.current`. An incident and its updates come from two tables. Put the function that joins them in `server/utils/`, where nuxvel auto-imports it on the server:
 
 ```ts
 // server/utils/with-updates.ts
@@ -325,12 +324,11 @@ export const statusRouter = {
 
 `publicProcedure` answers each visitor, also a guest. `current` lists the incidents that are not resolved. `incident` returns one incident, or `NOT_FOUND`. `history` returns one page of resolved incidents, the last resolved first. `paginate()` returns `{ rows, page, perPage, total, lastPage }`, and `paginated()` is the schema of that object. `paginationSchema` lets the page choose `page` and `perPage`. The router sets `perPage: 10` before `...input`, so ten is the default. See [Database: pagination](../database.md#pagination).
 
-Test the router. `guest().trpc` calls it as a visitor:
+Test the router. `guest().api` calls it as a visitor:
 
 ```ts
 // server/trpc/routers/status.router.test.ts
-import { expect, expectConstantQueries, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectConstantQueries, guest, it } from "@nuxvel/nuxt/testing";
 import { incidentFactory, resolvedIncidentFactory, incidentUpdateFactory } from "#nuxvel/factories";
 
 describe("status router", () => {
@@ -340,7 +338,7 @@ describe("status router", () => {
     const second = await incidentUpdateFactory({ status: "identified", body: "A slow query.", incident });
     await resolvedIncidentFactory();
 
-    const current = await guest().trpc.status.current();
+    const current = await guest().api.status.current();
 
     expect(current).toHaveLength(1);
     expect(current[0]).toMatchObject({ title: "API is slow" });
@@ -350,15 +348,15 @@ describe("status router", () => {
   it("reads the updates of all incidents in one query", async () => {
     await expectConstantQueries(async (size) => {
       await incidentFactory.has(2, (incident) => incidentUpdateFactory.for("incidentId", incident)).count(size)();
-      await guest().trpc.status.current();
+      await guest().api.status.current();
     });
   });
 
   it("shows one incident, also a resolved one", async () => {
     const incident = await resolvedIncidentFactory({ title: "Sign-in is down" });
 
-    await expect(guest().trpc.status.incident({ id: incident.id })).resolves.toMatchObject({ title: "Sign-in is down", status: "resolved" });
-    await expect(guest().trpc.status.incident({ id: incident.id + 1 })).rejects.toBeTrpcError("NOT_FOUND");
+    await expect(guest().api.status.incident({ id: incident.id })).resolves.toMatchObject({ title: "Sign-in is down", status: "resolved" });
+    await expect(guest().api.status.incident({ id: incident.id + 1 })).rejects.toBeTrpcError("NOT_FOUND");
   });
 
   it("pages the resolved incidents, 10 to a page, last resolved first", async () => {
@@ -366,8 +364,8 @@ describe("status router", () => {
     await resolvedIncidentFactory.count(11)({ resolvedAt: new Date("2026-09-01T10:00:00Z") });
     await incidentFactory();
 
-    const first = await guest().trpc.status.history();
-    const second = await guest().trpc.status.history({ page: 2 });
+    const first = await guest().api.status.history();
+    const second = await guest().api.status.history({ page: 2 });
 
     expect(first).toMatchObject({ page: 1, perPage: 10, total: 12, lastPage: 2 });
     expect(first.rows[0]?.id).toBe(newest.id);
@@ -376,7 +374,7 @@ describe("status router", () => {
 });
 ```
 
-`expectConstantQueries` runs the call for 1 and for 4 incidents and checks that the query count does not grow. Run `./nv test server/trpc`.
+`expectConstantQueries` runs the call for 1 and for 4 incidents and checks that the query count does not grow. Run `./nv test:functional server/trpc`.
 
 ### The pages
 
@@ -643,8 +641,7 @@ An action checks its input and runs its handler in one transaction. The incident
 
 ```ts
 // server/actions/incidents/open-incident.action.test.ts
-import { expect, expectRow, runAction } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectRow, it, runAction } from "@nuxvel/nuxt/testing";
 import { incidentUpdateTable } from "#nuxvel/schema";
 import { userFactory } from "#nuxvel/factories";
 
@@ -675,8 +672,7 @@ describe("incidents/open-incident action", () => {
 
 ```ts
 // server/actions/incidents/post-update.action.test.ts
-import { expect, expectRow, freezeTime, runAction } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectRow, freezeTime, it, runAction } from "@nuxvel/nuxt/testing";
 import { incidentTable } from "#nuxvel/schema";
 import { incidentFactory, resolvedIncidentFactory, userFactory } from "#nuxvel/factories";
 
@@ -711,7 +707,7 @@ describe("incidents/post-update action", () => {
 });
 ```
 
-`it.for` runs one test for each case. `toHaveValidationErrors` checks the message of each field. `freezeTime()` stops the clock of the app and returns the time, so the test can compare `resolvedAt` exactly. Run `./nv test server/actions`.
+`it.for` runs one test for each case. `toHaveValidationErrors` checks the message of each field. `freezeTime()` stops the clock of the app and returns the time, so the test can compare `resolvedAt` exactly. Run `./nv test:functional server/actions`.
 
 ### The team router
 
@@ -742,15 +738,14 @@ export const incidentRouter = {
 
 ```ts
 // server/trpc/routers/incident.router.test.ts
-import { actingAs, expect, expectActionCalled, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, expectActionCalled, guest, it } from "@nuxvel/nuxt/testing";
 import { incidentFactory, userFactory } from "#nuxvel/factories";
 
 describe("incident router", () => {
   it("opens an incident as the signed-in member of the team", async () => {
     const ada = await userFactory();
 
-    const incident = await actingAs(ada).trpc.incident.open({ title: "API is slow", body: "Looking into it." });
+    const incident = await actingAs(ada).api.incident.open({ title: "API is slow", body: "Looking into it." });
 
     expect(incident).toMatchObject({ title: "API is slow", status: "investigating" });
     await expectActionCalled("incidents.open-incident", { actingAs: ada });
@@ -760,14 +755,14 @@ describe("incident router", () => {
     const ada = await userFactory();
     const incident = await incidentFactory();
 
-    const update = await actingAs(ada).trpc.incident.postUpdate({ incidentId: incident.id, status: "monitoring", body: "A fix is out." });
+    const update = await actingAs(ada).api.incident.postUpdate({ incidentId: incident.id, status: "monitoring", body: "A fix is out." });
 
     expect(update).toEqual({ id: expect.any(Number), status: "monitoring", body: "A fix is out.", createdAt: expect.any(Date) });
   });
 
   it("refuses a guest", async () => {
-    await expect(guest().trpc.incident.open({ title: "Fake", body: "Fake" })).rejects.toBeTrpcError("UNAUTHORIZED");
-    await expect(guest().trpc.incident.postUpdate({ incidentId: 1, status: "resolved", body: "Fake" })).rejects.toBeTrpcError("UNAUTHORIZED");
+    await expect(guest().api.incident.open({ title: "Fake", body: "Fake" })).rejects.toBeTrpcError("UNAUTHORIZED");
+    await expect(guest().api.incident.postUpdate({ incidentId: 1, status: "resolved", body: "Fake" })).rejects.toBeTrpcError("UNAUTHORIZED");
   });
 });
 ```
@@ -1043,16 +1038,15 @@ After the transaction commits, the action removes every cached value under `stat
 
 ```ts
 // tests/functional/status-cache.test.ts
-import { actingAs, expect, expectCacheHit, expectCacheMiss, expectQueryCount, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, expectCacheHit, expectCacheMiss, expectQueryCount, guest, it } from "@nuxvel/nuxt/testing";
 import { incidentFactory, userFactory } from "#nuxvel/factories";
 
 describe("the status cache", () => {
   it("reads an incident from the database once, then from the cache", async () => {
     const incident = await incidentFactory();
 
-    await guest().trpc.status.incident({ id: incident.id });
-    await expectQueryCount({ max: 0 }, () => guest().trpc.status.incident({ id: incident.id }));
+    await guest().api.status.incident({ id: incident.id });
+    await expectQueryCount({ max: 0 }, () => guest().api.status.incident({ id: incident.id }));
 
     await expectCacheMiss(`status:incident:${incident.id}`, { times: 1 });
     await expectCacheHit(`status:incident:${incident.id}`, { times: 1 });
@@ -1061,19 +1055,19 @@ describe("the status cache", () => {
   it("reads the incident again after an update", async () => {
     const ada = await userFactory();
     const incident = await incidentFactory();
-    await guest().trpc.status.incident({ id: incident.id });
+    await guest().api.status.incident({ id: incident.id });
 
-    await actingAs(ada).trpc.incident.postUpdate({ incidentId: incident.id, status: "resolved", body: "Fixed." });
-    const resolved = await guest().trpc.status.incident({ id: incident.id });
+    await actingAs(ada).api.incident.postUpdate({ incidentId: incident.id, status: "resolved", body: "Fixed." });
+    const resolved = await guest().api.status.incident({ id: incident.id });
 
     expect(resolved).toMatchObject({ status: "resolved", updates: [{ body: "Fixed." }] });
     await expectCacheMiss(`status:incident:${incident.id}`, { times: 2 });
   });
 
   it("keeps one cached value for each page of the history", async () => {
-    await guest().trpc.status.history({ page: 1 });
-    await guest().trpc.status.history({ page: 2 });
-    await guest().trpc.status.history({ page: 1 });
+    await guest().api.status.history({ page: 1 });
+    await guest().api.status.history({ page: 2 });
+    await guest().api.status.history({ page: 1 });
 
     await expectCacheMiss("status:history:[1,null]", { times: 1 });
     await expectCacheMiss("status:history:[2,null]", { times: 1 });
@@ -1082,7 +1076,7 @@ describe("the status cache", () => {
 });
 ```
 
-`expectCacheMiss` and `expectCacheHit` count the lookups of one key. `expectQueryCount({ max: 0 })` proves that the second read runs no query. The key of the history page is the JSON of `[page, perPage]`, so a call without `perPage` has the key `status:history:[1,null]`. Run `./nv test tests/functional/status-cache.test.ts`.
+`expectCacheMiss` and `expectCacheHit` count the lookups of one key. `expectQueryCount({ max: 0 })` proves that the second read runs no query. The key of the history page is the JSON of `[page, perPage]`, so a call without `perPage` has the key `status:history:[1,null]`. Run `./nv test:functional tests/functional/status-cache.test.ts`.
 
 See [Cache](../cache.md).
 
@@ -1127,21 +1121,20 @@ export const subscriberRouter = {
 
 ```ts
 // server/trpc/routers/subscriber.router.test.ts
-import { expect, expectCount, expectRow, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectCount, expectRow, guest, it } from "@nuxvel/nuxt/testing";
 import { subscriberTable } from "#nuxvel/schema";
 
 describe("subscriber router", () => {
   it("subscribes an email once, also when it is sent two times", async () => {
-    await guest().trpc.subscriber.subscribe({ email: "reader@example.com" });
-    await guest().trpc.subscriber.subscribe({ email: "reader@example.com" });
+    await guest().api.subscriber.subscribe({ email: "reader@example.com" });
+    await guest().api.subscriber.subscribe({ email: "reader@example.com" });
 
     await expectRow(subscriberTable, { email: "reader@example.com" });
     await expectCount(subscriberTable, 1);
   });
 
   it("refuses a value that is not an email", async () => {
-    await expect(guest().trpc.subscriber.subscribe({ email: "reader" })).rejects.toHaveValidationErrors({
+    await expect(guest().api.subscriber.subscribe({ email: "reader" })).rejects.toHaveValidationErrors({
       email: "Enter an email address",
     });
   });
@@ -1287,8 +1280,7 @@ export const incidentUpdateMail = defineMail({
 
 ```ts
 // server/mail/incident/update.mail.test.ts
-import { expect, renderMail } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, it, renderMail } from "@nuxvel/nuxt/testing";
 
 const update = {
   to: "reader@example.com",
@@ -1418,8 +1410,7 @@ See [Queues: the outbox](../queues.md#the-outbox). Test the job:
 
 ```ts
 // server/jobs/incident/announce.job.test.ts
-import { expect, expectMailSent, expectNoMailSent, expectRow, renderMail, runJob } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectMailSent, expectNoMailSent, expectRow, it, renderMail, runJob } from "@nuxvel/nuxt/testing";
 import { incidentUpdateTable } from "#nuxvel/schema";
 import { incidentFactory, incidentUpdateFactory, subscriberFactory } from "#nuxvel/factories";
 
@@ -1460,8 +1451,7 @@ describe("incident.announce job", () => {
 
 ```ts
 // server/actions/incidents/post-update.action.test.ts
-import { expect, expectNotQueued, expectQueued, expectRow, freezeTime, runAction } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectNotQueued, expectQueued, expectRow, freezeTime, it, runAction } from "@nuxvel/nuxt/testing";
 import { incidentTable } from "#nuxvel/schema";
 import { incidentFactory, resolvedIncidentFactory, userFactory } from "#nuxvel/factories";
 
@@ -1501,7 +1491,7 @@ describe("incidents/post-update action", () => {
 `expectQueued()` relays the outbox and checks the job on the queue. `expectNotQueued()` proves that the failed action dispatched nothing. Run the tests:
 
 ```bash
-./nv test server/jobs server/mail server/actions server/trpc
+./nv test:functional server/jobs server/mail server/actions server/trpc
 npm run test:ui
 ```
 
@@ -1559,8 +1549,7 @@ The query leaves out the member who opened the incident. `$notifications.x.notif
 
 ```ts
 // server/notifications/incident/opened.notification.test.ts
-import { expectNotified, sendNotification } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expectNotified, it, sendNotification } from "@nuxvel/nuxt/testing";
 import { userFactory } from "#nuxvel/factories";
 
 describe("incident.opened notification", () => {
@@ -1587,7 +1576,7 @@ describe("incident.opened notification", () => {
   });
 ```
 
-`sendNotification()` tests the notification apart from the code that sends it. Run `./nv test server/notifications server/actions`. See [Notifications](../notifications.md).
+`sendNotification()` tests the notification apart from the code that sends it. Run `./nv test:functional server/notifications server/actions`. See [Notifications](../notifications.md).
 
 ## 8. The monitor webhook
 
@@ -1656,9 +1645,8 @@ Replace the generated test:
 
 ```ts
 // server/webhooks/monitor.webhook.test.ts
-import { deliverWebhook, expect, expectCount, expectQueued, expectRow, guest } from "@nuxvel/nuxt/testing";
+import { deliverWebhook, describe, expect, expectCount, expectQueued, expectRow, guest, it } from "@nuxvel/nuxt/testing";
 import { randomUUID } from "node:crypto";
-import { describe, it } from "vitest";
 import { incidentTable } from "#nuxvel/schema";
 import { incidentFactory } from "#nuxvel/factories";
 
@@ -1719,7 +1707,7 @@ describe("monitor webhook", () => {
 });
 ```
 
-Set the secret in `process.env` at the top of the file, before the app starts. `deliverWebhook()` signs the body with that secret and posts it to the real endpoint. Each call is a new delivery, so the second test sends the same event two times. Run `./nv test server/webhooks`.
+Set the secret in `process.env` at the top of the file, before the app starts. `deliverWebhook()` signs the body with that secret and posts it to the real endpoint. Each call is a new delivery, so the second test sends the same event two times. Run `./nv test:functional server/webhooks`.
 
 ### See it work
 
@@ -1767,8 +1755,8 @@ Read the flag at the start of the handler:
 While the flag is off, the handler returns. The delivery gets `200`, so the monitor does not send it again. Turn the flag off and on from the terminal. The change applies in each server process at the next evaluation:
 
 ```bash
-./nv flags:set monitor-incidents --value false
-./nv flags:list
+./nv flag:set monitor-incidents --value false
+./nv flag:list
 ```
 
 ```
@@ -1777,7 +1765,7 @@ monitor-incidents  flag  true     0%         -
 ```
 
 ```bash
-./nv flags:set monitor-incidents --value true
+./nv flag:set monitor-incidents --value true
 ```
 
 Add a test to the webhook test, before the test of the schema:
@@ -1857,7 +1845,7 @@ export const Running: StoryObj<typeof meta> = {
 };
 ```
 
-Run `./nv test server/webhooks` and `npm run test:ui`. See [Feature flags](../flags.md).
+Run `./nv test:functional server/webhooks` and `npm run test:ui`. See [Feature flags](../flags.md).
 
 ## 10. A reminder for silent incidents
 
@@ -1881,8 +1869,7 @@ export const incidentStaleNotification = defineNotification({
 
 ```ts
 // server/notifications/incident/stale.notification.test.ts
-import { expectNotified, sendNotification } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expectNotified, it, sendNotification } from "@nuxvel/nuxt/testing";
 import { userFactory } from "#nuxvel/factories";
 
 describe("incident.stale notification", () => {
@@ -1949,8 +1936,7 @@ nuxvel.auth.reencrypt-two-factor  04:15 every day   2026-10-03T17:15:00.000Z
 
 ```ts
 // server/schedules/incidents/remind-stale.schedule.test.ts
-import { expectNotNotified, expectNotified, freezeTime, runSchedule, travelBy } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expectNotified, expectNotNotified, freezeTime, it, runSchedule, travelBy } from "@nuxvel/nuxt/testing";
 import { incidentFactory, resolvedIncidentFactory, incidentUpdateFactory, userFactory } from "#nuxvel/factories";
 
 describe("incidents.remind-stale schedule", () => {
@@ -1989,7 +1975,7 @@ describe("incidents.remind-stale schedule", () => {
 });
 ```
 
-`freezeTime()` stops the clock. The factories run in the test process, and their `createdAt` gets the frozen time too. `travelBy()` moves the clock forward, and `runSchedule()` runs one tick now, without the worker. Run `./nv test server/schedules`. See [Queues: schedules](../queues.md#schedules) and [Testing: controlling time](../testing.md#controlling-time).
+`freezeTime()` stops the clock. The factories run in the test process, and their `createdAt` gets the frozen time too. `travelBy()` moves the clock forward, and `runSchedule()` runs one tick now, without the worker. Run `./nv test:functional server/schedules`. See [Queues: schedules](../queues.md#schedules) and [Testing: controlling time](../testing.md#controlling-time).
 
 ## 11. Browser tests
 
@@ -1997,8 +1983,7 @@ The functional tests check the server, and the stories check each component. An 
 
 ```ts
 // tests/e2e/incidents.test.ts
-import { actingAs, button, expect, expectMailSent, expectRow, fillForm, field, heading, link, text, toast, visit, workQueue } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, button, describe, expect, expectMailSent, expectRow, field, fillForm, heading, it, link, text, toast, visit, workQueue } from "@nuxvel/nuxt/testing";
 import { subscriberTable } from "#nuxvel/schema";
 import { resolvedIncidentFactory, subscriberFactory, userFactory } from "#nuxvel/factories";
 

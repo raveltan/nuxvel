@@ -63,7 +63,7 @@ export async function travelBy(duration: TravelDuration): Promise<Date> {
  * @example
  * ```ts
  * const frozenAt = await freezeTime();
- * const post = await trpc.post.create({ title: "Hello", body: "" });
+ * const post = await api.post.create({ title: "Hello", body: "" });
  * expect(post.createdAt).toEqual(frozenAt);
  * ```
  */

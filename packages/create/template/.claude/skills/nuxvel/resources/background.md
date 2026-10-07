@@ -127,7 +127,7 @@ const variant = await experiment("subscribe-button");
 await track("newsletter.subscribed");
 ```
 
-Targeting without a deploy: `setFlagTargeting(name, { percentage, roles })`, `./nv flags:set`.
+Targeting without a deploy: `setFlagTargeting(name, { percentage, roles })`, `./nv flag:set`.
 
 ## Cache and locks
 

@@ -184,8 +184,8 @@ export interface SpyAssertions<P extends TrpcPath> {
  * ```ts
  * import { actingAs, button, expect, guest, heading, visit } from "@nuxvel/nuxt/testing";
  *
- * await expect(guest().trpc.post.create({ title: "Hi" })).rejects.toBeTrpcError("UNAUTHORIZED");
- * expect(await actingAs(user).trpc.post.byId({ id })).toEqual({ id: expect.any(Number), title: "Hi" });
+ * await expect(guest().api.post.create({ title: "Hi" })).rejects.toBeTrpcError("UNAUTHORIZED");
+ * expect(await actingAs(user).api.post.byId({ id })).toEqual({ id: expect.any(Number), title: "Hi" });
  *
  * const page = await visit("/posts");
  * await expect(heading(page, "Posts")).toBeAbove(button(page, "New post"));

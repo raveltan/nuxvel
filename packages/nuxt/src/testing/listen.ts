@@ -29,7 +29,7 @@ export interface ChannelListener<Event extends string = string> {
    * @example
    * ```ts
    * const stream = await actingAs(ada).listen("room?roomId=1");
-   * await actingAs(ada).trpc.message.post({ roomId: 1, body: "Hi" });
+   * await actingAs(ada).api.message.post({ roomId: 1, body: "Hi" });
    * expect(await stream.next("posted")).toMatchObject({ payload: { id: expect.any(Number) } });
    * ```
    */

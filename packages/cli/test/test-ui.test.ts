@@ -169,7 +169,7 @@ describe("nuxvel test:ui", () => {
     expect(output).not.toContain("SSR is disabled");
   });
 
-  it("the Vitest config of the starter loads the ui project only for test:ui, so nuxvel test never loads Storybook", async () => {
+  it("the Vitest config of the starter loads the ui project only for test:ui, so nuxvel test:functional never loads Storybook", async () => {
     const appDir = storyApp();
 
     const result = await runBinAt(appDir, "vitest", ["list", "--project", "ui"], { ...process.env, NUXVEL_TEST_UI: "", VITEST_STORYBOOK: "" });

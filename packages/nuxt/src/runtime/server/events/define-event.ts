@@ -48,7 +48,7 @@ export type EventUpcaster = Upcaster;
  * (`$events.post.published.emit(payload)`) and where you listen for it
  * with {@link defineListener}. The file's path is the event's name
  * (`server/events/post/published.event.ts` is `"post.published"`): what
- * `nuxvel events` prints, and part of {@link EventName}.
+ * `nuxvel event:list` prints, and part of {@link EventName}.
  *
  * `parse` validates a payload against the schema (async refinements and
  * transforms included), rejecting with the same

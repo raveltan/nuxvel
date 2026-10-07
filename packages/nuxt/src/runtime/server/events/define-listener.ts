@@ -22,7 +22,7 @@ export interface Listener {
  * `defineListener` is auto-imported. One listener per file, under
  * `server/listeners/`; the file is discovered, so nothing registers it,
  * and its path names it (`server/listeners/post/notify-subscribers.listener.ts`
- * is `"post.notify-subscribers"`) for `nuxvel events`, the test fixture
+ * is `"post.notify-subscribers"`) for `nuxvel event:list`, the test fixture
  * and the queue job a queued run waits in, `listener:<name>`;
  * {@link renamed} at the old path keeps runs queued under the old name
  * working.

@@ -225,7 +225,7 @@ A channel that refuses the connection, or that no file defines, stays empty. See
 A query that follows a channel does not need `useChannel()` and a manual refetch. `useLiveQuery()` changes the query's cache entry from the channel's events, or fetches the query again. See [Live lists](./frontend.md#live-lists). Add `params` to follow one room:
 
 ```ts
-const cards = useLiveQuery(trpc.card.list.queryOptions({ boardId }), {
+const cards = useLiveQuery($api.card.list.queryOptions({ boardId }), {
   channel: "board",
   params: { boardId },
   refetch: { moved: true },
@@ -493,8 +493,7 @@ The channel is for the job name, not for one run. Every run of the job reports o
 ## Testing
 
 ```ts
-import { expect, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, guest, it } from "@nuxvel/nuxt/testing";
 
 describe("post.comments channel", () => {
   it("refuses a guest", async () => {
@@ -538,7 +537,7 @@ const again = await actingAs(user).listen("tasks", { lastEventId: id });
 expect(await again.next()).toMatchObject({ event: "created" });
 ```
 
-To see every channel, whether a guest can listen, and its replay buffer, run `nuxvel channels`. See the [CLI reference](./cli.md#nuxvel-channels).
+To see every channel, whether a guest can listen, and its replay buffer, run `nuxvel channel:list`. See the [CLI reference](./cli.md#nuxvel-channellist).
 
 ### Testing broadcasts
 

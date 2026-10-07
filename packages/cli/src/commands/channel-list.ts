@@ -7,7 +7,7 @@ import { printTable } from "../ui/table.ts";
 
 export default defineCommand({
   meta: {
-    name: "channels",
+    name: "channel:list",
     description: "List the realtime channels with whether guests may listen, their replay buffer and the servers listening now.",
   },
   args: { ...jsonArg },

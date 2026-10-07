@@ -223,8 +223,7 @@ Replace the starter's seeder test, so that it checks the room:
 
 ```ts
 // tests/functional/seeders.test.ts
-import { expectCount, expectRow, runSeeder, signIn } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expectCount, expectRow, it, runSeeder, signIn } from "@nuxvel/nuxt/testing";
 import { userTable, messageTable, roomMemberTable, roomTable } from "#nuxvel/schema";
 
 describe("the database seeder", () => {
@@ -436,8 +435,7 @@ The generated action test calls the action with sample values. Room `1` does not
 
 ```ts
 // server/actions/room/add-member.action.test.ts
-import { actingAs, expect, runAction } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, it, runAction } from "@nuxvel/nuxt/testing";
 import { roomFactory, userFactory } from "#nuxvel/factories";
 
 describe("room/add-member action", () => {
@@ -448,7 +446,7 @@ describe("room/add-member action", () => {
 
     await runAction("room.add-member", { roomId: room.id, email: grace.email }, { actingAs: ada });
 
-    expect(await actingAs(grace).trpc.room.byId({ id: room.id })).toMatchObject({ name: room.name });
+    expect(await actingAs(grace).api.room.byId({ id: room.id })).toMatchObject({ name: room.name });
   });
 
   it("fails with a typed code for an unknown email", async () => {
@@ -471,7 +469,7 @@ describe("room/add-member action", () => {
 });
 ```
 
-The first test reads the room through the router as the new member. So it checks the action, the `joinedBy()` condition and the policy together. The generated `room.router.test.ts` still passes: it creates its rooms through `trpc.room.create`, and the create action adds the owner as a member.
+The first test reads the room through the router as the new member. So it checks the action, the `joinedBy()` condition and the policy together. The generated `room.router.test.ts` still passes: it creates its rooms through `api.room.create`, and the create action adds the owner as a member.
 
 Run `npm run test:functional`.
 
@@ -528,8 +526,7 @@ The channel has one room for each chat room. `params: ["roomId"]` names the para
 
 ```ts
 // server/channels/room.channel.test.ts
-import { actingAs, expect, expectPresent, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, expectPresent, guest, it } from "@nuxvel/nuxt/testing";
 import { roomMemberFactory, roomFactory, userFactory } from "#nuxvel/factories";
 
 describe("room channel", () => {
@@ -566,7 +563,7 @@ describe("room channel", () => {
 - The second test opens one stream for four channel names. The `connected` event lists the room of the member in `channels`. It lists the room of another chat room, the room with a bad ID and `room` with no ID in `refused`. The connection stays open for the accepted room.
 - The third test opens a room. `expectPresent()` reads the members of the room, as `presenceOf()` does in the app, and returns the member. `connections` counts the open tabs of the user in the room.
 
-Run `npm run test:functional`. `./nv channels` lists the channel, and shows that a guest is refused:
+Run `npm run test:functional`. `./nv channel:list` lists the channel, and shows that a guest is refused:
 
 ```
 NAME         GUESTS   REPLAY BUFFER  SERVERS LISTENING
@@ -682,8 +679,7 @@ Replace the generated action test:
 
 ```ts
 // server/actions/message/post-message.action.test.ts
-import { actingAs, expect, expectBroadcast, expectNotBroadcast, expectRow, runAction } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, expectBroadcast, expectNotBroadcast, expectRow, it, runAction } from "@nuxvel/nuxt/testing";
 import { messageTable } from "#nuxvel/schema";
 import { roomMemberFactory, roomFactory, userFactory } from "#nuxvel/factories";
 
@@ -718,8 +714,8 @@ describe("message/post-message action", () => {
     await roomMemberFactory({ roomId: other.id, userId: ada.id });
     const stream = await actingAs(grace).listen(`room?roomId=${room.id}`);
 
-    await actingAs(ada).trpc.message.post({ roomId: other.id, body: "Not for Grace" });
-    const { id } = await actingAs(ada).trpc.message.post({ roomId: room.id, body: "Lunch at noon?" });
+    await actingAs(ada).api.message.post({ roomId: other.id, body: "Not for Grace" });
+    const { id } = await actingAs(ada).api.message.post({ roomId: room.id, body: "Lunch at noon?" });
 
     expect(await stream.next("posted")).toEqual({ id: expect.any(String), event: "posted", payload: { id } });
   });
@@ -735,8 +731,7 @@ Test the router in its own file:
 
 ```ts
 // server/trpc/routers/message.router.test.ts
-import { actingAs, expect } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, it } from "@nuxvel/nuxt/testing";
 import { messageFactory, roomMemberFactory, roomFactory, userFactory } from "#nuxvel/factories";
 
 describe("message router", () => {
@@ -748,7 +743,7 @@ describe("message router", () => {
     const second = await messageFactory({ roomId: room.id, authorId: ada.id });
     await messageFactory();
 
-    const listed = await actingAs(ada).trpc.message.forRoom({ roomId: room.id });
+    const listed = await actingAs(ada).api.message.forRoom({ roomId: room.id });
 
     expect(listed.map((row) => row.id)).toEqual([first.id, second.id]);
     expect(listed[0]).toMatchObject({ authorName: "Ada Lovelace", body: first.body });
@@ -758,7 +753,7 @@ describe("message router", () => {
     const room = await roomFactory();
     await messageFactory({ roomId: room.id });
 
-    await expect(actingAs(await userFactory()).trpc.message.forRoom({ roomId: room.id })).rejects.toBeTrpcError(
+    await expect(actingAs(await userFactory()).api.message.forRoom({ roomId: room.id })).rejects.toBeTrpcError(
       "FORBIDDEN",
     );
   });
@@ -1087,8 +1082,7 @@ The command writes `tests/e2e/room.test.ts`, which opens `/room`. Replace it:
 
 ```ts
 // tests/e2e/room.test.ts
-import { actingAs, button, expect, expectPresent, field, heading, text } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, button, describe, expect, expectPresent, field, heading, it, text } from "@nuxvel/nuxt/testing";
 import { roomMemberFactory, roomFactory, userFactory } from "#nuxvel/factories";
 
 async function roomWithAdaAndGrace() {

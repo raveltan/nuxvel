@@ -33,7 +33,7 @@ function todoFor(kind: TestKind | undefined, name: string) {
     case "action":
       return `runs the ${name} action with runAction() and checks its effect with expectRow()`;
     case "router":
-      return `calls the ${name} router through actingAs(user).trpc.${name} and guest().trpc.${name}`;
+      return `calls the ${name} router through actingAs(user).api.${name} and guest().api.${name}`;
     case "job":
       return `runs the ${name} job with runJob() and checks its effect with expectRow()`;
     case "listener":

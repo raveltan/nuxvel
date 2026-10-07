@@ -14,7 +14,7 @@ import { captureQueries } from "./query-count";
  *
  * @example
  * ```ts
- * await expectQueryCount({ max: 2 }, () => guest().trpc.post.list());
+ * await expectQueryCount({ max: 2 }, () => guest().api.post.list());
  * ```
  */
 export async function expectQueryCount(budget: { max: number }, fn: () => Promise<unknown>) {

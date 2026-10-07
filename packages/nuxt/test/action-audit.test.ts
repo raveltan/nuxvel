@@ -25,7 +25,7 @@ describe("the audit option of defineAction", async () => {
     const owner = await userFactory();
     const healthCheck = await healthCheckFactory({ userId: owner.id });
 
-    await actingAs(owner).trpc.health.update({ id: healthCheck.id, name: "after" });
+    await actingAs(owner).api.health.update({ id: healthCheck.id, name: "after" });
 
     const row = await expectAudited("health-checks.update", {
       actorType: "user",

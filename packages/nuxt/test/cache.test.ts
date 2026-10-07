@@ -69,17 +69,17 @@ describe("the server cache", async () => {
   });
 
   it("serves a second read of a remembered procedure without a query, until an action invalidates it", async () => {
-    const listQueries = () => expectConstantQueries(() => guest().trpc.post.list({ page: 1 }), [1]);
+    const listQueries = () => expectConstantQueries(() => guest().api.post.list({ page: 1 }), [1]);
 
     const uncached = await listQueries();
 
     expect(uncached).toBeGreaterThan(0);
     expect(await listQueries()).toBe(0);
 
-    const post = await actingAs(await userFactory()).trpc.post.create({ title: "Cached", body: "Body" });
+    const post = await actingAs(await userFactory()).api.post.create({ title: "Cached", body: "Body" });
 
     expect(await listQueries()).toBe(uncached);
-    expect((await guest().trpc.post.list()).rows.map(({ id }) => id)).toContain(post.id);
+    expect((await guest().api.post.list()).rows.map(({ id }) => id)).toContain(post.id);
   });
 
   it("runs a locked function once at a time, releases only its own lock, and takes a ttl of fractional milliseconds", async () => {
@@ -125,7 +125,7 @@ describe("the server cache", async () => {
 
     await expect(expectCached(key)).rejects.toThrow("post:list");
 
-    await guest().trpc.post.list();
+    await guest().api.post.list();
 
     expect(await expectCached<{ rows: unknown[] }>(key)).toHaveProperty("rows", expect.any(Array));
   });

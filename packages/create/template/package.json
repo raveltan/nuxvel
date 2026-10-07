@@ -15,7 +15,7 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "test": "npm run test:functional && npm run test:ui",
-    "test:functional": "nuxvel test",
+    "test:functional": "nuxvel test:functional",
     "pretest:ui": "playwright-core install chromium-headless-shell",
     "test:ui": "nuxvel test:ui",
     "pretest:e2e": "playwright-core install chromium-headless-shell",

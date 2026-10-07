@@ -1,5 +1,4 @@
-import { emit, expectEmitted } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, emit, expectEmitted, it } from "@nuxvel/nuxt/testing";
 
 describe("{{name}} event", () => {
   it("emits with a valid payload", async () => {

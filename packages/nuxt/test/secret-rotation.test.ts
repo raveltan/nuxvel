@@ -1,5 +1,5 @@
-import { expect, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { envHint } from "@nuxvel/nuxt/env";
+import { describe, expect, guest, it } from "@nuxvel/nuxt/testing";
 import { setupPlayground } from "./helpers/playground";
 
 describe("useSecrets", async () => {
@@ -9,7 +9,7 @@ describe("useSecrets", async () => {
     const body = await guest().$fetch("/api/_secret-rotate-check");
 
     expect(body).toEqual({
-      whenUnset: "NUXT_PROBE_SIGNING_SECRET is not set",
+      whenUnset: `NUXT_PROBE_SIGNING_SECRET is not set. ${envHint("NUXT_PROBE_SIGNING_SECRET")}`,
       freshSignedWithNewSecret: true,
       oldDuringGrace: true,
       freshDuringGrace: true,

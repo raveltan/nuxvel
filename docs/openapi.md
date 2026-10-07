@@ -257,8 +257,7 @@ A `create-nuxvel` app has this table. In an existing app, add the file, then run
 ## Testing
 
 ```ts
-import { actingAs, expect, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, guest, it } from "@nuxvel/nuxt/testing";
 import { postFactory, userFactory } from "#nuxvel/factories";
 
 describe("posts over REST", () => {

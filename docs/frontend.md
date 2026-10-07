@@ -912,7 +912,8 @@ const posts = useLiveQuery($api.post.list.queryOptions(), {
 
 `useLiveQuery(queryOptions, { channel, on })` is auto-imported. It runs a tRPC query and changes the cached result from the events of a [realtime channel](./realtime.md). The list stays current without polling and without a refetch. This example needs a `posts` channel that declares `created`, `updated` and `deleted` events.
 
-- It returns what `useQuery()` returns, typed by the procedure. `<QueryState>` and `data` work in the same way.
+- It returns what [`$api.x.useQuery()`](./api.md#calling-from-the-client) returns, typed by the procedure: `reactive()`, so `posts.data` needs no `.value`. `<QueryState>` and `data` work in the same way.
+- Do not destructure the result: it loses its reactivity. Wrap it in `toRefs()` first: `const { data } = toRefs(useLiveQuery(...))`.
 - `on` maps the channel's declared events to patches. Each patch gets the cached data and the event payload, and returns the new cached value. The payload type is the output of that event's schema.
 - The payload arrives as JSON. Parse dates again with the [shared schema](./validation.md), as `postSchema.parse` does above.
 - The composable ignores an event with no patch. It patches nothing before the first response arrives.
@@ -1140,8 +1141,7 @@ export default [...accessibility, ...architecture];
 
 ```ts
 // tests/e2e/post.test.ts
-import { actingAs, button, expect, expectAccessible, field } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, button, describe, expect, expectAccessible, field, it } from "@nuxvel/nuxt/testing";
 import { userFactory } from "#nuxvel/factories";
 
 describe("new post form", () => {

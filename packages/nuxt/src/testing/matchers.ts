@@ -205,7 +205,7 @@ interface CustomMatchers<R = unknown> {
    *
    * @example
    * ```ts
-   * await expect(actingAs(user).trpc.post.create({ title: "" })).rejects.toHaveValidationErrors("title");
+   * await expect(actingAs(user).api.post.create({ title: "" })).rejects.toHaveValidationErrors("title");
    * await expect(
    *   runAction("posts.create-post", { title: "" }, { actingAs: user }),
    * ).rejects.toHaveValidationErrors({ title: /required|too small/i });
@@ -235,7 +235,7 @@ interface CustomMatchers<R = unknown> {
    *
    * @example
    * ```ts
-   * await expect(guest().trpc.post.create(input)).rejects.toBeTrpcError("UNAUTHORIZED");
+   * await expect(guest().api.post.create(input)).rejects.toBeTrpcError("UNAUTHORIZED");
    * ```
    */
   toBeTrpcError(expectedCode: TRPC_ERROR_CODE_KEY): R;

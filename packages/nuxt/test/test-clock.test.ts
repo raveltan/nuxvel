@@ -36,10 +36,10 @@ describe("the test clock", async () => {
 
   it("freezeTime() shows in the timestamps of a row the server writes", async () => {
     const frozenAt = new Date("2030-01-01T00:00:00Z");
-    const { trpc } = actingAs(await userFactory());
+    const { api } = actingAs(await userFactory());
 
     expect(await freezeTime(frozenAt)).toEqual(frozenAt);
-    const created = await trpc.health.create({});
+    const created = await api.health.create({});
 
     await expectRow(healthChecksTable, { id: created.id, createdAt: frozenAt, updatedAt: frozenAt });
   });
@@ -55,7 +55,7 @@ describe("the test clock", async () => {
   it("a factory row and an app row get the same createdAt after freezeTime()", async () => {
     const frozenAt = await freezeTime();
     const row = await healthCheckFactory();
-    const created = await actingAs(await userFactory()).trpc.health.create({});
+    const created = await actingAs(await userFactory()).api.health.create({});
 
     expect(row.createdAt).toEqual(frozenAt);
     await expectRow(healthChecksTable, { id: created.id, createdAt: frozenAt });

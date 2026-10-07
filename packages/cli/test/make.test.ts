@@ -278,7 +278,7 @@ describe("nuxvel make:* generators", () => {
     expect((await runCliAt(fixtureCwd, "make:experiment", "checkout-cta")).exitCode).toBe(0);
 
     expect(readFileSync(join(fixtureCwd, "server", "flags", "new-checkout.flag.ts"), "utf-8")).toBe(
-      'export const newCheckoutFlag = defineFlag({ default: false });\n',
+      'export const newCheckoutFlag = defineFlag();\n',
     );
 
     const experiment = readFileSync(join(fixtureCwd, "server", "flags", "checkout-cta.experiment.ts"), "utf-8");
@@ -460,7 +460,8 @@ describe("nuxvel make:* generators", () => {
       "utf-8",
     );
     expect(testFile).toContain('import { defineFactory } from "@nuxvel/nuxt/factories";');
-    expect(testFile).toContain('import { expect, runAction } from "@nuxvel/nuxt/testing";');
+    expect(testFile).toContain('import { describe, expect, it, runAction } from "@nuxvel/nuxt/testing";');
+    expect(testFile).not.toContain('"vitest"');
     expect(testFile).toContain('runAction("widgets.archive-widget", {}, { actingAs: actor })');
     expect(testFile).toContain('describe("widgets/archive-widget action"');
   });
@@ -636,9 +637,9 @@ export default defineDeploy({
 
     expect(workflow.on).toEqual({ push: { branches: ["main"] } });
     expect(workflow.jobs.test.strategy.matrix.shard).toEqual([1, 2, 3]);
-    expect(runs("test")).toContain("npx nuxvel test --shard=${{ matrix.shard }}/3");
+    expect(runs("test")).toContain("npx nuxvel test:functional --shard=${{ matrix.shard }}/3");
     expect(runs("check")).toContain("npx nuxvel db:check");
-    expect(runs("check")).toContain("npx nuxvel routes --diff-env=production");
+    expect(runs("check")).toContain("npx nuxvel route:list --diff-env=production");
     expect(runs("check")).toContain('npx nuxvel test:compat --against="$live"');
 
     const compatStep = workflow.jobs.check.steps.find((step: { name?: string }) => step.name?.startsWith("Run the tests of the live release"));
@@ -646,7 +647,7 @@ export default defineDeploy({
     mkdirSync(binDir);
     writeFileSync(
       join(binDir, "npx"),
-      '#!/bin/sh\necho "npx $*" >> "$NPX_LOG"\n[ "$2" = releases ] || exit 0\n[ -n "$RELEASES_JSON" ] || { echo "ssh failed" >&2; exit 1; }\nprintf "%s" "$RELEASES_JSON"\n',
+      '#!/bin/sh\necho "npx $*" >> "$NPX_LOG"\n[ "$2" = release:list ] || exit 0\n[ -n "$RELEASES_JSON" ] || { echo "ssh failed" >&2; exit 1; }\nprintf "%s" "$RELEASES_JSON"\n',
       { mode: 0o755 },
     );
     const runCompatStep = async (releasesJson: string) => {
@@ -794,7 +795,7 @@ export default defineDeploy({
       "runs the posts.create-post action with runAction() and checks its effect with expectRow()",
     );
     expect(await todoOf("trpc/routers/post")).toBe(
-      "calls the post router through actingAs(user).trpc.post and guest().trpc.post",
+      "calls the post router through actingAs(user).api.post and guest().api.post",
     );
     expect(await todoOf("jobs/post/notify")).toBe(
       "runs the post.notify job with runJob() and checks its effect with expectRow()",
@@ -809,10 +810,10 @@ export default defineDeploy({
       "runs the post.publish action with runAction() and checks its effect with expectRow()",
     );
     expect(await todoOf("domains/post/routers/post.router")).toBe(
-      "calls the post router through actingAs(user).trpc.post and guest().trpc.post",
+      "calls the post router through actingAs(user).api.post and guest().api.post",
     );
     expect(await todoOf("domains/order/routers/shipments.router")).toBe(
-      "calls the order.shipments router through actingAs(user).trpc.order.shipments and guest().trpc.order.shipments",
+      "calls the order.shipments router through actingAs(user).api.order.shipments and guest().api.order.shipments",
     );
     expect(await todoOf("domains/order/jobs/ship/pack.job")).toBe(
       "runs the order.ship.pack job with runJob() and checks its effect with expectRow()",
@@ -919,7 +920,7 @@ export default defineDeploy({
 
     const routerTest = readFileSync(join(fixtureCwd, "server", "trpc", "routers", "widget-item.router.test.ts"), "utf-8");
     expect(routerTest).toContain("await expectConstantQueries(async (size) => {");
-    expect(routerTest).toContain("await actingAs(owner).trpc.widgetItem.list();");
+    expect(routerTest).toContain("await actingAs(owner).api.widgetItem.list();");
   });
 
   it("make:router --crud --soft-deletes --searchable adds delete and restore, search, and REST meta with an output schema on every procedure", async () => {

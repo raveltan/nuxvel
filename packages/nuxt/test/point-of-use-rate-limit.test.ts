@@ -49,20 +49,20 @@ describe("rateLimit() at the point of use", async () => {
   it("limits an authed procedure per user", async () => {
     const [alice, bob] = [await userFactory(), await userFactory()];
 
-    await expect(actingAs(alice).trpc._rateLimitCheck.byUser()).resolves.toBe(alice.id);
-    await expect(actingAs(alice).trpc._rateLimitCheck.byUser()).rejects.toBeTrpcError("TOO_MANY_REQUESTS");
-    await expect(actingAs(bob).trpc._rateLimitCheck.byUser()).resolves.toBe(bob.id);
+    await expect(actingAs(alice).api._rateLimitCheck.byUser()).resolves.toBe(alice.id);
+    await expect(actingAs(alice).api._rateLimitCheck.byUser()).rejects.toBeTrpcError("TOO_MANY_REQUESTS");
+    await expect(actingAs(bob).api._rateLimitCheck.byUser()).resolves.toBe(bob.id);
   });
 
   it("spends the inline limit of a procedure for the identity of the test client", async () => {
     const [alice, bob] = [await userFactory(), await userFactory()];
 
-    await exhaustRateLimit(actingAs(alice).trpc._rateLimitCheck.byUser);
-    await exhaustRateLimit(guest().trpc._rateLimitCheck.byKey);
+    await exhaustRateLimit(actingAs(alice).api._rateLimitCheck.byUser);
+    await exhaustRateLimit(guest().api._rateLimitCheck.byKey);
 
-    await expect(actingAs(alice).trpc._rateLimitCheck.byUser()).rejects.toBeTrpcError("TOO_MANY_REQUESTS");
-    await expect(guest().trpc._rateLimitCheck.byKey()).rejects.toBeTrpcError("TOO_MANY_REQUESTS");
-    await expect(actingAs(bob).trpc._rateLimitCheck.byUser()).resolves.toBe(bob.id);
+    await expect(actingAs(alice).api._rateLimitCheck.byUser()).rejects.toBeTrpcError("TOO_MANY_REQUESTS");
+    await expect(guest().api._rateLimitCheck.byKey()).rejects.toBeTrpcError("TOO_MANY_REQUESTS");
+    await expect(actingAs(bob).api._rateLimitCheck.byUser()).resolves.toBe(bob.id);
   });
 
   it("limits an action by its rateLimit option, keyed by its name", async () => {

@@ -26,7 +26,7 @@ describe("REST API", async () => {
   });
 
   it("reads the JSON body of a POST", async () => {
-    const { key } = await actingAs(await userFactory()).trpc.apiKeys.create({ name: "ci" });
+    const { key } = await actingAs(await userFactory()).api.apiKeys.create({ name: "ci" });
 
     const response = await guest().fetch("/api/v1/posts", {
       method: "POST",

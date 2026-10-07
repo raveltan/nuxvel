@@ -25,7 +25,7 @@ Each chapter adds tests in the layer that owns each check:
 
 | Layer | Command | Checks |
 |---|---|---|
-| Functional | `./nv test` | the server: procedures, policies, actions, events, jobs, mails, the REST API |
+| Functional | `./nv test:functional` | the server: procedures, policies, actions, events, jobs, mails, the REST API |
 | Component | `npm run test:ui` | the states of one component, with a mocked server |
 | End-to-end | `npm run test:e2e` | a journey across pages in a browser |
 
@@ -38,7 +38,7 @@ npm create nuxvel@latest academy
 cd academy
 npm install
 ./nv services up
-./nv test
+./nv test:functional
 ```
 
 ```
@@ -64,7 +64,7 @@ server/
       actions/        create-course, update-course, delete-course, create-lesson, ...
       factories/      course.factory.ts, lesson.factory.ts
       policies/       course.policy.ts, lesson.policy.ts
-      routers/        course.router.ts (trpc.courses.course), lesson.router.ts (trpc.courses.lesson)
+      routers/        course.router.ts (api.courses.course), lesson.router.ts (api.courses.lesson)
       schema/         course.schema.ts, lesson.schema.ts
       uploads/        lesson-file.upload.ts (upload "courses.lesson-file")
     learning/
@@ -74,7 +74,7 @@ server/
       flags/          weekly-goal.flag.ts
       listeners/      notify-instructor, announce-finish
       notifications/  new-student, course-finished
-      routers/        learning.router.ts (trpc.learning)
+      routers/        learning.router.ts (api.learning)
       schema/         enrollment.schema.ts, lesson-progress.schema.ts
   privacy/            course, lesson and enrollment user data
   utils/              instructor-procedure.ts
@@ -85,7 +85,7 @@ layers/
       factories/ jobs/ listeners/ mail/ routers/ schema/
 ```
 
-The domain name is the first word of each name. The action in `server/domains/learning/actions/enroll.action.ts` is `learning.enroll`. A router file with the name of its domain is the domain itself: `routers/learning.router.ts` is `trpc.learning`, and `routers/course.router.ts` in the `courses` domain is `trpc.courses.course`. [Tutorial: ship and run an app](./ship-and-run.md#1-a-domain-folder) shows the same rules on a smaller app.
+The domain name is the first word of each name. The action in `server/domains/learning/actions/enroll.action.ts` is `learning.enroll`. A router file with the name of its domain is the domain itself: `routers/learning.router.ts` is `$api.learning`, and `routers/course.router.ts` in the `courses` domain is `$api.courses.course`. [Tutorial: ship and run an app](./ship-and-run.md#1-a-domain-folder) shows the same rules on a smaller app.
 
 ## 3. Courses and lessons
 
@@ -429,8 +429,7 @@ Replace the generated router test. The first test is an authorization table: one
 
 ```ts
 // server/domains/courses/routers/course.router.test.ts
-import { actingAs, expect, expectConstantQueries, guest, type TestCaller } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, expectConstantQueries, guest, it, type TestCaller } from "@nuxvel/nuxt/testing";
 import { userFactory, courseFactory } from "#nuxvel/factories";
 import type { CourseRow } from "#nuxvel/schema";
 
@@ -438,16 +437,16 @@ const instructorFactory = userFactory.state({ role: "instructor" });
 
 describe("course router", () => {
   it.for<{ name: string; caller: (course: CourseRow) => Promise<TestCaller>; refused?: "FORBIDDEN" | "UNAUTHORIZED" }>([
-    { name: "the instructor of the course", caller: async (course) => actingAs({ id: course.ownerId }).trpc },
-    { name: "an admin", caller: async () => actingAs(await userFactory({ role: "admin" })).trpc },
-    { name: "another instructor", caller: async () => actingAs(await instructorFactory()).trpc, refused: "FORBIDDEN" },
-    { name: "a student", caller: async () => actingAs(await userFactory()).trpc, refused: "FORBIDDEN" },
-    { name: "a guest", caller: async () => guest().trpc, refused: "UNAUTHORIZED" },
+    { name: "the instructor of the course", caller: async (course) => actingAs({ id: course.ownerId }).api },
+    { name: "an admin", caller: async () => actingAs(await userFactory({ role: "admin" })).api },
+    { name: "another instructor", caller: async () => actingAs(await instructorFactory()).api, refused: "FORBIDDEN" },
+    { name: "a student", caller: async () => actingAs(await userFactory()).api, refused: "FORBIDDEN" },
+    { name: "a guest", caller: async () => guest().api, refused: "UNAUTHORIZED" },
   ])("renames a course as $name", async ({ caller, refused }) => {
     const course = await courseFactory({ ownerId: (await instructorFactory()).id });
-    const trpc = await caller(course);
+    const api = await caller(course);
 
-    const rename = trpc.courses.course.update({ id: course.id, title: "Renamed" });
+    const rename = api.courses.course.update({ id: course.id, title: "Renamed" });
 
     if (refused) await expect(rename).rejects.toBeTrpcError(refused);
     else await expect(rename).resolves.toMatchObject({ title: "Renamed" });
@@ -458,7 +457,7 @@ describe("course router", () => {
     const intro = await courseFactory({ status: "published", title: "Databases", summary: "A first look at queries" });
     await courseFactory({ status: "draft", title: "Query tuning", summary: "Slow queries" });
 
-    const page = await guest().trpc.courses.course.catalogue({ q: "queries" });
+    const page = await guest().api.courses.course.catalogue({ q: "queries" });
 
     expect(page.rows.map((row) => row.id)).toEqual([intro.id, sql.id]);
     expect(page.total).toBe(2);
@@ -467,7 +466,7 @@ describe("course router", () => {
   it("pages through the catalogue", async () => {
     await courseFactory.count(3)({ status: "published" });
 
-    const page = await guest().trpc.courses.course.catalogue({ page: 2, perPage: 2 });
+    const page = await guest().api.courses.course.catalogue({ page: 2, perPage: 2 });
 
     expect(page).toMatchObject({ page: 2, perPage: 2, total: 3, lastPage: 2 });
     expect(page.rows).toHaveLength(1);
@@ -478,7 +477,7 @@ describe("course router", () => {
 
     await expectConstantQueries(async (size) => {
       await courseFactory.count(size)({ ownerId: instructor.id });
-      await actingAs(instructor).trpc.courses.course.list();
+      await actingAs(instructor).api.courses.course.list();
     });
   });
 });
@@ -501,8 +500,7 @@ The lesson test uploads a real file. `upload()` asks for the upload URL as that 
 
 ```ts
 // server/domains/courses/routers/lesson.router.test.ts
-import { actingAs, expect, expectRow, expectStored } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, expectRow, expectStored, it } from "@nuxvel/nuxt/testing";
 import { userFactory, courseFactory } from "#nuxvel/factories";
 import { lessonTable } from "#nuxvel/schema";
 
@@ -515,7 +513,7 @@ describe("lesson router", () => {
     const instructor = actingAs(ada);
     const key = await instructor.upload("courses.lesson-file", pdf);
 
-    const lesson = await instructor.trpc.courses.lesson.create({ courseId: course.id, title: "Welcome", body: "Read the notes.", fileKey: key });
+    const lesson = await instructor.api.courses.lesson.create({ courseId: course.id, title: "Welcome", body: "Read the notes.", fileKey: key });
 
     const row = await expectRow(lessonTable, { id: lesson.id, ownerId: ada.id });
     expect(row.fileKey).toMatch(new RegExp(`^lessons/${course.id}/`));
@@ -524,9 +522,9 @@ describe("lesson router", () => {
 
   it("refuses a lesson for the course of another instructor", async () => {
     const course = await courseFactory();
-    const { trpc } = actingAs(await userFactory({ role: "instructor" }));
+    const { api } = actingAs(await userFactory({ role: "instructor" }));
 
-    await expect(trpc.courses.lesson.create({ courseId: course.id, title: "Mine now", body: "No." })).rejects.toBeTrpcError("NOT_FOUND");
+    await expect(api.courses.lesson.create({ courseId: course.id, title: "Mine now", body: "No." })).rejects.toBeTrpcError("NOT_FOUND");
   });
 
   it("keeps the upload to instructors", async () => {
@@ -535,10 +533,10 @@ describe("lesson router", () => {
 });
 ```
 
-Run the tests of the domain. `./nv test` takes paths, as Vitest does:
+Run the tests of the domain. `./nv test:functional` takes paths, as Vitest does:
 
 ```bash
-./nv test server/domains/courses
+./nv test:functional server/domains/courses
 ```
 
 ```
@@ -859,7 +857,7 @@ The `create`, `update` and `delete` mutations stay as they are.
 ◇ Updated types (nuxt prepare) (1.1s)
 ```
 
-The router file has the name of its domain, so it is `trpc.learning`. Each procedure calls an action to write, and reads only the rows of the signed-in user:
+The router file has the name of its domain, so it is `$api.learning`. Each procedure calls an action to write, and reads only the rows of the signed-in user:
 
 ```ts
 // server/domains/learning/routers/learning.router.ts
@@ -924,8 +922,7 @@ Replace the two generated action tests:
 
 ```ts
 // server/domains/learning/actions/enroll.action.test.ts
-import { actingAs, expect, expectEmitted, expectListenerQueued, expectRow, runAction } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, expectEmitted, expectListenerQueued, expectRow, it, runAction } from "@nuxvel/nuxt/testing";
 import { userFactory, courseFactory } from "#nuxvel/factories";
 import { enrollmentTable } from "#nuxvel/schema";
 
@@ -954,7 +951,7 @@ describe("learning/enroll action", () => {
   it("does not find a draft course", async () => {
     const course = await courseFactory({ status: "draft" });
 
-    await expect(actingAs(await userFactory()).trpc.learning.enroll({ courseId: course.id })).rejects.toBeTrpcError("NOT_FOUND");
+    await expect(actingAs(await userFactory()).api.learning.enroll({ courseId: course.id })).rejects.toBeTrpcError("NOT_FOUND");
   });
 });
 ```
@@ -963,8 +960,7 @@ The first test names the listener `learning.notify-instructor`, which chapter 5 
 
 ```ts
 // server/domains/learning/actions/complete-lesson.action.test.ts
-import { actingAs, expect, expectEmitted, expectNotEmitted, runAction } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, expectEmitted, expectNotEmitted, it, runAction } from "@nuxvel/nuxt/testing";
 import { userFactory, courseFactory, lessonFactory, enrollmentFactory } from "#nuxvel/factories";
 
 describe("learning/complete-lesson action", () => {
@@ -986,7 +982,7 @@ describe("learning/complete-lesson action", () => {
   it("refuses a lesson of a course that the student is not enrolled in", async () => {
     const lesson = await lessonFactory();
 
-    await expect(actingAs(await userFactory()).trpc.learning.completeLesson({ lessonId: lesson.id })).rejects.toBeTrpcError("NOT_FOUND");
+    await expect(actingAs(await userFactory()).api.learning.completeLesson({ lessonId: lesson.id })).rejects.toBeTrpcError("NOT_FOUND");
   });
 });
 ```
@@ -997,8 +993,7 @@ The `learn` rule gets its own authorization table. Add it to the lesson router t
 
 ```ts
 // server/domains/courses/routers/lesson.router.test.ts
-import { actingAs, expect, expectRow, expectStored, type TestCaller } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, expectRow, expectStored, it, type TestCaller } from "@nuxvel/nuxt/testing";
 import { userFactory, enrollmentFactory, courseFactory, lessonFactory } from "#nuxvel/factories";
 import type { CourseRow } from "#nuxvel/schema";
 import { lessonTable } from "#nuxvel/schema";
@@ -1008,15 +1003,15 @@ import { lessonTable } from "#nuxvel/schema";
 // server/domains/courses/routers/lesson.router.test.ts, at the end
 describe("lessons of a course", () => {
   it.for<{ name: string; caller: (course: CourseRow) => Promise<TestCaller>; allowed: boolean }>([
-    { name: "the instructor of the course", caller: async (course) => actingAs({ id: course.ownerId }).trpc, allowed: true },
-    { name: "an admin", caller: async () => actingAs(await userFactory({ role: "admin" })).trpc, allowed: true },
+    { name: "the instructor of the course", caller: async (course) => actingAs({ id: course.ownerId }).api, allowed: true },
+    { name: "an admin", caller: async () => actingAs(await userFactory({ role: "admin" })).api, allowed: true },
     {
       name: "an enrolled student",
-      caller: async (course) => actingAs({ id: (await enrollmentFactory({ courseId: course.id })).studentId }).trpc,
+      caller: async (course) => actingAs({ id: (await enrollmentFactory({ courseId: course.id })).studentId }).api,
       allowed: true,
     },
-    { name: "a student of another course", caller: async () => actingAs({ id: (await enrollmentFactory()).studentId }).trpc, allowed: false },
-    { name: "another instructor", caller: async () => actingAs(await userFactory({ role: "instructor" })).trpc, allowed: false },
+    { name: "a student of another course", caller: async () => actingAs({ id: (await enrollmentFactory()).studentId }).api, allowed: false },
+    { name: "another instructor", caller: async () => actingAs(await userFactory({ role: "instructor" })).api, allowed: false },
   ])("lets $name read the lessons: $allowed", async ({ caller, allowed }) => {
     const course = await courseFactory({ status: "published" });
     await lessonFactory({ courseId: course.id, ownerId: course.ownerId, title: "Welcome" });
@@ -1157,8 +1152,7 @@ A queued listener runs in the worker, not in the app under test. Test what it do
 
 ```ts
 // server/domains/learning/listeners/notify-instructor.listener.test.ts
-import { expectNotified, runListener } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expectNotified, it, runListener } from "@nuxvel/nuxt/testing";
 import { userFactory, courseFactory, enrollmentFactory } from "#nuxvel/factories";
 
 describe("learning.notify-instructor listener", () => {
@@ -1176,8 +1170,7 @@ describe("learning.notify-instructor listener", () => {
 
 ```ts
 // server/domains/learning/listeners/announce-finish.listener.test.ts
-import { expectNotified, runListener } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expectNotified, it, runListener } from "@nuxvel/nuxt/testing";
 import { userFactory, courseFactory, enrollmentFactory } from "#nuxvel/factories";
 
 describe("learning.announce-finish listener", () => {
@@ -1196,7 +1189,7 @@ describe("learning.announce-finish listener", () => {
 Run the tests of the two domains:
 
 ```bash
-./nv test server/domains
+./nv test:functional server/domains
 ```
 
 ```
@@ -1204,10 +1197,10 @@ Run the tests of the two domains:
       Tests  26 passed (26)
 ```
 
-`./nv events` shows each event, the file that emits it and its listeners:
+`./nv event:list` shows each event, the file that emits it and its listeners:
 
 ```bash
-./nv events
+./nv event:list
 ```
 
 ```
@@ -1483,8 +1476,7 @@ Keep each test next to its file. Vitest finds the tests in `layers/` too. Replac
 
 ```ts
 // layers/certificates/server/domains/certificate/listeners/issue.listener.test.ts
-import { emit, expectQueued, expectRow } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, emit, expectQueued, expectRow, it } from "@nuxvel/nuxt/testing";
 import { enrollmentFactory } from "#nuxvel/factories";
 import { certificateTable } from "#nuxvel/schema";
 
@@ -1505,8 +1497,7 @@ describe("certificate.issue listener", () => {
 
 ```ts
 // layers/certificates/server/domains/certificate/jobs/mail-certificate.job.test.ts
-import { expect, expectMailSent, runJob } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectMailSent, it, runJob } from "@nuxvel/nuxt/testing";
 import { userFactory, courseFactory, enrollmentFactory, certificateFactory } from "#nuxvel/factories";
 
 describe("certificate.mail-certificate job", () => {
@@ -1526,8 +1517,7 @@ describe("certificate.mail-certificate job", () => {
 
 ```ts
 // layers/certificates/server/domains/certificate/mail/issued.mail.test.ts
-import { expect, renderMail } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, it, renderMail } from "@nuxvel/nuxt/testing";
 
 describe("certificate.issued mail", () => {
   it("names the course and links to the certificate", async () => {
@@ -1548,8 +1538,7 @@ describe("certificate.issued mail", () => {
 ```ts
 // layers/certificates/server/domains/certificate/routers/certificate.router.test.ts
 import { randomUUID } from "node:crypto";
-import { expect, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, guest, it } from "@nuxvel/nuxt/testing";
 import { userFactory, enrollmentFactory, certificateFactory } from "#nuxvel/factories";
 
 describe("certificate router", () => {
@@ -1557,17 +1546,17 @@ describe("certificate router", () => {
     const enrollment = await enrollmentFactory({ studentId: (await userFactory({ name: "Ada Lovelace" })).id });
     const certificate = await certificateFactory({ enrollmentId: enrollment.id });
 
-    await expect(guest().trpc.certificate.verify({ code: certificate.code })).resolves.toMatchObject({ studentName: "Ada Lovelace" });
+    await expect(guest().api.certificate.verify({ code: certificate.code })).resolves.toMatchObject({ studentName: "Ada Lovelace" });
   });
 
   it("does not find an unknown code", async () => {
-    await expect(guest().trpc.certificate.verify({ code: randomUUID() })).rejects.toBeTrpcError("NOT_FOUND");
+    await expect(guest().api.certificate.verify({ code: randomUUID() })).rejects.toBeTrpcError("NOT_FOUND");
   });
 });
 ```
 
 ```bash
-./nv test layers
+./nv test:functional layers
 ```
 
 ```
@@ -1575,7 +1564,7 @@ describe("certificate router", () => {
       Tests  6 passed (6)
 ```
 
-`./nv events` now lists the listener of the module next to the listener of the domain:
+`./nv event:list` now lists the listener of the module next to the listener of the domain:
 
 ```
 learning.course-finished  server/domains/learning/events/course-finished.event.ts  server/domains/learning/actions/complete-lesson.action.ts  learning.announce-finish (queued), certificate.issue (sync)
@@ -1946,8 +1935,7 @@ Change its test to match:
 
 ```ts
 // tests/functional/seeders.test.ts
-import { expectCount, expectRow, runSeeder, signIn } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expectCount, expectRow, it, runSeeder, signIn } from "@nuxvel/nuxt/testing";
 import { userTable, lessonTable } from "#nuxvel/schema";
 
 describe("the database seeder", () => {
@@ -2121,7 +2109,7 @@ The team tries a weekly goal on the dashboard: "You completed 2 lessons in the l
 export const learningWeeklyGoalFlag = defineFlag({ default: false, expiresAt: "2027-03-31" });
 ```
 
-The flag is `learning.weekly-goal`, off by default. After `expiresAt`, `nuxvel flags:stale` reports it, so the team removes the flag or makes the feature permanent. Add a query to the learning router. It answers `null` while the flag is off for the user, so the server never computes a feature that the user does not have:
+The flag is `learning.weekly-goal`, off by default. After `expiresAt`, `nuxvel flag:stale` reports it, so the team removes the flag or makes the feature permanent. Add a query to the learning router. It answers `null` while the flag is off for the user, so the server never computes a feature that the user does not have:
 
 ```ts
 // server/domains/learning/routers/learning.router.ts, in learningRouter
@@ -2177,8 +2165,7 @@ Test both states of the flag. `enableFlag()` turns the flag on for every user in
 
 ```ts
 // server/domains/learning/routers/learning.router.test.ts
-import { actingAs, enableFlag, expect } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, enableFlag, expect, it } from "@nuxvel/nuxt/testing";
 import { userFactory, enrollmentFactory, lessonProgressFactory } from "#nuxvel/factories";
 
 describe("learning router", () => {
@@ -2189,11 +2176,11 @@ describe("learning router", () => {
     await lessonProgressFactory({ enrollmentId: enrollment.id, createdAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000) });
     await lessonProgressFactory();
 
-    const { trpc } = actingAs(student);
-    expect(await trpc.learning.weeklyGoal()).toBeNull();
+    const { api } = actingAs(student);
+    expect(await api.learning.weeklyGoal()).toBeNull();
 
     await enableFlag("learning.weekly-goal");
-    expect(await trpc.learning.weeklyGoal()).toBe(1);
+    expect(await api.learning.weeklyGoal()).toBe(1);
   });
 });
 ```
@@ -2201,7 +2188,7 @@ describe("learning router", () => {
 The test counts one lesson. The second row is 8 days old, and the third row belongs to another student.
 
 ```bash
-./nv test server/domains/learning/routers
+./nv test:functional server/domains/learning/routers
 ```
 
 ```
@@ -2212,9 +2199,9 @@ The test counts one lesson. The second row is 8 days old, and the third row belo
 Roll the beta out with no deploy. Turn it on for every instructor, who try it first, and for 10% of the other users:
 
 ```bash
-./nv flags:set learning.weekly-goal --role instructor --value true
-./nv flags:set learning.weekly-goal --percentage 10
-./nv flags:list
+./nv flag:set learning.weekly-goal --role instructor --value true
+./nv flag:set learning.weekly-goal --percentage 10
+./nv flag:list
 ```
 
 ```
@@ -2354,8 +2341,7 @@ Give the secret to the LMS team one time: nuxvel does not show it again. Then se
 
 ```ts
 // tests/functional/lms-api.test.ts
-import { actingAs, expect, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, guest, it } from "@nuxvel/nuxt/testing";
 import { courseFactory, enrollmentFactory, userFactory } from "#nuxvel/factories";
 
 describe("the LMS API", () => {
@@ -2401,8 +2387,7 @@ The webhook goes to each endpoint row, so the listener test adds one with a fact
 ```ts
 // server/domains/learning/listeners/announce-finish.listener.test.ts
 import { defineFactory } from "@nuxvel/nuxt/factories";
-import { expectNotified, expectWebhookSent, runListener } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expectNotified, expectWebhookSent, it, runListener } from "@nuxvel/nuxt/testing";
 import { webhookEndpointsTable } from "#nuxvel/schema";
 import { userFactory, courseFactory, enrollmentFactory } from "#nuxvel/factories";
 
@@ -2424,7 +2409,7 @@ describe("learning.announce-finish listener", () => {
 ```
 
 ```bash
-./nv test tests/functional/lms-api.test.ts server/domains/learning/listeners
+./nv test:functional tests/functional/lms-api.test.ts server/domains/learning/listeners
 ```
 
 ```
@@ -2440,8 +2425,7 @@ An end-to-end test drives the real app in a browser, through several pages. Keep
 
 ```ts
 // tests/e2e/catalogue.test.ts
-import { expect, field, heading, link, visit } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, field, heading, it, link, visit } from "@nuxvel/nuxt/testing";
 import { courseFactory, lessonFactory } from "#nuxvel/factories";
 
 describe("the catalogue in a browser", () => {
@@ -2465,8 +2449,7 @@ The student journey crosses the two domains and the module. `workQueue()` runs t
 
 ```ts
 // tests/e2e/learning.test.ts
-import { actingAs, button, expect, expectMailSent, heading, text, visit, workQueue } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, button, describe, expect, expectMailSent, heading, it, text, visit, workQueue } from "@nuxvel/nuxt/testing";
 import { courseFactory, lessonFactory, userFactory } from "#nuxvel/factories";
 
 describe("a student in a browser", () => {
@@ -2494,8 +2477,7 @@ The instructor journey uploads a real file. `setInputFiles` is the Playwright me
 
 ```ts
 // tests/e2e/teach.test.ts
-import { actingAs, button, expect, expectRow, fillForm, heading, text } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, button, describe, expect, expectRow, fillForm, heading, it, text } from "@nuxvel/nuxt/testing";
 import { lessonTable } from "#nuxvel/schema";
 import { userFactory } from "#nuxvel/factories";
 

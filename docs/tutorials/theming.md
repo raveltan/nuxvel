@@ -30,7 +30,7 @@ npm create nuxvel@latest grove
 cd grove
 npm install
 ./nv services up
-./nv test
+./nv test:functional
 ```
 
 ```
@@ -729,8 +729,7 @@ The component tests use Storybook. The end-to-end tests run the production build
 
 ```ts
 // tests/e2e/theme.test.ts
-import { button, expect, expectAccessible, heading, visit } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { button, describe, expect, expectAccessible, heading, it, visit } from "@nuxvel/nuxt/testing";
 
 describe("the theme in a browser", () => {
   it("follows a dark system setting and switches back to light", async () => {
@@ -780,7 +779,7 @@ The second file is the starter's `tests/e2e/home.test.ts`. Its `expectNoSmoke()`
 
 ```bash
 npm run typecheck
-./nv test
+./nv test:functional
 npm run test:ui
 npm run test:e2e
 npm run test:arch
@@ -799,7 +798,7 @@ npm run test:arch
 ✔ All architecture rules pass
 ```
 
-`./nv test` runs the generated router test and the two starter files. `npm run test:ui` runs the 16 stories of this tutorial and the 4 stories of the starter. `npm run test:arch` also checks that each test and each story imports `expect` from its nuxvel entry.
+`./nv test:functional` runs the generated router test and the two starter files. `npm run test:ui` runs the 16 stories of this tutorial and the 4 stories of the starter. `npm run test:arch` also checks that each test and each story imports `expect` from its nuxvel entry.
 
 ## What this tutorial leaves out
 

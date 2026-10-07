@@ -27,7 +27,7 @@ The test, `published.event.test.ts`, emits the event with a sample value for eac
 
 Put each event in its own file under `server/events/`, as a named export. `defineEvent` is auto-imported. nuxvel finds the file. You do not register it. Import the event where you listen for it.
 
-The file path gives the event name. The file above defines the event `post.published`. `nuxvel events` prints this name, and the test fixtures take it. See [Names come from paths](./index.md#names-come-from-paths).
+The file path gives the event name. The file above defines the event `post.published`. `nuxvel event:list` prints this name, and the test fixtures take it. See [Names come from paths](./index.md#names-come-from-paths).
 
 The auto-imported `$events` namespace holds each event under its path. Each path segment is in camelCase and has no kind suffix. `$events.post.published` is the event in the file above. Go to definition on `$events.post.published` opens the event file. `$events` is available on the server only.
 
@@ -79,7 +79,7 @@ export const postNotifySubscribersListener = defineListener({
 
 Put each listener in its own file under `server/listeners/`, as a named export. `defineListener` is auto-imported. nuxvel finds the file. You do not register it.
 
-The file path gives the listener name. The file above defines the listener `post.notify-subscribers`. `nuxvel events` and the test fixtures use this name.
+The file path gives the listener name. The file above defines the listener `post.notify-subscribers`. `nuxvel event:list` and the test fixtures use this name.
 
 The auto-imported `$listeners` namespace holds each listener in the same way. `$listeners.post.notifySubscribers` is the listener in the file above. A `renamed()` alias is not in the namespace. `$listeners` is available on the server only.
 
@@ -185,7 +185,7 @@ An event stores nothing under its name. You can move an event file without an al
 ## Listing events
 
 ```sh
-nuxvel events
+nuxvel event:list
 ```
 
 ```
@@ -195,14 +195,13 @@ post.published  server/events/post/published.event.ts  server/actions/posts/publ
 ▲ post.archived has no listener, nothing reacts to this event
 ```
 
-The command lists each event, the server files that emit it and its listeners. It warns about an event that has no listener. `--json` prints the same data as JSON. See the [CLI reference](./cli.md#nuxvel-events).
+The command lists each event, the server files that emit it and its listeners. It warns about an event that has no listener. `--json` prints the same data as JSON. See the [CLI reference](./cli.md#nuxvel-eventlist).
 
 ## Testing
 
 ```ts
 // server/events/post/published.event.test.ts
-import { emit, expectEmitted, expectListenerQueued, expectListenerRan } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, emit, expectEmitted, expectListenerQueued, expectListenerRan, it } from "@nuxvel/nuxt/testing";
 import { postFactory } from "#nuxvel/factories";
 
 describe("post.published event", () => {

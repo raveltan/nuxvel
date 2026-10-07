@@ -15,7 +15,7 @@ import { expectRecorded } from "./records";
  *
  * @example
  * ```ts
- * await expect(actingAs(other).trpc.post.update({ id: post.id, title: "x" })).rejects.toThrow();
+ * await expect(actingAs(other).api.post.update({ id: post.id, title: "x" })).rejects.toThrow();
  * await expectPolicyChecked("update", postsTable, { allowed: false });
  * ```
  */

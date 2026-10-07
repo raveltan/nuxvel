@@ -1,5 +1,4 @@
-import { expectRow, runSeeder, signIn } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expectRow, it, runSeeder, signIn } from "@nuxvel/nuxt/testing";
 import { userTable } from "#nuxvel/schema";
 
 describe("the database seeder", () => {

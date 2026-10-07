@@ -141,7 +141,7 @@ export function isPresenceRoom(key: string) {
 /**
  * Every channel: each one defined under `server/channels/`, the built-in
  * `flags` included, then the `job:<name>` channel of each job with a
- * `channel` option (the per-user `job:<name>:<userId>` channels are left out). What `nuxvel channels` lists. The per-user
+ * `channel` option (the per-user `job:<name>:<userId>` channels are left out). What `nuxvel channel:list` lists. The per-user
  * `notifications:<userId>` channels are left out.
  */
 export function allChannels(): readonly ListenableChannel[] {

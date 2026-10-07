@@ -25,8 +25,8 @@ async function expectLookup(helper: string, hit: boolean, given: CacheKey, times
  *
  * @example
  * ```ts
- * await guest().trpc.post.list();
- * await guest().trpc.post.list();
+ * await guest().api.post.list();
+ * await guest().api.post.list();
  * await expectCacheHit("posts:list:[null,null,null]", { times: 1 });
  * ```
  */
@@ -43,7 +43,7 @@ export async function expectCacheHit(key: CacheKey, options: { times?: number } 
  *
  * @example
  * ```ts
- * await guest().trpc.post.list();
+ * await guest().api.post.list();
  * await expectCacheMiss("posts:list:[null,null,null]", { times: 1 });
  * ```
  */

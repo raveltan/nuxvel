@@ -1,3 +1,19 @@
+import type { UseMutationReturn } from "@pinia/colada";
+import type { Reactive } from "vue";
+
+/** What a Better Auth call that only succeeds or fails resolves with. */
+export interface AuthStatus {
+  status: boolean;
+}
+
+/**
+ * An action of {@link useSessions}, {@link useChangeEmail},
+ * {@link useTwoFactor} or {@link useResendVerification}: Pinia Colada's
+ * `useMutation()` result wrapped in `reactive()`, like
+ * `$api.x.useMutation()`.
+ */
+export type AuthMutation<TData, TVars = void> = Reactive<UseMutationReturn<TData, TVars, Error>>;
+
 /** What every call of `authClient` resolves with: its data, or Better Auth's error. */
 export interface AuthResult<T> {
   data: T | null;

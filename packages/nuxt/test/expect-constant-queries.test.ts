@@ -12,7 +12,7 @@ describe("expectConstantQueries", async () => {
   it("fails when the app runs a query per row", async () => {
     const post = await postFactory.for("authorId", await userFactory())();
     const perRow = expectConstantQueries(async (size) => {
-      for (let call = 0; call < size; call++) await guest().trpc.post.byId({ id: post.id });
+      for (let call = 0; call < size; call++) await guest().api.post.byId({ id: post.id });
     });
 
     const failure = await perRow.catch((error: Error) => error.message);
@@ -25,7 +25,7 @@ describe("expectConstantQueries", async () => {
     const post = await postFactory.for("authorId", await userFactory())();
 
     const failure = await expectConstantQueries(async (size) => {
-      for (let call = 0; call < (size === 1 ? 3 : 2); call++) await guest().trpc.post.byId({ id: post.id });
+      for (let call = 0; call < (size === 1 ? 3 : 2); call++) await guest().api.post.byId({ id: post.id });
     }).catch((error: Error) => error.message);
 
     expect(failure).toContain("size 1: 3 queries, size 4: 2 queries");
@@ -36,7 +36,7 @@ describe("expectConstantQueries", async () => {
   it("captureQueries returns the SQL of the app's queries, and nothing for a call with no app", async () => {
     const post = await postFactory.for("authorId", await userFactory())();
 
-    const sql = await captureQueries(() => guest().trpc.post.byId({ id: post.id }));
+    const sql = await captureQueries(() => guest().api.post.byId({ id: post.id }));
 
     expect(sql).toHaveLength(1);
     expect(sql[0]).toMatch(/from "posts"/);
@@ -47,7 +47,7 @@ describe("expectConstantQueries", async () => {
     const count = await expectConstantQueries(async (size) => {
       await userFactory.has(size, (user) => postFactory.for("authorId", user))();
       await flushWorkerRedis();
-      await guest().trpc.post.list();
+      await guest().api.post.list();
     });
 
     expect(count).toBe(1);

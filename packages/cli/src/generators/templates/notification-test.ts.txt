@@ -1,6 +1,5 @@
 import { defineFactory } from "@nuxvel/nuxt/factories";
-import { expectNotified, sendNotification } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expectNotified, it, sendNotification } from "@nuxvel/nuxt/testing";
 import { userTable } from "{{authSchemaPath}}";
 
 const userFactory = defineFactory(userTable);

@@ -13,8 +13,8 @@ describe("actingAs(user, options)", async () => {
   it("sends the Idempotency-Key header with a tRPC call", async () => {
     const ada = actingAs(await userFactory(), { headers: { "Idempotency-Key": "k1" } });
 
-    const first = await ada.trpc.post.create({ title: "Hello", body: "" });
-    const second = await ada.trpc.post.create({ title: "Hello", body: "" });
+    const first = await ada.api.post.create({ title: "Hello", body: "" });
+    const second = await ada.api.post.create({ title: "Hello", body: "" });
 
     expect(second.id).toBe(first.id);
     await expectCount(postsTable, 1);

@@ -23,8 +23,8 @@ function keyOf(identity: RateLimitIdentity) {
  *
  * Give a shared limit and the identity that uses it: `{ user }` for
  * `by: "user"`, `{ ip }` for `by: "ip"`, or the string that a key function
- * returns. Or give a procedure of {@link actingAs}`().trpc` or
- * {@link guest}`().trpc`: the helper then spends the inline `rateLimit()`
+ * returns. Or give a procedure of {@link actingAs}`().api` or
+ * {@link guest}`().api`: the helper then spends the inline `rateLimit()`
  * of that procedure for the identity of that client, and does not call the
  * procedure. The next request answers 429, or `TOO_MANY_REQUESTS` for a
  * procedure. Each test starts with fresh counts. Throws when the procedure
@@ -38,9 +38,9 @@ function keyOf(identity: RateLimitIdentity) {
  * @example
  * ```ts
  * await exhaustRateLimit("export", { user });
- * await expect(actingAs(user).trpc.post.export()).rejects.toBeTrpcError("TOO_MANY_REQUESTS");
+ * await expect(actingAs(user).api.post.export()).rejects.toBeTrpcError("TOO_MANY_REQUESTS");
  *
- * await exhaustRateLimit(guest().trpc.tickets.public.open);
+ * await exhaustRateLimit(guest().api.tickets.public.open);
  * ```
  */
 export async function exhaustRateLimit(limit: RateLimitName | RateLimit, identity: RateLimitIdentity): Promise<void>;
@@ -52,7 +52,7 @@ export async function exhaustRateLimit(
   if (typeof limit === "function") {
     const caller = callerPaths.get(limit);
 
-    if (!caller) throw new Error("exhaustRateLimit: pass a procedure of actingAs().trpc or guest().trpc");
+    if (!caller) throw new Error("exhaustRateLimit: pass a procedure of actingAs().api or guest().api");
 
     await callApp("exhaust-rate-limit", { procedure: caller.path.join("."), userId: caller.userId }, await caller.headers());
 

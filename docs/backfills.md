@@ -128,8 +128,7 @@ When you move a backfill file, its name changes, and a new run starts from the b
 
 ```ts
 // server/database/backfills/posts-content.backfill.test.ts
-import { expect, expectRow, runBackfill } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectRow, it, runBackfill } from "@nuxvel/nuxt/testing";
 import { backfillsTable } from "#nuxvel/schema";
 
 describe("posts-content backfill", () => {

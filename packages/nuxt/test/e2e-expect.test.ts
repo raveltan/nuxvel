@@ -6,7 +6,7 @@ describe("expect from @nuxvel/nuxt/testing", async () => {
   await setupPlayground({ browser: true });
 
   it("sends a value to the Vitest expect, with the nuxvel matchers and the asymmetric matchers", async () => {
-    await expect(guest().trpc.account.signUps()).rejects.toBeTrpcError("UNAUTHORIZED");
+    await expect(guest().api.account.signUps()).rejects.toBeTrpcError("UNAUTHORIZED");
     expect({ id: 7, title: "Hi" }).toEqual({ id: expect.any(Number), title: "Hi" });
     expect(() => expect(1).toBe(2)).toThrow(/expected 1 to be 2/);
   });

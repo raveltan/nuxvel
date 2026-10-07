@@ -1,8 +1,28 @@
 import { useI18n } from "#imports";
 import { useMutation } from "@pinia/colada";
-import { computed, reactive } from "vue";
+import { computed, type ComputedRef, reactive } from "vue";
 import { authClient } from "../auth/client";
-import { unwrapAuth } from "./unwrap-auth";
+import { type AuthMutation, type AuthStatus, unwrapAuth } from "./unwrap-auth";
+
+/** What `enable` of {@link useTwoFactor} resolves with. */
+export interface TwoFactorSetup {
+  /** The `otpauth://` URI for the authenticator app, as a QR code or a key. */
+  totpURI: string;
+  /** The backup codes, each of which works once. */
+  backupCodes: string[];
+}
+
+/** What {@link useTwoFactor} returns. */
+export interface TwoFactor {
+  /** Checks the password and starts the setup. */
+  enable: AuthMutation<TwoFactorSetup, string>;
+  /** Checks a TOTP or a backup code. */
+  verify: AuthMutation<void, string>;
+  /** Checks the password and turns two-factor sign-in off. */
+  disable: AuthMutation<AuthStatus, string>;
+  /** The backup codes that `enable` returned. */
+  backupCodes: ComputedRef<string[]>;
+}
 
 /**
  * Turns the signed-in user's two-factor sign-in on and off, and checks a
@@ -41,11 +61,11 @@ import { unwrapAuth } from "./unwrap-auth";
  * </template>
  * ```
  */
-export function useTwoFactor() {
+export function useTwoFactor(): TwoFactor {
   const { ts } = useI18n();
 
   const enable = useMutation({
-    mutation: async (password: string) => {
+    mutation: async (password: string): Promise<TwoFactorSetup> => {
       const data = unwrapAuth(await authClient.twoFactor.enable({ password }), ts("nuxvel.auth.enableTwoFactorFailed"));
 
       if (!("totpURI" in data)) throw new Error(ts("nuxvel.auth.enableTwoFactorFailed"));
@@ -55,15 +75,16 @@ export function useTwoFactor() {
   });
 
   const verify = useMutation({
-    mutation: async (code: string) =>
+    mutation: async (code: string) => {
       unwrapAuth(
         /^\d{6}$/.test(code) ? await authClient.twoFactor.verifyTotp({ code }) : await authClient.twoFactor.verifyBackupCode({ code }),
         ts("nuxvel.auth.verifyFailed"),
-      ),
+      );
+    },
   });
 
   const disable = useMutation({
-    mutation: async (password: string) => unwrapAuth(await authClient.twoFactor.disable({ password }), ts("nuxvel.auth.disableTwoFactorFailed")),
+    mutation: async (password: string): Promise<AuthStatus> => unwrapAuth(await authClient.twoFactor.disable({ password }), ts("nuxvel.auth.disableTwoFactorFailed")),
   });
 
   return {

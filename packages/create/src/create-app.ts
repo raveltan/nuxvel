@@ -53,7 +53,7 @@ function writeEnv(targetDir: string) {
  * tables and their migrations, Docker Compose dev services (Postgres,
  * Redis, Mailpit, SeaweedFS), a `.env` with a generated
  * `NUXT_AUTH_SECRET`, a Dockerfile, a GitHub Actions workflow, and a
- * functional test that `nuxvel test` passes out of the box.
+ * functional test that `nuxvel test:functional` passes out of the box.
  *
  * Only writes files — installing dependencies is left to the caller.
  * `@nuxvel/nuxt` and `@nuxvel/cli` are pinned to this scaffolder's own

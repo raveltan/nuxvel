@@ -43,7 +43,7 @@ export async function serviceStates(cwd: string) {
 /**
  * Starts the project's dev services — Postgres, Redis, Mailpit,
  * SeaweedFS — and waits until they are healthy, so `nuxvel dev` and
- * `nuxvel test` find them up on a machine where nobody started them yet.
+ * `nuxvel test:functional` find them up on a machine where nobody started them yet.
  *
  * Does nothing when the project has no compose file, or when each
  * service is already healthy and was created from the current compose

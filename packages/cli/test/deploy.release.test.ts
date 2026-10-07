@@ -149,7 +149,7 @@ exec docker exec -i -u "\${1%@*}" -w / ${container} ${options.cpus ? `taskset -c
       down: (...args: string[]) => command("down", ...args),
       up: (...args: string[]) => command("up", ...args),
       maintenanceStatus: (...args: string[]) => command("maintenance:status", ...args),
-      releases: (...args: string[]) => command("releases", ...args),
+      releases: (...args: string[]) => command("release:list", ...args),
       unlock: (...args: string[]) => command("deploy:unlock", ...args),
       envPull: (...args: string[]) => command("env:pull", ...args),
       envPush: (...args: string[]) => command("env:push", ...args),

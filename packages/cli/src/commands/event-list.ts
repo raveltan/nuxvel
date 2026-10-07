@@ -10,7 +10,7 @@ import { errorMessage } from "../error-message.ts";
 
 export default defineCommand({
   meta: {
-    name: "events",
+    name: "event:list",
     description: "List the events discovered under server/events with the server files that emit them and their listeners, warning on any event nothing listens for.",
   },
   args: { ...jsonArg },

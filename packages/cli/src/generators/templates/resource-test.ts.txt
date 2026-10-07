@@ -1,6 +1,5 @@
 import { defineFactory } from "@nuxvel/nuxt/factories";
-import { actingAs, expect, expectConstantQueries, expectRow{{softDeleteImport}} } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, expectConstantQueries, expectRow{{softDeleteImport}}, it } from "@nuxvel/nuxt/testing";
 import { userTable } from "{{authSchemaPath}}";
 import { {{tableCamelName}}Table } from "{{tableSchemaImport}}";
 {{referenceImports}}
@@ -12,7 +11,7 @@ const userFactory = defineFactory(userTable);
 describe("{{tableName}} resource", () => {
   it("creates a row for its owner", async () => {
     const user = await userFactory();
-    const owner = actingAs(user).trpc;
+    const owner = actingAs(user).api;
 
     const created = await owner.{{tableCamelName}}.create({{createInput}});
     const listed = await owner.{{trpcPath}}.list();
@@ -26,7 +25,7 @@ describe("{{tableName}} resource", () => {
   it("updates a row for its owner", async () => {
     const user = await userFactory();
     const created = await {{tableCamelName}}Factory.for("ownerId", user)();
-    const owner = actingAs(user).trpc;
+    const owner = actingAs(user).api;
 
     const updated = await owner.{{tableCamelName}}.update({{updateInput}});
     const unchanged = await owner.{{tableCamelName}}.update({ id: created.id });
@@ -40,7 +39,7 @@ describe("{{tableName}} resource", () => {
     const created = await {{tableCamelName}}Factory();
 
     await expect(
-      actingAs(await userFactory()).trpc.{{trpcPath}}.update({{updateInput}}),
+      actingAs(await userFactory()).api.{{trpcPath}}.update({{updateInput}}),
     ).rejects.toBeTrpcError("FORBIDDEN");
   });
 {{extraTests}}
@@ -49,7 +48,7 @@ describe("{{tableName}} resource", () => {
 
     await expectConstantQueries(async (size) => {
       for (let row = 0; row < size; row++) await {{tableCamelName}}Factory({ ownerId: owner.id });
-      await actingAs(owner).trpc.{{trpcPath}}.list();
+      await actingAs(owner).api.{{trpcPath}}.list();
     });
   });
 });

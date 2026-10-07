@@ -15,7 +15,7 @@ import { expectRecorded } from "./records";
  *
  * @example
  * ```ts
- * await actingAs(author).trpc.post.update({ id: post.id, title: "New" });
+ * await actingAs(author).api.post.update({ id: post.id, title: "New" });
  * await expectActionCalled("posts.update-post", { actingAs: author });
  * ```
  */

@@ -1,6 +1,5 @@
-import { deliverWebhook, expect, guest } from "@nuxvel/nuxt/testing";
+import { deliverWebhook, describe, expect, guest, it } from "@nuxvel/nuxt/testing";
 import { randomUUID } from "node:crypto";
-import { describe, it } from "vitest";
 
 process.env.{{secretName}} = "{{name}}-webhook-test-secret";
 

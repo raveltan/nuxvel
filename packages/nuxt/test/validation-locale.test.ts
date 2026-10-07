@@ -12,10 +12,10 @@ describe("validation messages in the locale", async () => {
     ["zh", chinese],
     ["en", english],
   ] as const)("gives a procedure input and an action input in %s", async ([locale, message]) => {
-    const { trpc } = guest({ locale });
+    const { api } = guest({ locale });
 
-    await expect(trpc._localeCheck.validated({ title: "a" })).rejects.toHaveValidationErrors({ title: message });
-    await expect(trpc._localeCheck.validatedAction()).rejects.toHaveValidationErrors({ title: message });
+    await expect(api._localeCheck.validated({ title: "a" })).rejects.toHaveValidationErrors({ title: message });
+    await expect(api._localeCheck.validatedAction()).rejects.toHaveValidationErrors({ title: message });
   });
 
   it.for([

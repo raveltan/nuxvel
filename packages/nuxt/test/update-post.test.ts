@@ -40,8 +40,8 @@ describe("update-post action (owner-only via policy)", async () => {
     const actionError = await runAction("posts.update-post", input, { actingAs: owner }).catch((caught: unknown) => caught);
 
     expect(actionError).toBeActionError("post.body-empty");
-    await expect(actingAs(owner).trpc.post.update(input)).rejects.toBeTrpcError("UNPROCESSABLE_CONTENT");
-    await expect(actingAs(owner).trpc.post.update(input)).rejects.toHaveValidationErrors({
+    await expect(actingAs(owner).api.post.update(input)).rejects.toBeTrpcError("UNPROCESSABLE_CONTENT");
+    await expect(actingAs(owner).api.post.update(input)).rejects.toHaveValidationErrors({
       body: "Body cannot be empty after trimming",
     });
   });

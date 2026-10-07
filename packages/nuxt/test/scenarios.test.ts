@@ -12,7 +12,7 @@ describe("a scenario from tests/scenarios/", async () => {
 
     expect(written.map((post) => post.authorId)).toEqual([author.id, author.id, author.id]);
     await expectCount(postsTable, 3, { authorId: author.id });
-    const read = await actingAs(author).trpc.post.byId({ id: written[0]?.id ?? 0 });
+    const read = await actingAs(author).api.post.byId({ id: written[0]?.id ?? 0 });
     expect(read.title).toBe("Post 1");
   });
 });

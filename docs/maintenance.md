@@ -179,8 +179,7 @@ A tRPC call fails with the message of `nuxvel down`, the code `SERVICE_UNAVAILAB
 ## Testing
 
 ```ts
-import { it } from "vitest";
-import { expect, guest, startMaintenance, stopMaintenance } from "@nuxvel/nuxt/testing";
+import { expect, guest, it, startMaintenance, stopMaintenance } from "@nuxvel/nuxt/testing";
 
 it("answers 503 with a retry time while the app is down", async () => {
   await startMaintenance({ message: "Back at 10:00", retryAfter: 120 });

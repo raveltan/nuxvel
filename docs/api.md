@@ -154,8 +154,8 @@ import { expect } from "@nuxvel/nuxt/testing";
 const ada = actingAs(await userFactory(), { headers: { "Idempotency-Key": "k1" } });
 const input = { title: "Hello", body: "First post" };
 
-const first = await ada.trpc.post.create(input);
-const repeat = await ada.trpc.post.create(input);
+const first = await ada.api.post.create(input);
+const repeat = await ada.api.post.create(input);
 
 expect(repeat.id).toBe(first.id);
 ```
@@ -471,22 +471,21 @@ A machine client signs in with an API key in place of a session cookie. An `auth
 ## Testing
 
 ```ts
-import { actingAs, expect, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, guest, it } from "@nuxvel/nuxt/testing";
 import { userFactory } from "#nuxvel/factories";
 
 describe("post router", () => {
   it("creates a post as the signed-in user", async () => {
-    const { trpc } = actingAs(await userFactory());
+    const { api } = actingAs(await userFactory());
 
-    const post = await trpc.post.create({ title: "Hello", body: "" });
+    const post = await api.post.create({ title: "Hello", body: "" });
 
     expect(post.title).toBe("Hello");
   });
 
   it("rejects a guest", async () => {
     await expect(
-      guest().trpc.post.create({ title: "Hello", body: "" }),
+      guest().api.post.create({ title: "Hello", body: "" }),
     ).rejects.toBeTrpcError("UNAUTHORIZED");
   });
 });

@@ -1,6 +1,5 @@
 import { defineFactory } from "@nuxvel/nuxt/factories";
-import { actingAs, expectConstantQueries } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expectConstantQueries, it } from "@nuxvel/nuxt/testing";
 import { userTable } from "{{authSchemaPath}}";
 import { {{tableCamelName}}Table } from "{{tableSchemaImport}}";
 {{referenceImports}}
@@ -15,7 +14,7 @@ describe("{{tableName}} router", () => {
 
     await expectConstantQueries(async (size) => {
       for (let row = 0; row < size; row++) await {{tableCamelName}}Factory({ ownerId: owner.id });
-      await actingAs(owner).trpc.{{trpcPath}}.list();
+      await actingAs(owner).api.{{trpcPath}}.list();
     });
   });
 });

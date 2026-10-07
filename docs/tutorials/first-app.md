@@ -24,10 +24,10 @@ npm create nuxvel@latest gather
 cd gather
 npm install
 ./nv services up
-./nv test
+./nv test:functional
 ```
 
-`create-nuxvel` writes the app into `gather/`. `./nv` runs the `nuxvel` CLI of the app. `./nv services up` starts Postgres, Redis, Mailpit and SeaweedFS in Docker, and leaves them running. `./nv test` runs the functional tests of the starter:
+`create-nuxvel` writes the app into `gather/`. `./nv` runs the `nuxvel` CLI of the app. `./nv services up` starts Postgres, Redis, Mailpit and SeaweedFS in Docker, and leaves them running. `./nv test:functional` runs the functional tests of the starter:
 
 ```
  Test Files  2 passed (2)
@@ -150,7 +150,7 @@ export const eventFactory = defineFactory(eventTable, {
 Run the tests:
 
 ```bash
-./nv test
+./nv test:functional
 ```
 
 ```
@@ -522,8 +522,7 @@ The generated test of the mail checks the text of the generated template. Change
 
 ```ts
 // server/mail/event/invitation.mail.test.ts
-import { expect, renderMail } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, it, renderMail } from "@nuxvel/nuxt/testing";
 
 describe("event.invitation mail", () => {
   it("renders the event and the link", async () => {
@@ -543,7 +542,7 @@ describe("event.invitation mail", () => {
 ```
 
 ```bash
-./nv test server/mail
+./nv test:functional server/mail
 ```
 
 ```
@@ -645,11 +644,11 @@ nuxvel apps have three layers of tests:
 
 | Layer | Command | Checks |
 |---|---|---|
-| Functional | `./nv test` | the server: procedures, actions, rows, mail. A real Postgres, no browser |
+| Functional | `./nv test:functional` | the server: procedures, actions, rows, mail. A real Postgres, no browser |
 | Component | `npm run test:ui` | one component in one state, in a browser, with a mocked server |
 | End-to-end | `npm run test:e2e` | a journey across pages, with a real server and real sessions |
 
-Each test imports `expect` from nuxvel, never from `vitest`: `@nuxvel/nuxt/testing` in a functional or end-to-end test, `@nuxvel/nuxt/storybook/test` in a story. Import `describe` and `it` from `vitest`.
+Each test imports `expect` from nuxvel, never from `vitest`: `@nuxvel/nuxt/testing` in a functional or end-to-end test, `@nuxvel/nuxt/storybook/test` in a story. Import `describe` and `it` from `@nuxvel/nuxt/testing` too.
 
 ### Functional tests
 
@@ -657,18 +656,17 @@ Each test gets a clean database. A factory inserts the rows that it needs. `acti
 
 ```ts
 // tests/functional/rsvp.test.ts
-import { actingAs, expect, expectRow, runAction } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, expectRow, it, runAction } from "@nuxvel/nuxt/testing";
 import { rsvpTable } from "#nuxvel/schema";
 import { eventFactory, userFactory } from "#nuxvel/factories";
 
 describe("RSVPs", () => {
   it("keeps the last answer of a guest", async () => {
     const event = await eventFactory();
-    const { trpc } = actingAs(await userFactory({ name: "Ada" }));
+    const { api } = actingAs(await userFactory({ name: "Ada" }));
 
-    await trpc.rsvp.send({ eventId: event.id, answer: "yes" });
-    await trpc.rsvp.send({ eventId: event.id, answer: "no" });
+    await api.rsvp.send({ eventId: event.id, answer: "yes" });
+    await api.rsvp.send({ eventId: event.id, answer: "no" });
 
     await expectRow(rsvpTable, { eventId: event.id, answer: "no" });
   });
@@ -690,12 +688,12 @@ describe("RSVPs", () => {
     const host = await userFactory();
     const event = await eventFactory({ ownerId: host.id });
     const guest = await userFactory({ name: "Ada" });
-    await actingAs(guest).trpc.rsvp.send({ eventId: event.id, answer: "yes" });
+    await actingAs(guest).api.rsvp.send({ eventId: event.id, answer: "yes" });
 
-    const list = await actingAs(host).trpc.event.guests({ id: event.id });
+    const list = await actingAs(host).api.event.guests({ id: event.id });
 
     expect(list.rows).toEqual([{ id: expect.any(Number), name: "Ada", answer: "yes" }]);
-    await expect(actingAs(guest).trpc.event.guests({ id: event.id })).rejects.toBeTrpcError("FORBIDDEN");
+    await expect(actingAs(guest).api.event.guests({ id: event.id })).rejects.toBeTrpcError("FORBIDDEN");
   });
 });
 ```
@@ -710,8 +708,7 @@ The invitation tests check the mail, the validation and the policy:
 
 ```ts
 // tests/functional/invite.test.ts
-import { actingAs, expect, expectMailSent, expectNoMailSent } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, expectMailSent, expectNoMailSent, it } from "@nuxvel/nuxt/testing";
 import { eventFactory, userFactory } from "#nuxvel/factories";
 
 describe("invitations", () => {
@@ -719,7 +716,7 @@ describe("invitations", () => {
     const host = await userFactory();
     const event = await eventFactory({ ownerId: host.id, title: "Summer picnic" });
 
-    await actingAs(host).trpc.event.invite({ eventId: event.id, email: "ada@example.com" });
+    await actingAs(host).api.event.invite({ eventId: event.id, email: "ada@example.com" });
 
     const mail = await expectMailSent("event.invitation", { to: "ada@example.com", title: "Summer picnic" });
     expect(mail.url).toMatch(new RegExp(`/event/${event.id}$`));
@@ -730,7 +727,7 @@ describe("invitations", () => {
     const event = await eventFactory({ ownerId: host.id });
 
     await expect(
-      actingAs(host).trpc.event.invite({ eventId: event.id, email: "ada" }),
+      actingAs(host).api.event.invite({ eventId: event.id, email: "ada" }),
     ).rejects.toHaveValidationErrors({ email: "Enter an email address" });
   });
 
@@ -738,7 +735,7 @@ describe("invitations", () => {
     const event = await eventFactory();
 
     await expect(
-      actingAs(await userFactory()).trpc.event.invite({ eventId: event.id, email: "ada@example.com" }),
+      actingAs(await userFactory()).api.event.invite({ eventId: event.id, email: "ada@example.com" }),
     ).rejects.toBeTrpcError("FORBIDDEN");
     await expectNoMailSent("event.invitation");
   });
@@ -748,7 +745,7 @@ describe("invitations", () => {
 `expectMailSent()` fails unless the mail went out with these fields. It returns the data of the mail, so the test can read the link. No mail reaches an SMTP server in a test. `toHaveValidationErrors()` checks the message under each field.
 
 ```bash
-./nv test
+./nv test:functional
 ```
 
 ```
@@ -819,8 +816,7 @@ An end-to-end test follows a user across pages in a real browser, with the real 
 
 ```ts
 // tests/e2e/rsvp.test.ts
-import { actingAs, button, cell, expect, expectMailSent, fillForm, heading, link, toast } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, button, cell, describe, expect, expectMailSent, fillForm, heading, it, link, toast } from "@nuxvel/nuxt/testing";
 import { userFactory } from "#nuxvel/factories";
 
 describe("an event", () => {

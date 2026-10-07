@@ -595,19 +595,18 @@ A spreadsheet runs a cell that starts with `=` as a formula. A user can write su
 ## Testing
 
 ```ts
-import { actingAs, expect } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, it } from "@nuxvel/nuxt/testing";
 import { userFactory } from "#nuxvel/factories";
 
 describe("post rate limit", () => {
   it("refuses the sixth post in a minute", async () => {
-    const { trpc } = actingAs(await userFactory());
+    const { api } = actingAs(await userFactory());
 
     for (let attempt = 0; attempt < 5; attempt++) {
-      await trpc.post.create({ title: `Post ${attempt}`, body: "" });
+      await api.post.create({ title: `Post ${attempt}`, body: "" });
     }
 
-    await expect(trpc.post.create({ title: "One too many", body: "" }))
+    await expect(api.post.create({ title: "One too many", body: "" }))
       .rejects.toBeTrpcError("TOO_MANY_REQUESTS");
   });
 });
@@ -619,14 +618,14 @@ This test uses the `post.create` procedure with the limit of 5 per minute by use
 
 ```ts
 await exhaustRateLimit("export", { user });
-await expect(actingAs(user).trpc.post.export()).rejects.toBeTrpcError("TOO_MANY_REQUESTS");
+await expect(actingAs(user).api.post.export()).rejects.toBeTrpcError("TOO_MANY_REQUESTS");
 ```
 
 To spend the `rateLimit()` that you wrote inside a procedure, give the procedure of a test client. The helper spends the limit for the identity of that client, and it does not call the procedure.
 
 ```ts
-await exhaustRateLimit(guest().trpc.tickets.public.open);
-await expect(guest().trpc.tickets.public.open(input)).rejects.toBeTrpcError("TOO_MANY_REQUESTS");
+await exhaustRateLimit(guest().api.tickets.public.open);
+await expect(guest().api.tickets.public.open(input)).rejects.toBeTrpcError("TOO_MANY_REQUESTS");
 ```
 
 The `rateLimit` of an upload has no helper. Ask for the upload URL in a loop until the upload refuses the request.

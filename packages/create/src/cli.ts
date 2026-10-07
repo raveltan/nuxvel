@@ -70,7 +70,7 @@ try {
     `cd ${relative(process.cwd(), appDir) || "."}`,
     "npm install",
     "./nv services up",
-    "./nv test",
+    "./nv test:functional",
     "./nv db:migrate",
     "./nv db:seed",
     "npm run dev",

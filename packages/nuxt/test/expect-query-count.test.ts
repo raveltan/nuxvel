@@ -11,8 +11,8 @@ describe("expectQueryCount", async () => {
     const post = await postFactory();
 
     expect(await expectQueryCount({ max: 2 }, async () => {
-      await guest().trpc.post.byId({ id: post.id });
-      await guest().trpc.post.byId({ id: post.id });
+      await guest().api.post.byId({ id: post.id });
+      await guest().api.post.byId({ id: post.id });
     })).toBe(2);
   });
 
@@ -20,8 +20,8 @@ describe("expectQueryCount", async () => {
     const post = await postFactory();
 
     await expect(expectQueryCount({ max: 1 }, async () => {
-      await guest().trpc.post.byId({ id: post.id });
-      await guest().trpc.post.byId({ id: post.id });
+      await guest().api.post.byId({ id: post.id });
+      await guest().api.post.byId({ id: post.id });
     })).rejects.toThrow("expectQueryCount: the app ran 2 queries, over the budget of 1");
   });
 
@@ -29,8 +29,8 @@ describe("expectQueryCount", async () => {
     const post = await postFactory();
 
     const failure = await expectQueryCount({ max: 1 }, async () => {
-      await guest().trpc.post.byId({ id: post.id });
-      await guest().trpc.post.byId({ id: post.id });
+      await guest().api.post.byId({ id: post.id });
+      await guest().api.post.byId({ id: post.id });
     }).catch((error: Error) => error.message);
 
     expect(failure).toMatch(/\n  1\. select .*"posts"/);

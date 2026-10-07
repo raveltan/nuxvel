@@ -10,7 +10,7 @@ A nuxvel app has three layers of tests. Each check goes in the one layer that ow
 
 | Layer | Runs | Owns | This tutorial |
 |---|---|---|---|
-| Functional | `./nv test`, real Postgres, the built server | the result or the error of a procedure, the rows, the jobs, the mail, the time rules, the query count | chapters 3 to 7 |
+| Functional | `./nv test:functional`, real Postgres, the built server | the result or the error of a procedure, the rows, the jobs, the mail, the time rules, the query count | chapters 3 to 7 |
 | Component | `npm run test:ui`, one story in Chromium, MSW instead of the server | the states of one component: what it sends, the messages it shows, the accessibility of each state | chapter 8 |
 | End-to-end | `npm run test:e2e`, a real browser on the real server | a journey across pages with a real session, the browser timers | chapter 9 |
 
@@ -25,7 +25,7 @@ npm create nuxvel@latest rooms
 cd rooms
 npm install
 ./nv services up
-./nv test
+./nv test:functional
 ```
 
 ```
@@ -36,7 +36,7 @@ npm install
       Tests  5 passed (5)
 ```
 
-`./nv services up` starts Postgres, Redis, Mailpit and SeaweedFS from `docker-compose.yml`, and they stay running. `./nv test` builds the app for tests once, and the next runs use the same build while the app files do not change. A change to a test file does not start a new build.
+`./nv services up` starts Postgres, Redis, Mailpit and SeaweedFS from `docker-compose.yml`, and they stay running. `./nv test:functional` builds the app for tests once, and the next runs use the same build while the app files do not change. A change to a test file does not start a new build.
 
 The starter has one script for each layer, and two scripts that check the code without a test run:
 
@@ -44,7 +44,7 @@ The starter has one script for each layer, and two scripts that check the code w
 {
   "scripts": {
     "test": "npm run test:functional && npm run test:ui",
-    "test:functional": "nuxvel test",
+    "test:functional": "nuxvel test:functional",
     "pretest:ui": "playwright-core install chromium-headless-shell",
     "test:ui": "nuxvel test:ui",
     "pretest:e2e": "playwright-core install chromium-headless-shell",
@@ -58,7 +58,7 @@ The starter has one script for each layer, and two scripts that check the code w
 | Script | Does |
 |---|---|
 | `npm test` | the functional tests, then the component tests |
-| `npm run test:functional` | `nuxvel test`, the same as `./nv test`: the functional tests |
+| `npm run test:functional` | `nuxvel test:functional`, the same as `./nv test:functional`: the functional tests |
 | `npm run test:ui` | installs the headless browser, then runs each story under `app/` as a component test |
 | `npm run test:e2e` | installs the headless browser, then runs the tests in `tests/e2e/` |
 | `npm run test:arch` | the architecture rules, see chapter 10 |
@@ -160,7 +160,7 @@ export const bookingFactory = defineFactory(bookingTable, {
 - `endsAt` has a parameter, so it is a [field that reads other fields](../testing.md#fields-that-read-other-fields). It runs after the other columns have a value, and a booking lasts one hour.
 
 ```bash
-./nv test server/factories
+./nv test:functional server/factories
 ```
 
 ```
@@ -198,8 +198,7 @@ Start with the test. A signed-in user books a room, and a guest cannot:
 
 ```ts
 // tests/functional/bookings.test.ts
-import { actingAs, expect, expectRow, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, expectRow, guest, it } from "@nuxvel/nuxt/testing";
 import { bookingTable } from "#nuxvel/schema";
 import { roomFactory, userFactory } from "#nuxvel/factories";
 
@@ -218,7 +217,7 @@ describe("booking a room", () => {
     const ada = await userFactory();
     const room = await roomFactory();
 
-    const booking = await actingAs(ada).trpc.booking.create(sprintPlanning(room.id));
+    const booking = await actingAs(ada).api.booking.create(sprintPlanning(room.id));
 
     expect(booking).toMatchObject({ title: "Sprint planning", bookerId: ada.id });
     await expectRow(bookingTable, { id: booking.id, roomId: room.id, bookerId: ada.id, guests: 4 });
@@ -227,17 +226,17 @@ describe("booking a room", () => {
   it("asks a guest to sign in", async () => {
     const room = await roomFactory();
 
-    await expect(guest().trpc.booking.create(sprintPlanning(room.id))).rejects.toBeTrpcError("UNAUTHORIZED");
+    await expect(guest().api.booking.create(sprintPlanning(room.id))).rejects.toBeTrpcError("UNAUTHORIZED");
   });
 });
 ```
 
-- `expect` comes from `@nuxvel/nuxt/testing`, never from `vitest`. `describe` and `it` come from `vitest`.
-- `actingAs(ada).trpc` calls the procedure in the built server as Ada, with the context of a real request. `guest().trpc` calls it with no session.
+- `expect` comes from `@nuxvel/nuxt/testing`, never from `vitest`. `describe` and `it` come from `@nuxvel/nuxt/testing` too.
+- `actingAs(ada).api` calls the procedure in the built server as Ada, with the context of a real request. `guest().api` calls it with no session.
 - `expectRow(table, match)` reads the database on its own connection. It passes when one committed row matches every column in `match`.
 
 ```bash
-./nv test tests/functional/bookings.test.ts
+./nv test:functional tests/functional/bookings.test.ts
 ```
 
 ```
@@ -248,7 +247,7 @@ TRPCError: No procedure found on path "booking,create"
 Error: expected tRPC error code "UNAUTHORIZED", got "NOT_FOUND"
 ```
 
-There is no `booking.create` procedure yet. tRPC prints the path with a comma. `npm run typecheck` also fails on the same line, because `actingAs().trpc` is typed by the app router.
+There is no `booking.create` procedure yet. tRPC prints the path with a comma. `npm run typecheck` also fails on the same line, because `actingAs().api` is typed by the app router.
 
 Generate the action and the router:
 
@@ -282,7 +281,7 @@ export const bookingRouter = {
 ```
 
 ```bash
-./nv test tests/functional/bookings.test.ts
+./nv test:functional tests/functional/bookings.test.ts
 ```
 
 ```
@@ -304,8 +303,8 @@ The app changed, so the run built it again. The next runs use this build while t
     const ada = await userFactory.withPassword("correct-horse-battery")();
     const room = await roomFactory();
 
-    const { trpc } = await signIn(ada.email, "correct-horse-battery");
-    const booking = await trpc.booking.create(sprintPlanning(room.id));
+    const { api } = await signIn(ada.email, "correct-horse-battery");
+    const booking = await api.booking.create(sprintPlanning(room.id));
 
     await expectRow(bookingTable, { id: booking.id, bookerId: ada.id });
   });
@@ -336,7 +335,7 @@ const smallRoomFactory = roomFactory.state({ capacity: 2 });
 type BookingInput = ReturnType<typeof sprintPlanning>;
 
 describe.for([
-  { name: "the procedure", create: (user: { id: string }, input: BookingInput) => actingAs(user).trpc.booking.create(input) },
+  { name: "the procedure", create: (user: { id: string }, input: BookingInput) => actingAs(user).api.booking.create(input) },
   {
     name: "the action",
     create: (user: { id: string }, input: BookingInput) => runAction("booking.create-booking", input, { actingAs: user }),
@@ -382,14 +381,14 @@ describe.for([
 Import `bookedRoom` from `../scenarios/booked-room`. Some details of the tables:
 
 - `toHaveValidationErrors({ field: message })` checks the message of each field that you name. A field passes when one of its messages matches.
-- `toBeActionError(code)` checks the code of an action's `fail()`. It passes for the rejection of `runAction` and of `actingAs().trpc`.
+- `toBeActionError(code)` checks the code of an action's `fail()`. It passes for the rejection of `runAction` and of `actingAs().api`.
 - The type argument of the first `it.for` gives each case the same type. Without it, TypeScript infers a union of the cases, and `errors` does not fit `toHaveValidationErrors`. `as const` on the second list keeps each `code` a literal, so a misspelled code fails the typecheck.
 - `$name` in a title reads the `name` of the case. The report shows `the booking rules, through the action > refuses no guests`.
 
 The rows in a case list are functions, never rows. Vitest builds the list once, when it collects the tests, and the setup empties the tables after each test. A row that the list made would be gone for the second case. So `room: () => smallRoomFactory()` makes the row inside the test, and the overlap case calls the scenario there too.
 
 ```bash
-./nv test tests/functional/bookings.test.ts
+./nv test:functional tests/functional/bookings.test.ts
 ```
 
 ```
@@ -456,7 +455,7 @@ export const createBookingAction = defineAction({
 Two bookings overlap when each one starts before the other ends. `fail(code, message)` replaces the default message, so the form can name the room.
 
 ```bash
-./nv test tests/functional/bookings.test.ts --reporter=verbose
+./nv test:functional tests/functional/bookings.test.ts --reporter=verbose
 ```
 
 ```
@@ -491,7 +490,7 @@ Add the past rule to the first `describe`, and a new `describe` for cancelling. 
     await freezeTime(new Date("2030-01-07T09:30:00Z"));
     const room = await roomFactory();
 
-    await expect(actingAs(await userFactory()).trpc.booking.create(sprintPlanning(room.id))).rejects.toBeActionError(
+    await expect(actingAs(await userFactory()).api.booking.create(sprintPlanning(room.id))).rejects.toBeActionError(
       "booking.in-the-past",
     );
   });
@@ -506,7 +505,7 @@ describe("cancelling a booking", () => {
     await freezeTime(new Date("2026-03-02T08:00:00Z"));
     const { booker, booking } = await bookedRoom(nextWednesday);
 
-    await actingAs(booker).trpc.booking.cancel({ id: booking.id });
+    await actingAs(booker).api.booking.cancel({ id: booking.id });
 
     await expectNoRow(bookingTable, { id: booking.id });
   });
@@ -517,21 +516,21 @@ describe("cancelling a booking", () => {
 
     await travelBy({ days: 1, hours: 2 });
 
-    await expect(actingAs(booker).trpc.booking.cancel({ id: booking.id })).rejects.toBeActionError(
+    await expect(actingAs(booker).api.booking.cancel({ id: booking.id })).rejects.toBeActionError(
       "booking.too-late-to-cancel",
     );
     await expectRow(bookingTable, { id: booking.id });
   });
 
   it.for([
-    { name: "a guest", caller: async () => guest().trpc, code: "UNAUTHORIZED" },
-    { name: "another user", caller: async () => actingAs(await userFactory()).trpc, code: "FORBIDDEN" },
+    { name: "a guest", caller: async () => guest().api, code: "UNAUTHORIZED" },
+    { name: "another user", caller: async () => actingAs(await userFactory()).api, code: "FORBIDDEN" },
   ] as const)("refuses $name", async ({ caller, code }) => {
     await freezeTime(new Date("2026-03-02T08:00:00Z"));
     const { booking } = await bookedRoom(nextWednesday);
-    const trpc = await caller();
+    const api = await caller();
 
-    await expect(trpc.booking.cancel({ id: booking.id })).rejects.toBeTrpcError(code);
+    await expect(api.booking.cancel({ id: booking.id })).rejects.toBeTrpcError(code);
     await expectRow(bookingTable, { id: booking.id });
   });
 });
@@ -542,7 +541,7 @@ describe("cancelling a booking", () => {
 - The callers of the refusal list are functions again, because `actingAs(await userFactory())` makes a row.
 
 ```bash
-./nv test tests/functional/bookings.test.ts
+./nv test:functional tests/functional/bookings.test.ts
 ```
 
 ```
@@ -632,7 +631,7 @@ export const bookingRouter = {
 ```
 
 ```bash
-./nv test tests/functional/bookings.test.ts
+./nv test:functional tests/functional/bookings.test.ts
 ```
 
 Every test of the file passes.
@@ -643,8 +642,7 @@ The factory reads `now()`, so its rows follow the test clock too. Show it in the
 
 ```ts
 // server/factories/booking.factory.test.ts
-import { describe, it } from "vitest";
-import { expect, expectRow, freezeTime } from "@nuxvel/nuxt/testing";
+import { describe, expect, expectRow, freezeTime, it } from "@nuxvel/nuxt/testing";
 import { bookingTable } from "#nuxvel/schema";
 import { bookingFactory } from "./booking.factory";
 
@@ -684,7 +682,7 @@ describe("the confirmation mail", () => {
   it("queues the confirmation once the booking is saved", async () => {
     const room = await roomFactory();
 
-    const booking = await actingAs(await userFactory()).trpc.booking.create(sprintPlanning(room.id));
+    const booking = await actingAs(await userFactory()).api.booking.create(sprintPlanning(room.id));
 
     await expectQueued("booking.send-confirmation", { bookingId: booking.id }, { times: 1 });
   });
@@ -692,7 +690,7 @@ describe("the confirmation mail", () => {
   it("mails the booker when the queue runs", async () => {
     const ada = await userFactory();
     const room = await roomFactory({ name: "Lovelace" });
-    await actingAs(ada).trpc.booking.create(sprintPlanning(room.id));
+    await actingAs(ada).api.booking.create(sprintPlanning(room.id));
 
     await workQueue();
 
@@ -704,7 +702,7 @@ describe("the confirmation mail", () => {
   it("sends nothing for a refused booking", async () => {
     const room = await smallRoomFactory();
 
-    await expect(actingAs(await userFactory()).trpc.booking.create(sprintPlanning(room.id))).rejects.toBeActionError(
+    await expect(actingAs(await userFactory()).api.booking.create(sprintPlanning(room.id))).rejects.toBeActionError(
       "booking.over-capacity",
     );
     await workQueue();
@@ -720,7 +718,7 @@ describe("the confirmation mail", () => {
 - `expectMailSent(name, match)` returns the input of the send. `renderMail` takes it as it is, so the test checks the subject of the mail that the job really sent.
 
 ```bash
-./nv test tests/functional/bookings.test.ts -t "confirmation mail"
+./nv test:functional tests/functional/bookings.test.ts -t "confirmation mail"
 ```
 
 ```
@@ -804,8 +802,7 @@ The two generated tests next to the job and the mail send the old input. Replace
 
 ```ts
 // server/jobs/booking/send-confirmation.job.test.ts
-import { expect, expectMailSent, runJob } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectMailSent, it, runJob } from "@nuxvel/nuxt/testing";
 import { bookingFactory, userFactory } from "#nuxvel/factories";
 
 describe("booking.send-confirmation job", () => {
@@ -828,8 +825,7 @@ describe("booking.send-confirmation job", () => {
 
 ```ts
 // server/mail/booking/confirmed.mail.test.ts
-import { expect, renderMail } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, it, renderMail } from "@nuxvel/nuxt/testing";
 
 describe("booking.confirmed mail", () => {
   it("names the room, the title and the start", async () => {
@@ -848,7 +844,7 @@ describe("booking.confirmed mail", () => {
 ```
 
 ```bash
-./nv test tests/functional/bookings.test.ts server/jobs server/mail
+./nv test:functional tests/functional/bookings.test.ts server/jobs server/mail
 ```
 
 The three files pass.
@@ -859,8 +855,7 @@ The list page shows each booking with its room and its booker, and a search by t
 
 ```ts
 // tests/functional/booking-list.test.ts
-import { actingAs, expect, expectConstantQueries, expectQueryCount } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, expectConstantQueries, expectQueryCount, it } from "@nuxvel/nuxt/testing";
 import { bookingFactory, roomFactory, userFactory } from "#nuxvel/factories";
 
 describe("the booking list", () => {
@@ -870,7 +865,7 @@ describe("the booking list", () => {
     await bookingFactory({ title: "Sprint planning", room, booker: ada });
     await bookingFactory({ title: "Board meeting" });
 
-    const rows = await actingAs(ada).trpc.booking.list({ q: "sprint" });
+    const rows = await actingAs(ada).api.booking.list({ q: "sprint" });
 
     expect(rows).toEqual([expect.objectContaining({ title: "Sprint planning", room: "Hopper", booker: "Ada Lovelace" })]);
   });
@@ -880,7 +875,7 @@ describe("the booking list", () => {
 
     await expectConstantQueries(async (size) => {
       await bookingFactory.count(size)();
-      await actingAs(viewer).trpc.booking.list({});
+      await actingAs(viewer).api.booking.list({});
     });
   });
 
@@ -888,7 +883,7 @@ describe("the booking list", () => {
     const viewer = await userFactory();
     await bookingFactory.count(3)();
 
-    await expectQueryCount({ max: 2 }, () => actingAs(viewer).trpc.booking.list({}));
+    await expectQueryCount({ max: 2 }, () => actingAs(viewer).api.booking.list({}));
   });
 });
 ```
@@ -936,7 +931,7 @@ The first version of the list is the one that many apps write first. It loads th
 Import `ilike` from `drizzle-orm`, and `userTable`, `bookingTable` and `roomTable` from their schema files.
 
 ```bash
-./nv test tests/functional/booking-list.test.ts
+./nv test:functional tests/functional/booking-list.test.ts
 ```
 
 ```
@@ -977,7 +972,7 @@ The result is correct, so the first test passes. The count tests show the N+1: o
 ```
 
 ```bash
-./nv test tests/functional/booking-list.test.ts
+./nv test:functional tests/functional/booking-list.test.ts
 ```
 
 ```
@@ -996,13 +991,13 @@ describe("one booking", () => {
     const ada = await userFactory({ name: "Ada Lovelace" });
     const booking = await bookingFactory({ title: "Sprint planning", booker: ada });
 
-    const shown = await actingAs(ada).trpc.booking.byId({ id: booking.id });
+    const shown = await actingAs(ada).api.booking.byId({ id: booking.id });
 
     expect(shown).toMatchObject({ id: booking.id, title: "Sprint planning", booker: "Ada Lovelace" });
   });
 
   it("answers NOT_FOUND for a booking that does not exist", async () => {
-    await expect(actingAs(await userFactory()).trpc.booking.byId({ id: 404 })).rejects.toBeTrpcError("NOT_FOUND");
+    await expect(actingAs(await userFactory()).api.booking.byId({ id: 404 })).rejects.toBeTrpcError("NOT_FOUND");
   });
 });
 
@@ -1011,7 +1006,7 @@ describe("the rooms", () => {
     await roomFactory({ name: "Turing", capacity: 12 });
     await roomFactory({ name: "Hopper", capacity: 4 });
 
-    const rooms = await actingAs(await userFactory()).trpc.room.list();
+    const rooms = await actingAs(await userFactory()).api.room.list();
 
     expect(rooms).toEqual([
       expect.objectContaining({ name: "Hopper", capacity: 4 }),
@@ -1101,7 +1096,7 @@ export const roomRouter = {
 ```
 
 ```bash
-./nv test tests/functional
+./nv test:functional tests/functional
 ```
 
 ```
@@ -1493,7 +1488,7 @@ import {
   toast,
   trpcSpy,
 } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, it } from "@nuxvel/nuxt/testing";
 import { bookingTable } from "#nuxvel/schema";
 import { bookingFactory, roomFactory, userFactory } from "#nuxvel/factories";
 
@@ -1743,7 +1738,7 @@ The other rules check the app code, for example that a router writes only throug
 The whole suite is small now, but it grows with the app. While you work, run only the test files that your change can affect:
 
 ```bash
-./nv test --changes-only
+./nv test:functional --changes-only
 ```
 
 ```
@@ -1755,7 +1750,7 @@ The whole suite is small now, but it grows with the app. While you work, run onl
 The first run runs every file. For each test file, it records the app files that the file ran in the server and in the test process. The next run hashes the project files and runs only the files that a change can affect:
 
 ```bash
-./nv test --changes-only
+./nv test:functional --changes-only
 ```
 
 ```
@@ -1775,7 +1770,7 @@ Only `bookings.test.ts` ran the cancel action, so only that file runs. The setup
 To run the affected tests on each save, use watch mode:
 
 ```bash
-./nv test --watch
+./nv test:functional --watch
 ```
 
 ```
@@ -1822,8 +1817,8 @@ See [Testing: run only the changed tests](../testing.md#run-only-the-changed-tes
 
 | Check | Layer | Helper |
 |---|---|---|
-| A booking saves for the signed-in user | functional | `actingAs().trpc`, `expectRow` |
-| A guest cannot book or cancel | functional | `guest().trpc`, `toBeTrpcError` |
+| A booking saves for the signed-in user | functional | `actingAs().api`, `expectRow` |
+| A guest cannot book or cancel | functional | `guest().api`, `toBeTrpcError` |
 | The real sign-in session works | functional | `signIn`, `withPassword` |
 | Each schema rule and its message | functional | `describe.for`, `it.for`, `toHaveValidationErrors` |
 | Each action rule | functional | `it.for` with lazy factories, a state, a scenario, `toBeActionError` |

@@ -24,13 +24,13 @@ describe("defineSeeder", async () => {
   });
 
   it("seeds the playground with a demo user who signs in with the printed password, and posts that the cached post.list returns", async () => {
-    expect((await guest().trpc.post.list({ q: "playground" })).rows).toEqual([]);
+    expect((await guest().api.post.list({ q: "playground" })).rows).toEqual([]);
 
     await runSeeder("database");
 
     const demo = await expectRow(userTable, { email: "demo@example.com" });
     await expectRow(postsTable, { title: "Welcome to the playground", authorId: demo.id });
-    expect((await guest().trpc.post.list({ q: "playground" })).rows.map(({ title }) => title)).toContain(
+    expect((await guest().api.post.list({ q: "playground" })).rows.map(({ title }) => title)).toContain(
       "Welcome to the playground",
     );
 

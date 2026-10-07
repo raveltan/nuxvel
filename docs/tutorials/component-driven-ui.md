@@ -8,7 +8,7 @@ The tutorial builds the UI one component at a time, in Storybook first. You writ
 
 | Layer | Runs | This tutorial checks |
 |---|---|---|
-| Functional | `./nv test`, real Postgres, the built server | the procedures: the rule, the upload, the unique name, the policy |
+| Functional | `./nv test:functional`, real Postgres, the built server | the procedures: the rule, the upload, the unique name, the policy |
 | Component | `npm run test:ui`, one story in Chromium, MSW in place of the server | each state of each component, what it sends, the messages it shows, and the accessibility of each state |
 | End-to-end | `npm run test:e2e`, a real browser on the real server | one journey across the pages, with a real session and a real upload |
 
@@ -23,7 +23,7 @@ npm create nuxvel@latest catalogue
 cd catalogue
 npm install
 ./nv services up
-./nv test
+./nv test:functional
 ```
 
 ```
@@ -308,8 +308,7 @@ Replace the generated router test:
 
 ```ts
 // server/trpc/routers/product.router.test.ts
-import { actingAs, expect, expectStored } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, expectStored, it } from "@nuxvel/nuxt/testing";
 import { pixelPng } from "../../../tests/fixtures/pixel";
 import { productFactory, userFactory } from "#nuxvel/factories";
 
@@ -317,8 +316,8 @@ const draft = { name: "Harbour lights", description: "<p>A <b>calm</b> album</p>
 
 describe("product router", () => {
   it("creates a draft that every user finds", async () => {
-    const created = await actingAs(await userFactory()).trpc.product.create(draft);
-    const found = await actingAs(await userFactory()).trpc.product.list({ q: "harbour" });
+    const created = await actingAs(await userFactory()).api.product.create(draft);
+    const found = await actingAs(await userFactory()).api.product.list({ q: "harbour" });
 
     expect(created).toMatchObject({ name: "Harbour lights", published: false, imageKey: null });
     expect(found.rows.map((row) => row.id)).toEqual([created.id]);
@@ -326,7 +325,7 @@ describe("product router", () => {
 
   it("refuses to publish a product without an image", async () => {
     await expect(
-      actingAs(await userFactory()).trpc.product.create({ ...draft, published: true }),
+      actingAs(await userFactory()).api.product.create({ ...draft, published: true }),
     ).rejects.toBeActionError("product.needs-image");
   });
 
@@ -334,7 +333,7 @@ describe("product router", () => {
     const owner = actingAs(await userFactory());
     const imageKey = await owner.upload("product-image", new File([pixelPng], "cover.png", { type: "image/png" }));
 
-    const created = await owner.trpc.product.create({ ...draft, published: true, imageKey });
+    const created = await owner.api.product.create({ ...draft, published: true, imageKey });
 
     expect(created.imageKey).toMatch(/^products\//);
     expect((await expectStored(created.imageKey ?? "")).contentType).toBe("image/png");
@@ -343,19 +342,19 @@ describe("product router", () => {
   it("refuses a name that another product has", async () => {
     await productFactory({ name: "Harbour lights" });
 
-    await expect(actingAs(await userFactory()).trpc.product.create(draft)).rejects.toMatchObject({ code: "CONFLICT", field: "name" });
+    await expect(actingAs(await userFactory()).api.product.create(draft)).rejects.toMatchObject({ code: "CONFLICT", field: "name" });
   });
 
   it("refuses to delete the product of another user", async () => {
     const product = await productFactory();
 
-    await expect(actingAs(await userFactory()).trpc.product.delete({ id: product.id })).rejects.toBeTrpcError("FORBIDDEN");
+    await expect(actingAs(await userFactory()).api.product.delete({ id: product.id })).rejects.toBeTrpcError("FORBIDDEN");
   });
 });
 ```
 
 ```bash
-./nv test server/trpc/routers/product.router.test.ts
+./nv test:functional server/trpc/routers/product.router.test.ts
 ```
 
 ```
@@ -1026,8 +1025,7 @@ The component tests check each state with a fake server. One end-to-end test che
 
 ```ts
 // tests/e2e/products.test.ts
-import { actingAs, button, dialog, expect, expectAccessible, field, fillForm, heading, link, toast } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, button, describe, dialog, expect, expectAccessible, field, fillForm, heading, it, link, toast } from "@nuxvel/nuxt/testing";
 import { userFactory } from "#nuxvel/factories";
 import { pixelPng } from "../fixtures/pixel";
 
@@ -1079,7 +1077,7 @@ The second file is the starter's `tests/e2e/home.test.ts`. Its smoke test, `expe
 
 ```bash
 npm run typecheck
-./nv test
+./nv test:functional
 npm run test:ui
 npm run test:e2e
 npm run test:arch
@@ -1098,7 +1096,7 @@ npm run test:arch
 ✔ All architecture rules pass
 ```
 
-`./nv test` runs the router test, the factory test and the two starter files. `npm run test:ui` runs the 17 stories of this tutorial and the 4 stories of the starter. `npm run test:arch` also checks that each test and each story imports `expect` from its nuxvel entry: `@nuxvel/nuxt/testing` in a test, `@nuxvel/nuxt/storybook/test` in a story.
+`./nv test:functional` runs the router test, the factory test and the two starter files. `npm run test:ui` runs the 17 stories of this tutorial and the 4 stories of the starter. `npm run test:arch` also checks that each test and each story imports `expect` from its nuxvel entry: `@nuxvel/nuxt/testing` in a test, `@nuxvel/nuxt/storybook/test` in a story.
 
 ## What this tutorial leaves out
 

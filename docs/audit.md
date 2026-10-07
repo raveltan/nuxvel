@@ -296,17 +296,16 @@ A date without a timezone is in UTC. See [CLI](./cli.md).
 ## Testing
 
 ```ts
-import { actingAs, expect, expectAudited } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, expectAudited, it } from "@nuxvel/nuxt/testing";
 import { postFactory, userFactory } from "#nuxvel/factories";
 
 describe("update post", () => {
   it("logs the change", async () => {
     const author = await userFactory();
     const post = await postFactory({ authorId: author.id, title: "Draft", body: "Hello" });
-    const { trpc } = actingAs(author);
+    const { api } = actingAs(author);
 
-    await trpc.post.update({ id: post.id, title: "Updated", body: "Hello" });
+    await api.post.update({ id: post.id, title: "Updated", body: "Hello" });
 
     const row = await expectAudited("post.updated", {
       actorId: author.id,

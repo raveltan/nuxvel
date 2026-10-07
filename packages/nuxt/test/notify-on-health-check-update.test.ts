@@ -12,7 +12,7 @@ describe("health-check.notify-on-update dispatch", async () => {
     const owner = await userFactory();
     const row = await healthCheckFactory({ userId: owner.id });
 
-    await actingAs(owner).trpc.health.update({ id: row.id, name: "after" });
+    await actingAs(owner).api.health.update({ id: row.id, name: "after" });
 
     await expectQueued("health-check.notify-on-update", { id: row.id });
   });
@@ -21,7 +21,7 @@ describe("health-check.notify-on-update dispatch", async () => {
     const row = await healthCheckFactory({ userId: (await userFactory()).id });
 
     await expect(
-      actingAs(await userFactory()).trpc.health.update({ id: row.id, name: "hacked" }),
+      actingAs(await userFactory()).api.health.update({ id: row.id, name: "hacked" }),
     ).rejects.toBeTrpcError("FORBIDDEN");
     await expectNotQueued("health-check.notify-on-update");
   });

@@ -9,7 +9,7 @@ import { error, print, report } from "./ui/output.ts";
 const commandGroups: Record<string, SubCommandsDef> = {
   Development: {
     dev: () => import("./commands/dev.ts").then((command) => command.default),
-    test: () => import("./commands/test.ts").then((command) => command.default),
+    "test:functional": () => import("./commands/test-functional.ts").then((command) => command.default),
     "test:e2e": () => import("./commands/test-e2e.ts").then((command) => command.default),
     "test:ui": () => import("./commands/test-ui.ts").then((command) => command.default),
     services: () => import("./commands/services.ts").then((command) => command.default),
@@ -17,8 +17,8 @@ const commandGroups: Record<string, SubCommandsDef> = {
     "test:compat": () => import("./commands/test-compat.ts").then((command) => command.default),
     doctor: () => import("./commands/doctor.ts").then((command) => command.default),
     tinker: () => import("./commands/tinker.ts").then((command) => command.default),
-    routes: () => import("./commands/routes.ts").then((command) => command.default),
-    channels: () => import("./commands/channels.ts").then((command) => command.default),
+    "route:list": () => import("./commands/route-list.ts").then((command) => command.default),
+    "channel:list": () => import("./commands/channel-list.ts").then((command) => command.default),
     "openapi:export": () => import("./commands/openapi-export.ts").then((command) => command.default),
   },
   Database: {
@@ -77,9 +77,9 @@ const commandGroups: Record<string, SubCommandsDef> = {
   "Flags and experiments": {
     "make:flag": () => import("./commands/make-flag.ts").then((command) => command.default),
     "make:experiment": () => import("./commands/make-experiment.ts").then((command) => command.default),
-    "flags:list": () => import("./commands/flags-list.ts").then((command) => command.default),
-    "flags:set": () => import("./commands/flags-set.ts").then((command) => command.default),
-    "flags:stale": () => import("./commands/flags-stale.ts").then((command) => command.default),
+    "flag:list": () => import("./commands/flag-list.ts").then((command) => command.default),
+    "flag:set": () => import("./commands/flag-set.ts").then((command) => command.default),
+    "flag:stale": () => import("./commands/flag-stale.ts").then((command) => command.default),
     "experiment:start": () => import("./commands/experiment-start.ts").then((command) => command.default),
     "experiment:stop": () => import("./commands/experiment-stop.ts").then((command) => command.default),
     "experiment:report": () => import("./commands/experiment-report.ts").then((command) => command.default),
@@ -100,14 +100,14 @@ const commandGroups: Record<string, SubCommandsDef> = {
   Events: {
     "make:event": () => import("./commands/make-event.ts").then((command) => command.default),
     "make:listener": () => import("./commands/make-listener.ts").then((command) => command.default),
-    events: () => import("./commands/events.ts").then((command) => command.default),
+    "event:list": () => import("./commands/event-list.ts").then((command) => command.default),
   },
   Deploy: {
     "server:setup": () => import("./commands/server-setup.ts").then((command) => command.default),
     "app:create": () => import("./commands/app-create.ts").then((command) => command.default),
     deploy: () => import("./commands/deploy.ts").then((command) => command.default),
     "make:ci": () => import("./commands/make-ci.ts").then((command) => command.default),
-    releases: () => import("./commands/releases.ts").then((command) => command.default),
+    "release:list": () => import("./commands/release-list.ts").then((command) => command.default),
     "deploy:unlock": () => import("./commands/deploy-unlock.ts").then((command) => command.default),
     "db:contract": () => import("./commands/db-contract.ts").then((command) => command.default),
     rollback: () => import("./commands/rollback.ts").then((command) => command.default),
@@ -145,7 +145,7 @@ const commandGroups: Record<string, SubCommandsDef> = {
   Secrets: {
     "key:generate": () => import("./commands/key-generate.ts").then((command) => command.default),
     "key:rotate": () => import("./commands/key-rotate.ts").then((command) => command.default),
-    "push:keys": () => import("./commands/push-keys.ts").then((command) => command.default),
+    "key:push": () => import("./commands/key-push.ts").then((command) => command.default),
   },
   "API keys": {
     "key:issue": () => import("./commands/key-issue.ts").then((command) => command.default),
@@ -205,7 +205,7 @@ async function renderHelp(rawArgs: string[]) {
   ].join("\n");
 }
 
-const PASSTHROUGH_COMMANDS = new Set(["test", "test:e2e", "test:ui", "dev", "db:generate", "db:studio"]);
+const PASSTHROUGH_COMMANDS = new Set(["test:functional", "test:e2e", "test:ui", "dev", "db:generate", "db:studio"]);
 
 function forwardsHelp(rawArgs: string[], name: string) {
   return PASSTHROUGH_COMMANDS.has(name) && rawArgs.findIndex(isHelpArg) > rawArgs.indexOf(name);

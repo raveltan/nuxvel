@@ -17,8 +17,8 @@ export type TestCaller = ReturnType<AppRouter["createCaller"]>;
  * {@link SignedInTestClient}.
  */
 export interface TestClient {
-  /** A typed tRPC caller. */
-  trpc: TestCaller;
+  /** A typed tRPC caller of the app router, named like `$api` in the app. */
+  api: TestCaller;
   /** `fetch` from `@nuxt/test-utils/e2e`: a path on the app under test, the raw `Response`. */
   fetch: typeof fetch;
   /** `$fetch` from `@nuxt/test-utils/e2e`: a path on the app under test, the parsed body typed by the route. */
@@ -159,7 +159,7 @@ export function sessionClient(
   const signed = signedFetch(cookie, base);
 
   return {
-    trpc: testCaller(trpcUserId, trpcHeaders),
+    api: testCaller(trpcUserId, trpcHeaders),
     fetch: signed,
     $fetch: signed$fetch(cookie, base),
     upload: uploader(signed),
@@ -185,7 +185,7 @@ function bearerOf(user: { id: string }): Authorize {
  */
 export interface ActingAsOptions {
   /**
-   * Headers that `trpc`, `fetch` and `$fetch` send with each call, for example
+   * Headers that `api`, `fetch` and `$fetch` send with each call, for example
    * `Idempotency-Key` to test {@link idempotent}, `x-forwarded-for` to test a
    * rate limit by IP (it counts only when `nuxvel.security.trustProxy` is set)
    * or `accept-language`. A header that a `fetch` or `$fetch` call gives itself
@@ -206,7 +206,7 @@ export interface ActingAsOptions {
    */
   apiKey?: boolean;
   /**
-   * A locale code of the app, for example `"zh"`. `trpc`, `fetch` and
+   * A locale code of the app, for example `"zh"`. `api`, `fetch` and
    * `$fetch` send it as the locale of the page, so
    * {@link currentLocale} and `ctx.locale` give it. `visit` opens the
    * page in it, as its own `locale` option does.
@@ -216,7 +216,7 @@ export interface ActingAsOptions {
 
 /**
  * What `actingAs(user, { apiKey: true })` hands back: a {@link TestClient}
- * without `visit`, whose `trpc`, `fetch` and `$fetch` send
+ * without `visit`, whose `api`, `fetch` and `$fetch` send
  * `Authorization: Bearer <key>` of a new API key of the user and no session.
  */
 export type ApiKeyTestClient = Omit<TestClient, "visit">;
@@ -226,7 +226,7 @@ export type ApiKeyTestClient = Omit<TestClient, "visit">;
  * typed tRPC caller, `fetch` and `$fetch` for a server route, and
  * {@link visit} for a page, see {@link SignedInTestClient}.
  *
- * `trpc` runs in the Vitest process and calls the app that `@nuxvel/nuxt/testing/setup` started over
+ * `api` runs in the Vitest process and calls the app that `@nuxvel/nuxt/testing/setup` started over
  * its test control channel: the app loads the user's row and runs the
  * procedure with the context a request would get, so an
  * `authedProcedure` sees that user (role included) as `ctx.user` and
@@ -237,7 +237,7 @@ export type ApiKeyTestClient = Omit<TestClient, "visit">;
  * `$fetch`, `visit` and `login` send a real session cookie of the user.
  * See {@link guest} for the same with no session.
  *
- * @param options.headers Headers to send with each `trpc`, `fetch` and `$fetch` call.
+ * @param options.headers Headers to send with each `api`, `fetch` and `$fetch` call.
  * @param options.apiKey Sign each call in with a new API key and no session; the result has no `visit` and no `login`.
  * @param options.twoFactorVerified Whether the session passed a second factor. Default: whether the user has two-factor sign-in on.
  * @param options.locale The locale of each call and page, for example `"zh"`.
@@ -245,12 +245,12 @@ export type ApiKeyTestClient = Omit<TestClient, "visit">;
  * @example
  * ```ts
  * const ada = actingAs(await userFactory());
- * const post = await ada.trpc.post.create({ title: "Hello", body: "" });
+ * const post = await ada.api.post.create({ title: "Hello", body: "" });
  * const { unreadCount } = await ada.$fetch("/api/notifications");
  * const page = await ada.visit(`/posts/${post.id}`);
  * const retrying = actingAs(user, { headers: { "Idempotency-Key": "k1" } });
  * const response = await actingAs(user, { apiKey: true }).fetch("/api/v1/me");
- * const inChinese = await actingAs(user, { locale: "zh" }).trpc.post.list();
+ * const inChinese = await actingAs(user, { locale: "zh" }).api.post.list();
  * ```
  */
 export function actingAs(user: { id: string }, options: ActingAsOptions & { apiKey: true }): ApiKeyTestClient;
@@ -263,7 +263,7 @@ export function actingAs(user: { id: string }, options: ActingAsOptions = {}): S
     const signed = signedFetch(bearer, headers);
 
     return {
-      trpc: testCaller(undefined, () => bearer(new Headers(headers))),
+      api: testCaller(undefined, () => bearer(new Headers(headers))),
       fetch: signed,
       $fetch: signed$fetch(bearer, headers),
       upload: uploader(signed),
@@ -290,14 +290,14 @@ export function actingAs(user: { id: string }, options: ActingAsOptions = {}): S
  *
  * @example
  * ```ts
- * await expect(guest().trpc.post.create({ title: "x", body: "" }))
+ * await expect(guest().api.post.create({ title: "x", body: "" }))
  *   .rejects.toBeTrpcError("UNAUTHORIZED");
  * expect((await guest().fetch("/api/notifications")).status).toBe(401);
- * const inChinese = await guest({ locale: "zh" }).trpc.post.list();
+ * const inChinese = await guest({ locale: "zh" }).api.post.list();
  * ```
  */
 export function guest(options: Pick<ActingAsOptions, "locale"> = {}): TestClient {
-  if (!options.locale) return { trpc: testCaller(undefined, async () => new Headers()), fetch, $fetch, visit, upload: uploader(fetch), listen: listener(fetch) };
+  if (!options.locale) return { api: testCaller(undefined, async () => new Headers()), fetch, $fetch, visit, upload: uploader(fetch), listen: listener(fetch) };
 
   const { locale } = options;
   const headers = withLocale(undefined, locale);
@@ -305,7 +305,7 @@ export function guest(options: Pick<ActingAsOptions, "locale"> = {}): TestClient
   const signed = signedFetch(unsigned, headers);
 
   return {
-    trpc: testCaller(undefined, async () => new Headers(headers)),
+    api: testCaller(undefined, async () => new Headers(headers)),
     fetch: signed,
     $fetch: signed$fetch(unsigned, headers),
     visit: (target, visitOptions: VisitOptions = {}) => visit(target, visitIn(locale, visitOptions)),

@@ -1,5 +1,4 @@
-import { expect, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, guest, it } from "@nuxvel/nuxt/testing";
 
 describe("{{name}} channel", () => {
   it("refuses a guest", async () => {

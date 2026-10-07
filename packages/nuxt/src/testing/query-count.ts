@@ -13,7 +13,7 @@ export function recordAppQueries(sql: string[]) {
  *
  * @example
  * ```ts
- * const sql = await captureQueries(() => guest().trpc.post.list());
+ * const sql = await captureQueries(() => guest().api.post.list());
  * expect(sql).toHaveLength(1);
  * ```
  */

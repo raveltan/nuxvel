@@ -12,7 +12,7 @@ import { nodeOnlyPath, outsideRepoDir, repoNodeModules, scratchDir, scratchPlayg
 import { startCli } from "@nuxvel/test-helpers/cli";
 import { freePort } from "@nuxvel/test-helpers/free-port";
 
-describe("nuxvel test", () => {
+describe("nuxvel test:functional", () => {
   it("test matches vitest's own exit code for a passing suite", async () => {
     const fixtureCwd = scratchDir("pass");
 
@@ -21,7 +21,7 @@ describe("nuxvel test", () => {
       'import { expect, it } from "vitest";\n\nit("passes", () => {\n  expect(1).toBe(1);\n});\n',
     );
 
-    const nuxvelResult = await runCliAt(fixtureCwd, "test");
+    const nuxvelResult = await runCliAt(fixtureCwd, "test:functional");
     const vitestResult = await runBinAt(fixtureCwd, "vitest", ["run"]);
 
     expect(nuxvelResult.exitCode).toBe(vitestResult.exitCode);
@@ -40,7 +40,7 @@ describe("nuxvel test", () => {
       'import { expect, it } from "vitest";\n\nit("fails", () => {\n  expect(1).toBe(2);\n});\n',
     );
 
-    const { stdout, exitCode } = await runCliAt(fixtureCwd, "test", "sample.test.ts");
+    const { stdout, exitCode } = await runCliAt(fixtureCwd, "test:functional", "sample.test.ts");
 
     expect(exitCode, stdout).toBe(0);
     expect(stripAnsi(stdout)).toMatch(/Test Files\s+1 passed \(1\)/);
@@ -55,7 +55,7 @@ describe("nuxvel test", () => {
     mkdirSync(join(fixtureCwd, "tests", "e2e"), { recursive: true });
     writeFileSync(join(fixtureCwd, "tests", "e2e", "home.test.ts"), passing("end-to-end"));
 
-    const functional = await runCliAt(fixtureCwd, "test", "--reporter=verbose");
+    const functional = await runCliAt(fixtureCwd, "test:functional", "--reporter=verbose");
     const e2e = await runCliAt(fixtureCwd, "test:e2e", "--reporter=verbose");
 
     expect(functional.exitCode, functional.stdout).toBe(0);
@@ -74,7 +74,7 @@ describe("nuxvel test", () => {
     mkdirSync(layerE2e, { recursive: true });
     writeFileSync(join(layerE2e, "invoice.test.ts"), 'import { it } from "vitest";\n\nit("layer end-to-end", () => {});\n');
 
-    const functional = await runCliAt(fixtureCwd, "test", "--reporter=verbose");
+    const functional = await runCliAt(fixtureCwd, "test:functional", "--reporter=verbose");
     const e2e = await runCliAt(fixtureCwd, "test:e2e", "--reporter=verbose");
 
     expect(functional.exitCode, functional.stdout).toBe(0);
@@ -179,7 +179,7 @@ describe("nuxvel test", () => {
       writeFileSync(join(fixtureCwd, "docker-compose.yml"), compose);
       await composeDown();
 
-      const { stdout, stderr, exitCode } = await runCliAt(fixtureCwd, "test");
+      const { stdout, stderr, exitCode } = await runCliAt(fixtureCwd, "test:functional");
 
       expect(stripAnsi(stderr)).toContain("◇ Started dev services (docker compose)");
       expect(stripAnsi(stderr)).toContain("◇ Stopping dev services (docker compose)");
@@ -225,7 +225,7 @@ describe("nuxvel test", () => {
       expect(healthy.exitCode, healthy.stderr).toBe(0);
       expect(stripAnsi(healthy.stdout)).toContain("✔ redis  healthy");
 
-      const suite = await runCliAt(fixtureCwd, "test");
+      const suite = await runCliAt(fixtureCwd, "test:functional");
       expect(suite.exitCode, suite.stdout + suite.stderr).toBe(0);
       expect(stripAnsi(suite.stderr)).toContain("◇ Dev services are already healthy (docker compose)");
       expect(stripAnsi(suite.stderr)).not.toContain("Started dev services");
@@ -234,7 +234,7 @@ describe("nuxvel test", () => {
 
       const movedPort = await freePort();
       writeFileSync(join(fixtureCwd, "docker-compose.yml"), composeYml(movedPort));
-      const updated = await runCliAt(fixtureCwd, "test");
+      const updated = await runCliAt(fixtureCwd, "test:functional");
       expect(updated.exitCode, updated.stdout + updated.stderr).toBe(0);
       expect(stripAnsi(updated.stderr)).toContain("◇ Updated dev services to the compose file (docker compose)");
       expect(stripAnsi(updated.stderr)).not.toContain("Stopping dev services");
@@ -282,7 +282,7 @@ describe("nuxvel test", () => {
   it("test says so instead of crashing when vitest is not installed", async () => {
     const fixtureCwd = outsideRepoDir("no-vitest");
 
-    const { stderr, exitCode } = await runCliWithEnv(fixtureCwd, { PATH: `${nodeOnlyPath(fixtureCwd)}:/usr/bin:/bin` }, "test");
+    const { stderr, exitCode } = await runCliWithEnv(fixtureCwd, { PATH: `${nodeOnlyPath(fixtureCwd)}:/usr/bin:/bin` }, "test:functional");
 
     expect(stripAnsi(stderr)).toContain("✖ Could not run vitest");
     expect(stripAnsi(stderr)).toContain("→ Install it in this project (npm i -D vitest)");
@@ -301,7 +301,7 @@ describe("nuxvel test", () => {
     const { stdout, stderr, exitCode } = await runCliWithEnv(
       fixtureCwd,
       { ...process.env, PATH: nodeOnlyPath(fixtureCwd) },
-      "test",
+      "test:functional",
     );
 
     expect(stripAnsi(stderr)).toContain("✖ docker is not installed");
@@ -318,7 +318,7 @@ describe("nuxvel test", () => {
       'import { expect, it } from "vitest";\n\nit("fails", () => {\n  expect(1).toBe(2);\n});\n',
     );
 
-    const nuxvelResult = await runCliAt(fixtureCwd, "test");
+    const nuxvelResult = await runCliAt(fixtureCwd, "test:functional");
     const vitestResult = await runBinAt(fixtureCwd, "vitest", ["run"]);
 
     expect(nuxvelResult.exitCode).toBe(vitestResult.exitCode);
@@ -331,7 +331,7 @@ describe("nuxvel test", () => {
 
     writeFakeTool(fixtureCwd, "vitest", 'process.kill(process.pid, "SIGKILL");');
 
-    const { stderr, exitCode } = await runCliAt(fixtureCwd, "test");
+    const { stderr, exitCode } = await runCliAt(fixtureCwd, "test:functional");
 
     expect(exitCode).toBe(137);
     expect(stripAnsi(stderr)).toContain("✖ vitest was killed by SIGKILL");
@@ -351,7 +351,7 @@ describe("nuxvel test", () => {
     const { stdout, stderr, exitCode } = await runCliWithEnv(
       fixtureCwd,
       { ...process.env, PATH: nodeOnlyPath(fixtureCwd) },
-      "test",
+      "test:functional",
     );
 
     expect(exitCode, stdout + stderr).toBe(0);
@@ -503,16 +503,16 @@ describe("nuxvel test", () => {
     expect(readdirSync(changesDir)).toEqual([]);
   }, 300000);
 
-  it("test --help shows vitest's own help instead of nuxvel's", async () => {
+  it("test:functional --help shows vitest's own help instead of nuxvel's", async () => {
     const fixtureCwd = scratchDir("help");
 
     writeTestFixture(fixtureCwd, "");
 
-    const { stdout, exitCode } = await runCliAt(fixtureCwd, "test", "--help");
+    const { stdout, exitCode } = await runCliAt(fixtureCwd, "test:functional", "--help");
 
     expect(exitCode).toBe(0);
     expect(stripAnsi(stdout)).toContain("$ vitest run");
-    expect(stripAnsi(stdout)).not.toContain("nuxvel test");
+    expect(stripAnsi(stdout)).not.toContain("nuxvel test:functional");
   }, 30000);
 });
 
@@ -538,7 +538,7 @@ function changesFixture(label: string) {
 }
 
 async function testChangesOnly(dir: string, env: Record<string, string> = {}) {
-  const { stdout, stderr, exitCode } = await runCliWithEnv(dir, { ...process.env, CI: "", ...env }, "test", "--changes-only");
+  const { stdout, stderr, exitCode } = await runCliWithEnv(dir, { ...process.env, CI: "", ...env }, "test:functional", "--changes-only");
   return { output: stripAnsi(stdout + stderr), exitCode };
 }
 
@@ -546,7 +546,7 @@ function readChanges(dir: string) {
   return JSON.parse(readFileSync(join(dir, "node_modules", ".cache", "nuxvel", "changes.json"), "utf8"));
 }
 
-describe("nuxvel test --changes-only", () => {
+describe("nuxvel test:functional --changes-only", () => {
   it("runs all test files when there is no record of a previous run, and records the run", async () => {
     const dir = changesFixture("changes-no-record");
 
@@ -622,10 +622,10 @@ describe("nuxvel test --changes-only", () => {
   }, 60000);
 });
 
-describe("nuxvel test --watch", () => {
+describe("nuxvel test:functional --watch", () => {
   it("runs only the test file that ran a changed file, then waits again", async () => {
     const dir = changesFixture("changes-watch");
-    const watch = startCli(dir, ["test", "--watch"], { env: { ...process.env, CI: "" } });
+    const watch = startCli(dir, ["test:functional", "--watch"], { env: { ...process.env, CI: "" } });
     const output = () => stripAnsi(watch.output());
     const waiting = "Wait for file changes.";
 
@@ -648,7 +648,7 @@ describe("nuxvel test --watch", () => {
 
   it("starts one run for an atomic save", async () => {
     const dir = changesFixture("changes-watch-atomic");
-    const watch = startCli(dir, ["test", "--watch"], { env: { ...process.env, CI: "" } });
+    const watch = startCli(dir, ["test:functional", "--watch"], { env: { ...process.env, CI: "" } });
     const output = () => stripAnsi(watch.output());
     const waiting = "Wait for file changes.";
 
@@ -669,7 +669,7 @@ describe("nuxvel test --watch", () => {
     const dir = changesFixture("changes-watch-services");
     writeRedisCompose(dir, "watch-services", await freePort());
     onTestFinished(() => execFileAsync("docker", ["compose", "down", "-v"], { cwd: dir }).then(() => undefined, () => undefined));
-    const watch = startCli(dir, ["test", "--watch"], { env: { ...process.env, CI: "" } });
+    const watch = startCli(dir, ["test:functional", "--watch"], { env: { ...process.env, CI: "" } });
     const output = () => stripAnsi(watch.output());
     const exited = new Promise((resolve) => watch.child.on("exit", (code, signal) => resolve(signal ?? code)));
 

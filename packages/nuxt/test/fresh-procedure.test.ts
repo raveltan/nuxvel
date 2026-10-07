@@ -34,6 +34,6 @@ describe("freshProcedure", async () => {
   it("counts an actingAs caller as a fresh sign-in", async () => {
     const user = await userFactory();
 
-    await expect(actingAs(user).trpc._sessionCheck.fresh()).resolves.toBe(user.email);
+    await expect(actingAs(user).api._sessionCheck.fresh()).resolves.toBe(user.email);
   });
 });

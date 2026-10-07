@@ -22,7 +22,7 @@ const bootEnv = {
 describe("nuxvel flags, audit, user, backfill and storage commands", () => {
   const playground = sharedPlayground("data");
 
-  it("CI=1 flags:list reports one build step on stderr, a second one with another PATH, COLOR, NODE, session id and AI agent and one after an app/ edit reuse the cached server build, editing a server/ file or a variable the build reads rebuilds it naming the change, and only the last 2 builds not in use are kept", async () => {
+  it("CI=1 flag:list reports one build step on stderr, a second one with another PATH, COLOR, NODE, session id and AI agent and one after an app/ edit reuse the cached server build, editing a server/ file or a variable the build reads rebuilds it naming the change, and only the last 2 builds not in use are kept", async () => {
     const appDir = scratchPlayground("build-cache");
     const env: NodeJS.ProcessEnv = { ...bootEnv, CI: "1", NUXT_DATABASE_URL: await scratchDatabase("build-cache"), NUXT_REDIS_URL: await emptyWorkerRedis() };
     delete env.AI_AGENT;
@@ -34,7 +34,7 @@ describe("nuxvel flags, audit, user, backfill and storage commands", () => {
       });
     const timedFlagsList = async (runEnv: NodeJS.ProcessEnv = env) => {
       const startedAt = performance.now();
-      const result = await runCliWithEnv(appDir, runEnv, "flags:list");
+      const result = await runCliWithEnv(appDir, runEnv, "flag:list");
       expect(result.exitCode, result.stderr).toBe(0);
       return { ...result, took: performance.now() - startedAt };
     };
@@ -446,7 +446,7 @@ describe("nuxvel flags, audit, user, backfill and storage commands", () => {
     expect(stripAnsi(unknown.stderr)).toContain('no user has the id "no-such-user"');
   }, 120000);
 
-  it("flags:set changes a flag's targeting without a deploy and audit-logs it; flags:list, flags:stale and experiment:start/stop/report work", async () => {
+  it("flag:set changes a flag's targeting without a deploy and audit-logs it; flag:list, flag:stale and experiment:start/stop/report work", async () => {
     const appDir = playground;
     const databaseUrl = await scratchDatabase("flags");
     const redisUrl = await emptyWorkerRedis();
@@ -469,7 +469,7 @@ describe("nuxvel flags, audit, user, backfill and storage commands", () => {
       const before = await runCliWithInput(appDir, evaluate, env, "tinker");
       expect(before.stdout, before.output).toContain("evaluated false");
 
-      const set = await runCliWithEnv(appDir, env, "flags:set", "probe-rollout", "--role", "beta-tester", "--value", "true");
+      const set = await runCliWithEnv(appDir, env, "flag:set", "probe-rollout", "--role", "beta-tester", "--value", "true");
       expect(set.exitCode, set.stderr).toBe(0);
       expect(set.stdout).toBe("");
       expect(stripAnsi(set.stderr)).toContain("✔ probe-rollout  role beta-tester=true");
@@ -490,14 +490,14 @@ describe("nuxvel flags, audit, user, backfill and storage commands", () => {
         },
       ]);
 
-      const list = await runCliWithEnv(appDir, env, "flags:list");
+      const list = await runCliWithEnv(appDir, env, "flag:list");
       const listed = tableRows(list.stdout);
       expect(list.exitCode, list.stderr).toBe(0);
       expect(listed.header).toEqual(["NAME", "KIND", "DEFAULT", "TARGETING", "STATUS"]);
       expect(listed.rows).toContainEqual(["probe-rollout", "flag", "false", "role beta-tester=true", "-"]);
       expect(listed.rows).toContainEqual(["probe-cta", "experiment", "-", "control:50 green:50", "not started"]);
 
-      const listJson = await runCliWithEnv(appDir, env, "flags:list", "--json");
+      const listJson = await runCliWithEnv(appDir, env, "flag:list", "--json");
       const { flags, experiments } = JSON.parse(listJson.stdout);
       expect(listJson.exitCode, listJson.stderr).toBe(0);
       expect([...flags, ...experiments].map((entry: { name: string }) => entry.name)).toEqual(listed.rows.map((row) => row[0]));
@@ -512,14 +512,14 @@ describe("nuxvel flags, audit, user, backfill and storage commands", () => {
       });
       expect(experiments).toContainEqual({ name: "probe-cta", variants: { control: 50, green: 50 }, status: "not started" });
 
-      const stale = await runCliWithEnv(appDir, env, "flags:stale");
+      const stale = await runCliWithEnv(appDir, env, "flag:stale");
       expect(stale.exitCode, stale.stderr).toBe(0);
       expect(tableRows(stale.stdout)).toEqual({
         header: ["NAME", "STALE", "SINCE"],
         rows: [["probe-rollout", "expired", "2026-01-01"]],
       });
 
-      const staleJson = await runCliWithEnv(appDir, env, "flags:stale", "--json");
+      const staleJson = await runCliWithEnv(appDir, env, "flag:stale", "--json");
       expect(staleJson.exitCode, staleJson.stderr).toBe(0);
       expect(JSON.parse(staleJson.stdout)).toEqual({ flags: [{ name: "probe-rollout", reason: "expired", since: "2026-01-01" }] });
 
@@ -528,7 +528,7 @@ describe("nuxvel flags, audit, user, backfill and storage commands", () => {
       expect(started.stdout).toBe("");
       expect(stripAnsi(started.stderr)).toContain("✔ probe-cta  running");
 
-      const running = await runCliWithEnv(appDir, env, "flags:list");
+      const running = await runCliWithEnv(appDir, env, "flag:list");
       expect(tableRows(running.stdout).rows).toContainEqual(["probe-cta", "experiment", "-", "control:50 green:50", "running"]);
 
       const stopped = await runCliWithEnv(appDir, env, "experiment:stop", "probe-cta");
@@ -575,12 +575,12 @@ describe("nuxvel flags, audit, user, backfill and storage commands", () => {
         sampleRatio: { pValue: 1, mismatch: false },
       });
 
-      const unknown = await runCliWithInput(appDir, "", env, "flags:set", "nope", "--percentage", "10");
+      const unknown = await runCliWithInput(appDir, "", env, "flag:set", "nope", "--percentage", "10");
       expect(unknown.exitCode).toBe(1);
       expect(stripAnsi(unknown.stderr)).toContain('✖ no flag named "nope"');
-      expect(stripAnsi(unknown.stderr)).toContain("→ Run nuxvel flags:list to see the flags");
+      expect(stripAnsi(unknown.stderr)).toContain("→ Run nuxvel flag:list to see the flags");
 
-      const outOfRange = await runCliWithInput(appDir, "", env, "flags:set", "probe-rollout", "--percentage", "200");
+      const outOfRange = await runCliWithInput(appDir, "", env, "flag:set", "probe-rollout", "--percentage", "200");
       expect(outOfRange.exitCode).toBe(2);
       expect(stripAnsi(outOfRange.stderr)).toContain("✖ --percentage must be a number from 0 to 100");
       expect(stripAnsi(outOfRange.stderr)).toContain("→ e.g. --percentage 25");
@@ -590,7 +590,7 @@ describe("nuxvel flags, audit, user, backfill and storage commands", () => {
     }
   }, 180000);
 
-  it("flags:stale lists a flag no code references, but not a renamed() alias or a flag used through $flags", async () => {
+  it("flag:stale lists a flag no code references, but not a renamed() alias or a flag used through $flags", async () => {
     const appDir = scratchPlayground("unreferenced-flag");
     const env = {
       ...process.env,
@@ -613,7 +613,7 @@ describe("nuxvel flags, audit, user, backfill and storage commands", () => {
       'import { probeRolloutFlag } from "./probe-rollout.flag";\n\nexport default renamed(probeRolloutFlag);\n',
     );
 
-    const stale = await runCliWithEnv(appDir, env, "flags:stale", "--json");
+    const stale = await runCliWithEnv(appDir, env, "flag:stale", "--json");
     expect(stale.exitCode, stale.stderr).toBe(0);
     expect(JSON.parse(stale.stdout)).toEqual({
       flags: [
@@ -622,7 +622,7 @@ describe("nuxvel flags, audit, user, backfill and storage commands", () => {
       ],
     });
 
-    const table = await runCliWithEnv(appDir, env, "flags:stale");
+    const table = await runCliWithEnv(appDir, env, "flag:stale");
     expect(tableRows(table.stdout).rows).toContainEqual(["unused-banner", "unreferenced", "-"]);
   }, 120000);
 
@@ -672,7 +672,7 @@ describe("nuxvel flags, audit, user, backfill and storage commands", () => {
       expect(tinker.exitCode, tinker.output).toBe(0);
       expect(tinker.stdout).toContain("evaluated true");
 
-      const set = await runCliWithInput(appDir, "", env, "flags:set", "probe-rollout", "--percentage", "10");
+      const set = await runCliWithInput(appDir, "", env, "flag:set", "probe-rollout", "--percentage", "10");
 
       expect(set.exitCode, set.output).toBe(0);
       expect(JSON.parse((await redis.get("nuxvel:flags:rollout-before-move")) ?? "{}")).toMatchObject({ percentage: 10 });

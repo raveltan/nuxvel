@@ -165,12 +165,44 @@ applies each step below that names a codemod.
   = useUpload(name)`, or `isPending: uploading` to keep the old name, and
   read `.isPending` in place of `.uploading`. Codemod: `upload-pending`
   (it prints a destructured `uploading` with a default as a manual step).
+- `useLiveQuery()` returns the same `reactive()` shape as
+  `$api.<path>.useQuery()`, so its fields need no `.value`. By hand: read
+  `posts.data` in place of `posts.data.value`, pass `() => posts.data` to
+  `watch()`, and wrap a destructured `useLiveQuery()` in `toRefs()`.
+  Codemod: `live-query-reactive` (it prints a field passed to `watch()`,
+  `unref()` or `toValue()`, a write to a field's `.value`, and a result
+  that is destructured or passed to a call other than `toRefs()`, as
+  manual steps).
+- The test client of `actingAs()`, `guest()` and `signIn()` exposes
+  `api` in place of `trpc`, the name of `$api` in the app. By hand: write
+  `actingAs(user).api.post.list()` in place of
+  `actingAs(user).trpc.post.list()`, and `const { api } =
+  actingAs(user)` in place of `const { trpc } = actingAs(user)`, or `{
+  api: trpc }` to keep the old name. Codemod: `test-client-api` (it
+  prints a `.trpc` on a client it cannot follow, such as one that a
+  helper returns, as a manual step).
+- CLI commands are renamed, and the old names are removed: `nuxvel
+  test` is `nuxvel test:functional`, `channels`, `events`, `routes` and
+  `releases` are `channel:list`, `event:list`, `route:list` and
+  `release:list`, `flags:list`, `flags:set` and `flags:stale` are
+  `flag:list`, `flag:set` and `flag:stale`, and `push:keys` is
+  `key:push`. By hand: rename them in the scripts of `package.json`
+  (`"test:functional": "nuxvel test:functional"`), in
+  `.github/workflows/` (the workflow of `make:ci` runs `nuxvel test`,
+  `nuxvel routes` and `nuxvel releases`) and in the `Dockerfile` (`npx
+  nuxvel route:list --json > nuxvel-routes.json`). Codemod: `cli-names` (also for `./nv <command>` and `nv <command>`).
 - The translation key `nuxvel.authForm.codeFailed` is now
   `nuxvel.auth.verifyFailed`. By hand: if a locale file of the app sets
   `nuxvel.authForm.codeFailed`, rename it to `nuxvel.auth.verifyFailed`.
 
 ### Changes
 
+- `@nuxvel/nuxt/testing` exports `describe` and `it`, so one import line
+  serves a test file. Importing them from `vitest` still works.
+- `defineFlag()` takes no argument: `default` is `false`. `make:flag`
+  writes it that way.
+- The "X is not set" errors of the server and `nuxvel.mail.from` say how
+  to fix it.
 - The server-rendered page no longer carries a session token: the
   session state of `useUser()` drops it, and `useSessions().list` loads
   in the browser only.

@@ -48,7 +48,7 @@ describe("playground demo: live posts", async () => {
     const author = await userFactory({ email: "demo-realtime-author@example.com" });
     const page = await listeningOnPosts(author);
 
-    await actingAs(author).trpc.post.create({ title: "Mine live", body: "" });
+    await actingAs(author).api.post.create({ title: "Mine live", body: "" });
 
     await page.getByRole("link", { name: "Edit Mine live" }).waitFor();
     await expect(page.getByRole("button", { name: "Delete Mine live" })).toBeVisible();

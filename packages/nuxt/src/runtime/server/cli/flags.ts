@@ -19,7 +19,7 @@ function flagNamed(name: string): FlagName {
   const found = flagDefinitions().find((definition) => definition.kind === "flag" && definition.name === name);
 
   if (found?.kind !== "flag") {
-    throw new CommandError(`no flag named "${name}"`, { hint: "Run nuxvel flags:list to see the flags" });
+    throw new CommandError(`no flag named "${name}"`, { hint: "Run nuxvel flag:list to see the flags" });
   }
 
   return found.name;
@@ -29,7 +29,7 @@ function experimentNamed(name: string): ExperimentName {
   const found = flagDefinitions().find((definition) => definition.kind === "experiment" && definition.name === name);
 
   if (found?.kind !== "experiment") {
-    throw new CommandError(`no experiment named "${name}"`, { hint: "Run nuxvel flags:list to see the experiments" });
+    throw new CommandError(`no experiment named "${name}"`, { hint: "Run nuxvel flag:list to see the experiments" });
   }
 
   return found.name;

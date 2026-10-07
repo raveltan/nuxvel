@@ -1,5 +1,4 @@
-import { expect, expectRow, runBackfill } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectRow, it, runBackfill } from "@nuxvel/nuxt/testing";
 import { backfillsTable } from "{{backfillsImport}}";
 
 describe("{{name}} backfill", () => {

@@ -26,6 +26,10 @@ const backupCodesAreTyped: Typed<typeof backupCodes.value, string[]> = true;
 const resendIsTyped: Typed<typeof resend.data, { status: boolean } | undefined> = true;
 const resendErrorIsTyped: Typed<typeof resend.error, Error | null> = true;
 const unwrapIsTyped: Typed<typeof updated, { status: boolean }> = true;
+const sessionsListIsNotAny: IsAny<ReturnType<typeof useSessions>["list"]> extends true ? never : true = true;
+const twoFactorEnableIsNotAny: IsAny<ReturnType<typeof useTwoFactor>["enable"]> extends true ? never : true = true;
+const changeEmailIsNotAny: IsAny<ReturnType<typeof useChangeEmail>> extends true ? never : true = true;
+const resendVerificationIsNotAny: IsAny<ReturnType<typeof useResendVerification>> extends true ? never : true = true;
 
 // @ts-expect-error revoke takes the token of a session
 revoke.mutate();
@@ -39,5 +43,6 @@ unwrapAuth({ data: null, error: null });
     {{ changeEmailIsTyped }} {{ changeEmailErrorIsTyped }} {{ requestedIsTyped }} {{ totpUriIsTyped }} {{ enableErrorIsTyped }}
     {{ verifyIsTyped }} {{ verifyErrorIsTyped }} {{ disableIsTyped }} {{ disableErrorIsTyped }} {{ backupCodesAreTyped }}
     {{ resendIsTyped }} {{ resendErrorIsTyped }} {{ unwrapIsTyped }}
+    {{ sessionsListIsNotAny }} {{ twoFactorEnableIsNotAny }} {{ changeEmailIsNotAny }} {{ resendVerificationIsNotAny }}
   </p>
 </template>

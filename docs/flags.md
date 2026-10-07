@@ -8,7 +8,7 @@ A feature flag turns a feature on for some users and off for the rest. An experi
 
 ```ts
 // server/flags/new-editor.flag.ts
-export const newEditorFlag = defineFlag({ default: false });
+export const newEditorFlag = defineFlag();
 ```
 
 Put each flag in its own file under `server/flags/`. nuxvel discovers the file, so you do not register it. The file path gives the flag name: `server/flags/new-editor.flag.ts` is the flag `new-editor`. `defineFlag` is auto-imported.
@@ -17,8 +17,8 @@ The auto-imported `$flags` namespace holds each flag under its path. Each path s
 
 | Option | Meaning |
 |---|---|
-| `default` | The value for a user that no targeting rule matches. Required. |
-| `expiresAt` | An ISO date. After this date, `nuxvel flags:stale` reports the flag. |
+| `default` | The value for a user that no targeting rule matches. Defaults to `false`. |
+| `expiresAt` | An ISO date. After this date, `nuxvel flag:stale` reports the flag. |
 
 Run `nuxvel make:flag new-editor` to generate this file. The generated flag is off by default. Add `--force` to overwrite a file that exists.
 
@@ -77,31 +77,31 @@ Percentage buckets are deterministic. The same user always gets the same answer 
 
 The targeting is stored in Redis, on the `durable` connection of `useRedis()`. `flagTargeting(name)` reads it back, with `updatedAt`. It returns `{}` when the flag has no targeting.
 
-Each change writes a `flag.targeted` row to the [audit log](./audit.md), with the targeting `before` and `after`. The row names the actor in scope. With no actor in scope, the row names a `flags` system actor. The write of the audit row and the write to Redis are one unit: the audit row is written first, in a transaction that ends after the Redis write. When either write fails, the audit row rolls back and the targeting does not change, so an error from `setFlagTargeting()` or `nuxvel flags:set` always means that nothing was saved.
+Each change writes a `flag.targeted` row to the [audit log](./audit.md), with the targeting `before` and `after`. The row names the actor in scope. With no actor in scope, the row names a `flags` system actor. The write of the audit row and the write to Redis are one unit: the audit row is written first, in a transaction that ends after the Redis write. When either write fails, the audit row rolls back and the targeting does not change, so an error from `setFlagTargeting()` or `nuxvel flag:set` always means that nothing was saved.
 
 ### From the command line
 
 ```sh
-nuxvel flags:list
-nuxvel flags:set new-editor --percentage 10
-nuxvel flags:set new-editor --role beta-tester --value true
-nuxvel flags:set new-editor --value false
-nuxvel flags:stale
+nuxvel flag:list
+nuxvel flag:set new-editor --percentage 10
+nuxvel flag:set new-editor --role beta-tester --value true
+nuxvel flag:set new-editor --value false
+nuxvel flag:stale
 ```
 
 | Command | What it does |
 |---|---|
-| `flags:list` | Lists each flag with its default and targeting, and each experiment with its weights and status. |
-| `flags:set <name>` | Changes the targeting of a flag. It keeps the rules you do not change. |
-| `flags:stale` | Lists the flags that are due for removal, and the flags that no code references. |
+| `flag:list` | Lists each flag with its default and targeting, and each experiment with its weights and status. |
+| `flag:set <name>` | Changes the targeting of a flag. It keeps the rules you do not change. |
+| `flag:stale` | Lists the flags that are due for removal, and the flags that no code references. |
 
-`flags:set` takes these options:
+`flag:set` takes these options:
 
 - `--percentage <0-100>` sets the rollout.
 - `--role <role>` sets a fixed value for that role. The value is `true` unless you also give `--value false`.
 - `--value <true|false>` without `--role` turns the flag on (100%) or off (0%) for everyone.
 
-`flags:list` and `flags:stale` accept `--json`. See [CLI](./cli.md).
+`flag:list` and `flag:stale` accept `--json`. See [CLI](./cli.md).
 
 ### Stale flags
 
@@ -109,7 +109,7 @@ nuxvel flags:stale
 export const newEditorFlag = defineFlag({ default: false, expiresAt: "2026-12-31" });
 ```
 
-`flags:stale` reports a flag in these cases:
+`flag:stale` reports a flag in these cases:
 
 - Its `expiresAt` date is in the past.
 - Its targeting is at 100% and did not change for more than 30 days.
@@ -340,7 +340,7 @@ export const postFeaturesAction = defineAction({
 
 ```ts
 // tests/functional/flags.test.ts
-import { describe, it } from "vitest";
+import { describe, it } from "@nuxvel/nuxt/testing";
 import {
   expect,
   expectRow,

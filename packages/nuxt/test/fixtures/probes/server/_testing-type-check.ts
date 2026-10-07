@@ -268,15 +268,15 @@ export async function factoriesReturnSelectRows() {
 }
 
 export async function callersAreTypedByTheRouter() {
-  const { trpc } = actingAs({ id: "typed" });
-  const callerIsTyped: IsAny<typeof trpc> extends true ? never : true = true;
-  const listed = await guest().trpc.post.list();
+  const { api } = actingAs({ id: "typed" });
+  const callerIsTyped: IsAny<typeof api> extends true ? never : true = true;
+  const listed = await guest().api.post.list();
   const listedIsTyped: IsAny<typeof listed> extends true ? never : true = true;
 
   // @ts-expect-error the post router has no procedure named missing
-  await trpc.post.missing();
+  await api.post.missing();
   // @ts-expect-error post.create needs a title
-  await trpc.post.create({ body: "" });
+  await api.post.create({ body: "" });
 
   return { callerIsTyped, listedIsTyped };
 }
@@ -411,7 +411,7 @@ export async function canTakesOnlyDefinedRules() {
 export async function exhaustRateLimitTakesOnlyDefinedLimits() {
   await exhaustRateLimit("login", { ip: "127.0.0.1" });
   await exhaustRateLimit("login", "ip:127.0.0.1");
-  await exhaustRateLimit(guest().trpc._rateLimitCheck.byKey);
+  await exhaustRateLimit(guest().api._rateLimitCheck.byKey);
 
   // @ts-expect-error a shared limit needs the identity
   await exhaustRateLimit("login");

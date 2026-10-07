@@ -43,8 +43,8 @@ Every fixture on this page comes from `@nuxvel/nuxt/testing`. The examples use a
 ## Running tests
 
 ```bash
-nuxvel test
-nuxvel test tests/functional/posts.test.ts
+nuxvel test:functional
+nuxvel test:functional tests/functional/posts.test.ts
 ```
 
 A new app has one script for each layer:
@@ -52,26 +52,26 @@ A new app has one script for each layer:
 | Script | Runs |
 |---|---|
 | `npm test` | `test:functional`, then `test:ui` |
-| `npm run test:functional` | `nuxvel test`: the functional tests |
+| `npm run test:functional` | `nuxvel test:functional`: the functional tests |
 | `npm run test:ui` | `nuxvel test:ui`: the stories of `app/`, as [component tests](#component-tests) |
 | `npm run test:e2e` | `nuxvel test:e2e`: the [end-to-end tests](#end-to-end-tests) in `tests/e2e/` |
 | `npm run test:arch` | `nuxvel test:arch`: the [architecture rules](./cli.md#nuxvel-testarch), including two rules for tests |
 
-`nuxvel test` runs `vitest run --project functional` in the project. It passes every extra argument to Vitest. It leaves out the end-to-end tests and the component tests. `npm test` does not run the end-to-end tests. Run `npm run test:e2e` for them. Only the functional layer takes part in `--changes-only` and `--watch`, see below.
+`nuxvel test:functional` runs `vitest run --project functional` in the project. It passes every extra argument to Vitest. It leaves out the end-to-end tests and the component tests. `npm test` does not run the end-to-end tests. Run `npm run test:e2e` for them. Only the functional layer takes part in `--changes-only` and `--watch`, see below.
 
 `nuxvel test:arch` reports two kinds of mistake in a test. A functional test must not read the HTML of a page: check it in a story or with `visit()`. A test or a story must not import `expect` from `vitest`, `playwright/test`, `@playwright/test` or `storybook/test`: use the `expect` of its layer.
 
-Before Vitest starts, `nuxvel test` starts the services in the app's `docker-compose.yml` (or `compose.yml`) with `docker compose up -d --wait`. It waits until they report healthy. `nuxvel dev` does the same. When Docker is not installed or `docker compose` fails, the command shows the error and continues. Without a compose file, it starts nothing. When each service is already healthy and was created from the current compose file, it does not run `docker compose up`. A stack created from an older compose file is recreated. When the command ends, Ctrl-C included, it stops the services that it started with `docker compose stop`. Services that were already running stay running.
+Before Vitest starts, `nuxvel test:functional` starts the services in the app's `docker-compose.yml` (or `compose.yml`) with `docker compose up -d --wait`. It waits until they report healthy. `nuxvel dev` does the same. When Docker is not installed or `docker compose` fails, the command shows the error and continues. Without a compose file, it starts nothing. When each service is already healthy and was created from the current compose file, it does not run `docker compose up`. A stack created from an older compose file is recreated. When the command ends, Ctrl-C included, it stops the services that it started with `docker compose stop`. Services that were already running stay running.
 
 To keep the services running between test runs, start them once with `nuxvel services up`. Then each run uses them and does not stop them. `nuxvel services status` shows the state of each service, and `nuxvel services down` stops them. See the [CLI reference](./cli.md#nuxvel-services).
 
 ### Run only the changed tests
 
 ```bash
-nuxvel test --changes-only
+nuxvel test:functional --changes-only
 ```
 
-`nuxvel test --changes-only` runs only the test files that your changes since the last `--changes-only` run can affect. It prints the number of test files that it does not run. These files keep the result that they had in the last run:
+`nuxvel test:functional --changes-only` runs only the test files that your changes since the last `--changes-only` run can affect. It prints the number of test files that it does not run. These files keep the result that they had in the last run:
 
 ```
 ◇ Test files replayed as passed: 41. Test files to run: 2.
@@ -81,7 +81,7 @@ When it must run all test files, it prints the reason, for example `◇ Run all 
 
 #### How the selection works
 
-Each `--changes-only` run records a map in `node_modules/.cache/nuxvel/changes.json`. A plain `nuxvel test` run does not change it. For each test file, the map lists the project files that the test file ran:
+Each `--changes-only` run records a map in `node_modules/.cache/nuxvel/changes.json`. A plain `nuxvel test:functional` run does not change it. For each test file, the map lists the project files that the test file ran:
 
 - the modules that the test process loaded, such as test helpers and `shared/` code
 - the app files with at least one function that ran in the server that `@nuxvel/nuxt/testing/setup` started for the file. The reporter reads the V8 coverage of the server and finds each file through the source maps of the test build.
@@ -105,15 +105,15 @@ The selection is only as good as the map. These cases can give a wrong selection
 - The map records a file only when a function in it ran. A test that only reads a top-level constant of a file does not record that file. When you change the constant, that test file does not run, unless rule 3 applies.
 - The map records only code that ran in Node. Code that runs only in the browser, such as an `onMounted` hook or a client plugin, is not in the map. A change to it can skip the tests that check it.
 
-Run the full `nuxvel test` before you merge. CI always runs all test files.
+Run the full `nuxvel test:functional` before you merge. CI always runs all test files.
 
 ### Watch mode
 
 ```bash
-nuxvel test --watch
+nuxvel test:functional --watch
 ```
 
-`nuxvel test --watch` does the steps of [`--changes-only`](#run-only-the-changed-tests), then watches the project files. It does not watch `node_modules`, `dist` and the folders whose names start with `.`. When a file changes, the command selects the test files with the same rules and runs them. Each run updates the record. The test build stays in the cache, so a run builds the app again only when the build key changes. An atomic save (`sed -i` and many editors write a temporary file and rename it) sends more than one file event, so the command waits 100 ms after the last event before it starts a run. A new run starts only after the current run ends. Push Ctrl-C to stop the command.
+`nuxvel test:functional --watch` does the steps of [`--changes-only`](#run-only-the-changed-tests), then watches the project files. It does not watch `node_modules`, `dist` and the folders whose names start with `.`. When a file changes, the command selects the test files with the same rules and runs them. Each run updates the record. The test build stays in the cache, so a run builds the app again only when the build key changes. An atomic save (`sed -i` and many editors write a temporary file and rename it) sends more than one file event, so the command waits 100 ms after the last event before it starts a run. A new run starts only after the current run ends. Push Ctrl-C to stop the command.
 
 ## The test database
 
@@ -177,9 +177,9 @@ export default defineConfig(async () => {
 
 A new app ships with this file.
 
-The config has one Vitest project for each kind of test. `nuxvel test` runs `vitest run --project functional`, `nuxvel test:e2e` runs `vitest run --project e2e`, and `nuxvel test:ui` runs `vitest run --project ui`. A project owns the test files that its `include` and `exclude` globs match, so an end-to-end test in any `tests/e2e/` folder, such as `layers/billing/tests/e2e/`, runs under `test:e2e` and never under `nuxvel test`. `extends: true` gives each project the options above it. A project is a name and a set of globs, so a new kind of test is a new entry in `projects`. A plain `npx vitest run` runs every project.
+The config has one Vitest project for each kind of test. `nuxvel test:functional` runs `vitest run --project functional`, `nuxvel test:e2e` runs `vitest run --project e2e`, and `nuxvel test:ui` runs `vitest run --project ui`. A project owns the test files that its `include` and `exclude` globs match, so an end-to-end test in any `tests/e2e/` folder, such as `layers/billing/tests/e2e/`, runs under `test:e2e` and never under `nuxvel test:functional`. `extends: true` gives each project the options above it. A project is a name and a set of globs, so a new kind of test is a new entry in `projects`. A plain `npx vitest run` runs every project.
 
-When `NUXVEL_TEST_UI=1` or `VITEST_STORYBOOK=true`, the config has only the `ui` project. `nuxvel test:ui` sets the first variable, and the test widget of the Storybook UI sets the second. The `ui` project has no global setup, so it needs no database and no test build of the app. `@storybook/addon-vitest` loads the Storybook presets and starts Nuxt, and this adds about 2 s to each run. Thus `nuxvel test`, `--changes-only` and `--watch` do not load it. The Storybook widget finds the Vitest config only in a file named `vitest.config.*` that contains the text `storybookTest`. Keep the `ui()` function in `vitest.config.ts`.
+When `NUXVEL_TEST_UI=1` or `VITEST_STORYBOOK=true`, the config has only the `ui` project. `nuxvel test:ui` sets the first variable, and the test widget of the Storybook UI sets the second. The `ui` project has no global setup, so it needs no database and no test build of the app. `@storybook/addon-vitest` loads the Storybook presets and starts Nuxt, and this adds about 2 s to each run. Thus `nuxvel test:functional`, `--changes-only` and `--watch` do not load it. The Storybook widget finds the Vitest config only in a file named `vitest.config.*` that contains the text `storybookTest`. Keep the `ui()` function in `vitest.config.ts`.
 
 `@nuxvel/nuxt/testing/global-setup` builds the app for tests before any test file starts. List it after any global setup that sets environment the build reads, such as the database setup.
 
@@ -217,10 +217,10 @@ The test server runs with `NODE_ENV=production`, so it needs `NUXT_SITE_URL`. Th
 
 ### Sharding
 
-Sharding divides the test files between machines. Each machine runs one shard. `nuxvel test` gives the `--shard` and `--reporter` options to Vitest:
+Sharding divides the test files between machines. Each machine runs one shard. `nuxvel test:functional` gives the `--shard` and `--reporter` options to Vitest:
 
 ```bash
-npx nuxvel test --shard=1/3 --reporter=blob
+npx nuxvel test:functional --shard=1/3 --reporter=blob
 ```
 
 The `blob` reporter writes the results to `.vitest/blob/`. When all shards are done, put the blob files of each shard in `.vitest/blob/` on one machine. Then merge them into one report:
@@ -248,7 +248,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: cp .env.example .env
-      - run: npx nuxvel test --shard=${{ matrix.shard }}/3 --reporter=blob
+      - run: npx nuxvel test:functional --shard=${{ matrix.shard }}/3 --reporter=blob
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
@@ -281,16 +281,15 @@ Use one shard for each machine. Each shard builds the app for tests, and the tes
 
 ```ts
 // tests/functional/posts.test.ts
-import { actingAs, expect, expectRow } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, expectRow, it } from "@nuxvel/nuxt/testing";
 import { userFactory } from "#nuxvel/factories";
 import { postTable } from "#nuxvel/schema";
 
 describe("posts", () => {
   it("creates a post", async () => {
-    const { trpc } = actingAs(await userFactory());
+    const { api } = actingAs(await userFactory());
 
-    const post = await trpc.post.create({ title: "Hello", body: "" });
+    const post = await api.post.create({ title: "Hello", body: "" });
 
     expect(post.title).toBe("Hello");
     await expectRow(postTable, { id: post.id, title: "Hello" });
@@ -302,7 +301,7 @@ Put tests in `tests/functional/`, or next to the server file they cover.
 
 Import tables from `#nuxvel/schema`, factories from `#nuxvel/factories`, server files from `#server/<path>` and shared files from `#shared/<path>`, never through `../`. The `imports` field in the starter's `package.json` maps these specifiers for Vitest, so a test file can import them wherever it is. An app made before 0.3.0 gets the field from [`nuxvel upgrade`](./cli.md#nuxvel-upgrade).
 
-Import `expect` from `@nuxvel/nuxt/testing`, never from `vitest`. It checks a Playwright `Locator` or `Page` with the Playwright `expect`, and any other value with the Vitest `expect`. Import `describe`, `it`, `vi` and the hooks from `vitest`. In a story, import `expect` from `@nuxvel/nuxt/storybook/test`.
+Import `expect` from `@nuxvel/nuxt/testing`, never from `vitest`. It checks a Playwright `Locator` or `Page` with the Playwright `expect`, and any other value with the Vitest `expect`. Import `describe` and `it` from `@nuxvel/nuxt/testing` too, and `vi` and the hooks from `vitest`. In a story, import `expect` from `@nuxvel/nuxt/storybook/test`.
 
 A test file does not start the app itself. Before the first test of each file, `@nuxvel/nuxt/testing/setup` starts a server for the file from the run's build. A fixture that reaches the app throws when `@nuxvel/nuxt/testing/global-setup` is not in `globalSetup`.
 
@@ -318,7 +317,7 @@ nuxvel make:test actions/posts/create-post.action
 
 `nuxvel make:test <path>` creates a test next to an existing file under `server/`. The path is relative to `server/`, without the extension. The command above writes `server/actions/posts/create-post.action.test.ts`. The file must exist. Pass `--force` to overwrite a test that already exists.
 
-The folder of the file picks the fixture that the scaffold's `it.todo` names: `runAction()` under `actions/`, the `trpc` caller under `trpc/routers/`, `runJob()` under `jobs/` and `runListener()` under `listeners/`. Pass `--action`, `--router`, `--job` or `--listener` to pick it yourself.
+The folder of the file picks the fixture that the scaffold's `it.todo` names: `runAction()` under `actions/`, the `api` caller under `trpc/routers/`, `runJob()` under `jobs/` and `runListener()` under `listeners/`. Pass `--action`, `--router`, `--job` or `--listener` to pick it yourself.
 
 Most `make:*` commands also write a test next to the file they create: `make:action`, `make:job`, `make:event`, `make:listener`, `make:mail`, `make:notification`, `make:backfill`, `make:channel`, `make:webhook`, `make:resource`, `make:router --crud` and `make:factory`. See the [CLI reference](./cli.md).
 
@@ -326,17 +325,17 @@ Most `make:*` commands also write a test next to the file they create: `make:act
 
 ```ts
 const author = await userFactory();
-const { trpc } = actingAs(author);
+const { api } = actingAs(author);
 
-const post = await trpc.post.create({ title: "Hello", body: "" });
-const posts = await guest().trpc.post.list();
+const post = await api.post.create({ title: "Hello", body: "" });
+const posts = await guest().api.post.list();
 ```
 
 `actingAs(user)` returns the ways to reach the app as that user:
 
 | Member | Does |
 |---|---|
-| `trpc` | a caller for the app's tRPC router |
+| `api` | a caller for the app's tRPC router, named like [`$api`](./api.md#calling-from-the-client) in the app |
 | `fetch(path, init?)` | sends a request to a server route and returns the `Response` |
 | `$fetch(path, options?)` | sends a request to a server route and returns the parsed body, typed by the route |
 | `visit(target, options?)` | opens a page in the browser, see [visit](#visit) |
@@ -344,7 +343,7 @@ const posts = await guest().trpc.post.list();
 | `upload(name, file)` | uploads a `File` as the upload `name` of `server/uploads/` and returns its `tmp/` key, see [Storage](./storage.md#testing) |
 | `listen(channels, { lastEventId? })` | opens a channel stream, with a replay from `lastEventId`, and returns `{ channels, refused, next(event?), close() }`, see [Realtime](./realtime.md#listening-in-a-test) |
 
-`trpc` is typed by the router, so a wrong procedure name or input fails to compile. The caller runs each procedure inside the app with the context a real request gets.
+`api` is typed by the router, so a wrong procedure name or input fails to compile. The caller runs each procedure inside the app with the context a real request gets.
 
 The app loads the user's row by `id`. An `authedProcedure` and a `publicProcedure` see that user as `ctx.user` and `ctx.actor`, role included.
 
@@ -354,7 +353,7 @@ Reach the app through `guest()` and `actingAs(user)`, not through `$fetch`, `fet
 
 ```ts
 const ada = actingAs(await userFactory());
-const post = await ada.trpc.post.create({ title: "Hello", body: "" });
+const post = await ada.api.post.create({ title: "Hello", body: "" });
 
 const { unreadCount } = await ada.$fetch("/api/notifications");
 const response = await ada.fetch("/api/notifications");
@@ -364,10 +363,10 @@ const response = await ada.fetch("/api/notifications");
 
 | Option | Does |
 |---|---|
-| `headers` | headers that `trpc`, `fetch` and `$fetch` send with each call. A header that a `fetch` or `$fetch` call sets itself wins. `visit` and `login` do not send them |
+| `headers` | headers that `api`, `fetch` and `$fetch` send with each call. A header that a `fetch` or `$fetch` call sets itself wins. `visit` and `login` do not send them |
 | `apiKey` | signs each call in with a new API key of the user instead of a session. The result has no `visit` and no `login`. `adminProcedure`, `freshProcedure` and a `roleProcedure` without `{ apiKeys: true }` refuse a key. `twoFactorVerified` has no effect |
 | `twoFactorVerified` | whether the session passed a second factor, for `adminProcedure`. Default: `true` when the user has `twoFactorEnabled`. Give `false` to test the refusal |
-| `locale` | a locale code of the app, for example `"zh"`. `trpc`, `fetch` and `$fetch` send it as the locale of the page, so `currentLocale()` and `ctx.locale` return it. `visit` opens the page in that locale. See [Internationalization](./i18n.md#the-locale-on-the-server) |
+| `locale` | a locale code of the app, for example `"zh"`. `api`, `fetch` and `$fetch` send it as the locale of the page, so `currentLocale()` and `ctx.locale` return it. `visit` opens the page in that locale. See [Internationalization](./i18n.md#the-locale-on-the-server) |
 
 ```ts
 const ada = actingAs(await userFactory(), { headers: { "Idempotency-Key": "k1" } });
@@ -568,10 +567,10 @@ const posts = await postFactory.for("authorId", author).count(10)();
 
 ```ts
 const author = await userFactory();
-const { trpc } = actingAs(author);
+const { api } = actingAs(author);
 const values = await postFactory.make({ authorId: author.id });
 
-await trpc.post.create(values);
+await api.post.create(values);
 ```
 
 `factory.make(overrides)` returns the insert object of one row and does not insert it. The object has the type of the table's insert model. It holds the values from `definition` and the defaults for required columns, but not the database defaults. A function in `definition` still runs. If that function inserts a parent row, give the column in `overrides` to prevent the insert.
@@ -581,12 +580,12 @@ await trpc.post.create(values);
 ```ts
 const author = await userFactory.withPassword("secret-password")();
 
-const { trpc, fetch } = await signIn(author.email, "secret-password");
+const { api, fetch } = await signIn(author.email, "secret-password");
 ```
 
 `signIn(email, password)` signs the user in through the real `/api/auth/sign-in/email` endpoint. It returns the same members as `actingAs`, on that session. It throws when the app refuses the password, and when the user has two-factor sign-in on. `userFactory.withPassword(password)` returns a user factory that also writes the credential account of each user. The user can then sign in with `password`, with `signIn` or through the sign-in form in an end-to-end test. The factory computes the hash one time for each password. To sign a user in without a password, use [`actingAs(user)`](#acting-as-a-user).
 
-`signIn(email, password, { headers })` sends `headers` with the sign-in and with each later `trpc`, `fetch` and `$fetch` call, for example `user-agent` to name the device of the session or `x-forwarded-for` to sign in from an IP. A header that a call gives itself wins.
+`signIn(email, password, { headers })` sends `headers` with the sign-in and with each later `api`, `fetch` and `$fetch` call, for example `user-agent` to name the device of the session or `x-forwarded-for` to sign in from an IP. A header that a call gives itself wins.
 
 ```ts
 const user = await userFactory.withTwoFactor("secret-password")();
@@ -641,7 +640,7 @@ export async function blog({ posts = 1 }: { posts?: number } = {}) {
 import { blog } from "../scenarios/blog";
 
 const { author, posts } = await blog({ posts: 3 });
-const { trpc } = actingAs(author);
+const { api } = actingAs(author);
 ```
 
 A scenario is an async function that builds a group of rows with factories and returns them. Put scenarios in `tests/scenarios/`, one file per scenario, and import them in functional and end-to-end tests. The rows keep the types of their factories.
@@ -774,7 +773,7 @@ const row = await expectRow(postTable, { id: post.id, title: "Hello" });
 `expectRow` reads on its own connection, outside any transaction the app has open. It sees committed rows only.
 
 ```ts
-await trpc.post.delete({ id: post.id });
+await api.post.delete({ id: post.id });
 await expectNoRow(postTable, { id: post.id, deletedAt: null });
 await expectSoftDeleted(postTable, { id: post.id });
 
@@ -785,7 +784,7 @@ await expectCount(postTable, 0);
 `expectSoftDeleted(table, match)` checks that a soft-deleted row of `table` matches, and returns it. It takes only a table with `softDeletes()`. `expectNoRow(table, match)` checks that no row of `table` matches `match`. `expectCount(table, n, match?)` checks that exactly `n` rows match. Without `match`, it counts every row of the table. Both use the matching rules and the connection of `expectRow`.
 
 ```ts
-await trpc.post.update({ id: post.id, title: "Updated", body: "Text" });
+await api.post.update({ id: post.id, title: "Updated", body: "Text" });
 
 const entry = await expectAudited("post.updated", { targetId: String(post.id) });
 expect(entry.changes).toEqual({ title: { from: "Draft", to: "Updated" } });
@@ -809,14 +808,14 @@ await expect(
   runAction("posts.create-post", { title: "", body: "" }, { actingAs: author }),
 ).rejects.toHaveValidationErrors("title");
 
-await expect(guest().trpc.post.create({ title: "Hello", body: "" })).rejects.toBeTrpcError("UNAUTHORIZED");
+await expect(guest().api.post.create({ title: "Hello", body: "" })).rejects.toBeTrpcError("UNAUTHORIZED");
 
 await expect(
   runAction("posts.update-post", { id: post.id, title: "Hello", body: " " }, { actingAs: author }),
 ).rejects.toBeActionError("post.body-empty");
 
 await expect(
-  trpc.post.update({ id: post.id, title: "Hello", body: " " }),
+  api.post.update({ id: post.id, title: "Hello", body: " " }),
 ).rejects.toBeTrpcError("UNPROCESSABLE_CONTENT");
 ```
 
@@ -855,11 +854,11 @@ await expect(runJob("post.notify-followers", { postId: 0 })).rejects.toBeUnrecov
 `expectRefused(router, code)` checks that every procedure of a router refuses the caller with `code`:
 
 ```ts
-await expectRefused(actingAs(await userFactory()).trpc.tickets.ticket, "FORBIDDEN");
-await expectRefused(guest().trpc.tickets, "UNAUTHORIZED");
+await expectRefused(actingAs(await userFactory()).api.tickets.ticket, "FORBIDDEN");
+await expectRefused(guest().api.tickets, "UNAUTHORIZED");
 ```
 
-It reads the procedures from the app router, so the check includes a procedure that you add later. It calls each procedure with no input. The role check must run before `.input()`, which is the case for a procedure built on `authedProcedure`, `roleProcedure()` or `adminProcedure`. The failure message names each procedure that answered or refused with a different code. You can also pass one procedure, such as `trpc.account.signUps`.
+It reads the procedures from the app router, so the check includes a procedure that you add later. It calls each procedure with no input. The role check must run before `.input()`, which is the case for a procedure built on `authedProcedure`, `roleProcedure()` or `adminProcedure`. The failure message names each procedure that answered or refused with a different code. You can also pass one procedure, such as `api.account.signUps`.
 
 ## Many cases in one test
 
@@ -872,7 +871,7 @@ it("rejects a blank title with a readable message", async () => {
   const ada = await userFactory();
   const board = await projectFactory({ ownerId: ada.id });
 
-  await expect(actingAs(ada).trpc.task.create({ title: "   ", projectId: board.id })).rejects.toMatchObject({
+  await expect(actingAs(ada).api.task.create({ title: "   ", projectId: board.id })).rejects.toMatchObject({
     fields: { title: ["Describe the task"] },
   });
 });
@@ -882,7 +881,7 @@ it("rejects a due date that is not YYYY-MM-DD", async () => {
   const board = await projectFactory({ ownerId: ada.id });
 
   await expect(
-    actingAs(ada).trpc.task.create({ title: "Book the venue", projectId: board.id, due: "31/01/2026" }),
+    actingAs(ada).api.task.create({ title: "Book the venue", projectId: board.id, due: "31/01/2026" }),
   ).rejects.toHaveValidationErrors("due");
 });
 ```
@@ -898,7 +897,7 @@ it.for<{ name: string; input: { title?: string; due?: string }; errors: Record<s
   const board = await projectFactory({ ownerId: ada.id });
 
   await expect(
-    actingAs(ada).trpc.task.create({ title: "Book the venue", projectId: board.id, ...input }),
+    actingAs(ada).api.task.create({ title: "Book the venue", projectId: board.id, ...input }),
   ).rejects.toHaveValidationErrors(errors);
 });
 ```
@@ -917,16 +916,16 @@ nuxvel empties the tables after each test. Vitest builds the case list once, whe
 
 ```ts
 it.for([
-  { name: "trash", ticket: () => ticketFactory(), call: (trpc: TestCaller, ticket: TicketRow) => trpc.tickets.ticket.trash({ id: ticket.id }) },
-  { name: "restore", ticket: () => ticketFactory({ deletedAt: new Date() }), call: (trpc: TestCaller, ticket: TicketRow) => trpc.tickets.ticket.restore({ id: ticket.id }) },
+  { name: "trash", ticket: () => ticketFactory(), call: (api: TestCaller, ticket: TicketRow) => api.tickets.ticket.trash({ id: ticket.id }) },
+  { name: "restore", ticket: () => ticketFactory({ deletedAt: new Date() }), call: (api: TestCaller, ticket: TicketRow) => api.tickets.ticket.restore({ id: ticket.id }) },
 ])("keeps the trash to admins: $name", async ({ ticket: makeTicket, call }) => {
   const ticket = await makeTicket();
 
-  await expect(call(actingAs(await userFactory({ role: "agent" })).trpc, ticket)).rejects.toBeTrpcError("FORBIDDEN");
+  await expect(call(actingAs(await userFactory({ role: "agent" })).api, ticket)).rejects.toBeTrpcError("FORBIDDEN");
 });
 ```
 
-`TestCaller` is the type of `actingAs(user).trpc`. It types the parameter of a call function, so a case list keeps its types.
+`TestCaller` is the type of `actingAs(user).api`. It types the parameter of a call function, so a case list keeps its types.
 
 ### A matrix
 
@@ -935,12 +934,12 @@ it.for([
 ```ts
 describe.for(["user", "guest"] as const)("a %s", (who) => {
   it.for([
-    { name: "trash", call: (trpc: TestCaller) => trpc.tickets.ticket.trash({ id: 1 }) },
-    { name: "restore", call: (trpc: TestCaller) => trpc.tickets.ticket.restore({ id: 1 }) },
+    { name: "trash", call: (api: TestCaller) => api.tickets.ticket.trash({ id: 1 }) },
+    { name: "restore", call: (api: TestCaller) => api.tickets.ticket.restore({ id: 1 }) },
   ])("cannot $name a ticket", async ({ call }) => {
-    const trpc = who === "user" ? actingAs(await userFactory()).trpc : guest().trpc;
+    const api = who === "user" ? actingAs(await userFactory()).api : guest().api;
 
-    await expect(call(trpc)).rejects.toThrow();
+    await expect(call(api)).rejects.toThrow();
   });
 });
 ```
@@ -957,7 +956,7 @@ Some checks need no fixture. Use `expect` and the fixtures that you know.
 const author = await userFactory();
 await postFactory.for("authorId", author).count(25)();
 
-const second = await trpc.post.list({ page: 2, perPage: 10 });
+const second = await api.post.list({ page: 2, perPage: 10 });
 
 expect(second).toMatchObject({ page: 2, perPage: 10, total: 25, lastPage: 3 });
 expect(second.rows).toHaveLength(10);
@@ -971,8 +970,8 @@ expect(second.rows).toHaveLength(10);
 const ada = actingAs(await userFactory(), { headers: { "Idempotency-Key": "k1" } });
 const input = { title: "Hello", body: "First post" };
 
-const first = await ada.trpc.post.create(input);
-const repeat = await ada.trpc.post.create(input);
+const first = await ada.api.post.create(input);
+const repeat = await ada.api.post.create(input);
 
 expect(repeat.id).toBe(first.id);
 await expectCount(postTable, 1);
@@ -981,7 +980,7 @@ await expectCount(postTable, 1);
 A repeat with the same key and input returns the first result and runs nothing. To check a repeat while the first call still runs, send both calls together with `Promise.allSettled`. One call rejects:
 
 ```ts
-const results = await Promise.allSettled([ada.trpc.post.create(input), ada.trpc.post.create(input)]);
+const results = await Promise.allSettled([ada.api.post.create(input), ada.api.post.create(input)]);
 const refused = results.filter((result) => result.status === "rejected");
 
 expect(refused).toHaveLength(1);
@@ -993,7 +992,7 @@ See [API: idempotent mutations](./api.md#idempotent-mutations).
 ### A snapshot of a response
 
 ```ts
-const post = await trpc.post.byId({ id: created.id });
+const post = await api.post.byId({ id: created.id });
 
 expect(post).toMatchSnapshot({ id: expect.any(Number), createdAt: expect.any(Date) });
 ```
@@ -1027,7 +1026,7 @@ await expect(toast(page, "Post created")).toBeVisible();
 ## Fakes
 
 ```ts
-const post = await trpc.post.create({ title: "Hello", body: "" });
+const post = await api.post.create({ title: "Hello", body: "" });
 
 await expectQueued("post.notify-followers", { postId: post.id }, { times: 1 });
 await expectNoMailSent("welcome");
@@ -1081,7 +1080,7 @@ await expectNoWebhookSent("ticket.deleted");
 ### Policies and actions
 
 ```ts
-await expect(actingAs(other).trpc.post.update({ id: post.id, title: "Mine", body: "" })).rejects.toBeTrpcError("FORBIDDEN");
+await expect(actingAs(other).api.post.update({ id: post.id, title: "Mine", body: "" })).rejects.toBeTrpcError("FORBIDDEN");
 
 await expectPolicyChecked("update", postsTable, { allowed: false });
 await expectActionCalled("posts.update-post", { actingAs: other });
@@ -1094,7 +1093,7 @@ await expectActionCalled("posts.update-post", { actingAs: other });
 ### Errors and logs
 
 ```ts
-await expect(trpc.post.publish({ id: post.id })).rejects.toThrow();
+await expect(api.post.publish({ id: post.id })).rejects.toThrow();
 
 await expectErrorReported("stripe timeout");
 await expectLogged("warn", "charge retried");
@@ -1102,7 +1101,7 @@ await expectLogged("warn", "charge retried");
 
 `expectErrorReported(match?, { times? })` checks that the app handed an error to error tracking. It sees an unexpected procedure error, a 500 of a route and a failed job run in the app. It does not see a 4xx tRPC error. `expectNoErrorReported()` checks that no error was reported, and lists the errors when one was. `expectLogged(level, match, { times? })` checks that the app logged a line at `level`. It sees only the lines at or above `NUXT_LOG_LEVEL`. `match` is text that the message contains, or a pattern. Each assertion returns the latest matching record.
 
-A call through `actingAs().trpc` or `guest().trpc` reports an unexpected error and logs it, as in production.
+A call through `actingAs().api` or `guest().api` reports an unexpected error and logs it, as in production.
 
 ### Broadcasts and cache lookups
 
@@ -1148,7 +1147,7 @@ import { expectFetched, fakeStripe } from "@nuxvel/nuxt/testing";
 it("charges the yearly price", async () => {
   await fakeStripe({ prices: { pro_monthly: { amount: 19000, currency: "eur", interval: "year" } } });
 
-  await actingAs(user).trpc.billing.upgrade();
+  await actingAs(user).api.billing.upgrade();
 
   const request = await expectFetched("https://api.stripe.com/v1/checkout/sessions", { method: "POST" });
   expect(new URLSearchParams(request.body).get("mode")).toBe("subscription");
@@ -1168,7 +1167,7 @@ it("locks the reports once the renewal fails", async () => {
   await failRenewal(user, $products.pro);
 
   await expectNotSubscribed(user, $products.pro);
-  await expect(actingAs(user).trpc.reports.export()).rejects.toBeTrpcError("FORBIDDEN");
+  await expect(actingAs(user).api.reports.export()).rejects.toBeTrpcError("FORBIDDEN");
 });
 ```
 
@@ -1228,17 +1227,17 @@ Call it in the `describe` body. It applies again before every test, so a restart
 import { freezeTime, travelBy, travelTo } from "@nuxvel/nuxt/testing";
 
 it("closes comments 30 days after the post", async () => {
-  const post = await trpc.post.create({ title: "Hello", body: "" });
+  const post = await api.post.create({ title: "Hello", body: "" });
 
   await travelBy({ days: 31 });
 
-  await expect(trpc.comment.create({ postId: post.id, body: "Late" })).rejects.toBeActionError("comment.closed");
+  await expect(api.comment.create({ postId: post.id, body: "Late" })).rejects.toBeActionError("comment.closed");
 });
 
 it("stamps the post with the frozen time", async () => {
   const frozenAt = await freezeTime(new Date("2030-01-01T00:00:00Z"));
 
-  const post = await trpc.post.create({ title: "Hello", body: "" });
+  const post = await api.post.create({ title: "Hello", body: "" });
 
   await expectRow(postTable, { id: post.id, createdAt: frozenAt });
 });
@@ -1263,7 +1262,7 @@ import { expectConstantQueries, guest } from "@nuxvel/nuxt/testing";
 
 await expectConstantQueries(async (size) => {
   await userFactory.has(size, (user) => postFactory.for("authorId", user))();
-  await guest().trpc.post.list();
+  await guest().api.post.list();
 });
 ```
 
@@ -1278,7 +1277,7 @@ Each size runs on the same database. The rows and the backfill progress of the e
 ```ts
 import { expectQueryCount, guest } from "@nuxvel/nuxt/testing";
 
-await expectQueryCount({ max: 2 }, () => guest().trpc.post.list());
+await expectQueryCount({ max: 2 }, () => guest().api.post.list());
 ```
 
 `expectQueryCount({ max }, fn)` checks that the app ran at most `max` queries for the calls in `fn`. It counts the same queries as `expectConstantQueries`. On success, it returns the query count. Over the budget, it throws with the count, the budget and the list of queries. Use it to hold one call to a fixed number of queries.
@@ -1286,7 +1285,7 @@ await expectQueryCount({ max: 2 }, () => guest().trpc.post.list());
 ```ts
 import { captureQueries, guest } from "@nuxvel/nuxt/testing";
 
-const sql = await captureQueries(() => guest().trpc.post.list());
+const sql = await captureQueries(() => guest().api.post.list());
 
 expect(sql).toHaveLength(1);
 ```
@@ -1369,8 +1368,7 @@ The stories of `nuxvelStories()` live in `node_modules`, and Vitest does not col
 ## End-to-end tests
 
 ```ts
-import { actingAs, expect, heading } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, heading, it } from "@nuxvel/nuxt/testing";
 import { userFactory } from "#nuxvel/factories";
 
 describe("the new post page", () => {
@@ -1389,7 +1387,7 @@ npm run test:e2e
 nuxvel make:test posts/new --e2e
 ```
 
-`nuxvel test:e2e` starts the services and runs the tests in `tests/e2e/`, on the same build and test database as `nuxvel test`. A new app's `npm run test:e2e` script first installs the browser with `playwright-core install chromium-headless-shell`, then runs `nuxvel test:e2e`. `nuxvel make:test <page> --e2e` writes a test that opens the page with `visit()` and checks that the page stays at its URL. See the [CLI reference](./cli.md#nuxvel-teste2e).
+`nuxvel test:e2e` starts the services and runs the tests in `tests/e2e/`, on the same build and test database as `nuxvel test:functional`. A new app's `npm run test:e2e` script first installs the browser with `playwright-core install chromium-headless-shell`, then runs `nuxvel test:e2e`. `nuxvel make:test <page> --e2e` writes a test that opens the page with `visit()` and checks that the page stays at its URL. See the [CLI reference](./cli.md#nuxvel-teste2e).
 
 ### Find elements
 
@@ -1447,7 +1445,7 @@ For other roles, and for options such as `level`, use the Playwright methods on 
 ```ts
 import { alert, button, dialog, expect, guest, visit } from "@nuxvel/nuxt/testing";
 
-await expect(guest().trpc.post.create({ title: "Hi" })).rejects.toBeTrpcError("UNAUTHORIZED");
+await expect(guest().api.post.create({ title: "Hi" })).rejects.toBeTrpcError("UNAUTHORIZED");
 expect({ id: 7, title: "Hi" }).toEqual({ id: expect.any(Number), title: "Hi" });
 
 const page = await visit("/posts");
@@ -1703,8 +1701,7 @@ At the end of the test, `visit` fails the test with each recorded error. When th
 ### Smoke tests
 
 ```ts
-import { expectNoSmoke } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expectNoSmoke, it } from "@nuxvel/nuxt/testing";
 import { postFactory } from "#nuxvel/factories";
 
 describe("the app", () => {
@@ -1744,8 +1741,7 @@ await page.goto(url("/posts/new"), { waitUntil: "hydration" });
 ## Accessibility
 
 ```ts
-import { expectAccessible, visit } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expectAccessible, it, visit } from "@nuxvel/nuxt/testing";
 
 describe("the posts page", () => {
   it("is accessible", async () => {
@@ -1803,9 +1799,9 @@ The starter's `tests/tsconfig.json` extends the server program for everything un
 
 | Fixture | Does |
 |---|---|
-| `signIn(email, password, { headers? })` | signs in through the sign-in endpoint, with `headers` on the sign-in and each later call, and returns `trpc`, `fetch`, `$fetch`, `visit`, `login`, `upload` and `listen` on that session |
-| `actingAs(user, options?)` | returns `trpc`, `fetch`, `$fetch`, `visit`, `login`, `upload` and `listen` that run as that user |
-| `guest({ locale? })` | returns `trpc`, `fetch`, `$fetch`, `visit`, `upload` and `listen` with no session |
+| `signIn(email, password, { headers? })` | signs in through the sign-in endpoint, with `headers` on the sign-in and each later call, and returns `api`, `fetch`, `$fetch`, `visit`, `login`, `upload` and `listen` on that session |
+| `actingAs(user, options?)` | returns `api`, `fetch`, `$fetch`, `visit`, `login`, `upload` and `listen` that run as that user |
+| `guest({ locale? })` | returns `api`, `fetch`, `$fetch`, `visit`, `upload` and `listen` with no session |
 | `expectRefused(router, code)` | checks that every procedure of a router refuses the caller with that tRPC code |
 | `runAction(name, input, { actingAs })` | calls an action as that user, or with `{ asSystem: name }` as a system actor |
 | `runJob(name, input, { actingAs }?)` | runs a job's handler now, as nobody or as that user |

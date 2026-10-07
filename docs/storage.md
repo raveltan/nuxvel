@@ -307,8 +307,7 @@ An `<img>` with a stored file also needs `crossorigin="anonymous"`. Without it, 
 ## Testing
 
 ```ts
-import { expect, runAction } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, it, runAction } from "@nuxvel/nuxt/testing";
 import { postFactory, userFactory } from "#nuxvel/factories";
 
 describe("posts.set-cover", () => {

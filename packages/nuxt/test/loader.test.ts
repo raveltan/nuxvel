@@ -22,7 +22,7 @@ describe("loader()", async () => {
       );
 
       expected = rows.toSorted((a, b) => a.id - b.id);
-      answers = await guest().trpc.post.withAuthors({ ids: rows.map((row) => row.id) });
+      answers = await guest().api.post.withAuthors({ ids: rows.map((row) => row.id) });
     }, [1, 10]);
 
     expect(queries).toBe(2);

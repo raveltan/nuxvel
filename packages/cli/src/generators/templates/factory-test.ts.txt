@@ -1,5 +1,4 @@
-import { describe, it } from "vitest";
-import { expect } from "@nuxvel/nuxt/testing";
+import { describe, expect, it } from "@nuxvel/nuxt/testing";
 import { {{exportName}} } from "./{{name}}.factory";
 
 describe("{{name}} factory", () => {

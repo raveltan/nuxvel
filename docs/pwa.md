@@ -125,10 +125,10 @@ A push notification goes from your server, through the push service of the user'
 ### VAPID keys
 
 ```sh
-nuxvel push:keys
+nuxvel key:push
 ```
 
-The push services accept a notification only when the server signs it with a VAPID key pair. `nuxvel push:keys` writes a new pair into `.env`. When `.env` already sets one of the two keys, the command refuses and changes nothing, because new keys end every subscription. Set the subject yourself:
+The push services accept a notification only when the server signs it with a VAPID key pair. `nuxvel key:push` writes a new pair into `.env`. When `.env` already sets one of the two keys, the command refuses and changes nothing, because new keys end every subscription. Set the subject yourself:
 
 ```
 NUXT_PUBLIC_PUSH_VAPID_PUBLIC_KEY=BNcR...
@@ -256,8 +256,7 @@ The `nuxvel.push` job signs each notification with the VAPID keys and sends it t
 ```ts
 // eslint-disable-next-line nuxvel/test-client -- the page goes offline, so visit() would record each failed request
 import { createPage, url } from "@nuxt/test-utils/e2e";
-import { expect, heading } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, heading, it } from "@nuxvel/nuxt/testing";
 
 describe("offline", () => {
   it("shows the offline page for a post that is not in the cache", async () => {
@@ -279,8 +278,7 @@ The test app is a production build, so it registers the service worker. The firs
 ### Testing push notifications
 
 ```ts
-import { expectPushSent, runAction } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expectPushSent, it, runAction } from "@nuxvel/nuxt/testing";
 import { postFactory, userFactory } from "#nuxvel/factories";
 
 describe("comment notifications", () => {

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-/** @internal The part of a JSON Schema `nuxvel routes --diff` compares. */
+/** @internal The part of a JSON Schema `nuxvel route:list --diff` compares. */
 export interface RouteSchema {
   properties?: Record<string, RouteSchema | boolean>;
   required?: string[];

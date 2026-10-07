@@ -1,7 +1,7 @@
 /**
  * Builds `#nuxvel/nitro-routes`: every Nitro route with its method and
  * handler file, sorted by path. Two handlers claiming one method and path
- * are both kept, so `nuxvel routes` can report the collision.
+ * are both kept, so `nuxvel route:list` can report the collision.
  */
 export function buildNitroRoutesModuleCode(
   handlers: { route?: string; method?: string; middleware?: boolean; handler: string }[],

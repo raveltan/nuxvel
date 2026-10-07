@@ -1,5 +1,4 @@
-import { expect, expectMailSent, expectRow, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectMailSent, expectRow, guest, it } from "@nuxvel/nuxt/testing";
 import { userTable } from "#nuxvel/schema";
 import { userFactory } from "#nuxvel/factories";
 

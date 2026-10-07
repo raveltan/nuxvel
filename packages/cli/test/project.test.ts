@@ -37,11 +37,11 @@ describe("nuxvel project commands", () => {
   }, 30000);
 
   it("--help before a passthrough command, or after one of nuxvel's own, shows nuxvel's usage", async () => {
-    const beforeTest = await runCli("--help", "test");
+    const beforeTest = await runCli("--help", "test:functional");
     const afterMake = await runCli("make:job", "-h");
 
     expect(beforeTest.exitCode).toBe(0);
-    expect(stripAnsi(beforeTest.stdout)).toContain("nuxvel test");
+    expect(stripAnsi(beforeTest.stdout)).toContain("nuxvel test:functional");
     expect(afterMake.exitCode).toBe(0);
     expect(stripAnsi(afterMake.stdout)).toContain("nuxvel make:job");
   });
@@ -239,10 +239,10 @@ describe("nuxvel project commands", () => {
     expect(stripAnsi(stderr)).toContain("→ To replace it, run nuxvel key:rotate NUXT_AUTH_SECRET");
   });
 
-  it("push:keys writes a matching VAPID key pair into .env and refuses to replace it", async () => {
+  it("key:push writes a matching VAPID key pair into .env and refuses to replace it", async () => {
     const fixtureCwd = scratchDir("push-keys");
 
-    const first = await runCliAt(fixtureCwd, "push:keys");
+    const first = await runCliAt(fixtureCwd, "key:push");
     const written = readFileSync(join(fixtureCwd, ".env"), "utf8");
     const publicKey = written.match(/^NUXT_PUBLIC_PUSH_VAPID_PUBLIC_KEY=(.+)$/m)?.[1] ?? "";
     const privateKey = Buffer.from(written.match(/^NUXT_PUSH_VAPID_PRIVATE_KEY=(.+)$/m)?.[1] ?? "", "base64url");
@@ -256,7 +256,7 @@ describe("nuxvel project commands", () => {
     expect(privateKey).toHaveLength(32);
     expect(derived.getPublicKey("base64url")).toBe(publicKey);
 
-    const second = await runCliAt(fixtureCwd, "push:keys");
+    const second = await runCliAt(fixtureCwd, "key:push");
 
     expect(second.exitCode).toBe(1);
     expect(readFileSync(join(fixtureCwd, ".env"), "utf8")).toBe(written);
@@ -386,7 +386,7 @@ describe("nuxvel project commands", () => {
 
   it("routes lists the loaded app's tRPC procedures and Nitro routes in a table, module-added ones included, reporting no collisions", async () => {
     const appDir = scratchPlayground("routes");
-    const { stdout, stderr, exitCode } = await runCliWithEnv(appDir, bootEnv, "routes");
+    const { stdout, stderr, exitCode } = await runCliWithEnv(appDir, bootEnv, "route:list");
     const { header, rows } = tableRows(stdout);
 
     expect(exitCode, stderr).toBe(0);
@@ -404,7 +404,7 @@ describe("nuxvel project commands", () => {
     expect(rows.map((row) => row.slice(0, 2))).toContainEqual(["POST", "/api/webhooks/:name"]);
     expect(stripAnsi(stderr)).toMatch(/✔ \d+ routes, no colliding paths/);
 
-    const json = await runCliWithEnv(appDir, bootEnv, "routes", "--json");
+    const json = await runCliWithEnv(appDir, bootEnv, "route:list", "--json");
     const listed = JSON.parse(json.stdout);
 
     expect(json.exitCode, json.stderr).toBe(0);
@@ -437,7 +437,7 @@ describe("nuxvel project commands", () => {
     }
 
     const env = { ...bootEnv, NUXT_REDIS_URL: redisUrl };
-    const { stdout, stderr, exitCode } = await runCliWithEnv(appDir, env, "channels");
+    const { stdout, stderr, exitCode } = await runCliWithEnv(appDir, env, "channel:list");
     const { header, rows } = tableRows(stdout);
 
     expect(exitCode, stderr).toBe(0);
@@ -448,7 +448,7 @@ describe("nuxvel project commands", () => {
     expect(rows).toContainEqual(["job:demo.countdown", "refused", "0 of 500", "0"]);
     expect(rows.map((row) => row[0])).toContain("flags");
 
-    const json = await runCliWithEnv(appDir, env, "channels", "--json");
+    const json = await runCliWithEnv(appDir, env, "channel:list", "--json");
     const { channels } = JSON.parse(json.stdout);
 
     expect(json.exitCode, json.stderr).toBe(0);
@@ -486,14 +486,14 @@ describe("nuxvel project commands", () => {
     writeFileSync(join(fixtureCwd, "server", "api", "thing.get.ts"), "export default {};\n");
     writeFileSync(join(fixtureCwd, "server", "api", "thing", "index.get.ts"), "export default {};\n");
 
-    const { stdout, stderr, exitCode } = await runCliWithEnv(fixtureCwd, bootEnv, "routes");
+    const { stdout, stderr, exitCode } = await runCliWithEnv(fixtureCwd, bootEnv, "route:list");
 
     expect(exitCode).toBe(1);
     expect(tableRows(stdout).rows).toContainEqual(["GET", "/api/thing", "server/api/thing.get.ts"]);
     expect(stripAnsi(stderr)).toContain("1 colliding path");
     expect(stripAnsi(stderr)).toContain("GET /api/thing  server/api/thing.get.ts, server/api/thing/index.get.ts");
 
-    const json = await runCliWithEnv(fixtureCwd, bootEnv, "routes", "--json");
+    const json = await runCliWithEnv(fixtureCwd, bootEnv, "route:list", "--json");
 
     expect(json.exitCode).toBe(1);
     expect(JSON.parse(json.stdout).collisions).toEqual([
@@ -517,7 +517,7 @@ describe("nuxvel project commands", () => {
     writeFileSync(join(fixtureCwd, "server", "api", "items", "[id].ts"), "export default {};\n");
     writeFileSync(join(fixtureCwd, "server", "api", "items", "[name].post.ts"), "export default {};\n");
 
-    const { stdout, stderr, exitCode } = await runCliWithEnv(fixtureCwd, bootEnv, "routes");
+    const { stdout, stderr, exitCode } = await runCliWithEnv(fixtureCwd, bootEnv, "route:list");
 
     expect(exitCode).toBe(1);
     expect(tableRows(stdout).rows).toContainEqual(["GET", "/api/trpc/admin.index.stats", "server/trpc/routers/admin/index.ts"]);
@@ -529,7 +529,7 @@ describe("nuxvel project commands", () => {
       "export default { ping: publicProcedure.query(() => 1) };\n",
     );
 
-    const clash = await runCliWithEnv(fixtureCwd, bootEnv, "routes");
+    const clash = await runCliWithEnv(fixtureCwd, bootEnv, "route:list");
 
     expect(clash.exitCode).toBe(1);
     expect(clash.stderr).toContain('both define the tRPC namespace "admin"');
@@ -561,7 +561,7 @@ export default {
     await git("add", ".");
     await git("commit", "-q", "-m", "posts");
 
-    const unchanged = await runCliWithEnv(fixtureCwd, bootEnv, "routes", "--diff=HEAD");
+    const unchanged = await runCliWithEnv(fixtureCwd, bootEnv, "route:list", "--diff=HEAD");
 
     expect(unchanged.exitCode, unchanged.stderr).toBe(0);
     expect(stripAnsi(unchanged.stderr)).toContain("✔ No breaking API changes since HEAD");
@@ -579,12 +579,12 @@ export default {
 `,
     );
 
-    const { stderr, exitCode } = await runCliWithEnv(fixtureCwd, bootEnv, "routes", "--diff=HEAD");
+    const { stderr, exitCode } = await runCliWithEnv(fixtureCwd, bootEnv, "route:list", "--diff=HEAD");
 
     expect(exitCode).toBe(1);
     expect(stripAnsi(stderr)).toContain("4 breaking API changes since HEAD");
 
-    const json = await runCliWithEnv(fixtureCwd, bootEnv, "routes", "--diff=HEAD", "--json");
+    const json = await runCliWithEnv(fixtureCwd, bootEnv, "route:list", "--diff=HEAD", "--json");
 
     expect(json.exitCode).toBe(1);
     expect(JSON.parse(json.stdout).breaking).toEqual([
@@ -621,29 +621,29 @@ export default defineDeploy({
     );
     writeRouter(`  latest: publicProcedure.output(z.object({ id: z.number(), title: z.string() })).query(() => ({ id: 1, title: "Hi" })),`);
 
-    const listed = await runCliWithEnv(fixtureCwd, env, "routes", "--json");
+    const listed = await runCliWithEnv(fixtureCwd, env, "route:list", "--json");
     expect(listed.exitCode, listed.stderr).toBe(0);
     writeFileSync(liveRoutes, listed.stdout);
 
-    const unchanged = await runCliWithEnv(fixtureCwd, env, "routes", "--diff-env=production");
+    const unchanged = await runCliWithEnv(fixtureCwd, env, "route:list", "--diff-env=production");
     expect(unchanged.exitCode, unchanged.stderr).toBe(0);
     expect(stripAnsi(unchanged.stderr)).toContain("✔ No breaking API changes since the live release of production");
 
     writeRouter(`  latest: publicProcedure.output(z.object({ id: z.number() })).query(() => ({ id: 1 })),`);
-    const breaking = await runCliWithEnv(fixtureCwd, env, "routes", "--diff-env=production", "--json");
+    const breaking = await runCliWithEnv(fixtureCwd, env, "route:list", "--diff-env=production", "--json");
     expect(breaking.exitCode).toBe(1);
     expect(JSON.parse(breaking.stdout).breaking).toEqual(['post.latest: output field "title" removed']);
 
     writeFileSync(liveRoutes, "@no-live\n");
-    const first = await runCliWithEnv(fixtureCwd, env, "routes", "--diff-env=production");
+    const first = await runCliWithEnv(fixtureCwd, env, "route:list", "--diff-env=production");
     expect(first.exitCode, first.stderr).toBe(0);
     expect(stripAnsi(first.stderr)).toContain("posts has no live release on 203.0.113.10, so no call can break");
 
     writeFileSync(liveRoutes, "@missing 20260927T100000Z-abc1234\n");
-    const missing = await runCliWithEnv(fixtureCwd, env, "routes", "--diff-env=production");
+    const missing = await runCliWithEnv(fixtureCwd, env, "route:list", "--diff-env=production");
     expect(missing.exitCode).toBe(1);
     expect(stripAnsi(missing.stderr)).toContain("✖ The live release 20260927T100000Z-abc1234 of posts has no nuxvel-routes.json");
-    expect(stripAnsi(missing.stderr)).toContain("NUXT_DATABASE_URL=postgres://build@127.0.0.1/unused NUXT_AUTH_SECRET=build-time-route-list-only-not-a-secret npx nuxvel routes --json > nuxvel-routes.json");
+    expect(stripAnsi(missing.stderr)).toContain("NUXT_DATABASE_URL=postgres://build@127.0.0.1/unused NUXT_AUTH_SECRET=build-time-route-list-only-not-a-secret npx nuxvel route:list --json > nuxvel-routes.json");
   }, 240000);
 
   it("routes and events read a layer the app extends like the module does", async () => {
@@ -677,12 +677,12 @@ export default defineDeploy({
       'import { gadgetBuilt } from "../../events/gadget/built";\n\nexport default defineListener({ event: gadgetBuilt, handler: async () => {} });\n',
     );
 
-    const routes = await runCliWithEnv(fixtureCwd, bootEnv, "routes");
+    const routes = await runCliWithEnv(fixtureCwd, bootEnv, "route:list");
 
     expect(routes.exitCode, routes.stderr).toBe(0);
     expect(tableRows(routes.stdout).rows).toContainEqual(["GET", "/api/trpc/layered.ping", "layer/server/trpc/routers/layered.ts"]);
 
-    const events = await runCliAt(fixtureCwd, "events");
+    const events = await runCliAt(fixtureCwd, "event:list");
 
     expect(events.exitCode, events.stderr).toBe(0);
     expect(tableRows(events.stdout).rows).toContainEqual([
@@ -1537,7 +1537,7 @@ export default defineDeploy({
 
   it("events lists the playground's events with their emitting actions and listeners, as a table or JSON", async () => {
     const appDir = scratchPlayground("events");
-    const { stdout, stderr, exitCode } = await runCliAt(appDir, "events");
+    const { stdout, stderr, exitCode } = await runCliAt(appDir, "event:list");
     const { header, rows } = tableRows(stdout);
 
     expect(exitCode).toBe(0);
@@ -1556,7 +1556,7 @@ export default defineDeploy({
     ]);
     expect(stderr).not.toContain("has no listener");
 
-    const json = await runCliAt(appDir, "events", "--json");
+    const json = await runCliAt(appDir, "event:list", "--json");
     const { events } = JSON.parse(json.stdout);
 
     expect(json.exitCode).toBe(0);
@@ -1618,7 +1618,7 @@ export default defineDeploy({
       'import { widgetArchived } from "../../events/widget/archived";\n\nexport const archiveWidget = defineAction({\n  handler: async () => widgetArchived.emit({ id: 1 }),\n});\n',
     );
 
-    const { stdout, stderr, exitCode } = await runCliAt(fixtureCwd, "events");
+    const { stdout, stderr, exitCode } = await runCliAt(fixtureCwd, "event:list");
     const { rows } = tableRows(stdout);
 
     expect(exitCode).toBe(0);

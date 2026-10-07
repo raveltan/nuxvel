@@ -19,5 +19,5 @@ jobs:
       - run: npm ci
       - run: cp .env.example .env
       - run: npm run typecheck
-      - run: npx nuxvel test
+      - run: npx nuxvel test:functional
       - run: npx nuxt build

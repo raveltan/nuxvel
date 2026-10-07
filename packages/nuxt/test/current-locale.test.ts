@@ -7,12 +7,12 @@ describe("currentLocale()", async () => {
   await setupPlayground({ browser: true });
 
   it("gives the locale of the test caller to the context, the procedure and its action", async () => {
-    expect(await guest({ locale: "zh" }).trpc._localeCheck.current()).toEqual({ context: "zh", request: "zh", action: "zh", inAction: "zh" });
-    expect(await guest().trpc._localeCheck.current()).toEqual({ context: "en", request: "en", action: "en", inAction: "en" });
+    expect(await guest({ locale: "zh" }).api._localeCheck.current()).toEqual({ context: "zh", request: "zh", action: "zh", inAction: "zh" });
+    expect(await guest().api._localeCheck.current()).toEqual({ context: "en", request: "en", action: "en", inAction: "en" });
   });
 
   it("gives an action the locale of its context", async () => {
-    expect(await guest().trpc._localeCheck.given()).toEqual({ action: "zh", inAction: "zh" });
+    expect(await guest().api._localeCheck.given()).toEqual({ action: "zh", inAction: "zh" });
   });
 
   it.for([
@@ -21,9 +21,9 @@ describe("currentLocale()", async () => {
     [{ cookie: "user-locale=zh", "accept-language": "en" }, undefined, "zh"],
     [{ cookie: "user-locale=zh" }, "en", "en"],
   ] as const)("reads %o with the locale option %s as %s", async ([headers, locale, expected]) => {
-    const { trpc } = actingAs(await userFactory(), { headers, ...(locale ? { locale } : {}) });
+    const { api } = actingAs(await userFactory(), { headers, ...(locale ? { locale } : {}) });
 
-    expect((await trpc._localeCheck.current()).context).toBe(expected);
+    expect((await api._localeCheck.current()).context).toBe(expected);
   });
 
   it("gives a procedure the locale of the page that calls it", async () => {

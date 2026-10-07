@@ -59,7 +59,7 @@ const remove = $api.post.delete.useMutation({
 | `useMutation(options)` | Pinia Colada's own mutation, for `mutationOptions()` |
 | `useQueryCache()` | `setQueriesData`, `invalidateQueries({ key })` for a refetch no mutation causes. A mutation already refetches its router's queries and the tags its actions declare in `invalidates` |
 | `{ optimistic: { key, apply } }` in `.useMutation()` or `.mutationOptions()` | change the cache first, roll back on error. `apply` can be `removeRow()`, `prependRow()` or `replaceRow()` on a paginated list |
-| `useLiveQuery(options, { channel, on \| refetch })` | query patched by channel events |
+| `useLiveQuery(options, { channel, on \| refetch })` | query patched by channel events, same shape as `.useQuery()` (no `.value`) |
 | `useActionForm($api.post.create, { defaults, onSuccess, failures, warnUnsaved, schema, toast, confirm, invalidate })` | `form.ref/schema/state/submit/errors/formError/pending`. Schema: the procedure's input from `shared/schemas/` (else pass `schema`). `defaults` is partial: `defaults: props.post` keeps the schema's keys, a missing key starts at its `.default()` or `undefined`. A failure with `field` on the action shows under that field; `failures: { code: "field" }` overrides |
 | `RouterOutputs["post"]["byId"]` | procedure type, never hand-written |
 

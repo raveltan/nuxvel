@@ -21,7 +21,7 @@ The command writes the app into `my-app` and prints the next steps:
 cd my-app
 npm install
 ./nv services up
-./nv test
+./nv test:functional
 ./nv db:migrate
 ./nv db:seed
 npm run dev
@@ -93,7 +93,7 @@ npm create nuxvel .          # the current directory's name
 | `.gitignore` | ignores `node_modules`, `.env`, build output (`storybook-static` included) and `.nuxvel/`, but keeps `.nuxvel/generated.json`, `.nuxvel/templates/`, `.nuxvel/known_hosts` and `.nuxvel/rehearsals.json` |
 | `.dockerignore` | keeps `node_modules`, `.git`, `.env`, `.env.deploy`, `.data` and build output (`.nuxt`, `.output`, `.nuxvel`, `dist`) out of the Docker build context |
 | `Dockerfile` | a multi-stage `node:24-bookworm-slim` build. The image runs `.output/server/index.mjs` as the `node` user on port 3000. `nuxvel build` uses it ([Building for production](./build.md)) |
-| `.github/workflows/ci.yml` | on a push to `main` and on each pull request: `npm ci`, `cp .env.example .env`, `npm run typecheck`, `npx nuxvel test`, `npx nuxt build` |
+| `.github/workflows/ci.yml` | on a push to `main` and on each pull request: `npm ci`, `cp .env.example .env`, `npm run typecheck`, `npx nuxvel test:functional`, `npx nuxt build` |
 | `vitest.config.ts` | the test config. See [The tests](#the-tests) |
 | `tests/setup/database.ts` | recreates and migrates the test database before each test run |
 | `tests/functional/health.test.ts` | the functional tests of the server. They check that the app reaches its database and Redis, signs a user up, answers a missing page with status 404 and sends a password reset mail |
@@ -107,7 +107,7 @@ Tests use the database `<database>_test`, which is `nuxvel_test` with the defaul
 
 `vitest.config.ts` lists `@nuxvel/nuxt/testing/global-setup`, which builds the app for tests. The next run uses the same build again while the app's inputs do not change. It also lists `@nuxvel/nuxt/testing/database`, which gives each test file its own copy of the test database and its own Redis database. Thus the test files run in parallel. It also lists `@nuxvel/nuxt/testing/setup`, which starts the app for each test file from that build. A test file does not call a setup function. Every test also gets the matchers and fakes from `@nuxvel/nuxt/testing`. This includes the tests that `nuxvel make:*` writes next to your code. See [Testing](./testing.md).
 
-`./nv test` runs the functional tests: every test except the end-to-end tests in `tests/e2e/` and the stories. `npm run test:ui` runs the stories of `app/` as [component tests](./testing.md#component-tests). `npm test` runs the functional tests, then the component tests. `npm run test:e2e` installs the Playwright browser, then runs the end-to-end tests with `nuxvel test:e2e`. See [End-to-end tests](./testing.md#end-to-end-tests). `npm run test:arch` runs [`nuxvel test:arch`](./cli.md#nuxvel-testarch), which checks the architecture rules, the test files included.
+`./nv test:functional` runs the functional tests: every test except the end-to-end tests in `tests/e2e/` and the stories. `npm run test:ui` runs the stories of `app/` as [component tests](./testing.md#component-tests). `npm test` runs the functional tests, then the component tests. `npm run test:e2e` installs the Playwright browser, then runs the end-to-end tests with `nuxvel test:e2e`. See [End-to-end tests](./testing.md#end-to-end-tests). `npm run test:arch` runs [`nuxvel test:arch`](./cli.md#nuxvel-testarch), which checks the architecture rules, the test files included.
 
 ## First run
 
@@ -116,7 +116,7 @@ Run these commands in the app's directory:
 ```bash
 npm install
 ./nv services up
-./nv test
+./nv test:functional
 ./nv db:migrate
 ./nv db:seed
 npm run dev
@@ -124,12 +124,12 @@ npm run dev
 
 1. `npm install` installs the dependencies.
 2. `./nv services up` starts the dev services from `docker-compose.yml` and leaves them running. `./nv services down` stops them when you are done.
-3. `./nv test` runs the tests in `tests/`. The tests pass on a new app.
+3. `./nv test:functional` runs the tests in `tests/`. The tests pass on a new app.
 4. `./nv db:migrate` applies the migrations to the database in `.env`.
 5. `./nv db:seed` runs `server/seeders/database.seeder.ts`. It creates the demo user `demo@example.com` and prints its password, `demo-password`.
 6. `npm run dev` starts the Nuxt dev server and the queue worker. Before the dev server starts, it prints the URLs of the app, DevTools, Storybook, Postgres, Redis, Mailpit and storage. See [`nuxvel dev`](./cli.md#nuxvel-dev).
 
-`./nv test`, `./nv test:e2e` and `npm run dev` start the dev services themselves when they are not running, and stop them again when they end. The `db:*` commands and the other commands do not start them.
+`./nv test:functional`, `./nv test:e2e` and `npm run dev` start the dev services themselves when they are not running, and stop them again when they end. The `db:*` commands and the other commands do not start them.
 
 The app runs at `https://<name>.localhost`, for example `https://my-app.localhost`. The first run asks for your password to trust a local certificate. To serve plain `nuxt dev` at `http://localhost:3000`, run `./nv dev --no-https`. The [CLI](./cli.md#nuxvel-dev) guide describes `nuxvel dev`.
 
@@ -164,7 +164,7 @@ npm install
 node packages/create/bin/create-nuxvel.mjs ../my-app --local
 cd ../my-app
 npm install
-./nv test
+./nv test:functional
 ```
 
 Use a local checkout to try changes to nuxvel before they are released. Without `--local`, the app depends on the npm release with the same version as `create-nuxvel`.
@@ -181,11 +181,11 @@ npm copies the packages at install time. Changes to the nuxvel source do not rea
 rm -rf node_modules/@nuxvel package-lock.json && npm install
 ```
 
-Remove `package-lock.json` too. The lock file keeps the old dependencies of the nuxvel packages, so a dependency that nuxvel added since the last install is missing without it. The next `nuxvel test` builds the app again, because the installed copies changed.
+Remove `package-lock.json` too. The lock file keeps the old dependencies of the nuxvel packages, so a dependency that nuxvel added since the last install is missing without it. The next `nuxvel test:functional` builds the app again, because the installed copies changed.
 
 ### Stopping the repo's dev services
 
-The app's `docker-compose.yml` uses the same ports as the repo's: 5432, 6379, 1025, 8025 and 8333. If the repo's services are running, `nuxvel test` reports that its services did not start and continues with the running ones. The tests still pass, because they use their own `nuxvel_test` database.
+The app's `docker-compose.yml` uses the same ports as the repo's: 5432, 6379, 1025, 8025 and 8333. If the repo's services are running, `nuxvel test:functional` reports that its services did not start and continues with the running ones. The tests still pass, because they use their own `nuxvel_test` database.
 
 The dev database is `nuxvel` in both. Run `docker compose down` in the checkout before you run `./nv db:migrate` or `npm run dev` in the app. If you do not, the app migrates on top of the playground's tables.
 

@@ -71,7 +71,7 @@ export function usePush() {
   });
 
   async function subscribe() {
-    if (!publicKey) throw new Error("NUXT_PUBLIC_PUSH_VAPID_PUBLIC_KEY is not set");
+    if (!publicKey) throw new Error("NUXT_PUBLIC_PUSH_VAPID_PUBLIC_KEY is not set. Run nuxvel key:push");
 
     const { pushManager } = await registration();
     const subscription = await pushManager

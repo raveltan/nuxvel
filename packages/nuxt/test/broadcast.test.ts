@@ -63,7 +63,7 @@ describe("broadcast()", async () => {
   it("sends the payload with superjson, so a Date reaches a listener as a Date", async () => {
     const author = actingAs(await userFactory());
     const stream = await author.listen("posts");
-    const post = await author.trpc.post.create({ title: "Dated", body: "" });
+    const post = await author.api.post.create({ title: "Dated", body: "" });
 
     expect(await stream.next("created")).toMatchObject({ payload: { id: post.id, createdAt: post.createdAt } });
   });

@@ -70,6 +70,18 @@ export { visit, type VisitOptions } from "./visit";
 export { fillForm } from "./fill-form";
 export { getMeta, type PageMeta } from "./get-meta";
 export { expect, type SpyAssertions } from "./expect";
+
+/**
+ * `describe` and `it` of Vitest, so one import line serves a test file:
+ * `import { describe, expect, it } from "@nuxvel/nuxt/testing"`. Importing
+ * them from `vitest` keeps working. Use {@link expect} from here too.
+ *
+ * @example
+ * ```ts
+ * import { describe, expect, it } from "@nuxvel/nuxt/testing";
+ * ```
+ */
+export { describe, it } from "vitest";
 export { trpcSpy, type TrpcSpy } from "./trpc-spy";
 export { expectNoSmoke } from "./expect-no-smoke";
 export { alert, button, cell, dialog, field, heading, link, type LocatorScope, type MatchOptions, menu, menuitem, text, toast, type ToastLocator } from "./locators";

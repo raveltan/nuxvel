@@ -38,11 +38,11 @@ describe("signedUrl and requireSignature", async () => {
 
   it("signs a path for its expiresIn duration, and the link expires on the app's clock, for a route and for a procedure that checks its path", async () => {
     const link = await signedUrl("/api/_signed-url-target?invite=42", { expiresIn: { minutes: 1 } });
-    const { searchParams } = new URL(await guest().trpc._signedCheck.sign({ id: 4 }), "http://x");
+    const { searchParams } = new URL(await guest().api._signedCheck.sign({ id: 4 }), "http://x");
     const procedureLink = { id: 4, expires: String(searchParams.get("expires")), signature: String(searchParams.get("signature")), note: "hi" };
 
     expect(await guest().$fetch(link)).toMatchObject({ invite: "42" });
-    await expect(guest().trpc._signedCheck.open(procedureLink)).resolves.toMatchObject({ note: "hi" });
+    await expect(guest().api._signedCheck.open(procedureLink)).resolves.toMatchObject({ note: "hi" });
 
     await travelBy({ seconds: 50 });
     expect((await guest().fetch(link)).status).toBe(200);
@@ -52,6 +52,6 @@ describe("signedUrl and requireSignature", async () => {
 
     expect(expired.status).toBe(403);
     expect(await expired.json()).toMatchObject({ data: { code: "FORBIDDEN", message: "This link expired" } });
-    await expect(guest().trpc._signedCheck.open(procedureLink)).rejects.toBeTrpcError("FORBIDDEN");
+    await expect(guest().api._signedCheck.open(procedureLink)).rejects.toBeTrpcError("FORBIDDEN");
   });
 });

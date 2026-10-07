@@ -1,3 +1,4 @@
+import { envHint } from "../../shared/env/env-hints";
 import { Redis } from "ioredis";
 import { useRuntimeConfig } from "nitropack/runtime";
 import { useLogger } from "../logging/logger";
@@ -15,7 +16,7 @@ function redisUrl(purpose: RedisPurpose) {
   const url = config.redisUrl;
 
   if (url) return url;
-  if (process.env.NODE_ENV === "production") throw new Error("NUXT_REDIS_URL is not set");
+  if (process.env.NODE_ENV === "production") throw new Error(`NUXT_REDIS_URL is not set. ${envHint("NUXT_REDIS_URL")}`);
 
   return "redis://localhost:6379";
 }

@@ -406,7 +406,7 @@ declare module "@nuxt/schema" {
     auth: AuthRuntimeConfig;
     /**
      * The VAPID private key that signs each web push {@link sendPush}
-     * sends. Set it with `NUXT_PUSH_VAPID_PRIVATE_KEY`; `nuxvel push:keys`
+     * sends. Set it with `NUXT_PUSH_VAPID_PRIVATE_KEY`; `nuxvel key:push`
      * writes one.
      */
     pushVapidPrivateKey: string;
@@ -420,7 +420,7 @@ declare module "@nuxt/schema" {
     /**
      * The VAPID public key that `usePush()` subscribes with and
      * {@link sendPush} signs with. Set it with
-     * `NUXT_PUBLIC_PUSH_VAPID_PUBLIC_KEY`; `nuxvel push:keys` writes one.
+     * `NUXT_PUBLIC_PUSH_VAPID_PUBLIC_KEY`; `nuxvel key:push` writes one.
      */
     pushVapidPublicKey: string;
     /**

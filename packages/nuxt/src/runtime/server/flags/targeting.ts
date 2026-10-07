@@ -77,7 +77,7 @@ export async function flagTargeting(flag: FlagName | Flag): Promise<StoredFlagTa
  * and nothing is saved, so a thrown error means the targeting did not
  * change. It then broadcasts `changed` with `{ name }` on the `flags`
  * channel, so every open page using `useFlag()` refetches its values
- * without a reload. `nuxvel flags:set` calls it. `flag` is a
+ * without a reload. `nuxvel flag:set` calls it. `flag` is a
  * {@link FlagName} or the flag's definition; an unknown name also throws
  * at runtime.
  *

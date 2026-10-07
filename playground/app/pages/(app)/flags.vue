@@ -8,7 +8,7 @@ const cta = useExperiment("probe-cta");
     <h1 class="text-2xl font-semibold">Flags</h1>
     <p class="text-sm text-muted">
       Evaluated on the server for you, and live: change targeting with
-      <code>nuxvel flags:set</code> and this page follows without a reload.
+      <code>nuxvel flag:set</code> and this page follows without a reload.
       An experiment that is not running shows everyone its control variant.
     </p>
     <UCard>

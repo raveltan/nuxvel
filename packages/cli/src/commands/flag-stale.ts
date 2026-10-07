@@ -8,7 +8,7 @@ import { printTable } from "../ui/table.ts";
 
 export default defineCommand({
   meta: {
-    name: "flags:stale",
+    name: "flag:stale",
     description: "List flags past their expiresAt, fully rolled out for over 30 days, or referenced by no code.",
   },
   args: { ...jsonArg },

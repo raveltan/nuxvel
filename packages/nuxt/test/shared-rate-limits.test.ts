@@ -52,7 +52,7 @@ describe("shared rate limits in server/rate-limits/", async () => {
 
     await exhaustRateLimit("_shared-probe", { user: alice });
 
-    await expect(actingAs(alice).trpc._rateLimitCheck.sharedByUser()).rejects.toBeTrpcError("TOO_MANY_REQUESTS");
-    await expect(actingAs(bob).trpc._rateLimitCheck.sharedByUser()).resolves.toBe(bob.id);
+    await expect(actingAs(alice).api._rateLimitCheck.sharedByUser()).rejects.toBeTrpcError("TOO_MANY_REQUESTS");
+    await expect(actingAs(bob).api._rateLimitCheck.sharedByUser()).resolves.toBe(bob.id);
   });
 });

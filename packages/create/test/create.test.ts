@@ -70,7 +70,7 @@ describe("create-nuxvel", () => {
         "npm ci",
         "cp .env.example .env",
         "npm run typecheck",
-        "npx nuxvel test",
+        "npx nuxvel test:functional",
         "npx nuxt build",
       ]);
     } finally {
@@ -148,7 +148,7 @@ describe("create-nuxvel", () => {
         "cd my_app",
         "npm install",
         "./nv services up",
-        "./nv test",
+        "./nv test:functional",
         "./nv db:migrate",
         "./nv db:seed",
         "npm run dev",
@@ -256,7 +256,7 @@ describe("create-nuxvel", () => {
       const skill = [router, ...resources.map((path) => readFileSync(join(skillDir, path ?? ""), "utf8"))].join("\n");
 
       const listed = (await run("node", [cliEntry, "--help"], appDir, { ...process.env, NO_COLOR: "1" })).output;
-      const commands = new Set([...skill.matchAll(/(?:\.\/nv |`)((?:make|db|test|services)(?::[\w-]+)?|routes|events|tinker)\b(?!:)/g)].map(([, name]) => name));
+      const commands = new Set([...skill.matchAll(/(?:\.\/nv |`)((?:make|db|test|services)(?::[\w-]+)?|(?:route|event|channel):list|tinker)\b(?!:)/g)].map(([, name]) => name));
       expect(commands.size).toBeGreaterThan(20);
       for (const name of commands) expect(listed, name).toMatch(new RegExp(`^ +${name} +`, "m"));
 
@@ -437,7 +437,7 @@ describe("create-nuxvel", () => {
         storybook: "storybook dev --port 6006",
         "storybook:build": "storybook build",
         test: "npm run test:functional && npm run test:ui",
-        "test:functional": "nuxvel test",
+        "test:functional": "nuxvel test:functional",
         "pretest:ui": "playwright-core install chromium-headless-shell",
         "test:ui": "nuxvel test:ui",
         "test:arch": "nuxvel test:arch",

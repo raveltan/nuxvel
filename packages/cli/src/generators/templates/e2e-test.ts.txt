@@ -1,6 +1,5 @@
 import { url } from "@nuxt/test-utils/e2e";
-import { expect, visit } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, it, visit } from "@nuxvel/nuxt/testing";
 
 describe("the {{pagePath}} page in a browser", () => {
   it("opens without errors", async () => {

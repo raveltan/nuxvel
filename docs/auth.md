@@ -736,21 +736,20 @@ See [CLI](./cli.md#nuxvel-keyrotate-name) and [Security](./security.md#rotating-
 ## Testing
 
 ```ts
-import { actingAs, expect, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, guest, it } from "@nuxvel/nuxt/testing";
 import { userFactory } from "#nuxvel/factories";
 
 describe("posts", () => {
   it("lets a signed-in user create a post", async () => {
-    const { trpc } = actingAs(await userFactory());
+    const { api } = actingAs(await userFactory());
 
-    const post = await trpc.post.create({ title: "Hello", body: "" });
+    const post = await api.post.create({ title: "Hello", body: "" });
 
     expect(post.title).toBe("Hello");
   });
 
   it("refuses a guest", async () => {
-    await expect(guest().trpc.post.create({ title: "Hello", body: "" }))
+    await expect(guest().api.post.create({ title: "Hello", body: "" }))
       .rejects.toBeTrpcError("UNAUTHORIZED");
   });
 });

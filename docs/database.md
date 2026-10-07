@@ -716,16 +716,15 @@ The actor of a seeder is `systemActor("seed")`. So `audit()` works, and the row 
 ## Testing
 
 ```ts
-import { actingAs, expect, expectConstantQueries, expectRow, guest } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, expectConstantQueries, expectRow, guest, it } from "@nuxvel/nuxt/testing";
 import { postTable } from "#nuxvel/schema";
 import { postFactory, userFactory } from "#nuxvel/factories";
 
 describe("posts", () => {
   it("creates a post", async () => {
-    const { trpc } = actingAs(await userFactory());
+    const { api } = actingAs(await userFactory());
 
-    const post = await trpc.post.create({ title: "Hello", body: "" });
+    const post = await api.post.create({ title: "Hello", body: "" });
 
     expect(post.title).toBe("Hello");
     await expectRow(postTable, { id: post.id, title: "Hello" });
@@ -734,7 +733,7 @@ describe("posts", () => {
   it("lists posts in a constant number of queries", async () => {
     await expectConstantQueries(async (size) => {
       await userFactory.has(size, (user) => postFactory.for("authorId", user))();
-      await guest().trpc.post.list();
+      await guest().api.post.list();
     });
   });
 });

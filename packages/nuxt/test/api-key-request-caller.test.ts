@@ -14,7 +14,7 @@ describe("the caller of a request signed with an API key", async () => {
 
   it("spends the key's api-key rate limit once for each call of a batch", async () => {
     const user = await userFactory();
-    const { key, id } = await actingAs(user).trpc.apiKeys.create({ name: "batch" });
+    const { key, id } = await actingAs(user).api.apiKeys.create({ name: "batch" });
 
     const batch = await guest().fetch("/api/trpc/_sessionCheck.whoami,_sessionCheck.whoami,_sessionCheck.whoami?batch=1", {
       headers: { authorization: `Bearer ${key}` },

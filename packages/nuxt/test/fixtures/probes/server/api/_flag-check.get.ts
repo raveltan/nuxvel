@@ -44,6 +44,7 @@ export default defineEventHandler(async () => {
   );
 
   return {
+    noDefault: defineFlag().default,
     untargeted,
     atZero,
     atHundred,

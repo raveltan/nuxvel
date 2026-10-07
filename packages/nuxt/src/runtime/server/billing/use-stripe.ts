@@ -1,3 +1,4 @@
+import { envHint } from "../../shared/env/env-hints";
 import Stripe from "stripe";
 import { useRuntimeConfig } from "nitropack/runtime";
 import { effectReplacement } from "../effects/replacements";
@@ -28,7 +29,7 @@ function sendThroughFetch(...request: Parameters<typeof fetch>) {
 export function useStripe(): Stripe {
   const key = useRuntimeConfig().stripeSecretKey;
 
-  if (!key) throw new Error("NUXT_STRIPE_SECRET_KEY is not set");
+  if (!key) throw new Error(`NUXT_STRIPE_SECRET_KEY is not set. ${envHint("NUXT_STRIPE_SECRET_KEY")}`);
 
   if (client && client.key === key) return client.stripe;
 

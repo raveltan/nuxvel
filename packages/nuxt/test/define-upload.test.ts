@@ -165,7 +165,7 @@ describe("defineUpload()", async () => {
     const user = await userFactory();
 
     await expect(
-      actingAs(user).trpc.profile.setAvatar({
+      actingAs(user).api.profile.setAvatar({
         key: "tmp/profile-avatar/../../avatars/someone-else/avatar.png",
       }),
     ).rejects.toHaveValidationErrors("key");

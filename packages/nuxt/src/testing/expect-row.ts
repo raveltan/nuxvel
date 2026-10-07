@@ -87,7 +87,7 @@ export async function expectRow<Table extends PgTable>(
  *
  * @example
  * ```ts
- * await trpc.post.delete({ id: post.id });
+ * await api.post.delete({ id: post.id });
  * await expectSoftDeleted(postsTable, { id: post.id });
  * ```
  */
@@ -104,7 +104,7 @@ export async function expectSoftDeleted<Table extends SoftDeletableTable>(
  *
  * @example
  * ```ts
- * await trpc.post.delete({ id: post.id });
+ * await api.post.delete({ id: post.id });
  * await expectNoRow(postsTable, { id: post.id });
  * ```
  */

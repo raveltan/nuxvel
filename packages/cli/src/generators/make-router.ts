@@ -151,7 +151,7 @@ function testValues(name: string, options: CrudOptions, trpcPath: string, router
     const match = await ${table}Factory({ ownerId: owner.id, ${firstColumn}: "Quarterly report" });
     await ${table}Factory({ ownerId: owner.id, ${firstColumn}: "Holiday plan" });
 
-    const found = await actingAs(owner).trpc.${trpcPath}.list({ q: "quarterly" });
+    const found = await actingAs(owner).api.${trpcPath}.list({ q: "quarterly" });
 
     expect(found.rows.map((row) => row.id)).toEqual([match.id]);
   });
@@ -164,13 +164,13 @@ function testValues(name: string, options: CrudOptions, trpcPath: string, router
     const owner = await userFactory();
     const row = await ${table}Factory.for("ownerId", owner)();
 
-    await actingAs(owner).trpc.${trpcPath}.delete({ id: row.id });
+    await actingAs(owner).api.${trpcPath}.delete({ id: row.id });
     await expectSoftDeleted(${table}Table, { id: row.id });
-    const listed = await actingAs(owner).trpc.${trpcPath}.list();
+    const listed = await actingAs(owner).api.${trpcPath}.list();
 
     expect(listed.rows.map((listedRow) => listedRow.id)).not.toContain(row.id);
 
-    await actingAs(owner).trpc.${trpcPath}.restore({ id: row.id });
+    await actingAs(owner).api.${trpcPath}.restore({ id: row.id });
     await expectRow(${table}Table, { id: row.id, deletedAt: null });
   });
 `);
@@ -180,10 +180,10 @@ function testValues(name: string, options: CrudOptions, trpcPath: string, router
     const owner = await userFactory();
     const row = await ${table}Factory.for("ownerId", owner)();
 
-    await expect(actingAs(await userFactory()).trpc.${trpcPath}.delete({ id: row.id })).rejects.toBeTrpcError("FORBIDDEN");
-    await actingAs(owner).trpc.${trpcPath}.delete({ id: row.id });
+    await expect(actingAs(await userFactory()).api.${trpcPath}.delete({ id: row.id })).rejects.toBeTrpcError("FORBIDDEN");
+    await actingAs(owner).api.${trpcPath}.delete({ id: row.id });
 
-    await expect(actingAs(owner).trpc.${trpcPath}.byId({ id: row.id })).rejects.toBeTrpcError("NOT_FOUND");
+    await expect(actingAs(owner).api.${trpcPath}.byId({ id: row.id })).rejects.toBeTrpcError("NOT_FOUND");
   });
 `);
   }

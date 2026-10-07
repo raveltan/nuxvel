@@ -35,7 +35,7 @@ describe("promoteUpload() / signedReadUrl()", async () => {
     expect(await storedObjectSize(TEST_STORAGE_BUCKET, key)).toBe(PNG.byteLength);
     await expectNotStored(tmpKey);
 
-    const { avatarUrl } = await actingAs(user).trpc.profile.me();
+    const { avatarUrl } = await actingAs(user).api.profile.me();
     const read = await globalThis.fetch(avatarUrl ?? "");
 
     expect(read.status).toBe(200);

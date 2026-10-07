@@ -6,7 +6,7 @@ import { callApp } from "./settled";
 function pathOf(caller: object): CallerPath {
   const found = callerPaths.get(caller);
 
-  if (!found) throw new Error("expectRefused: pass a router or a procedure of actingAs().trpc or guest().trpc");
+  if (!found) throw new Error("expectRefused: pass a router or a procedure of actingAs().api or guest().api");
 
   return found;
 }
@@ -30,8 +30,8 @@ async function outcome(caller: CallerPath, path: string, code: TRPC_ERROR_CODE_K
 /**
  * Asserts that every procedure of a router refuses the caller with the tRPC error `code`.
  *
- * Pass a router or a single procedure of {@link actingAs}`().trpc` or
- * {@link guest}`().trpc`. The helper reads the procedures from the app
+ * Pass a router or a single procedure of {@link actingAs}`().api` or
+ * {@link guest}`().api`. The helper reads the procedures from the app
  * router, so a procedure that you add later is checked too. It calls each
  * procedure with no input. A role check that runs before `.input()`
  * refuses first, so the procedure does not need valid input. The
@@ -40,8 +40,8 @@ async function outcome(caller: CallerPath, path: string, code: TRPC_ERROR_CODE_K
  *
  * @example
  * ```ts
- * await expectRefused(actingAs(await userFactory()).trpc.tickets.ticket, "FORBIDDEN");
- * await expectRefused(guest().trpc.tickets, "UNAUTHORIZED");
+ * await expectRefused(actingAs(await userFactory()).api.tickets.ticket, "FORBIDDEN");
+ * await expectRefused(guest().api.tickets, "UNAUTHORIZED");
  * ```
  */
 export async function expectRefused(router: object, code: TRPC_ERROR_CODE_KEY): Promise<void> {

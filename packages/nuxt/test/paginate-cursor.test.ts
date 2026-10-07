@@ -19,7 +19,7 @@ describe("paginateCursor() through post.feed", async () => {
     let pages = 0;
 
     do {
-      const page: { rows: { id: number }[]; nextCursor: number | null } = await guest().trpc.post.feed({ cursor, limit: 3 });
+      const page: { rows: { id: number }[]; nextCursor: number | null } = await guest().api.post.feed({ cursor, limit: 3 });
 
       seen.push(...page.rows.map((post) => post.id));
       cursor = page.nextCursor;
@@ -33,6 +33,6 @@ describe("paginateCursor() through post.feed", async () => {
   it("gives no next cursor when the first page holds every row", async () => {
     await postFactory();
 
-    expect(await guest().trpc.post.feed({ limit: 5 })).toMatchObject({ nextCursor: null });
+    expect(await guest().api.post.feed({ limit: 5 })).toMatchObject({ nextCursor: null });
   });
 });

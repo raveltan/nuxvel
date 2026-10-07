@@ -13,7 +13,7 @@ ARG NUXVEL_GIT_COMMIT
 ARG NUXVEL_BUILD_SOURCE
 RUN npx nuxvel build:manifest
 RUN NUXT_DATABASE_URL=postgres://build@127.0.0.1/unused NUXT_AUTH_SECRET=build-time-route-list-only-not-a-secret \
-  npx nuxvel routes --json > nuxvel-routes.json
+  npx nuxvel route:list --json > nuxvel-routes.json
 
 FROM scratch AS artifact
 COPY --from=build /app/.output ./.output

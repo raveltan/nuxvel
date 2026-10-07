@@ -39,7 +39,7 @@ export async function loadLiveProcedures(cwd: string, envName: string): Promise<
   }
   if (first.startsWith("@missing ")) {
     fail(`The live release ${first.slice("@missing ".length)} of ${app} has no nuxvel-routes.json`, {
-      hint: "Add RUN NUXT_DATABASE_URL=postgres://build@127.0.0.1/unused NUXT_AUTH_SECRET=build-time-route-list-only-not-a-secret npx nuxvel routes --json > nuxvel-routes.json to the build stage of the Dockerfile and copy nuxvel-routes.json into the artifact stage, then deploy",
+      hint: "Add RUN NUXT_DATABASE_URL=postgres://build@127.0.0.1/unused NUXT_AUTH_SECRET=build-time-route-list-only-not-a-secret npx nuxvel route:list --json > nuxvel-routes.json to the build stage of the Dockerfile and copy nuxvel-routes.json into the artifact stage, then deploy",
     });
   }
 

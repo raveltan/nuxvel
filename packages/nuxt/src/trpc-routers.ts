@@ -47,7 +47,7 @@ function clash(routerFile: string, actionFile: string, path: string[]) {
  * Builds `#nuxvel/trpc-routers`: the discovered router files, nested by
  * their path under their layer's `server/trpc/routers` with kebab-case segments
  * camel-cased, and, as `routerFiles`, each namespace's file for
- * `nuxvel routes`. A file exports its router as the default export or
+ * `nuxvel route:list`. A file exports its router as the default export or
  * as a named export whose name ends with `Router` (`taskRouter`).
  * A higher layer's namespace hides a lower one's; see
  * {@link trpcRouterFiles}. Each action whose `defineAction()` sets

@@ -4,7 +4,7 @@ import { fail } from "../ui/fail.ts";
 
 export default defineCommand({
   meta: {
-    name: "flags:set",
+    name: "flag:set",
     description: "Change a flag's targeting without a deploy; the change is audit-logged.",
   },
   args: {

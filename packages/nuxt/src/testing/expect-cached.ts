@@ -11,7 +11,7 @@ import { callApp } from "./settled";
  *
  * @example
  * ```ts
- * await guest().trpc.post.list();
+ * await guest().api.post.list();
  * const posts = await expectCached<{ rows: Post[] }>(["post", "list", null]);
  * ```
  */

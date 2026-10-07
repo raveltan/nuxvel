@@ -1,5 +1,4 @@
-import { button, expect, expectMailSent, expectNoSmoke, expectRow, fillForm, heading, link, text, visit } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { button, describe, expect, expectMailSent, expectNoSmoke, expectRow, fillForm, heading, it, link, text, visit } from "@nuxvel/nuxt/testing";
 import { userTable } from "#nuxvel/schema";
 import { userFactory } from "#nuxvel/factories";
 

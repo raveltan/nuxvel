@@ -39,7 +39,7 @@ async function runChangedTests(cwd: string, vitestArgs: string[]) {
 
 export default defineCommand({
   meta: {
-    name: "test",
+    name: "test:functional",
     description:
       "Start the dev services, then run the project's functional tests, the `functional` project of its Vitest config (passthrough to `vitest run`, extra arguments included). With --changes-only, run only the test files that the changes since the last --changes-only run affect. With --watch, do the --changes-only steps again each time a project file changes.",
   },

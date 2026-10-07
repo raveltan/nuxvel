@@ -168,8 +168,7 @@ A cookie value that is not a valid timezone counts as `UTC`.
 ## Testing
 
 ```ts
-import { describe, it } from "vitest";
-import { expect, guest } from "@nuxvel/nuxt/testing";
+import { describe, expect, guest, it } from "@nuxvel/nuxt/testing";
 
 describe("blog pages", () => {
   it("are cached", async () => {

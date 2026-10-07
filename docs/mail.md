@@ -361,8 +361,7 @@ nuxvel has no function that removes an address from the list. To send to the add
 ## Testing
 
 ```ts
-import { expect, expectMailSent, renderMail, runAction } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { describe, expect, expectMailSent, it, renderMail, runAction } from "@nuxvel/nuxt/testing";
 import { postFactory, subscriberFactory, userFactory } from "#nuxvel/factories";
 
 describe("post.published mail", () => {

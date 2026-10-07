@@ -290,17 +290,16 @@ It checks the rows of one response with one `canMany()` call, so the policy's `p
 ## Testing
 
 ```ts
-import { actingAs, expect, expectConstantQueries, expectPolicyChecked } from "@nuxvel/nuxt/testing";
-import { describe, it } from "vitest";
+import { actingAs, describe, expect, expectConstantQueries, expectPolicyChecked, it } from "@nuxvel/nuxt/testing";
 import { postTable } from "#nuxvel/schema";
 import { postFactory, userFactory } from "#nuxvel/factories";
 
 describe("post policy", () => {
   it("refuses to update another user's post", async () => {
     const post = await postFactory();
-    const { trpc } = actingAs(await userFactory());
+    const { api } = actingAs(await userFactory());
 
-    await expect(trpc.post.update({ id: post.id, title: "Mine now", body: "Edited" }))
+    await expect(api.post.update({ id: post.id, title: "Mine now", body: "Edited" }))
       .rejects.toBeTrpcError("FORBIDDEN");
     await expectPolicyChecked("update", postTable, { allowed: false });
   });
@@ -322,11 +321,11 @@ it("lets only the author update a post", async () => {
 
 ```ts
 it("checks a list of posts with constant queries", async () => {
-  const { trpc } = actingAs(await userFactory({ role: "admin" }));
+  const { api } = actingAs(await userFactory({ role: "admin" }));
 
   await expectConstantQueries(async (size) => {
     const rows = await Promise.all(Array.from({ length: size }, () => postFactory()));
-    await trpc.post.list({ perPage: size });
+    await api.post.list({ perPage: size });
   }, [1, 10]);
 });
 ```

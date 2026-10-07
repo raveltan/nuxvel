@@ -40,7 +40,7 @@ describe("richText()", async () => {
   });
 
   it("reaches the schema through the test caller", async () => {
-    expect(await guest().trpc._richTextCheck.save({ body: sent })).toEqual({ body: stored });
+    expect(await guest().api._richTextCheck.save({ body: sent })).toEqual({ body: stored });
   });
 
   it("keeps the XSS validator on the other API routes", async () => {

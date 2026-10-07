@@ -153,7 +153,7 @@ The key then follows these rules:
 
 - When the handler succeeds, nuxvel records the key in Redis for 7 days. A repeat of the event gets `200 { "received": true }`, and the handler does not run again.
 - While the handler runs, a repeat of the event gets `409`. The provider then tries again later. The repeat is not acknowledged, because the first delivery can still fail.
-- When the handler throws, the delivery gets `500`. nuxvel releases the key, so the next retry of the provider runs the handler.
+- When the handler throws, the delivery gets `500`. nuxvel release:list the key, so the next retry of the provider runs the handler.
 
 ```json
 { "statusCode": 409, "message": "This delivery is already being handled",
@@ -194,9 +194,8 @@ When you move a webhook file, its URL changes. Keep the old file as a `renamed()
 
 ```ts
 // server/webhooks/newsletter.webhook.test.ts
-import { deliverWebhook, expect, expectQueued } from "@nuxvel/nuxt/testing";
+import { deliverWebhook, describe, expect, expectQueued, it } from "@nuxvel/nuxt/testing";
 import { randomUUID } from "node:crypto";
-import { describe, it } from "vitest";
 
 process.env.NUXT_NEWSLETTER_WEBHOOK_SECRET = "newsletter-webhook-test-secret";
 

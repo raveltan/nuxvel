@@ -11,17 +11,17 @@ describe("the procedure option of defineAction", async () => {
     const owner = await userFactory();
     const row = await healthCheckFactory({ userId: owner.id });
 
-    await expect(actingAs(owner).trpc.healthChecks.updateHealthCheck({ id: row.id, name: "after" })).resolves.toMatchObject({ name: "after" });
-    await expect(guest().trpc.healthChecks.updateHealthCheck({ id: row.id, name: "guest" })).rejects.toBeTrpcError("UNAUTHORIZED");
-    await expect(guest().trpc._probes.whoami()).resolves.toEqual({ type: "guest", id: "guest" });
+    await expect(actingAs(owner).api.healthChecks.updateHealthCheck({ id: row.id, name: "after" })).resolves.toMatchObject({ name: "after" });
+    await expect(guest().api.healthChecks.updateHealthCheck({ id: row.id, name: "guest" })).rejects.toBeTrpcError("UNAUTHORIZED");
+    await expect(guest().api._probes.whoami()).resolves.toEqual({ type: "guest", id: "guest" });
   });
 
   it("sends only the fields of the output schema of the action", async () => {
-    await expect(guest().trpc._probes.secretRow()).resolves.toEqual({ id: 1 });
+    await expect(guest().api._probes.secretRow()).resolves.toEqual({ id: 1 });
   });
 
   it("mounts the action with a procedure builder value", async () => {
-    await expect(actingAs(await userFactory({ role: "editor" })).trpc._probes.editorsOnly()).resolves.toBe("edited");
-    await expect(actingAs(await userFactory()).trpc._probes.editorsOnly()).rejects.toBeTrpcError("FORBIDDEN");
+    await expect(actingAs(await userFactory({ role: "editor" })).api._probes.editorsOnly()).resolves.toBe("edited");
+    await expect(actingAs(await userFactory()).api._probes.editorsOnly()).rejects.toBeTrpcError("FORBIDDEN");
   });
 });
