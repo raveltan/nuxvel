@@ -223,6 +223,9 @@ applies each step below that names a codemod.
 
 ### Changes
 
+- The tests that `make:router --crud` and `make:resource` generate no
+  longer set `ownerId` in their factories. The factory creates the owner
+  row.
 - The types of `@nuxvel/nuxt/database` no longer load BullMQ, ioredis
   and the AWS SDK, so the editor is faster in each file that imports it.
 - The app tsconfig no longer loads the `webworker` lib, so the editor

@@ -205,7 +205,7 @@ function testValues(name: string, options: CrudOptions, trpcPath: string, router
       .filter((reference) => !reference.factory)
       .map(
         (reference) =>
-          `const ${referenceFactory(reference)} = defineFactory(${reference.table}${reference.owned ? ", {\n  ownerId: async () => (await userFactory()).id,\n}" : ""});\n`,
+          `const ${referenceFactory(reference)} = defineFactory(${reference.table});\n`,
       )
       .join(""),
     factoryFields: fields

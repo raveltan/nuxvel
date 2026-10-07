@@ -1139,11 +1139,10 @@ export default defineDeploy({
     const testFile = readFileSync(join(fixtureCwd, "server", "trpc", "routers", "task.router.test.ts"), "utf-8");
     expect(testFile).toContain('import { projectTable } from "#nuxvel/schema";\n');
     expect(testFile).toContain(
-      "const projectFactory = defineFactory(projectTable, {\n  ownerId: async () => (await userFactory()).id,\n});\n",
+      "const projectFactory = defineFactory(projectTable);\n",
     );
     expect(testFile).toContain(
       [
-        "  ownerId: async () => (await userFactory()).id,",
         '  title: "Sample text",',
         '  status: "draft",',
         '  dueAt: new Date("2026-01-31T12:00:00Z"),',

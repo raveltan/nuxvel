@@ -5,7 +5,6 @@ import { {{tableCamelName}}Table } from "{{tableSchemaImport}}";
 {{referenceImports}}
 const userFactory = defineFactory(userTable);
 {{referenceFactories}}const {{tableCamelName}}Factory = defineFactory({{tableCamelName}}Table, {
-  ownerId: async () => (await userFactory()).id,
 {{factoryFields}}});
 
 describe("{{tableName}} resource", () => {
