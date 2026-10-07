@@ -418,6 +418,7 @@ describe("create-nuxvel", () => {
       expect(readFileSync(join(appDir, "tests", "tsconfig.json"), "utf8")).toContain('"extends": "../.nuxt/tsconfig.server.json"');
       expect(readFileSync(join(appDir, "tests", "tsconfig.json"), "utf8")).toContain('"../.nuxt/types/typed-router.d.ts"');
       expect(readFileSync(join(appDir, "tsconfig.json"), "utf8")).toContain('"path": "./tests"');
+      expect(readFileSync(join(appDir, "tsconfig.json"), "utf8")).toContain('"disableReferencedProjectLoad": true');
     } finally {
       rmSync(scratchDir, { recursive: true, force: true });
     }
