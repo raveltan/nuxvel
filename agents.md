@@ -376,6 +376,12 @@ report for `packages/nuxt/src` and `packages/cli/src` to `coverage/`,
 and prints the totals per package. It includes child processes and built
 servers. It is a report only, with no threshold.
 
+`npm run bench:editor` measures the playground editor program: file and
+memory totals, the file count per heavy package, and completion timing at
+an empty line of an app file and a server file. `npm run bench:gotodef`
+prints where a marker in a playground file resolves. Both need
+`PLAYGROUND_PROBES_LAYER=1 npx nuxt prepare` in the playground first.
+
 ## Commits
 
 One change = one commit. Commit message: short imperative
