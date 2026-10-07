@@ -133,3 +133,58 @@ export default { name: "PostForm" };
   <ActionForm :action="$api.post.update" />
 </template>
 ```
+
+## A removed call whose definition it cannot map
+
+The `definition-methods` codemod rewrites `dispatchAfterCommit()`,
+`broadcast()`, `broadcastAfterCommit()`, `sendMail()`, `emit()` and
+`notify()` to the method of the definition, and imports the definition
+from its file, as the `explicit-imports` codemod does. A name that
+matches no definition file gets no rewrite and one manual step.
+
+Before:
+
+```ts
+const job = "post.notify-followers";
+
+export default defineEventHandler(() => dispatchAfterCommit(job, { postId: 1 }));
+```
+
+After:
+
+```ts
+import { postNotifyFollowersJob } from "#server/jobs/post/notify-followers.job";
+
+const job = "post.notify-followers";
+
+export default defineEventHandler(() => postNotifyFollowersJob.dispatch({ postId: 1 }));
+```
+
+The same step covers a `renamed()` job, which has no job file of its own.
+Import the job it renames and call `dispatch()` on it.
+
+## A mail name with no mail file
+
+The `notification-input` codemod returns the definition of a mail name in
+`toMail`, imported from its file. A name that matches no file of
+`server/mail/` gets no rewrite and one manual step.
+
+Before:
+
+```ts
+export const postPublishedNotification = defineNotification({
+  input: postInput,
+  toMail: ({ postId }) => ({ mail: "post.gone", data: { postId } }),
+});
+```
+
+After:
+
+```ts
+import { postPublishedMail } from "#server/mail/post/published.mail";
+
+export const postPublishedNotification = defineNotification({
+  input: postInput,
+  toMail: ({ postId }) => ({ mail: postPublishedMail, input: { postId } }),
+});
+```

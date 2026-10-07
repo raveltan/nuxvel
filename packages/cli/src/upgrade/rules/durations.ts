@@ -1,10 +1,16 @@
-import type { Rule } from "eslint";
+import type { Rule, Scope } from "eslint";
 
 type CallNode = Extract<Rule.Node, { type: "CallExpression" }>;
 
 type Expression = CallNode["arguments"][number];
 
+type Member = Extract<Expression, { type: "MemberExpression" }>;
+
+type Chain = Expression | Member["object"];
+
 type Unit = "seconds" | "milliseconds";
+
+const JOB_FILE = /(^|\/)jobs\//;
 
 const UNITS: [name: string, seconds: number][] = [
   ["days", 86_400],
@@ -38,10 +44,11 @@ function durationText(seconds: number) {
   return `{ ${name}: ${seconds / size} }`;
 }
 
-function rootName(node: Expression): string | undefined {
-  if (node.type === "Identifier") return node.name;
+function rootIdentifier(node: Chain): Extract<Expression, { type: "Identifier" }> | undefined {
+  if (node.type === "Identifier") return node;
+  if (node.type !== "MemberExpression" || node.object.type === "Super") return undefined;
 
-  return node.type === "MemberExpression" && node.object.type !== "Super" ? rootName(node.object) : undefined;
+  return rootIdentifier(node.object);
 }
 
 function property(node: Expression | undefined, name: string): Expression | undefined {
@@ -72,6 +79,8 @@ export const durations: Rule.RuleModule = {
     schema: [],
   },
   create(context) {
+    const { sourceCode } = context;
+
     function rewrite(value: Expression | undefined, option: string, unit: Unit) {
       if (!value || value.type === "ObjectExpression" || value.type === "SpreadElement") return;
       const amount = evaluate(value);
@@ -83,6 +92,26 @@ export const durations: Rule.RuleModule = {
       }
 
       context.report({ node: value, messageId: "rewritten", data: { option }, fix: (fixer) => fixer.replaceText(value, durationText(seconds)) });
+    }
+
+    function jobDispatch(callee: Member) {
+      const identifier = rootIdentifier(callee.object);
+      if (!identifier) return false;
+      if (identifier.name === "$jobs") return true;
+
+      for (let scope: Scope.Scope | null = sourceCode.getScope(identifier); scope; scope = scope.upper) {
+        const variable = scope.set.get(identifier.name);
+        if (!variable) continue;
+
+        return variable.defs.some((definition) => {
+          if (definition.type !== "ImportBinding") return false;
+          const { value } = definition.parent.source;
+
+          return typeof value === "string" && JOB_FILE.test(value);
+        });
+      }
+
+      return false;
     }
 
     return {
@@ -101,7 +130,7 @@ export const durations: Rule.RuleModule = {
           !callee.computed &&
           callee.property.type === "Identifier" &&
           callee.property.name === "dispatch" &&
-          rootName(callee) === "$jobs"
+          jobDispatch(callee)
         ) {
           rewrite(property(call.arguments[1], "delay"), "delay of dispatch()", "milliseconds");
         }

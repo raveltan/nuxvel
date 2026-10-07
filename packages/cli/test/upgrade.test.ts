@@ -25,7 +25,9 @@ describe("nuxvel upgrade", () => {
 
     expect(unknown.exitCode).toBe(2);
     expect(unknown.stdout).toBe("");
-    expect(stripAnsi(unknown.stderr)).toContain("✖ No codemod named nope\n  → The codemods are test-aliases, imports, use-trpc, explicit-imports, invalidate, mutation-options, audit");
+    expect(stripAnsi(unknown.stderr)).toContain(
+      "✖ No codemod named nope\n  → The codemods are test-aliases, imports, use-trpc, invalidate, mutation-options, audit, action-form, actor-arg, removed-globals, definition-methods, durations, presence-params, notification-input, upload-pending, live-query-reactive, test-client-api, cli-names, explicit-imports",
+    );
 
     writeFileSync(join(appDir, "package.json"), "{ not json");
 
@@ -958,8 +960,8 @@ describe("nuxvel upgrade", () => {
       const file = join(appDir, "server", "api", "effects.get.ts");
       const local = join(appDir, "server", "utils", "local-emit.ts");
       const localSource = 'function emit(name: string, payload: unknown) {\n  return { name, payload };\n}\n\nexport const sent = emit("post.published", {});\n';
-      const removed = (name: string, method: string, namespace: string, example: string) =>
-        `${name}() is removed: call ${method}() on the definition in ${namespace}, such as ${example}, with the other arguments in the same order`;
+      const removed = (name: string, method: string, example: string) =>
+        `${name}() is removed: import the definition from its file and call ${method}() on it, such as ${example}, with the other arguments in the same order`;
 
       writeFileSync(
         join(appDir, "server", "jobs", "_probe", "old-record.ts"),
@@ -1002,29 +1004,38 @@ describe("nuxvel upgrade", () => {
         ].join("\n"),
       );
       writeFileSync(local, localSource);
+      const bare = join(appDir, "server", "api", "no-imports.get.ts");
+      writeFileSync(bare, 'export default defineEventHandler(() => dispatchAfterCommit("post.notify-followers", { postId: 2 }));\n');
 
       const applied = await runCliAt(appDir, "upgrade", "--only", "definition-methods");
       const stderr = stripAnsi(applied.stderr);
-      const dispatch = removed("dispatchAfterCommit", "dispatch", "$jobs", "$jobs.post.notifyFollowers.dispatch(input)");
-      const emit = removed("emit", "emit", "$events", "$events.post.published.emit(payload)");
+      const dispatch = removed("dispatchAfterCommit", "dispatch", "notifyFollowersJob.dispatch(input)");
+      const emit = removed("emit", "emit", "postPublishedEvent.emit(payload)");
 
       expect(applied.exitCode, applied.stderr).toBe(0);
       expect(applied.stdout).toContain("updated: server/api/effects.get.ts\n");
+      expect(applied.stdout).toContain("updated: server/api/no-imports.get.ts\n");
       expect(applied.stdout).not.toContain("local-emit");
       expect(stderr).toContain(
-          '▲ server/api/effects.get.ts:15: dispatchAfterCommit() is removed, and "_probe.old-record" is a renamed() alias with no $jobs key: call dispatch() on the job it renames',
+          '▲ server/api/effects.get.ts:21: dispatchAfterCommit() is removed, and "_probe.old-record" is a renamed() alias with no job file: call dispatch() on the job it renames',
       );
-      expect(stderr).toContain(`▲ server/api/effects.get.ts:16: ${dispatch}`);
-      expect(stderr).toContain(`▲ server/api/effects.get.ts:21: ${removed("broadcast", "broadcast", "$channels", '$channels.posts.broadcast("created", payload)')}`);
-      expect(stderr).toContain(`▲ server/api/effects.get.ts:23: ${removed("sendMail", "send", "$mails", "$mails.welcome.send(input)")}`);
-      expect(stderr).toContain(`▲ server/api/effects.get.ts:25: ${emit}`);
-      expect(stderr).toContain(`▲ server/api/effects.get.ts:26: ${emit}`);
-      expect(stderr).toContain(`▲ server/api/effects.get.ts:27: ${emit}`);
+      expect(stderr).toContain(`▲ server/api/effects.get.ts:22: ${dispatch}`);
+      expect(stderr).toContain(`▲ server/api/effects.get.ts:27: ${removed("broadcast", "broadcast", 'postsChannel.broadcast("created", payload)')}`);
+      expect(stderr).toContain(`▲ server/api/effects.get.ts:29: ${removed("sendMail", "send", "welcomeMail.send(input)")}`);
+      expect(stderr).toContain(`▲ server/api/effects.get.ts:31: ${emit}`);
+      expect(stderr).toContain(`▲ server/api/effects.get.ts:32: ${emit}`);
+      expect(stderr).toContain(`▲ server/api/effects.get.ts:33: ${emit}`);
       expect(readFileSync(file, "utf8")).toBe(
         [
           'import { postPublishedEvent } from "#server/events/post/published.event";',
           'import { probeHappened } from "#server/events/_probe/happened";',
           'import { FLAGS_CHANNEL } from "#shared/flags";',
+          'import _probeBoardChannel from "#server/channels/_probe-board";',
+          'import { postsChannel } from "#server/channels/posts.channel";',
+          'import recordJob from "#server/jobs/_probe/record";',
+          'import { postNotifyFollowersJob } from "#server/jobs/post/notify-followers.job";',
+          'import { welcomeMail } from "#server/mail/welcome.mail";',
+          'import { welcomeNotification } from "#server/notifications/welcome.notification";',
           "",
           'const jobName = "_probe.record";',
           'let mailName = "welcome";',
@@ -1033,29 +1044,37 @@ describe("nuxvel upgrade", () => {
           "  const userId = String(getQuery(event).userId);",
           "",
           "  await transaction(async () => {",
-          "    await $jobs.post.notifyFollowers.dispatch({ postId: 1 });",
-          '    await $jobs._probe.record.dispatch({ name: "a" }, { delay: 1000 });',
-          '    await $jobs._probe.record.dispatch({ name: "b" });',
+          "    await postNotifyFollowersJob.dispatch({ postId: 1 });",
+          '    await recordJob.dispatch({ name: "a" }, { delay: 1000 });',
+          '    await recordJob.dispatch({ name: "b" });',
           '    await dispatchAfterCommit("_probe.old-record", { name: "c" });',
           '    await dispatchAfterCommit($jobs._probe.record.name, { name: "d" });',
-          '    await $channels.posts.broadcast("created", { id: 1 });',
-          '    await $channels._probeBoard.broadcast("moved", {',
+          '    await postsChannel.broadcast("created", { id: 1 });',
+          '    await _probeBoardChannel.broadcast("moved", {',
           "      card: 1,",
           "    }, { boardId: 1 });",
           '    await broadcast(FLAGS_CHANNEL, "changed", { name: "x" });',
-          '    await $mails.welcome.send({ to: "ada@example.com", name: "Ada" }, { locale: "zh" });',
+          '    await welcomeMail.send({ to: "ada@example.com", name: "Ada" }, { locale: "zh" });',
           '    await sendMail(mailName, { to: "ada@example.com", name: "Ada" });',
           "    await postPublishedEvent.emit({ postId: 1 });",
           '    await emit(probeHappened, { name: "x", count: 1 });',
           "    await emit(postPublishedEvent.name, { postId: 1 });",
           '    await emit(`_probe.${"happened"}`, {});',
-          '    await $notifications.welcome.notify(userId, { name: "Ada" });',
+          '    await welcomeNotification.notify(userId, { name: "Ada" });',
           "  });",
           "});",
           "",
         ].join("\n"),
       );
       expect(readFileSync(local, "utf8")).toBe(localSource);
+      expect(readFileSync(bare, "utf8")).toBe(
+        [
+          'import { postNotifyFollowersJob } from "#server/jobs/post/notify-followers.job";',
+          "",
+          "export default defineEventHandler(() => postNotifyFollowersJob.dispatch({ postId: 2 }));",
+          "",
+        ].join("\n"),
+      );
 
       const again = await runCliAt(appDir, "upgrade", "--only", "definition-methods");
 
@@ -1064,13 +1083,15 @@ describe("nuxvel upgrade", () => {
   });
 
   describe("durations", () => {
-    it("rewrites a number of seconds or milliseconds to a duration object, leaves the dispatch() of anything but $jobs, and prints a value it cannot compute as a manual step", async () => {
+    it("rewrites a number of seconds or milliseconds to a duration object, rewrites the delay of a job's dispatch() on a definition and on a $jobs member, leaves the dispatch() of another object, and prints a value it cannot compute as a manual step", async () => {
       const appDir = scratchPlayground("upgrade-durations");
       const file = join(appDir, "server", "jobs", "report", "digest.job.ts");
       const manual = (option: string, unit: string) =>
         `${option} takes a duration such as { minutes: 5 } in place of a number of ${unit}: rewrite the value by hand, or leave the option out when it is zero`;
       mkdirSync(join(appDir, "server", "jobs", "report"), { recursive: true });
       const before = [
+        'import { postNotifyFollowersJob } from "#server/jobs/post/notify-followers.job";',
+        "",
         "const TTL = 300;",
         "",
         "export const reportDigestJob = defineJob({",
@@ -1083,16 +1104,19 @@ describe("nuxvel upgrade", () => {
         '    await withLock("report", 90, () => undefined);',
         '    const link = signedUrl("/reports/1", { expiresIn: 7 * 24 * 60 * 60 });',
         "    await $jobs._probe.record.dispatch({ name: link }, { delay: 60_000, priority: 1 });",
+        "    await postNotifyFollowersJob.dispatch({ postId: 1 }, { delay: 2 * 60_000 });",
         '    await $jobs._probe.record.dispatch({ name: "now" }, { delay: 0 });',
         '    await remember("report:done", { minutes: 5 }, () => []);',
         "    store.dispatch(link, { delay: 5 });",
         "  },",
         "});",
         "",
-        "export const retried = defineJob({ backoff: { type: \"exponential\", delay: 1000 }, handler: () => undefined });",
+        'export const retried = defineJob({ backoff: { type: "exponential", delay: 1000 }, handler: () => undefined });',
         "",
       ];
       const after = [
+        'import { postNotifyFollowersJob } from "#server/jobs/post/notify-followers.job";',
+        "",
         "const TTL = 300;",
         "",
         "export const reportDigestJob = defineJob({",
@@ -1105,13 +1129,14 @@ describe("nuxvel upgrade", () => {
         '    await withLock("report", { seconds: 90 }, () => undefined);',
         '    const link = signedUrl("/reports/1", { expiresIn: { days: 7 } });',
         "    await $jobs._probe.record.dispatch({ name: link }, { delay: { minutes: 1 }, priority: 1 });",
+        "    await postNotifyFollowersJob.dispatch({ postId: 1 }, { delay: { minutes: 2 } });",
         '    await $jobs._probe.record.dispatch({ name: "now" }, { delay: 0 });',
         '    await remember("report:done", { minutes: 5 }, () => []);',
         "    store.dispatch(link, { delay: 5 });",
         "  },",
         "});",
         "",
-        "export const retried = defineJob({ backoff: { type: \"exponential\", delay: 1000 }, handler: () => undefined });",
+        'export const retried = defineJob({ backoff: { type: "exponential", delay: 1000 }, handler: () => undefined });',
         "",
       ];
       writeFileSync(file, before.join("\n"));
@@ -1121,8 +1146,8 @@ describe("nuxvel upgrade", () => {
 
       expect(applied.exitCode, applied.stderr).toBe(0);
       expect(applied.stdout).toContain("updated: server/jobs/report/digest.job.ts\n");
-      expect(stderr).toContain(`▲ server/jobs/report/digest.job.ts:9: ${manual("the ttl of remember()", "seconds")}`);
-      expect(stderr).toContain(`▲ server/jobs/report/digest.job.ts:13: ${manual("delay of dispatch()", "milliseconds")}`);
+      expect(stderr).toContain(`▲ server/jobs/report/digest.job.ts:11: ${manual("the ttl of remember()", "seconds")}`);
+      expect(stderr).toContain(`▲ server/jobs/report/digest.job.ts:16: ${manual("delay of dispatch()", "milliseconds")}`);
       expect(stderr.match(/▲ /g)).toHaveLength(2);
       expect(readFileSync(file, "utf8")).toBe(after.join("\n"));
 
@@ -1185,6 +1210,10 @@ describe("nuxvel upgrade", () => {
       const appDir = scratchPlayground("upgrade-notification-input");
       const file = join(appDir, "server", "notifications", "post", "published.notification.ts");
       mkdirSync(join(appDir, "server", "notifications", "post"), { recursive: true });
+      mkdirSync(join(appDir, "server", "mail", "order"), { recursive: true });
+      mkdirSync(join(appDir, "server", "mail", "post"), { recursive: true });
+      writeFileSync(join(appDir, "server", "mail", "order", "shipped-late.mail.ts"), "export default defineMail({});\n");
+      writeFileSync(join(appDir, "server", "mail", "post", "published.mail.ts"), "export const postPublishedMail = defineMail({});\n");
       const before = [
         'import { z } from "zod";',
         "",
@@ -1231,21 +1260,26 @@ describe("nuxvel upgrade", () => {
       expect(applied.exitCode, applied.stderr).toBe(0);
       expect(applied.stdout).toContain(`updated: ${path}\n`);
       expect(stderr).toContain(
-        `▲ ${path}:25: toMail returns { mail, input }: return the mail's $mails definition as mail, such as $mails.post.published, and its input as input in place of data`,
+        `▲ ${path}:28: toMail returns { mail, input }: import the mail from its file in server/mail/ as mail, and rename data to input`,
       );
-      expect(stderr).toContain(`▲ ${path}:28: defineNotification() takes input in place of schema: rename the schema key of this notification to input`);
+      expect(stderr).toContain(`▲ ${path}:31: defineNotification() takes input in place of schema: rename the schema key of this notification to input`);
       expect(stderr.match(/▲ /g)).toHaveLength(2);
       expect(readFileSync(file, "utf8")).toBe(
-        before
-          .map((line) =>
+        [
+          'import { z } from "zod";',
+          'import shippedLateMail from "#server/mail/order/shipped-late.mail";',
+          'import { postPublishedMail } from "#server/mail/post/published.mail";',
+          'import { welcomeMail } from "#server/mail/welcome.mail";',
+          "",
+          ...before.slice(2).map((line) =>
             line
               .replace("  schema: z.object", "  input: z.object")
               .replace("  schema,", "  input: schema,")
-              .replace('({ mail: "post.published", data: {', "({ mail: $mails.post.published, input: {")
-              .replace('{ mail: "order.shipped-late", data }', "{ mail: $mails.order.shippedLate, input: data }")
-              .replace('{ mail: "welcome", data }', "{ mail: $mails.welcome, input: data }"),
-          )
-          .join("\n"),
+              .replace('({ mail: "post.published", data: {', "({ mail: postPublishedMail, input: {")
+              .replace('{ mail: "order.shipped-late", data }', "{ mail: shippedLateMail, input: data }")
+              .replace('{ mail: "welcome", data }', "{ mail: welcomeMail, input: data }"),
+          ),
+        ].join("\n"),
       );
 
       const again = await runCliAt(appDir, "upgrade", "--only", "notification-input");
@@ -1283,7 +1317,7 @@ describe("nuxvel upgrade", () => {
       const applied = await runCliAt(appDir, "upgrade", "--only", "notification-input");
       const stderr = stripAnsi(applied.stderr);
       const path = "server/notifications/order/shipped.notification.ts";
-      const manualMail = "toMail returns the mail as its $mails definition: make this mail a $mails path, such as $mails.post.published, when it is a name";
+      const manualMail = "toMail returns the mail as its definition: import the mail from its file in server/mail/ and return it in place of this name";
 
       expect(applied.exitCode, applied.stderr).toBe(0);
       expect(stderr).toContain(`▲ ${path}:10: ${manualMail}`);
@@ -1603,112 +1637,6 @@ describe("nuxvel upgrade", () => {
       expect(readFileSync(dockerfile, "utf8")).toBe("RUN npx nuxvel route:list --json > nuxvel-routes.json\n");
 
       const again = await runCliAt(appDir, "upgrade", "--only", "cli-names");
-
-      expect(again.stdout).not.toContain("updated:");
-    }, 60000);
-  });
-
-  describe("explicit-sdk-imports", () => {
-    it("imports useS3(), useQueue() and useRedis() from their subpaths where a file uses them, and leaves a file that imports or declares them", async () => {
-      const appDir = scratchPlayground("upgrade-explicit-sdk-imports");
-      const api = join(appDir, "server", "api");
-      mkdirSync(api, { recursive: true });
-      const usesAll = [
-        'import { HeadObjectCommand } from "@aws-sdk/client-s3";',
-        "",
-        "export default defineEventHandler(async () => {",
-        '  await useS3().send(new HeadObjectCommand({ Bucket: useBucket(), Key: "a" }));',
-        '  await useRedis("cache").get(redisKey("a"));',
-        "  return useQueue().getFailed();",
-        "});",
-        "",
-      ];
-      const usesRedis = ['export default defineEventHandler(() => useRedis("cache").ping());', ""];
-      const imported = ['import { useRedis } from "@nuxvel/nuxt/redis";', "", 'export default defineEventHandler(() => useRedis("cache").ping());', ""];
-      const declared = ["function useS3() {", "  return 1;", "}", "", "export default defineEventHandler(() => useS3());", ""];
-      writeFileSync(join(api, "uses-all.get.ts"), usesAll.join("\n"));
-      writeFileSync(join(api, "uses-redis.get.ts"), usesRedis.join("\n"));
-      writeFileSync(join(api, "imported.get.ts"), imported.join("\n"));
-      writeFileSync(join(api, "declared.get.ts"), declared.join("\n"));
-
-      const applied = await runCliAt(appDir, "upgrade", "--only", "explicit-sdk-imports");
-
-      expect(applied.exitCode, applied.stderr).toBe(0);
-      expect(applied.stdout.match(/updated: /g)).toHaveLength(2);
-      expect(applied.stdout).toContain("updated: server/api/uses-all.get.ts\n");
-      expect(applied.stdout).toContain("updated: server/api/uses-redis.get.ts\n");
-      expect(readFileSync(join(api, "uses-all.get.ts"), "utf8")).toBe(
-        [
-          usesAll[0],
-          'import { useS3 } from "@nuxvel/nuxt/storage";',
-          'import { useQueue } from "@nuxvel/nuxt/queue";',
-          'import { useRedis } from "@nuxvel/nuxt/redis";',
-          ...usesAll.slice(1),
-        ].join("\n"),
-      );
-      expect(readFileSync(join(api, "uses-redis.get.ts"), "utf8")).toBe(['import { useRedis } from "@nuxvel/nuxt/redis";', "", ...usesRedis].join("\n"));
-
-      const again = await runCliAt(appDir, "upgrade", "--only", "explicit-sdk-imports");
-
-      expect(again.stdout).not.toContain("updated:");
-    }, 60000);
-
-    it("imports useStripe() from @nuxvel/nuxt/billing where a file uses it", async () => {
-      const appDir = scratchPlayground("upgrade-explicit-stripe-import");
-      const api = join(appDir, "server", "api");
-      mkdirSync(api, { recursive: true });
-      const usesStripe = ["export default defineEventHandler(() => useStripe().balance.retrieve());", ""];
-      writeFileSync(join(api, "uses-stripe.get.ts"), usesStripe.join("\n"));
-
-      const applied = await runCliAt(appDir, "upgrade", "--only", "explicit-sdk-imports");
-
-      expect(applied.exitCode, applied.stderr).toBe(0);
-      expect(applied.stdout).toContain("updated: server/api/uses-stripe.get.ts\n");
-      expect(readFileSync(join(api, "uses-stripe.get.ts"), "utf8")).toBe(
-        ['import { useStripe } from "@nuxvel/nuxt/billing";', "", ...usesStripe].join("\n"),
-      );
-    }, 60000);
-  });
-
-  describe("explicit-namespace-imports", () => {
-    it("imports $seeders and $backfills from their namespace modules where a file uses them, and leaves a file that imports or declares them", async () => {
-      const appDir = scratchPlayground("upgrade-explicit-namespace-imports");
-      const seeders = join(appDir, "server", "seeders");
-      mkdirSync(seeders, { recursive: true });
-      const usesBoth = [
-        'import { eq } from "drizzle-orm";',
-        "",
-        "export default defineSeeder(async ({ call }) => {",
-        '  await call("a", $seeders.a);',
-        "  await runBackfill($backfills.b);",
-        "});",
-        "",
-      ];
-      const usesSeeders = ['export default defineSeeder(({ call }) => call($seeders.a));', ""];
-      const imported = ['import * as $seeders from "#nuxvel/seeders-namespace";', "", "export default defineSeeder(({ call }) => call($seeders.a));", ""];
-      const declared = ["const $backfills = {};", "", "export default defineSeeder(() => $backfills);", ""];
-      writeFileSync(join(seeders, "uses-both.ts"), usesBoth.join("\n"));
-      writeFileSync(join(seeders, "uses-seeders.ts"), usesSeeders.join("\n"));
-      writeFileSync(join(seeders, "imported.ts"), imported.join("\n"));
-      writeFileSync(join(seeders, "declared.ts"), declared.join("\n"));
-
-      const applied = await runCliAt(appDir, "upgrade", "--only", "explicit-namespace-imports");
-
-      expect(applied.exitCode, applied.stderr).toBe(0);
-      expect(applied.stdout.match(/updated: /g)).toHaveLength(2);
-      expect(applied.stdout).toContain("updated: server/seeders/uses-both.ts\n");
-      expect(applied.stdout).toContain("updated: server/seeders/uses-seeders.ts\n");
-      expect(readFileSync(join(seeders, "uses-both.ts"), "utf8")).toBe(
-        [
-          usesBoth[0],
-          'import * as $seeders from "#nuxvel/seeders-namespace";',
-          'import * as $backfills from "#nuxvel/backfills-namespace";',
-          ...usesBoth.slice(1),
-        ].join("\n"),
-      );
-      expect(readFileSync(join(seeders, "uses-seeders.ts"), "utf8")).toBe(['import * as $seeders from "#nuxvel/seeders-namespace";', "", ...usesSeeders].join("\n"));
-
-      const again = await runCliAt(appDir, "upgrade", "--only", "explicit-namespace-imports");
 
       expect(again.stdout).not.toContain("updated:");
     }, 60000);

@@ -52,7 +52,7 @@ function calledActions(cwd: string, routerFile: string, handler: TSESTree.Node, 
     if (node.type !== "CallExpression") return;
     const path = namespacePath(node.callee);
     if (path?.[0] === "$actions") {
-      files.add(namespacedFile(cwd, path) ?? `$actions.${path.slice(1).join(".")}`);
+      files.add(namespacedFile(cwd, path) ?? path.slice(1).join("."));
       return;
     }
     const imported = path?.length === 1 && path[0] ? imports.get(path[0]) : undefined;
@@ -111,7 +111,7 @@ export function auditedUses(source: string, file: string, cwd: string): AuditedU
       const actions = calledActions(cwd, file, handler, imports);
       const [action] = actions;
       if (actions.length > 1) use.problem = `the mutation calls ${actions.length} actions`;
-      else if (action?.startsWith("$actions.")) use.problem = `no file of server/actions/ is ${action}`;
+      else if (action && !action.startsWith("server/actions/")) use.problem = `no file of server/actions/ is ${action}`;
       else if (action && !use.targetSource) use.problem = `${use.target} is not imported`;
       else if (action) use.actionFile = action;
       else if (handler.type !== "ArrowFunctionExpression" && handler.type !== "FunctionExpression") use.problem = "the mutation handler is not a function";

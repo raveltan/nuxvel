@@ -93,7 +93,8 @@ function definitions(cwd: string, folder: string) {
   return files.map((file) => ({ file, name: definitionName(join(server, folder), file) }));
 }
 
-function namespaceDefinitions(cwd: string, folder: string) {
+/** The definition each camelCase member of one `$<kind>` namespace reaches, by member path. */
+export function namespaceDefinitions(cwd: string, folder: string) {
   const server = join(cwd, "server");
   const suffix = exportSuffixes(folder)[0] ?? "";
   const leaves = new Map<string, DefinitionImport>();
