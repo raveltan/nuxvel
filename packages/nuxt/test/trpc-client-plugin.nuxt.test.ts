@@ -4,7 +4,7 @@ import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { useQuery } from "@pinia/colada";
 import { readBody, setResponseHeader, setResponseStatus } from "h3";
 import { QueryState } from "#components";
-import { $api, isNetworkError } from "#imports";
+import { $api, isNetworkError } from "@nuxvel/nuxt/app/api";
 
 describe("client tRPC plugin", () => {
   it("lets a mounted component query a procedure and render the result", async () => {

@@ -3,6 +3,7 @@ import { createError, getQuery } from "h3";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { useQueryCache } from "@pinia/colada";
+import { $api, useLiveQuery } from "@nuxvel/nuxt/app/api";
 
 const CHANNEL = "_probe-public";
 

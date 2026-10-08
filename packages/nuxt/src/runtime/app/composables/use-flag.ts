@@ -6,11 +6,9 @@ import { useLiveFlagValues } from "../flags/flag-values";
 /**
  * Whether a flag is on for the current user, as a live ref.
  *
- * Auto-imported. It takes the flag's name or its entry in the
- * auto-imported `$flags` namespace (`$flags.newCheckout`). In the app,
- * `$flags` holds only the names, and go-to-definition on a key opens the
- * flag's file under `server/flags/`. The value is evaluated on the server — the page only
- * ever sees the result, never the targeting — and arrives in the SSR
+ * Import it from `@nuxvel/nuxt/app/flags`. It takes the flag's name,
+ * typed from the flags that `server/flags/` defines. The value is
+ * evaluated on the server — the page only ever sees the result, never the targeting — and arrives in the SSR
  * payload, so the first render already shows it. While the component is
  * mounted it listens on the `flags` channel and refreshes when
  * `setFlagTargeting()` changes any flag, without a reload. It is `false`
@@ -26,8 +24,9 @@ import { useLiveFlagValues } from "../flags/flag-values";
  * @example
  * ```vue
  * <script setup lang="ts">
+ * import { useFlag } from "@nuxvel/nuxt/app/flags";
+ *
  * const newCheckout = useFlag("new-checkout");
- * const oneClick = useFlag($flags.checkout.oneClick);
  * </script>
  *
  * <template>

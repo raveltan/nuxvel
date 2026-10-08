@@ -12,29 +12,36 @@ const publicImports = JSON.parse(
   readFileSync(fileURLToPath(new URL("../src/public-imports.json", import.meta.url)), "utf8"),
 ) as { name: string; side: string }[];
 
-async function nitroImports() {
+async function loadImports() {
   const nuxt = await loadNuxt({
     cwd: playgroundDir,
     ready: false,
     overrides: { _prepare: true, buildDir: testBuildDir("server-imports") },
   });
   let imports: Import[] = [];
+  let appImports: Import[] = [];
 
   nuxt.hook("nitro:init", async (nitro) => {
     imports = (await nitro.unimport?.getImports()) ?? [];
   });
+  nuxt.hook("imports:context", (context) => {
+    nuxt.hook("modules:done", async () => {
+      appImports = await context.getImports();
+    });
+  });
   await nuxt.ready();
   await nuxt.close();
 
-  return imports;
+  return { imports, appImports };
 }
 
 describe("server auto-imports", () => {
   let imports: Import[];
+  let appImports: Import[];
   let names: string[];
 
   beforeAll(async () => {
-    imports = await nitroImports();
+    ({ imports, appImports } = await loadImports());
     names = imports.map((entry) => entry.as ?? entry.name);
   }, 120_000);
 
@@ -59,5 +66,20 @@ describe("server auto-imports", () => {
   it("auto-imports no export of shared/schemas", () => {
     const schemas = imports.filter((entry) => entry.from.includes("/shared/schemas/")).map((entry) => entry.name);
     expect(schemas).toEqual([]);
+  });
+
+  it("auto-imports no file of the nuxvel runtime in the app", () => {
+    const fromNuxvel = appImports.filter((entry) => entry.from.startsWith(runtime)).map((entry) => `${entry.as ?? entry.name} from ${entry.from}`);
+    expect(fromNuxvel).toEqual([]);
+  });
+
+  it("auto-imports no name of the public import map in the app", () => {
+    const appNames = appImports.map((entry) => entry.as ?? entry.name);
+    const leaked = publicImports.filter((entry) => entry.side !== "server" && appNames.includes(entry.name)).map((entry) => entry.name);
+    expect(leaked).toEqual([]);
+  });
+
+  it("auto-imports no $<kind> namespace in the app", () => {
+    expect(appImports.map((entry) => entry.as ?? entry.name).filter((name) => name.startsWith("$"))).toEqual([]);
   });
 });

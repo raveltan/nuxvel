@@ -19,11 +19,10 @@ type Listening<Message> = {
 
 /**
  * Listens to a realtime channel from a component and collects what it
- * receives. The channel is its name or its entry in the auto-imported
- * `$channels` namespace (`$channels.posts`), which in the app holds only
- * the name; go-to-definition on the key opens the channel's file.
+ * receives. The channel is its name, typed from the channels that
+ * `server/channels/` defines.
  *
- * Auto-imported. Once the component mounts it joins the channel over the
+ * Import it from `@nuxvel/nuxt/app/realtime`. Once the component mounts it joins the channel over the
  * tab's single `EventSource` on `/api/channels`, shared with every other
  * `useChannel()` on the page, and leaves it again when the component
  * unmounts; it does nothing during SSR. Each `broadcast()` to the
@@ -49,7 +48,7 @@ type Listening<Message> = {
  * that is the room `usePresence()` joins, so a signed-in user becomes a
  * member; the presence events do not reach `events`.
  *
- * @param name The channel's `name`, a {@link ChannelName}, or its `$channels` entry.
+ * @param name The channel's `name`, a {@link ChannelName}.
  * @param options.params The room to listen to, such as `{ boardId: 7 }`.
  * The channel's `defineChannel()` names the params, so a wrong param
  * fails to compile. Leave it out to listen to the channel itself.
@@ -59,8 +58,10 @@ type Listening<Message> = {
  * @example
  * ```vue
  * <script setup lang="ts">
+ * import { useChannel } from "@nuxvel/nuxt/app/realtime";
+ *
  * const { events } = useChannel("announcements");
- * const posts = useChannel($channels.posts);
+ * const posts = useChannel("posts");
  * const board = useChannel("board", { params: { boardId: 7 } });
  * </script>
  *

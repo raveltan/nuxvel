@@ -2,6 +2,7 @@ import superjson from "superjson";
 import { defineComponent, h, nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mountSuspended } from "@nuxt/test-utils/runtime";
+import { useJobChannel } from "@nuxvel/nuxt/app/realtime";
 
 const CHANNEL = "job:_probe.progress";
 

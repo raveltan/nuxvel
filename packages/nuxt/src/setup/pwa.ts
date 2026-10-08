@@ -1,4 +1,4 @@
-import { addComponent, addImports, addServerHandler } from "@nuxt/kit";
+import { addComponent, addServerHandler } from "@nuxt/kit";
 import type { Nuxt } from "@nuxt/schema";
 import { defu } from "defu";
 import { OFFLINE_PATH } from "../pwa";
@@ -25,7 +25,6 @@ export function setupPwa(nuxt: Nuxt, options: ResolvedOptions, runtimeFile: Runt
     ...(nuxt.options.nitro.publicAssets ?? []),
     { dir: runtimeFile("./runtime/pwa"), maxAge: 0 },
   ];
-  addImports({ name: "usePush", from: runtimeFile("./runtime/app/pwa/use-push") });
   if (options.ui) {
     addComponent({ name: "PwaInstallPrompt", filePath: runtimeFile("./runtime/app/ui/PwaInstallPrompt.vue") });
     addComponent({ name: "PushToggle", filePath: runtimeFile("./runtime/app/ui/PushToggle.vue") });

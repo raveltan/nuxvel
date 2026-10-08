@@ -16,7 +16,7 @@ describe("the dev server of a linked app when the framework declarations are bui
     const buildDir = join(useTestContext().options.rootDir, ".nuxt");
 
     expect(typeFilesImportingSource(buildDir)).toEqual([]);
-    expect(readFileSync(join(buildDir, "types/imports.d.ts"), "utf8")).toContain("/.types/runtime/");
+    expect(readFileSync(join(buildDir, "types/plugins.d.ts"), "utf8")).toContain("/.types/runtime/");
     expect(readFileSync(join(buildDir, "nuxt.d.ts"), "utf8")).toContain(".types/types.d.mts");
   });
 });

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { registerEndpoint } from "@nuxt/test-utils/runtime";
 import { getRequestHeader } from "h3";
-import { $api } from "#imports";
+import { $api } from "@nuxvel/nuxt/app/api";
 
 describe("tRPC query options", () => {
   it("derives the same key for identical input", () => {

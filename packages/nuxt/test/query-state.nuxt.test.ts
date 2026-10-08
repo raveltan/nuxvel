@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { useQuery, useQueryCache } from "@pinia/colada";
 import { QueryState } from "#components";
+import { $api } from "@nuxvel/nuxt/app/api";
 import PlainQueryState from "../src/runtime/app/query-state/QueryState.vue";
-import { $api } from "#imports";
 
 const customSlots = {
   loading: () => "loading",

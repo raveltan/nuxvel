@@ -3,7 +3,7 @@ import { getQuery, getRequestHeader } from "h3";
 import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { useQueryCache } from "@pinia/colada";
-import { $api } from "#imports";
+import { $api } from "@nuxvel/nuxt/app/api";
 
 function respondWithPostTitles() {
   const ids: number[] = [];

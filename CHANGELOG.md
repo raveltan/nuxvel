@@ -235,6 +235,15 @@ applies each step below that names a codemod.
   schema from `#shared/schemas/<file>`, and use the imported definition
   in place of `$jobs.post.notify`. Nuxt and Nitro names stay global.
   Codemod: `explicit-imports`.
+- BREAKING: nuxvel no longer auto-imports its app names, its app
+  composables or its client `$flags`, `$experiments`, `$channels` and
+  `$jobs` namespaces. By hand: in each `.vue` file and each file of
+  `app/`, import the name from its topic path, for example
+  `import { $api } from "@nuxvel/nuxt/app/api"` and
+  `import { useFlag } from "@nuxvel/nuxt/app/flags"`. Pass a string name
+  in place of a namespace entry: `useFlag("new-editor")` in place of
+  `useFlag($flags.newEditor)`. Nuxt names stay global. Codemod:
+  `explicit-imports`.
 
 ### Changes
 

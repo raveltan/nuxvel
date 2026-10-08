@@ -33,7 +33,7 @@ describe("nuxt prepare in an app with no pages", () => {
 
     await promisify(execFile)(process.execPath, [nuxtBin, "prepare"], { cwd: appDir, env: { ...process.env, NUXVEL_EDITOR_TYPES_DIR: typesDir } });
 
-    expect(typeFilesImportingSource(join(appDir, ".nuxt"))).toContain("types/imports.d.ts");
+    expect(typeFilesImportingSource(join(appDir, ".nuxt"))).toContain("types/plugins.d.ts");
   }, 60_000);
 
   it("leaves the webworker lib out of the app tsconfig", async () => {

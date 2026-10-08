@@ -2,7 +2,8 @@ import { defineComponent, h } from "vue";
 import { describe, expect, it } from "vitest";
 import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { createPostInput } from "../../../playground/shared/schemas/post";
-import { $api, useFormErrors } from "#imports";
+import { $api } from "@nuxvel/nuxt/app/api";
+import { useFormErrors } from "@nuxvel/nuxt/app/forms";
 
 function answerCreatePost(error: { message: string; code: string; httpStatus: number; fields?: Record<string, string[]> }) {
   registerEndpoint("/api/trpc/post.create", {

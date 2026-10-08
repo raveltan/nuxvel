@@ -2,6 +2,7 @@ import { defineComponent, h, nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { mountSuspended } from "@nuxt/test-utils/runtime";
 import { useState } from "#app";
+import { usePresence } from "@nuxvel/nuxt/app/realtime";
 
 class FakeEventSource extends EventTarget {
   static instances: FakeEventSource[] = [];

@@ -4,7 +4,8 @@ import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { readBody } from "h3";
 import superjson from "superjson";
 import { ActionField, ActionForm } from "#components";
-import { $api, useAppConfig } from "#imports";
+import { useAppConfig } from "#imports";
+import { $api } from "@nuxvel/nuxt/app/api";
 
 async function mountForm(slots: object, props: object = {}) {
   const wrapper = await mountSuspended(

@@ -24,11 +24,10 @@ type Following<Message extends JobResultMessage<unknown>> = {
 
 /**
  * Follows the runs of a job from a component: its `reportProgress`
- * reports, then `completed` or `failed`. The job is its name or its entry
- * in the auto-imported `$jobs` namespace (`$jobs.post.import`), which in
- * the app holds only the name.
+ * reports, then `completed` or `failed`. The job is its name, typed from
+ * the jobs that `server/jobs/` defines with a `channel`.
  *
- * Auto-imported. Listens to the signed-in user's channel of the job,
+ * Import it from `@nuxvel/nuxt/app/realtime`. Listens to the signed-in user's channel of the job,
  * `job:<name>:<userId>`, so it receives only the runs that user
  * dispatched. Signed out, it listens to `job:<name>`, which carries the
  * runs with no user behind them. It waits for the session before it
@@ -45,13 +44,15 @@ type Following<Message extends JobResultMessage<unknown>> = {
  * whose `defineJob` has a `channel` can be followed, and its `authorize`
  * decides who may listen.
  *
- * @param name The job's `name`, or its `$jobs` entry.
+ * @param name The job's `name`.
  * @param options.limit How many of the newest messages `events` keeps;
  * older ones are dropped. Defaults to 100.
  *
  * @example
  * ```vue
  * <script setup lang="ts">
+ * import { useJobChannel } from "@nuxvel/nuxt/app/realtime";
+ *
  * const { status, progress, result, error } = useJobChannel("post.import");
  * </script>
  *

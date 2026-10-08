@@ -3,7 +3,8 @@ import { setResponseHeader, setResponseStatus } from "h3";
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { useMutation, useQueryCache } from "@pinia/colada";
-import { $api, useRuntimeConfig } from "#imports";
+import { useRuntimeConfig } from "#imports";
+import { $api } from "@nuxvel/nuxt/app/api";
 
 function respondWithEcho(invalidates?: unknown[][]) {
   registerEndpoint("/api/trpc/health.echo", {

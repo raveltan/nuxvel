@@ -4,6 +4,7 @@ import { createError, readBody } from "h3";
 import { mountSuspended } from "@nuxt/test-utils/runtime";
 import { defineComponent, h, reactive } from "vue";
 import { UForm, UploadField } from "#components";
+import { useUpload } from "@nuxvel/nuxt/app/storage";
 
 class FakeUploadRequest {
   static last: FakeUploadRequest | undefined;

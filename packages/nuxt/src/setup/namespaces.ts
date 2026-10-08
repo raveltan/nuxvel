@@ -1,4 +1,4 @@
-import { addImports, addTemplate } from "@nuxt/kit";
+import { addTemplate } from "@nuxt/kit";
 import { buildNamespaceModules } from "../definition-namespaces";
 import type { DiscoveredFolder, Discovery } from "./discovery";
 
@@ -23,8 +23,6 @@ const NAMESPACE_ENTRIES: [namespace: string, kind: string, folder: DiscoveredFol
 
 const EMPTY_MODULE = "export {};\n";
 
-const CLIENT_NAMESPACES = ["$flags", "$experiments", "$channels", "$jobs"];
-
 export async function registerNamespaces({ discoverNamed }: Discovery) {
   const namespaces = await Promise.all(
     NAMESPACE_ENTRIES.map(async ([namespace, kind, folder, define]) => {
@@ -38,16 +36,6 @@ export async function registerNamespaces({ discoverNamed }: Discovery) {
       return { namespace, root, folder, build, buildRegistered, aliases };
     }),
   );
-
-  for (const { namespace, root, buildRegistered, aliases } of namespaces.filter(({ namespace }) => CLIENT_NAMESPACES.includes(namespace))) {
-    const clientRoot = `#build/nuxvel/${namespace.slice(1)}-client-namespace`;
-    for (const alias of aliases.map((serverAlias) => clientRoot + serverAlias.slice(root.length))) {
-      const filename = alias.slice("#build/".length);
-      addTemplate({ filename: `${filename}.mjs`, getContents: async () => (await buildRegistered(clientRoot, true))[alias] ?? EMPTY_MODULE });
-      addTemplate({ filename: `${filename}.d.ts`, write: true, getContents: async () => (await buildRegistered(clientRoot))[alias] ?? EMPTY_MODULE });
-    }
-    addImports({ name: "*", as: namespace, from: clientRoot });
-  }
 
   const testNamespaceList = namespaces.filter(({ namespace }) => namespace !== "$policies");
   for (const { namespace, root, buildRegistered, aliases } of testNamespaceList) {

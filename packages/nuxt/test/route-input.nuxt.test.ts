@@ -2,7 +2,8 @@ import { defineComponent, h, nextTick } from "vue";
 import { describe, expect, it } from "vitest";
 import { mountSuspended } from "@nuxt/test-utils/runtime";
 import { z } from "zod";
-import { useRouteInput, useRouter } from "#imports";
+import { useRouter } from "#imports";
+import { useRouteInput } from "@nuxvel/nuxt/app/ui";
 
 const querySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),

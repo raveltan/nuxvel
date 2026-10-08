@@ -42,10 +42,9 @@ export interface PresenceRoomOf<State> {
 /**
  * Joins one room of a presence channel from a component, and returns
  * who is in it with a way to share this user's state. The channel is
- * its name or its entry in the auto-imported `$channels` namespace
- * (`$channels.posts`), which in the app holds only the name.
+ * its name, typed from the channels that set `presence`.
  *
- * Auto-imported. It joins over the tab's single realtime connection,
+ * Import it from `@nuxvel/nuxt/app/realtime`. It joins over the tab's single realtime connection,
  * the one `useChannel()` uses, when the component mounts, and leaves on
  * unmount. It does nothing during SSR. `members` holds one
  * {@link PresenceMember} per user, this user included. It starts from the
@@ -59,7 +58,7 @@ export interface PresenceRoomOf<State> {
  * server. Only a signed-in user becomes a member.
  *
  * @param name A channel whose `defineChannel()` sets `presence`, a
- * {@link PresenceChannelName}, or its `$channels` entry.
+ * {@link PresenceChannelName}.
  * @param options.params What selects the room, such as `{ id: post.id }`,
  * as in `useChannel(name, { params })`. Leave it out for the room
  * without params.
@@ -67,7 +66,9 @@ export interface PresenceRoomOf<State> {
  * @example
  * ```vue
  * <script setup lang="ts">
- * const { members, setState } = usePresence($channels.posts, { params: { id: 42 } });
+ * import { PresenceAvatars, usePresence } from "@nuxvel/nuxt/app/realtime";
+ *
+ * const { members, setState } = usePresence("posts", { params: { id: 42 } });
  * </script>
  *
  * <template>

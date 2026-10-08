@@ -19,7 +19,7 @@ export interface SeoMeta {
  * Sets the title, description, image and Open Graph and Twitter tags of
  * the current page in one call.
  *
- * Auto-imported in `app/`. Call it in a page's `setup()`. Pass a getter
+ * Import it from `@nuxvel/nuxt/app/seo`. Call it in a page's `setup()`. Pass a getter
  * when a value comes from data that loads, so the tags follow it on the
  * server and after each client navigation. With `nuxvel.seo` set, the
  * title gets the site name, and the page gets its canonical link and

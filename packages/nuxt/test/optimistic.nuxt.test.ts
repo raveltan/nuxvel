@@ -2,7 +2,7 @@ import { defineComponent, h } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { useQuery, useQueryCache } from "@pinia/colada";
-import { $api } from "#imports";
+import { $api } from "@nuxvel/nuxt/app/api";
 
 function deferred<T>() {
   let resolve: (value: T) => void = () => {};

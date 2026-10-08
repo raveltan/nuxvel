@@ -1,8 +1,7 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { addImports, addTemplate, useNuxt } from "@nuxt/kit";
+import { addTemplate, useNuxt } from "@nuxt/kit";
 import { i18nOptions } from "./i18n-options";
-import type { RuntimeFile } from "./resolved-options";
 
 function uiLocaleName(names: string[], { code, iso }: { code: string; iso?: string }) {
   const candidates = [iso, code].flatMap((value) => {
@@ -24,7 +23,7 @@ async function uiLocalesModule() {
   ].join("\n");
 }
 
-export function addUiLocale(runtimeFile: RuntimeFile) {
+export function addUiLocale() {
   addTemplate({ filename: "nuxvel/ui-locales.mjs", getContents: uiLocalesModule });
   addTemplate({
     filename: "nuxvel/ui-locales.d.ts",
@@ -32,5 +31,4 @@ export function addUiLocale(runtimeFile: RuntimeFile) {
     getContents: () =>
       'import type { Locale, Messages } from "@nuxt/ui";\ndeclare const uiLocales: Partial<Record<string, Locale<Messages>>>;\nexport default uiLocales;\n',
   });
-  addImports({ name: "useUiLocale", from: runtimeFile("./runtime/app/ui/use-ui-locale") });
 }

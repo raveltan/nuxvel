@@ -1,5 +1,5 @@
 import { resolve } from "node:path";
-import { addComponent, addImports } from "@nuxt/kit";
+import { addComponent } from "@nuxt/kit";
 import type { Nuxt } from "@nuxt/schema";
 import type { ResolvedOptions, RuntimeFile } from "./resolved-options";
 
@@ -10,7 +10,6 @@ export function setupMaintenance(nuxt: Nuxt, options: ResolvedOptions, runtimeFi
       options.ui ? "./runtime/app/maintenance/UiMaintenance.vue" : "./runtime/app/maintenance/Maintenance.vue",
     ),
   });
-  addImports({ name: "isMaintenanceError", from: runtimeFile("./runtime/app/maintenance/is-maintenance-error") });
   nuxt.hook("app:resolve", (app) => {
     if (app.errorComponent === resolve(nuxt.options.appDir, "components/nuxt-error-page.vue")) {
       app.errorComponent = runtimeFile("./runtime/app/maintenance/ErrorPage.vue");

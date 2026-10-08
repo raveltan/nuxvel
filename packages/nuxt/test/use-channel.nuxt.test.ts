@@ -3,6 +3,7 @@ import { defineComponent, h, nextTick, watch } from "vue";
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { mountSuspended } from "@nuxt/test-utils/runtime";
 import { useState } from "#app";
+import { useChannel } from "@nuxvel/nuxt/app/realtime";
 
 class FakeEventSource extends EventTarget {
   static instances: FakeEventSource[] = [];
@@ -205,38 +206,6 @@ describe("useChannel()", () => {
     expect(onlySource().closed).toBe(true);
     expect(FakeEventSource.instances).toHaveLength(1);
     expect(wrapper.find(".status-_probe-public").text()).toBe("closed");
-  });
-
-  it("takes the $channels and $jobs stubs, which hold only the names", async () => {
-    expect($channels._probePublic).toEqual({ name: "_probe-public" });
-    expect($jobs.demo.countdown).toEqual({ name: "demo.countdown" });
-
-    const wrapper = await mountSuspended(
-      defineComponent({
-        setup() {
-          const { events } = useChannel($channels._probePublic);
-          const job = useJobChannel($jobs.demo.countdown);
-
-          return () => h("p", [...events.value, ...job.events.value].map((message) => message.event).join(", "));
-        },
-      }),
-    );
-
-    mounted.push(wrapper);
-    await vi.waitFor(() => expect(FakeEventSource.instances).toHaveLength(1));
-    expect(onlySource().url).toBe(
-      `/api/channels?channels=${encodeURIComponent(
-        JSON.stringify([{ name: "_probe-public" }, { name: "job:demo.countdown" }]),
-      )}&build=${useRuntimeConfig().app.buildId}`,
-    );
-
-    onlySource().connect();
-    await settle();
-    onlySource().deliver("_probe-public", "pinged", { count: 1 });
-    onlySource().deliver("job:demo.countdown", "progress", { percent: 25 });
-    await nextTick();
-
-    expect(wrapper.text()).toBe("pinged, progress");
   });
 
   it("keeps only the newest messages, 100 unless a limit is given", async () => {

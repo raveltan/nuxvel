@@ -3,7 +3,8 @@ import { describe, expect, it, onTestFinished, vi } from "vitest";
 import { z } from "zod";
 import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { getRequestHeader, readBody } from "h3";
-import { $api, useActionForm } from "#imports";
+import { $api } from "@nuxvel/nuxt/app/api";
+import { useActionForm } from "@nuxvel/nuxt/app/forms";
 
 async function mounted<T>(setup: () => T) {
   let result: T | undefined;

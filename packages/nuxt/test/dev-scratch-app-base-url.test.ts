@@ -15,6 +15,7 @@ beforeAll(() => {
     join(appDir, "app/app.vue"),
     `<script setup lang="ts">
 import { TRPCClientError } from "@trpc/client";
+import { $api } from "@nuxvel/nuxt/app/api";
 
 const { data: code } = await useAsyncData("keys", async () => {
   try {

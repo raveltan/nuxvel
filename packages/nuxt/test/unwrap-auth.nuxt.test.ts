@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { unwrapAuth } from "#imports";
+import { unwrapAuth } from "@nuxvel/nuxt/app/auth";
 
 describe("unwrapAuth()", () => {
   it("returns the data of a call Better Auth accepted", () => {

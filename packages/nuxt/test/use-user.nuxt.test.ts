@@ -2,7 +2,7 @@ import { defineComponent, h } from "vue";
 import { describe, expect, it, onTestFinished, vi } from "vitest";
 import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { useQuery, useQueryCache } from "@pinia/colada";
-import { authClient } from "#imports";
+import { authClient, useUser } from "@nuxvel/nuxt/app/auth";
 
 const SESSION = {
   session: {

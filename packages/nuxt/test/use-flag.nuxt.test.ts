@@ -2,6 +2,7 @@ import { defineComponent, h, nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { readBody } from "h3";
+import { useExperiment, useFlag } from "@nuxvel/nuxt/app/flags";
 
 class FakeEventSource extends EventTarget {
   static instances: FakeEventSource[] = [];
@@ -99,25 +100,6 @@ describe("useFlag() / useExperiment()", () => {
     source.deliver("changed", { name: "probe-rollout" });
 
     await vi.waitFor(() => expect(mounted.text()).toBe("true green"));
-  });
-
-  it("takes the $flags stub, which holds only the flag's name", async () => {
-    expect($flags.probeRollout).toEqual({ name: "probe-rollout" });
-    expect($experiments.probeCta).toEqual({ name: "probe-cta" });
-
-    useState("nuxvel:flags").value = { flags: { "probe-rollout": true }, experiments: {} };
-    const mounted = await mountSuspended(
-      defineComponent({
-        setup() {
-          const rollout = useFlag($flags.probeRollout);
-
-          return () => h("p", String(rollout.value));
-        },
-      }),
-    );
-
-    wrapper = mounted;
-    expect(mounted.text()).toBe("true");
   });
 
   it("records an exposure for each flag and experiment it renders", async () => {

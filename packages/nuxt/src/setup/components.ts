@@ -1,14 +1,13 @@
-import { addComponent, addComponentsDir, addImports, addPlugin } from "@nuxt/kit";
+import { addComponent, addComponentsDir, addPlugin } from "@nuxt/kit";
 import type { ResolvedOptions, RuntimeFile } from "./resolved-options";
 import { addUiLocale } from "./ui-locale";
 
 export function addComponents(options: ResolvedOptions, runtimeFile: RuntimeFile) {
   if (options.ui) {
-    addUiLocale(runtimeFile);
+    addUiLocale();
     addComponent({ name: "SocialSignIn", filePath: runtimeFile("./runtime/app/ui/SocialSignIn.vue") });
     addPlugin(runtimeFile("./runtime/app/ui/flash-toasts.client"));
     addPlugin(runtimeFile("./runtime/app/ui/mutation-ui"));
-    addImports({ name: "useConfirm", from: runtimeFile("./runtime/app/ui/use-confirm") });
     addComponent({ name: "DataTable", filePath: runtimeFile("./runtime/app/ui/DataTable.vue") });
     addComponent({ name: "SearchInput", filePath: runtimeFile("./runtime/app/ui/SearchInput.vue") });
     addComponent({ name: "UploadField", filePath: runtimeFile("./runtime/app/ui/UploadField.vue") });

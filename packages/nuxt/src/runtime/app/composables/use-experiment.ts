@@ -8,11 +8,10 @@ import { useLiveFlagValues } from "../flags/flag-values";
 
 /**
  * The variant of an experiment the current user is in, as a live ref.
- * The experiment is its name or its entry in the auto-imported
- * `$experiments` namespace (`$experiments.checkoutCta`), which in the app
- * holds only the name.
+ * The experiment is its name, typed from the experiments that
+ * `server/flags/` defines.
  *
- * Auto-imported. Assigned on the server and carried in the SSR payload,
+ * Import it from `@nuxvel/nuxt/app/flags`. Assigned on the server and carried in the SSR payload,
  * like {@link useFlag}, and refreshed the same way over the `flags`
  * channel, and records an exposure on mount the same way. It is
  * `undefined` only if the values could not be loaded at all.
@@ -20,8 +19,9 @@ import { useLiveFlagValues } from "../flags/flag-values";
  * @example
  * ```vue
  * <script setup lang="ts">
+ * import { useExperiment } from "@nuxvel/nuxt/app/flags";
+ *
  * const cta = useExperiment("checkout-cta");
- * const sameCta = useExperiment($experiments.checkoutCta);
  * </script>
  *
  * <template>

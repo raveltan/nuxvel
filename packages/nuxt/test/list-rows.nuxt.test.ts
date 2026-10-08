@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { prependRow, removeRow, replaceRow } from "#imports";
+import { prependRow, removeRow, replaceRow } from "@nuxvel/nuxt/app/ui";
 
 const page = (ids: number[], total = ids.length) => ({
   rows: ids.map((id) => ({ id, title: `Post ${id}` })),

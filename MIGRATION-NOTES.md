@@ -281,3 +281,50 @@ export default defineAction({
 
 Nuxt and Nitro names stay global. A layer keeps `defineEventHandler`,
 `getQuery` and `useRuntimeConfig` without an import.
+
+## A client namespace passed to a composable, and a layer that used app globals
+
+nuxvel no longer registers its app names or the client `$flags`,
+`$experiments`, `$channels` and `$jobs` namespaces as globals. The
+composables `useFlag()`, `useExperiment()`, `useChannel()`,
+`usePresence()` and `useJobChannel()` take a typed string name. The
+`explicit-imports` codemod rewrites the files of an app. It prints
+`file:line` for a namespace that it cannot rewrite, for example one that
+a function returns or one that a variable holds. Replace each one by hand.
+Run the codemod in the folder of a layer too, or make the same change by
+hand. A layer that nuxvel does not control needs a release of its own.
+
+Before:
+
+```vue
+<script setup lang="ts">
+const flags = $flags;
+const oneClick = useFlag(flags.checkout.oneClick);
+const room = usePresence($channels.posts, { params: { id: 1 } });
+</script>
+```
+
+After:
+
+```vue
+<script setup lang="ts">
+import { useFlag } from "@nuxvel/nuxt/app/flags";
+import { usePresence } from "@nuxvel/nuxt/app/realtime";
+
+const oneClick = useFlag("checkout.one-click");
+const room = usePresence("posts", { params: { id: 1 } });
+</script>
+```
+
+A name that no definition has fails to compile. The name of a flag, an
+experiment, a channel or a job is the name that its definition file has
+under `server/`, for example `checkout.one-click`.
+
+A test that checked the client stubs, such as `$flags.probeRollout`
+holding `{ name: "probe-rollout" }`, has no use any more. Remove it. A
+test file that imports a nuxvel name from `#imports` imports it from its
+topic path, for example `import { $api } from "@nuxvel/nuxt/app/api"`.
+
+With `nuxvel.seo.ogImage`, `useSeo` from `@nuxvel/nuxt/app/seo` still
+renders the Open Graph image. Nuxt resolves that path to the variant that
+calls `defineOgImage()`.

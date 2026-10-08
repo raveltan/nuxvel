@@ -2,7 +2,9 @@ import { defineComponent, h } from "vue";
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { useQueryCache } from "@pinia/colada";
-import { $api, useActionForm, useNuxtApp } from "#imports";
+import { useNuxtApp } from "#imports";
+import { $api } from "@nuxvel/nuxt/app/api";
+import { useActionForm } from "@nuxvel/nuxt/app/forms";
 
 async function mounted<T>(setup: () => T) {
   let result: T | undefined;
