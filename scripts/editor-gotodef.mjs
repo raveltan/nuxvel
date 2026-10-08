@@ -1,8 +1,9 @@
 import { readFileSync, writeFileSync, rmSync } from "node:fs";
 import { createRequire } from "node:module";
-import { isAbsolute, join, relative } from "node:path";
+import { isAbsolute, join, relative, resolve } from "node:path";
 
-const [project = "playground", fileArg, marker] = process.argv.slice(2);
+const [projectArg = "playground", fileArg, marker] = process.argv.slice(2);
+const project = resolve(projectArg);
 if (!fileArg || !marker) {
   console.error("usage: node scripts/editor-gotodef.mjs [project] <file> <marker>");
   process.exit(2);
