@@ -2,13 +2,13 @@
 
 ## Introduction
 
-Every name on this page is auto-imported in `server/`. You use it without an import line. Each table lists the names of one guide.
+nuxvel does not auto-import its server names. Import each name on this page from its topic path, for example `import { defineAction } from "@nuxvel/nuxt/server/actions"`. Nuxt and Nitro names stay global, such as `defineEventHandler`, `getQuery`, `useRuntimeConfig` and the files of your own `server/utils/`. Each table lists the names of one guide.
 
-No other name from nuxvel is auto-imported. The helpers that nuxvel uses internally, such as the tRPC instance, the registries and the test recorders, stay out of your global scope. A name you did not write cannot resolve by accident.
+The helpers that nuxvel uses internally, such as the tRPC instance, the registries and the test recorders, have no import path. A name you did not write cannot resolve by accident.
 
-The exports of `shared/schemas/` are also auto-imported, in `server/` and in the app. The pagination names are also auto-imported in the app. So are `SanitizedHtml` and `richText`, which are also auto-imported in `shared/`. For app-side names, such as `$api`, `useUser()` and `useFlag()`, see [Frontend](./frontend.md) and [Calling from the client](./api.md#calling-from-the-client). For `useMaintenance()` and `isMaintenanceError()`, see [Maintenance mode](./maintenance.md#in-the-app). For `isNetworkError()`, see [When the server cannot be reached](./api.md#when-the-server-cannot-be-reached). Test fixtures are not auto-imported. Import them from `@nuxvel/nuxt/testing`, as [Testing](./testing.md) shows.
+The exports of `shared/schemas/` are not auto-imported. Import them from `#shared/schemas/<file>`, for example `import { createPostInput } from "#shared/schemas/post"`. The pagination names, `SanitizedHtml` and `richText` are auto-imported in the app and in `shared/`, and not in `server/`. For app-side names, such as `$api`, `useUser()` and `useFlag()`, see [Frontend](./frontend.md) and [Calling from the client](./api.md#calling-from-the-client). For `useMaintenance()` and `isMaintenanceError()`, see [Maintenance mode](./maintenance.md#in-the-app). For `isNetworkError()`, see [When the server cannot be reached](./api.md#when-the-server-cannot-be-reached). Test fixtures are not auto-imported. Import them from `@nuxvel/nuxt/testing`, as [Testing](./testing.md) shows.
 
-`$seeders` and `$backfills` are not auto-imported either. They load the seeders, the factories and faker, which makes the editor slow in every file. Import them where you need them, as [Seeding](./database.md#seeding) and [Backfills](./backfills.md) show.
+The `$seeders` and `$backfills` namespaces do not exist. Import each seeder and each backfill from its own file, as [Seeding](./database.md#seeding) and [Backfills](./backfills.md) show.
 
 `useS3()`, `useQueue()`, `useRedis()` and `useStripe()` are not auto-imported too. Their types load the AWS SDK, BullMQ, ioredis and Stripe, which makes the editor slow in every file. Import them on the server:
 

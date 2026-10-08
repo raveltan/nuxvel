@@ -1,11 +1,7 @@
-import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { expect } from "@nuxvel/nuxt/testing";
 import { describe, it } from "vitest";
-
-const root = fileURLToPath(new URL("..", import.meta.url));
-const script = fileURLToPath(new URL("../scripts/list-public-names.mjs", import.meta.url));
 
 type Entry = { name: string; kind: string; side: string; file: string; path: string };
 
@@ -13,12 +9,17 @@ const committed = JSON.parse(
   readFileSync(fileURLToPath(new URL("../src/public-imports.json", import.meta.url)), "utf8"),
 ) as Entry[];
 
-describe("public imports map", () => {
-  it("matches what the script collects", () => {
-    const output = execFileSync("node", [script], { encoding: "utf8", cwd: root });
-    expect(JSON.parse(output)).toEqual(committed);
-  });
+function exportedNames(entryFile: string) {
+  const text = readFileSync(entryFile, "utf8");
 
+  return new Set(
+    [...text.matchAll(/^export (?:type )?\{([^}]*)\} from /gm)].flatMap(([, list = ""]) =>
+      list.split(",").map((item) => item.trim().split(/\s+as\s+/).pop() ?? ""),
+    ),
+  );
+}
+
+describe("public imports map", () => {
   it("gives every entry a topic path and one name each", () => {
     const keyed = committed.map((entry) => `${entry.name} ${entry.kind}`);
     expect(new Set(keyed).size, "duplicate entries").toBe(keyed.length);
@@ -36,5 +37,17 @@ describe("public imports map", () => {
       .filter((entry) => !existsSync(fileURLToPath(new URL(`../src/${entry.file}`, import.meta.url))))
       .map((entry) => `${entry.name}: ${entry.file}`);
     expect(missing, "missing files").toEqual([]);
+  });
+
+  it("exports every entry from its topic entry file", () => {
+    const unexported = committed
+      .filter((entry) => {
+        const topic = entry.path.replace("@nuxvel/nuxt/", "");
+        const entryFile = fileURLToPath(new URL(`../src/${topic}.ts`, import.meta.url));
+
+        return !existsSync(entryFile) || !exportedNames(entryFile).has(entry.name);
+      })
+      .map((entry) => `${entry.name}: ${entry.path}`);
+    expect(unexported, "entries the topic file does not export").toEqual([]);
   });
 });

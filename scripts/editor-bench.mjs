@@ -20,10 +20,10 @@ const PACKAGES = [
   "@faker-js",
 ];
 
-const serverImports = JSON.parse(
-  readFileSync("packages/nuxt/src/runtime/server/server-imports.json", "utf8"),
+const publicImports = JSON.parse(readFileSync("packages/nuxt/src/public-imports.json", "utf8"));
+const nuxvelServerNames = new Set(
+  publicImports.filter((entry) => entry.side === "server" && entry.kind === "value").map((entry) => entry.name),
 );
-const nuxvelServerNames = new Set(Object.values(serverImports.values).flat());
 
 function runVueTsc(args) {
   return execFileSync("npx", ["vue-tsc", "--noEmit", ...args], {

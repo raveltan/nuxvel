@@ -1,7 +1,6 @@
-import { addImports, addServerImports, addTemplate } from "@nuxt/kit";
+import { addImports, addTemplate } from "@nuxt/kit";
 import { buildNamespaceModules } from "../definition-namespaces";
 import type { DiscoveredFolder, Discovery } from "./discovery";
-import type { GeneratedModule } from "./generated-modules";
 
 export type Namespaces = Awaited<ReturnType<typeof registerNamespaces>>["namespaces"];
 
@@ -24,8 +23,6 @@ const NAMESPACE_ENTRIES: [namespace: string, kind: string, folder: DiscoveredFol
 
 const EMPTY_MODULE = "export {};\n";
 
-const EXPLICIT_IMPORT_NAMESPACES = ["$backfills", "$seeders"];
-
 const CLIENT_NAMESPACES = ["$flags", "$experiments", "$channels", "$jobs"];
 
 export async function registerNamespaces({ discoverNamed }: Discovery) {
@@ -34,18 +31,12 @@ export async function registerNamespaces({ discoverNamed }: Discovery) {
       const root = `#nuxvel/${namespace.slice(1)}-namespace`;
       const build = async (buildRoot = root, stub = false, known?: Set<string>) =>
         buildNamespaceModules(buildRoot, folder, await discoverNamed(kind, folder), define, stub, known);
-      if (!EXPLICIT_IMPORT_NAMESPACES.includes(namespace)) addServerImports([{ name: "*", as: namespace, from: root }]);
       const aliases = Object.keys(await build());
       const buildRegistered = (buildRoot = root, stub = false) =>
         build(buildRoot, stub, new Set(aliases.map((alias) => buildRoot + alias.slice(root.length))));
 
       return { namespace, root, folder, build, buildRegistered, aliases };
     }),
-  );
-  const namespaceModules: Record<string, GeneratedModule> = Object.fromEntries(
-    namespaces.flatMap(({ buildRegistered, aliases }) =>
-      aliases.map((alias): [string, GeneratedModule] => [alias, async () => (await buildRegistered())[alias] ?? EMPTY_MODULE]),
-    ),
   );
 
   for (const { namespace, root, buildRegistered, aliases } of namespaces.filter(({ namespace }) => CLIENT_NAMESPACES.includes(namespace))) {
@@ -74,5 +65,5 @@ export async function registerNamespaces({ discoverNamed }: Discovery) {
   addTemplate({ filename: "nuxvel/test-namespaces.mjs", write: true, getContents: testNamespaces });
   addTemplate({ filename: "nuxvel/test-namespaces.d.mts", write: true, getContents: testNamespaces });
 
-  return { namespaces, namespaceModules };
+  return { namespaces };
 }

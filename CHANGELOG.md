@@ -228,6 +228,13 @@ applies each step below that names a codemod.
   from "#nuxvel/seeders-namespace"` or `import * as $backfills from
   "#nuxvel/backfills-namespace"`. Test files keep both in
   `#nuxvel/test-namespaces`. Codemod: `explicit-namespace-imports`.
+- BREAKING: nuxvel no longer auto-imports its server names, the server
+  `$<kind>` namespaces or the exports of `shared/schemas/`. By hand: in
+  each server file, import the name from its topic path, for example
+  `import { defineAction } from "@nuxvel/nuxt/server/actions"`, import a
+  schema from `#shared/schemas/<file>`, and use the imported definition
+  in place of `$jobs.post.notify`. Nuxt and Nitro names stay global.
+  Codemod: `explicit-imports`.
 
 ### Changes
 

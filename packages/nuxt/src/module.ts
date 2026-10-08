@@ -18,7 +18,7 @@ import { trackNitroScan } from "./setup/nitro-scan";
 import { setupPwa } from "./setup/pwa";
 import { type PageGroupMeta, setupPageGroups } from "./setup/page-groups";
 import { dropFontsPluginInStorybook, includeStorybookTypes, typecheckStoriesApart, localizeStorybook, prebundleSanitizeHtmlInStorybook, isStorybookBuild, storybookI18nOverrides } from "./setup/storybook";
-import { addAutoImports, addSharedSchemaImports } from "./setup/auto-imports";
+import { addAutoImports } from "./setup/auto-imports";
 import { addComponents } from "./setup/components";
 import { addFormInputs } from "./setup/form-inputs";
 import { setupMaintenance } from "./setup/maintenance";
@@ -517,8 +517,7 @@ function hasLocalizedSeo(nuxt: Nuxt) {
  * `nuxvel` key, which is merged into runtime config and read back with
  * {@link useNuxvelConfig}.
  *
- * It registers the server auto-imports (database, errors, redis, rate limiting, jobs, events, backfills, flags,
- * tRPC, actions, policies, mail, notifications, storage, webhooks, realtime, utils), the `auth` and `guest` route middleware and the page meta of the route groups in `pages.groups`,
+ * It registers the `auth` and `guest` route middleware and the page meta of the route groups in `pages.groups`,
  * the app composables and `authClient`, `isMaintenanceError()`, the `<QueryState>`, `<DateTime>` and `<Maintenance>` components, Pinia Colada, the `$trpc` client plugin, the flags and flash plugins, the `/api/trpc`, the REST handler at `api.restPrefix`, `/api/flags`, `/api/flags/exposures`, `/api/notifications`, `/api/notifications/read` and
  * `/api/auth` handlers, the `/api/uploads/<name>` presigned-URL endpoint, the
  * `/api/webhooks/<name>` webhook endpoint, the `/api/channels` multiplexed and
@@ -637,16 +636,15 @@ export default defineNuxtModule<ModuleOptions>().with({
     setupRequestSize(nuxt, runtimeFile);
 
     const discovery = createDiscovery(nuxt);
-    addSharedSchemaImports(nuxt, discovery.layerDirectories);
     const socialProviders = applyRuntimeConfig(nuxt, options);
     addReleaseEntries(nuxt, runtimeFile, options.audit?.retentionMonths);
     warnServerlessPreset(nuxt, discovery);
 
     const modules = generatedModules(options, discovery, nitroScan, socialProviders, runtimeFile);
-    const { namespaces, namespaceModules } = await registerNamespaces(discovery);
+    const { namespaces } = await registerNamespaces(discovery);
     addRouteTypes(nitroScan, runtimeFile);
     dropWebworkerLib(nuxt);
-    registerServerOnlyModules(nuxt, { ...modules, ...namespaceModules }, editorTypes(nuxt, runtimeFile("./runtime")));
+    registerServerOnlyModules(nuxt, modules, editorTypes(nuxt, runtimeFile("./runtime")));
     addProcedureInputs(nuxt, discovery);
     reloadOnDefinitionChanges(nuxt, discovery, namespaces);
     configureNitro(nuxt, runtimeFile);

@@ -241,3 +241,43 @@ const stubIsTyped: IsAny<FlagNameArg> extends true
 Add a negative check beside it. Put `// @ts-expect-error` above a call with
 a name that no definition has, such as `useFlag("probe-missing")`.
 
+## A third-party layer that used nuxvel server globals
+
+nuxvel no longer registers its server names, the server `$<kind>`
+namespaces or the exports of `shared/schemas/` as globals. The
+`explicit-imports` codemod rewrites the files of an app. Run it in the
+folder of the layer too, or make the same change by hand. A layer that
+nuxvel does not control needs a release of its own.
+
+Before:
+
+```ts
+export default defineAction({
+  input: createPostInput,
+  handler: async (input) => {
+    await $jobs.post.notifyFollowers.dispatch({ postId: input.id });
+    return useDb().insert(postsTable).values(input);
+  },
+});
+```
+
+After:
+
+```ts
+import { defineAction } from "@nuxvel/nuxt/server/actions";
+import { useDb } from "@nuxvel/nuxt/server/database";
+import { postsTable } from "#nuxvel/schema";
+import { notifyFollowersJob } from "#server/jobs/post/notify-followers.job";
+import { createPostInput } from "#shared/schemas/post";
+
+export default defineAction({
+  input: createPostInput,
+  handler: async (input) => {
+    await notifyFollowersJob.dispatch({ postId: input.id });
+    return useDb().insert(postsTable).values(input);
+  },
+});
+```
+
+Nuxt and Nitro names stay global. A layer keeps `defineEventHandler`,
+`getQuery` and `useRuntimeConfig` without an import.

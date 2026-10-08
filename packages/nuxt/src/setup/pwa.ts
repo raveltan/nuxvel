@@ -1,4 +1,4 @@
-import { addComponent, addImports, addServerHandler, addServerImports } from "@nuxt/kit";
+import { addComponent, addImports, addServerHandler } from "@nuxt/kit";
 import type { Nuxt } from "@nuxt/schema";
 import { defu } from "defu";
 import { OFFLINE_PATH } from "../pwa";
@@ -30,10 +30,6 @@ export function setupPwa(nuxt: Nuxt, options: ResolvedOptions, runtimeFile: Runt
     addComponent({ name: "PwaInstallPrompt", filePath: runtimeFile("./runtime/app/ui/PwaInstallPrompt.vue") });
     addComponent({ name: "PushToggle", filePath: runtimeFile("./runtime/app/ui/PushToggle.vue") });
   }
-  addServerImports([
-    { name: "sendPush", from: runtimeFile("./runtime/server/push/send-push") },
-    { name: "PushNotification", from: runtimeFile("./runtime/server/push/push-notification"), type: true },
-  ]);
   addServerHandler({
     route: "/api/push/subscribe",
     method: "post",

@@ -5,8 +5,12 @@ import { expect } from "@nuxvel/nuxt/testing";
 import { beforeAll, describe, it } from "vitest";
 import { playgroundDir, testBuildDir } from "./helpers/test-builds";
 
+type Import = { name: string; as?: string; from: string };
+
 const runtime = fileURLToPath(new URL("../src/runtime/", import.meta.url));
-const autoImportsDoc = fileURLToPath(new URL("../../../docs/auto-imports.md", import.meta.url));
+const publicImports = JSON.parse(
+  readFileSync(fileURLToPath(new URL("../src/public-imports.json", import.meta.url)), "utf8"),
+) as { name: string; side: string }[];
 
 async function nitroImports() {
   const nuxt = await loadNuxt({
@@ -14,7 +18,7 @@ async function nitroImports() {
     ready: false,
     overrides: { _prepare: true, buildDir: testBuildDir("server-imports") },
   });
-  let imports: { name: string; as?: string; from: string }[] = [];
+  let imports: Import[] = [];
 
   nuxt.hook("nitro:init", async (nitro) => {
     imports = (await nitro.unimport?.getImports()) ?? [];
@@ -26,93 +30,34 @@ async function nitroImports() {
 }
 
 describe("server auto-imports", () => {
+  let imports: Import[];
   let names: string[];
 
   beforeAll(async () => {
-    names = (await nitroImports())
-      .filter((entry) => entry.from.startsWith(runtime))
-      .map((entry) => entry.as ?? entry.name);
+    imports = await nitroImports();
+    names = imports.map((entry) => entry.as ?? entry.name);
   }, 120_000);
 
-  it("auto-imports the public server API", () => {
-    expect(names).toEqual(
-      expect.arrayContaining([
-        "useDb",
-        "currentLocale",
-        "transaction",
-        "defineAction",
-        "publicProcedure",
-        "authedProcedure",
-        "useCaller",
-        "defineJob",
-        "sendMailNow",
-        "can",
-        "JobName",
-        "SessionUser",
-      ]),
-    );
+  it("keeps Nitro's own names global", () => {
+    expect(names).toEqual(expect.arrayContaining(["defineEventHandler", "getQuery", "useRuntimeConfig", "useStorage"]));
   });
 
-  it("keeps nuxvel's internals out of the server's global scope", () => {
-    for (const internal of [
-      "handler",
-      "t",
-      "appRouter",
-      "errorFormatter",
-      "actorContext",
-      "requestIdContext",
-      "logActionCall",
-      "enqueueJob",
-      "installEffectReplacements",
-      "removeEffectReplacement",
-      "effectReplacement",
-      "publishObserved",
-      "subscribeObserved",
-      "findJob",
-      "findListener",
-      "findFlag",
-      "flagDefinitions",
-      "policyRegistry",
-      "ruleAllowsSystem",
-      "isRetryableJobError",
-      "isKnownTaxonomyError",
-      "countQueries",
-      "queryCountLogger",
-      "withUniqueViolationMapping",
-      "transactionContext",
-      "auth",
-      "SYSTEM_ACTOR_TYPE",
-      "API_KEY_ACTOR_TYPE",
-      "dispatchAfterCommit",
-      "broadcast",
-      "broadcastAfterCommit",
-      "sendMail",
-      "emit",
-      "notify",
-    ]) {
-      expect(names, internal).not.toContain(internal);
-    }
+  it("auto-imports no file of the nuxvel runtime", () => {
+    const fromNuxvel = imports.filter((entry) => entry.from.startsWith(runtime)).map((entry) => `${entry.as ?? entry.name} from ${entry.from}`);
+    expect(fromNuxvel).toEqual([]);
   });
 
-  it("leaves the clients whose types load an SDK to their subpaths", () => {
-    expect(names).not.toContain("useS3");
-    expect(names).not.toContain("useQueue");
-    expect(names).not.toContain("useRedis");
-    expect(names).not.toContain("useStripe");
-    expect(names).toContain("checkout");
-    expect(names).toContain("RedisPurpose");
+  it("auto-imports no name of the public import map", () => {
+    const leaked = publicImports.filter((entry) => names.includes(entry.name)).map((entry) => entry.name);
+    expect(leaked).toEqual([]);
   });
 
-  it("leaves the namespaces of the seeders and backfills to an explicit import", () => {
-    expect(names).not.toContain("$seeders");
-    expect(names).not.toContain("$backfills");
+  it("auto-imports no $<kind> namespace", () => {
+    expect(names.filter((name) => name.startsWith("$"))).toEqual([]);
   });
 
-  it("lists every server auto-import in docs/auto-imports.md", () => {
-    const documented = [
-      ...readFileSync(autoImportsDoc, "utf8").matchAll(/^\| `(\w+)` \|/gm),
-    ].map((match) => match[1]);
-
-    expect([...documented].sort()).toEqual([...new Set(names)].sort());
+  it("auto-imports no export of shared/schemas", () => {
+    const schemas = imports.filter((entry) => entry.from.includes("/shared/schemas/")).map((entry) => entry.name);
+    expect(schemas).toEqual([]);
   });
 });
