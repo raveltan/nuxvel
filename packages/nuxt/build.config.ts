@@ -12,6 +12,8 @@ const subpathEntries = [
   "src/database",
   "src/env",
   "src/migrations",
+  "src/runner/index",
+  "src/runner/nitro-shim",
   "src/factories",
   "src/storybook",
   "src/storybook-mocks",

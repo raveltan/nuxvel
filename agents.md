@@ -314,6 +314,17 @@ keep them correct and quick.
   `migrate()` of `@nuxvel/test-helpers/cli`, and opens its database
   connection with `scratchSql()` of `@nuxvel/test-helpers/sql`, which
   closes it when the test ends. Never spawn the CLI by hand.
+- The no-build runner (`loadApp()` of `@nuxvel/nuxt/runner`, internal)
+  loads the server code of a prepared app in the current process with the
+  Vite module runner. It needs `nuxt prepare`, which writes
+  `.nuxt/nuxvel/runtime-config.json`, `server-plugins.json` and
+  `tasks.json`, and it needs no `.output` folder. It runs `validate-env`
+  and `load-registries` first, so a definition imported from its file has
+  its name. Load every module of the app through `run(({ load }) => ...)`:
+  a module that Node imports another way is a second copy with its own
+  registries. The Nitro shim serves no request, so `useEvent()` throws.
+  `test/runner.test.ts` is the model: it writes a scratch app, runs
+  `nuxt prepare` once and calls `loadApp()`, with no build.
 - Type-level "fails to compile" checks belong in `npm run typecheck`
   (`test/type-fixtures`), not in a test that spawns `tsc`.
 - No fixed sleeps: wait on an event, a locator or fake timers.

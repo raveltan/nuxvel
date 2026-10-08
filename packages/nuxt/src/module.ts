@@ -37,6 +37,7 @@ import { reloadOnDefinitionChanges } from "./setup/dev-reload";
 import { allowUiThemeStyle } from "./setup/ui-theme-csp";
 import { configureNitro } from "./setup/nitro-config";
 import { addServerPlugins } from "./setup/server-plugins";
+import { writeRunnerFiles } from "./setup/runner-files";
 import { addTestRoutes } from "./setup/test-routes";
 import { addApiRoutes, addHealthRoutes } from "./setup/api-routes";
 import { setupDevtools } from "./setup/devtools";
@@ -652,6 +653,7 @@ export default defineNuxtModule<ModuleOptions>().with({
     if (options.ui) allowUiThemeStyle(nuxt);
 
     addServerPlugins(nuxt, options, runtimeFile);
+    writeRunnerFiles(nuxt);
     addTestRoutes(nuxt, runtimeFile, options.billing ?? false);
     addHealthRoutes(runtimeFile);
     await setupDevtools(nuxt, runtimeFile);
