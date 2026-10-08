@@ -54,6 +54,8 @@ import recordJob from "#server/jobs/_probe/record";
 import { welcomeMail } from "#server/mail/welcome.mail";
 import { welcomeNotification } from "#server/notifications/welcome.notification";
 import { databaseSeeder } from "#server/seeders/database.seeder";
+import { probeRolloutFlag } from "#server/flags/probe-rollout.flag";
+import { probeCtaExperiment } from "#server/flags/probe-cta.experiment";
 
 export async function fakeAssertionsTakeOnlyDefinedNames() {
   await expectQueued("_probe.record", { name: "typed" });
@@ -114,6 +116,7 @@ export async function errorAndLogAssertionsAreTyped() {
 
 export async function broadcastAssertionTakesOnlyDeclaredEvents() {
   const broadcast = await expectBroadcast("_probe-public", "from-job", { title: "typed" });
+  await expectBroadcast(testNamespaces.$channels._probePublic, "from-job", { title: "typed" });
   const broadcastIsTyped: IsAny<typeof broadcast.channel> extends true ? never : true = true;
 
   // @ts-expect-error _probe-public declares no event named missing
@@ -159,7 +162,7 @@ export async function jobFixturesTakeADefinition() {
 }
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
-type TestJobStub = typeof recordJob;
+type TestJobStub = typeof testNamespaces.$jobs._probe.record;
 type TestFlagStub = typeof testNamespaces.$flags;
 
 export const testJobStubIsTheDefinition: IsAny<TestJobStub> extends true ? never : TestJobStub extends typeof recordJob ? true : never = true;
@@ -167,16 +170,22 @@ export const testFlagStubsAreTyped: IsAny<TestFlagStub> extends true ? never : t
 
 export async function jobFixturesTakeATestStub() {
   await runJob(recordJob, { name: "typed" });
+  await runJob(testNamespaces.$jobs._probe.record, { name: "typed" });
   await expectQueued(namedExportJob, { name: "typed" });
 
   // @ts-expect-error the definition's input takes a string name
   await runJob(recordJob, { name: 1 });
+
+  // @ts-expect-error the stub's input takes a string name
+  await runJob(testNamespaces.$jobs._probe.record, { name: 1 });
 }
 
 export async function mailFixturesTakeADefinitionOrATestStub() {
   await renderMail(welcomeMail, { to: "ada@example.com", name: "Ada" });
+  await renderMail(testNamespaces.$mails.welcome, { to: "ada@example.com", name: "Ada" });
   await expectMailSent(welcomeMail, { to: "ada@example.com" });
   await expectMailSent(welcomeMail, { name: "Ada" });
+  await expectMailSent(testNamespaces.$mails.welcome, { name: "Ada" });
   await expectNoMailSent(welcomeMail);
 
   const sent: { to: string; name: string } = await expectMailSent("welcome");
@@ -185,6 +194,8 @@ export async function mailFixturesTakeADefinitionOrATestStub() {
 
   // @ts-expect-error the definition's input needs a name
   await renderMail(welcomeMail, { to: "ada@example.com" });
+  // @ts-expect-error the stub's input needs a name
+  await renderMail(testNamespaces.$mails.welcome, { to: "ada@example.com" });
   // @ts-expect-error the definition's name is a string
   await expectMailSent(welcomeMail, { name: 1 });
 }
@@ -192,11 +203,14 @@ export async function mailFixturesTakeADefinitionOrATestStub() {
 export async function notificationFixturesTakeADefinitionOrATestStub() {
   await sendNotification({ id: "user-1" }, welcomeNotification, { name: "Ada" });
   await sendNotification([{ id: "user-1" }], welcomeNotification, { name: "Ada" });
+  await sendNotification([{ id: "user-1" }], testNamespaces.$notifications.welcome, { name: "Ada" });
   await expectNotified({ id: "user-1" }, welcomeNotification, { title: "Welcome, Ada" });
   await expectNotNotified({ id: "user-1" }, welcomeNotification);
 
   // @ts-expect-error the definition's data needs a name
   await sendNotification({ id: "user-1" }, welcomeNotification, {});
+  // @ts-expect-error the stub's data needs a name
+  await sendNotification({ id: "user-1" }, testNamespaces.$notifications.welcome, {});
   // @ts-expect-error the definition's name is a string
   await sendNotification({ id: "user-1" }, welcomeNotification, { name: 1 });
 }
@@ -354,9 +368,9 @@ export async function runActionIsTypedByTheAction(author: { id: string }) {
 
 export async function flagFixturesTakeADefinitionOrATestStub() {
   await setFlagTargeting(testNamespaces.$flags.probeRollout, { percentage: 100 });
-  await setFlagTargeting($flags.probeRollout, { percentage: 100 });
+  await setFlagTargeting(probeRolloutFlag, { percentage: 100 });
   await startExperiment(testNamespaces.$experiments.probeCta);
-  await stopExperiment($experiments.probeCta);
+  await stopExperiment(probeCtaExperiment);
 
   // @ts-expect-error probe-cta is an experiment, not a flag
   await setFlagTargeting(testNamespaces.$experiments.probeCta, { percentage: 100 });
@@ -366,13 +380,20 @@ export async function flagFixturesTakeADefinitionOrATestStub() {
 
 export async function backfillAndSeederFixturesTakeADefinitionOrATestStub() {
   await runBackfill(_probeNamesBackfill);
+  await runBackfill(testNamespaces.$backfills._probeNames);
   await runSeeder(postsSeeder);
+  await runSeeder(testNamespaces.$seeders._probe.posts);
   await runSeeder(databaseSeeder);
 
   // @ts-expect-error a seeder is not a backfill
   await runBackfill(databaseSeeder);
+  // @ts-expect-error a seeder is not a backfill
+  await runBackfill(testNamespaces.$seeders.database);
   // @ts-expect-error a rate limit is not a seeder
   await runSeeder(loginRateLimit);
+
+  // @ts-expect-error a rate limit is not a seeder
+  await runSeeder(testNamespaces.$rateLimits.login);
 }
 
 export async function flagFixturesTakeOnlyDefinedNames() {
@@ -418,6 +439,7 @@ export async function canTakesOnlyDefinedRules() {
 
 export async function exhaustRateLimitTakesOnlyDefinedLimits() {
   await exhaustRateLimit("login", { ip: "127.0.0.1" });
+  await exhaustRateLimit(testNamespaces.$rateLimits.login, { ip: "127.0.0.1" });
   await exhaustRateLimit("login", "ip:127.0.0.1");
   await exhaustRateLimit(guest().api._rateLimitCheck.byKey);
 

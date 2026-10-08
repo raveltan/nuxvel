@@ -1,4 +1,6 @@
 import { defineFlag, experiment, flag, setFlagTargeting, startExperiment } from "@nuxvel/nuxt/server/flags";
+import { probeCtaExperiment } from "#server/flags/probe-cta.experiment";
+import { probeRolloutFlag } from "#server/flags/probe-rollout.flag";
 
 const USERS = Array.from({ length: 200 }, (_, index) => ({
   id: `flag-user-${index}`,
@@ -22,9 +24,9 @@ export default defineEventHandler(async () => {
 
   await setFlagTargeting("probe-rollout", { percentage: 30 });
   const atThirty = await share((user) => flag("probe-rollout", user));
-  const atThirtyAgain = await share((user) => flag($flags.probeRollout, user));
+  const atThirtyAgain = await share((user) => flag(probeRolloutFlag, user));
 
-  await setFlagTargeting($flags.probeRollout, { roles: { "beta-tester": true } });
+  await setFlagTargeting(probeRolloutFlag, { roles: { "beta-tester": true } });
   const roleTargeted = await Promise.all(
     USERS.slice(0, 4).map(async (user) => ({
       role: user.role,
@@ -36,13 +38,13 @@ export default defineEventHandler(async () => {
     USERS.map((user) => experiment("probe-cta", user)),
   );
 
-  await startExperiment($experiments.probeCta);
+  await startExperiment(probeCtaExperiment);
 
   const variants = await Promise.all(
     USERS.map((user) => experiment("probe-cta", user)),
   );
   const repeated = await Promise.all(
-    USERS.map((user) => experiment($experiments.probeCta, user)),
+    USERS.map((user) => experiment(probeCtaExperiment, user)),
   );
 
   return {

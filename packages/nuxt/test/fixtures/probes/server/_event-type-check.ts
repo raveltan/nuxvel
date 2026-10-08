@@ -5,6 +5,7 @@ import {
   expectListenerRan,
   runListener,
 } from "@nuxvel/nuxt/testing";
+import * as testNamespaces from "#build/nuxvel/test-namespaces.mjs";
 import { probeTransformed } from "~~/server/events/_probe/transformed";
 import { probeHappened } from "#server/events/_probe/happened";
 import _recordProbeSyncListener from "#server/listeners/_record-probe-sync";
@@ -61,14 +62,20 @@ export const listenersNamespaceIsTyped: IsAny<NamespacedListener> extends true ?
 
 export async function eventFixturesTakeADefinitionOrATestStub() {
   await emitInTest(probeTransformed, { names: "a,b" });
+  await emitInTest(testNamespaces.$events._probe.transformed, { names: "a,b" });
   await expectEmitted(probeTransformed, { names: ["a", "b"] });
+  await expectEmitted(testNamespaces.$events._probe.transformed, { names: ["a", "b"] });
   await expectEmitted(probeHappened);
   await runListener(_recordProbeQueuedListener, { name: "typed" });
+  await runListener(testNamespaces.$listeners._recordProbeQueued, { name: "typed" });
   await expectListenerRan(_recordProbeSyncListener);
   await expectListenerQueued(_recordProbeQueuedListener);
+  await expectListenerQueued(testNamespaces.$listeners._recordProbeQueued);
 
   // @ts-expect-error the test emit takes the schema's input, not its parsed output
   await emitInTest(probeTransformed, { names: ["a", "b"] });
+  // @ts-expect-error the test emit takes the schema's input, not its parsed output
+  await emitInTest(testNamespaces.$events._probe.transformed, { names: ["a", "b"] });
   // @ts-expect-error expectEmitted matches the parsed payload
   await expectEmitted(probeTransformed, { names: "a,b" });
 }

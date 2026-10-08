@@ -1,5 +1,8 @@
 import { experiment, experimentReport, experimentState, flag, flagTargeting, setFlagTargeting, startExperiment, stopExperiment, track } from "@nuxvel/nuxt/server/flags";
 import type { Flag } from "@nuxvel/nuxt/server/flags";
+import * as testNamespaces from "#build/nuxvel/test-namespaces.mjs";
+import { probeCtaExperiment } from "#server/flags/probe-cta.experiment";
+import { probeRolloutFlag } from "#server/flags/probe-rollout.flag";
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
@@ -51,31 +54,31 @@ export async function managesOnlyDefinedFlags() {
 }
 
 export async function takesADefinition() {
-  const on: boolean = await flag($flags.probeRollout);
-  const variant: "control" | "green" = await experiment($experiments.probeCta);
+  const on: boolean = await flag(probeRolloutFlag);
+  const variant: "control" | "green" = await experiment(probeCtaExperiment);
 
-  await flagTargeting($flags.probeRollout);
-  await setFlagTargeting($flags.probeRollout, { percentage: 10 });
-  await experimentState($experiments.probeCta);
-  await startExperiment($experiments.probeCta);
-  await stopExperiment($experiments.probeCta);
+  await flagTargeting(probeRolloutFlag);
+  await setFlagTargeting(probeRolloutFlag, { percentage: 10 });
+  await experimentState(probeCtaExperiment);
+  await startExperiment(probeCtaExperiment);
+  await stopExperiment(probeCtaExperiment);
 
   // @ts-expect-error probe-cta is an experiment, not a flag
-  await flag($experiments.probeCta);
+  await flag(probeCtaExperiment);
   // @ts-expect-error probe-cta is an experiment, not a flag
-  await setFlagTargeting($experiments.probeCta, { percentage: 10 });
+  await setFlagTargeting(probeCtaExperiment, { percentage: 10 });
   // @ts-expect-error probe-rollout is a flag, not an experiment
-  await experiment($flags.probeRollout);
+  await experiment(probeRolloutFlag);
   // @ts-expect-error probe-rollout is a flag, not an experiment
-  await startExperiment($flags.probeRollout);
+  await startExperiment(probeRolloutFlag);
   // @ts-expect-error the variant of probe-cta is control or green
-  const blue: "blue" = await experiment($experiments.probeCta);
+  const blue: "blue" = await experiment(probeCtaExperiment);
 
   return { on, variant, blue };
 }
 
-type NamespacedFlag = typeof $flags.probeRollout;
-type NamespacedExperiment = typeof $experiments.probeCta;
+type NamespacedFlag = typeof testNamespaces.$flags.probeRollout;
+type NamespacedExperiment = typeof testNamespaces.$experiments.probeCta;
 
 export const flagsNamespaceIsTyped: IsAny<NamespacedFlag> extends true ? never : NamespacedFlag extends Flag ? true : never = true;
 export const experimentsNamespaceIsTyped: IsAny<NamespacedExperiment> extends true
@@ -84,4 +87,4 @@ export const experimentsNamespaceIsTyped: IsAny<NamespacedExperiment> extends tr
     ? true
     : never = true;
 // @ts-expect-error an experiment is in $experiments, not in $flags
-export const experimentIsNotAFlag = $flags.probeCta;
+export const experimentIsNotAFlag = testNamespaces.$flags.probeCta;
