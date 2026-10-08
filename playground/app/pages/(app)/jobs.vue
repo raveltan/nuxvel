@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { $api } from "@nuxvel/nuxt/app/api";
+import { useJobChannel } from "@nuxvel/nuxt/app/realtime";
+import { DateTime } from "@nuxvel/nuxt/app/ui";
+
 const { status, progress, result, error } = useJobChannel("demo.countdown");
 const countdown = $api.jobs.startCountdown.useMutation();
 

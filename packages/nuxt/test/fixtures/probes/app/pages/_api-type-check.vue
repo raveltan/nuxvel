@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { $api, QueryState } from "@nuxvel/nuxt/app/api";
+
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
 function typed<T>(value: IsAny<T> extends true ? never : T) {

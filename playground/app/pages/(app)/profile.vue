@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import { $api, QueryState } from "@nuxvel/nuxt/app/api";
+import { useActionForm } from "@nuxvel/nuxt/app/forms";
+import { PushToggle } from "@nuxvel/nuxt/app/pwa";
+import { UploadField } from "@nuxvel/nuxt/app/storage";
+
 const me = $api.profile.me.useQuery();
 
 const avatarForm = useActionForm($api.profile.setAvatar, {

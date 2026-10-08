@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { $api } from "@nuxvel/nuxt/app/api";
+import { ActionForm } from "@nuxvel/nuxt/app/forms";
+
 const sent = ref("");
 </script>
 

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useUser } from "@nuxvel/nuxt/app/auth";
+import { NotificationBell } from "@nuxvel/nuxt/app/notifications";
+
 const { user, signOut } = useUser();
 
 async function signOutAndLeave() {

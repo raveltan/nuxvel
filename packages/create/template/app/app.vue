@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useUiLocale } from "@nuxvel/nuxt/app/ui";
+
 const uiLocale = useUiLocale();
 </script>
 

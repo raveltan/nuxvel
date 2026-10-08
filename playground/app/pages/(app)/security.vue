@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { QueryState } from "@nuxvel/nuxt/app/api";
+import { useChangeEmail, useSessions, useTwoFactor, useUser } from "@nuxvel/nuxt/app/auth";
+import { DateTime } from "@nuxvel/nuxt/app/ui";
+
 const { user } = useUser();
 const { list: sessions, revoke } = useSessions();
 const changeEmail = useChangeEmail();

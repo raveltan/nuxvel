@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { $api, QueryState } from "@nuxvel/nuxt/app/api";
+import { useSeo } from "@nuxvel/nuxt/app/seo";
+
 const route = useRoute();
 const post = $api.post.byId.useQuery({ id: Number(route.params.id) });
 

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { ModalProps } from "@nuxt/ui";
+import { $api } from "@nuxvel/nuxt/app/api";
+import { UploadField } from "@nuxvel/nuxt/app/storage";
+import { DataTable, useConfirm } from "@nuxvel/nuxt/app/ui";
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 

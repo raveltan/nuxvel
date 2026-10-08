@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import { useUser } from "@nuxvel/nuxt/app/auth";
+import { MaintenanceBanner } from "@nuxvel/nuxt/app/maintenance";
+import { NotificationBell } from "@nuxvel/nuxt/app/notifications";
+import { PushToggle, PwaInstallPrompt } from "@nuxvel/nuxt/app/pwa";
+
 const { user, signOut } = useUser();
 const { ts, localeRoute } = useI18n();
 const DevEnvStrip = import.meta.dev ? defineAsyncComponent(() => import("~/components/DevEnvStrip.vue")) : null;

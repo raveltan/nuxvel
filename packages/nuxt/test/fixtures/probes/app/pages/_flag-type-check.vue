@@ -1,10 +1,16 @@
 <script setup lang="ts">
+import { useExperiment, useFlag } from "@nuxvel/nuxt/app/flags";
+
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
 const rollout = useFlag("probe-rollout");
-const stubbed = useFlag($flags.probeRollout);
+const stubbed = useFlag("probe-rollout");
+// @ts-expect-error no flag is named probe-missing
+useFlag("probe-missing");
 const cta = useExperiment("probe-cta");
-const stubbedCta = useExperiment($experiments.probeCta);
+const stubbedCta = useExperiment("probe-cta");
+// @ts-expect-error no experiment is named probe-missing
+useExperiment("probe-missing");
 
 type FlagNameArg = Parameters<typeof useFlag>[0];
 
@@ -18,9 +24,9 @@ const flagValueIsBoolean: IsAny<typeof rollout.value> extends true
   : typeof rollout.value extends boolean
     ? true
     : never = true;
-const stubIsTyped: IsAny<typeof $flags.probeRollout> extends true
+const stubIsTyped: IsAny<FlagNameArg> extends true
   ? never
-  : typeof $flags.probeRollout extends FlagNameArg
+  : "probe-rollout" extends FlagNameArg
     ? true
     : never = true;
 const variantIsTyped: IsAny<typeof cta.value> extends true

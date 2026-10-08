@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { TypingIndicator } from "@nuxvel/nuxt/app/realtime";
+import { useConfirm } from "@nuxvel/nuxt/app/ui";
+
 const confirm = useConfirm();
 const typing = [
   { userId: "ada", name: "Ada", state: { typing: true }, connections: 1 },

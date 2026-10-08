@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { $api } from "@nuxvel/nuxt/app/api";
+
 if (import.meta.client) inject("browser-problems-probe-missing");
 
 function explode() {

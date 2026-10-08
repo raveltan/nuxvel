@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { Ref } from "vue";
+import { $api, useLiveQuery } from "@nuxvel/nuxt/app/api";
+import type { LiveQueryUpdates } from "@nuxvel/nuxt/app/api";
+import type { Paginated } from "@nuxvel/nuxt/shared/pagination";
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 

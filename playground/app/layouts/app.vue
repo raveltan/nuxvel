@@ -1,3 +1,7 @@
+<script setup lang="ts">
+import { MaintenanceBanner } from "@nuxvel/nuxt/app/maintenance";
+</script>
+
 <template>
   <div class="flex min-h-screen flex-col">
     <MaintenanceBanner />

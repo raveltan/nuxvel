@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { RouterOutputs } from "@nuxvel/nuxt/app/api";
+
 defineProps<{ post: Pick<RouterOutputs["post"]["byId"], "id" | "title" | "can"> }>();
 const emit = defineEmits<{ delete: [] }>();
 </script>

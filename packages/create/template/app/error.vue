@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { NuxtError } from "#app";
+import { Maintenance, isMaintenanceError } from "@nuxvel/nuxt/app/maintenance";
+import { useUiLocale } from "@nuxvel/nuxt/app/ui";
 
 const props = defineProps<{ error: NuxtError }>();
 

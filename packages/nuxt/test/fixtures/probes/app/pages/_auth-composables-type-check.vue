@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { unwrapAuth, useChangeEmail, useResendVerification, useSessions, useTwoFactor } from "@nuxvel/nuxt/app/auth";
+
 type IsAny<T> = 0 extends 1 & T ? true : false;
 type Typed<T, Expected> = IsAny<T> extends true ? never : T extends Expected ? true : never;
 

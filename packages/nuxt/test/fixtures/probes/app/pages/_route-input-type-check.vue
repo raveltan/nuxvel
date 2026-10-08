@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { z } from "zod";
+import { useRouteInput } from "@nuxvel/nuxt/app/ui";
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 

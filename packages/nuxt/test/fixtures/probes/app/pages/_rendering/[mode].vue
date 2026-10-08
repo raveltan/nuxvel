@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useUser } from "@nuxvel/nuxt/app/auth";
+
 const mode = String(useRoute().params.mode);
 const { user } = useUser();
 

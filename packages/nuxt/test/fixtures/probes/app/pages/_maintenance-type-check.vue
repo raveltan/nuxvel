@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { isMaintenanceError, useMaintenance } from "@nuxvel/nuxt/app/maintenance";
+
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
 const maintenance = useMaintenance();

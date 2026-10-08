@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { $api } from "@nuxvel/nuxt/app/api";
+import { useActionForm } from "@nuxvel/nuxt/app/forms";
+
 const form = useActionForm($api.post.create, {
   defaults: { title: "", body: "" },
   toast: "Post added",

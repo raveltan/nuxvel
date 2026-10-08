@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { $api, QueryState } from "@nuxvel/nuxt/app/api";
+import { DateTime } from "@nuxvel/nuxt/app/ui";
+
 const posts = $api.account.posts.useQuery();
 
 const columns = [

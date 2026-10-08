@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { $api } from "@nuxvel/nuxt/app/api";
+
 const posts = $api.post.list.useQuery();
 const deletePost = $api.post.delete.useMutation();
 </script>

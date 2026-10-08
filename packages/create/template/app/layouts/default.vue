@@ -1,3 +1,9 @@
+<script setup lang="ts">
+import { MaintenanceBanner } from "@nuxvel/nuxt/app/maintenance";
+import { NotificationBell } from "@nuxvel/nuxt/app/notifications";
+import { PwaInstallPrompt } from "@nuxvel/nuxt/app/pwa";
+</script>
+
 <template>
   <div class="flex min-h-screen flex-col">
     <MaintenanceBanner />

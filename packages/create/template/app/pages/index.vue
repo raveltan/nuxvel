@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useUser } from "@nuxvel/nuxt/app/auth";
+import { useSeo } from "@nuxvel/nuxt/app/seo";
+
 definePageMeta({ layout: "home" });
 const { user } = useUser();
 const { ts } = useI18n();

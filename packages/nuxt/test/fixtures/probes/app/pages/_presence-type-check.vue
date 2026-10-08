@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { PresenceAvatars, TypingIndicator, usePresence } from "@nuxvel/nuxt/app/realtime";
+
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
 const { members, setState } = usePresence("posts", { params: { id: 1 } });
@@ -24,7 +26,7 @@ usePresence("_probe-public");
 // @ts-expect-error the room goes in params
 usePresence("posts", { id: 1 });
 
-const stubbed = usePresence($channels.posts, { params: { id: 1 } });
+const stubbed = usePresence("posts", { params: { id: 1 } });
 
 type StubbedState = (typeof stubbed.members.value)[number]["state"];
 
@@ -36,9 +38,6 @@ const stubIsTyped: IsAny<StubbedState> extends true
 
 // @ts-expect-error typing is a boolean
 stubbed.setState({ typing: "yes" });
-
-// @ts-expect-error the _probe-public channel does not set presence
-usePresence($channels._probePublic);
 </script>
 
 <template>

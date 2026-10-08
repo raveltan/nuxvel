@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { authClient, useUser } from "@nuxvel/nuxt/app/auth";
+
 const { getLocales, getLocale, switchLocale } = useI18n();
 const { user } = useUser();
 

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useExperiment, useFlag } from "@nuxvel/nuxt/app/flags";
+
 const rollout = useFlag("probe-rollout");
 const cta = useExperiment("probe-cta");
 </script>

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { $api } from "@nuxvel/nuxt/app/api";
+
 const mounted = ref(false);
 const { data: rendered } = useQuery($api._localeCheck.current.queryOptions());
 const { data: browser } = useQuery({ ...$api._localeCheck.current.queryOptions(), key: ["_request-locale-browser"], enabled: () => mounted.value });

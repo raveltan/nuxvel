@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useResendVerification } from "@nuxvel/nuxt/app/auth";
+
 const route = useRoute();
 const email = typeof route.query.email === "string" ? route.query.email : "";
 const resend = useResendVerification(email);

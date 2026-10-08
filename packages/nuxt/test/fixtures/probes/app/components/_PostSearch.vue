@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { $api } from "@nuxvel/nuxt/app/api";
+
 const search = ref("");
 const q = ref("");
 let pending: ReturnType<typeof setTimeout> | undefined;

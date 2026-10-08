@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { $api, useLiveQuery } from "@nuxvel/nuxt/app/api";
+import { DataTable, removeRow, useRouteInput } from "@nuxvel/nuxt/app/ui";
+import { paginationSchema } from "@nuxvel/nuxt/shared/pagination";
+
 const { query: input } = useRouteInput({ query: paginationSchema });
 
 const posts = useLiveQuery(() => $api.post.list.queryOptions(input.value), {

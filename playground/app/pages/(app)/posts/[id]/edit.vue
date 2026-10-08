@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { $api, QueryState } from "@nuxvel/nuxt/app/api";
+import { useUser } from "@nuxvel/nuxt/app/auth";
+import { PresenceAvatars, TypingIndicator, usePresence } from "@nuxvel/nuxt/app/realtime";
+
 const route = useRoute();
 const id = Number(route.params.id);
 const post = $api.post.byId.useQuery({ id });

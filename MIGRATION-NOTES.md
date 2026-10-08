@@ -211,3 +211,33 @@ export const postPublishedNotification = defineNotification({
   toMail: ({ postId }) => ({ mail: postPublishedMail, input: { postId } }),
 });
 ```
+
+## A type probe that reads a client namespace
+
+The `explicit-imports` codemod rewrites `useFlag($flags.probeRollout)` to
+`useFlag("probe-rollout")`. It does not rewrite `typeof $flags.probeRollout`
+in a type position. Use the string name in the type probe.
+
+Before:
+
+```ts
+const stubIsTyped: IsAny<typeof $flags.probeRollout> extends true
+  ? never
+  : typeof $flags.probeRollout extends FlagNameArg
+    ? true
+    : never = true;
+```
+
+After:
+
+```ts
+const stubIsTyped: IsAny<FlagNameArg> extends true
+  ? never
+  : "probe-rollout" extends FlagNameArg
+    ? true
+    : never = true;
+```
+
+Add a negative check beside it. Put `// @ts-expect-error` above a call with
+a name that no definition has, such as `useFlag("probe-missing")`.
+

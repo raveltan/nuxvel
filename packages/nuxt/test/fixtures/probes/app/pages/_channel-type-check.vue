@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useChannel } from "@nuxvel/nuxt/app/realtime";
+
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
 const { events, status } = useChannel("_probe-public");
@@ -23,7 +25,7 @@ type Expected = "connecting" | "open" | "reconnecting" | "closed";
 
 const statusIsTyped: [Status] extends [Expected] ? ([Expected] extends [Status] ? true : never) : never = true;
 
-const stubbed = useChannel($channels.posts);
+const stubbed = useChannel("posts");
 
 type StubbedMessage = (typeof stubbed.events.value)[number];
 
@@ -38,7 +40,7 @@ useChannel("probe-missing");
 
 const room = useChannel("_probe-board", { params: { boardId: 1 }, limit: 10 });
 
-useChannel($channels._probeBoard, { params: { boardId: "1" } });
+useChannel("_probe-board", { params: { boardId: "1" } });
 useChannel("_probe-board");
 
 type RoomMessage = (typeof room.events.value)[number];
@@ -51,8 +53,6 @@ const roomIsTyped: IsAny<RoomMessage> extends true
 
 // @ts-expect-error _probe-board names boardId, not board
 useChannel("_probe-board", { params: { board: 1 } });
-// @ts-expect-error _probe-board names boardId, not board
-useChannel($channels._probeBoard, { params: { board: 1 } });
 // @ts-expect-error _probe-public names no params
 useChannel("_probe-public", { params: { id: 1 } });
 </script>

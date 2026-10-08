@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useJobChannel } from "@nuxvel/nuxt/app/realtime";
+
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
 const { events } = useJobChannel("demo.countdown");
@@ -20,7 +22,7 @@ const resultIsTyped: IsAny<Completed> extends true
 // @ts-expect-error probe.record has no channel
 useJobChannel("_probe.record");
 
-const stubbed = useJobChannel($jobs.demo.countdown);
+const stubbed = useJobChannel("demo.countdown");
 
 type StubbedCompleted = Extract<(typeof stubbed.events.value)[number], { event: "completed" }>["payload"]["result"];
 
@@ -29,9 +31,6 @@ const stubIsTyped: IsAny<StubbedCompleted> extends true
   : StubbedCompleted extends { finishedAt: Date }
     ? true
     : never = true;
-
-// @ts-expect-error probe.record has no channel
-useJobChannel($jobs._probe.record);
 
 const countdown = useJobChannel("demo.countdown");
 

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { UploadField, useUpload } from "@nuxvel/nuxt/app/storage";
+
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
 function requestUpload() {

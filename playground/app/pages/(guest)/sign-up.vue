@@ -1,3 +1,7 @@
+<script setup lang="ts">
+import { AuthForm } from "@nuxvel/nuxt/app/auth";
+</script>
+
 <template>
   <h1 class="mb-4 text-lg font-semibold">Sign up</h1>
   <AuthForm mode="sign-up" />

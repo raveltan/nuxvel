@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useUser } from "@nuxvel/nuxt/app/auth";
+
 const { user, isPending, signOut } = useUser();
 const { ts, localeRoute } = useI18n();
 

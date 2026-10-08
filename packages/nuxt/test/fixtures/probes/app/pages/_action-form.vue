@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { $api } from "@nuxvel/nuxt/app/api";
+import { useActionForm } from "@nuxvel/nuxt/app/forms";
+
 const created = ref<string>();
 const form = useActionForm($api.tag.create, {
   defaults: { name: "" },

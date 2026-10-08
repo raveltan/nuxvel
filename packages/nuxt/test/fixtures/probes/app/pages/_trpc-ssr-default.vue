@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { $api, QueryState } from "@nuxvel/nuxt/app/api";
+
 const route = useRoute();
 const name = route.query.name === "UnknownError" ? "UnknownError" : "NotFoundError";
 const failing = useQuery({ ...$api._taxonomyCheck.throwError.queryOptions(name) });
