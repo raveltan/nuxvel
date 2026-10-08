@@ -38,7 +38,7 @@ describe("nuxvel tinker", () => {
         'const post = await createPostAction({ title: "Tinkered", body: "From the REPL" }, { actor: userActor({ id: "tinker-user", role: "user" }) });',
         'console.log("created", post.title);',
         'console.log("factoried", (await postFactory({ title: "Factoried", authorId: "tinker-user" })).title);',
-        'console.log("realtime globals", typeof $channels.posts.broadcast, typeof defineChannel, typeof holdStream);',
+        'console.log("realtime globals", typeof postsChannel.broadcast, typeof defineChannel, typeof holdStream, typeof $channels);',
         'const [check] = await useDb().insert(healthChecksTable).values({ name: "probe", userId: "tinker-user" }).returning();',
         'const owned = await updateHealthCheckAction({ id: check.id, name: "owned" }, { actor: userActor({ id: "tinker-user", role: "user" }) });',
         'const denied = await updateHealthCheckAction({ id: check.id, name: "denied" }, { actor: userActor({ id: "other", role: "user" }) }).catch((error) => error.code);',
@@ -52,7 +52,7 @@ describe("nuxvel tinker", () => {
     expect(exitCode, stdout).toBe(0);
     expect(stdout).toContain("created Tinkered");
     expect(stdout).toContain("factoried Factoried");
-    expect(stdout).toContain("realtime globals function function undefined");
+    expect(stdout).toContain("realtime globals function function undefined undefined");
     expect(stdout).toContain("user probe owned FORBIDDEN");
 
     const sql = scratchSql(databaseUrl);
@@ -84,12 +84,28 @@ describe("nuxvel tinker", () => {
     expect(directorySnapshot(join(appDir, ".nuxt"))).toEqual(types);
   }, 60000);
 
-  it("tinker completes the tRPC caller, factories and auto-imports on Tab, lists tables, routes and jobs, prints results deeply, and keeps a history file", async () => {
+  it("tinker has every nuxvel server value and every app definition in scope, and no namespace", async () => {
+    const { stdout, exitCode } = await runCliWithInput(
+      playground,
+      [
+        'const names = ["useDb", "defineAction", "userActor", "createPostAction", "postNotifyFollowersJob", "welcomeMail", "postsChannel", "postPolicy", "databaseSeeder"];',
+        'console.log("in scope", names.filter((name) => globalThis[name] === undefined).length, typeof createPostAction, typeof $actions, typeof $mails);',
+        "",
+      ].join("\n"),
+      bootEnv,
+      "tinker",
+    );
+
+    expect(exitCode, stdout).toBe(0);
+    expect(stdout).toContain("in scope 0 function undefined undefined");
+  }, 60000);
+
+  it("tinker completes the tRPC caller, factories and nuxvel names on Tab, lists tables, routes and jobs, prints results deeply, and keeps a history file", async () => {
     const appDir = playground;
     const history = join(appDir, ".nuxvel", "tinker-history");
     rmSync(history, { force: true });
 
-    const tinker = startCli(appDir, ["tinker"], { env: bootEnv, stdin: "pipe" });
+    const tinker = startCli(appDir, ["tinker"], { env: { ...bootEnv, TERM: "xterm" }, stdin: "pipe" });
     const exited = new Promise((resolve) => tinker.child.on("exit", resolve));
     const send = async (text: string, shown: string) => {
       tinker.child.stdin?.write(text);
@@ -194,6 +210,7 @@ describe("nuxvel tinker", () => {
     writeFileSync(
       join(appDir, "server/utils/count-health-checks.ts"),
       [
+        'import { useDb } from "@nuxvel/nuxt/server/database";',
         'import { healthChecksTable } from "~~/server/database/schema/health-check.schema";',
         "",
         "export async function countHealthChecks() {",

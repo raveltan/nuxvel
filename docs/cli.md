@@ -512,26 +512,29 @@ nuxvel tinker [env] [--force]
 `nuxvel tinker` opens a REPL inside the Nitro server of the app. With an environment, such as `nuxvel tinker production`, it opens it on the server instead, over SSH as the deploy user, in the live release with `shared/.env`, `shared/owner.env` and the environment of the pm2 processes (`NODE_ENV=production`, and the erasure log command, so `eraseUserData()` writes the erasure log). It asks first, because what you run there changes the live data. `--force` skips the question. Without a terminal, the command refuses unless you pass `--force`. See [Deploying to a VPS](./deploy.md#logs-status-and-a-shell). These are in scope with no imports:
 
 - The schema tables, one by one and as `schema`.
-- Every server auto-import that Nitro knows: the [nuxvel ones](./auto-imports.md) such as `useDb()`, `$mails`, `$channels` and `useBucket()`, those of Nitro, h3 and other modules, and the `server/utils` and `shared/` of the app.
-- Every export of the files under `server/actions/`.
+- Every server value of the [nuxvel public imports](./auto-imports.md), under its own name: `useDb()`, `defineAction()`, `userActor()`, `sendMailNow()`, `useBucket()` and the others. Types are not in scope, because the input is JavaScript.
+- Every export of the files under `server/actions/`, `server/jobs/`, `server/mail/`, `server/channels/`, `server/events/`, `server/notifications/`, `server/policies/` and `server/seeders/`, under its export name, such as `createPostAction` or `welcomeMail`. The `default` export is not in scope.
 - Every export of the files under `server/factories/`, such as `postFactory`.
+- The server names of Nitro itself, such as `defineTask()` and `useRuntimeConfig()`, and the `server/utils` of the app.
 - `trpc`, the in-process caller of the app router that [`useCaller()`](./api.md) returns.
+
+The `$kind` namespaces, such as `$mails` and `$channels`, are not in scope. Use the definition by its export name.
 
 ```
 nuxvel> const post = await createPostAction({ title: "Hi", body: "There" }, { actor: userActor({ id, role: "user" }) })
 nuxvel> await useDb().select().from(postTable)
 nuxvel> await postFactory({ title: "Seeded" })
 nuxvel> await trpc.post.list()
-nuxvel> await $mails.welcome.send({ to: "ada@example.com", name: "Ada" })
+nuxvel> await welcomeMail.send({ to: "ada@example.com", name: "Ada" })
 ```
 
 `trpc` has no session. A procedure behind `authedProcedure` throws `UNAUTHORIZED` there. Call the action with an actor instead.
 
-Outside a transaction, an awaited `$mails.x.send()` or `$jobs.x.dispatch()` has written its outbox row when it returns.
+Outside a transaction, an awaited `welcomeMail.send()` or `postNotifyFollowersJob.dispatch()` writes its outbox row before it returns.
 
 #### Completion
 
-Press Tab to complete a name. Tab completes the tables, the auto-imports, the actions and the factories. After `trpc.`, Tab completes the routers and then their procedures. For example, `trpc.post.withA` and Tab gives `trpc.post.withAuthors`. When more than one name matches, a second Tab lists them.
+Press Tab to complete a name. Tab completes the tables, the nuxvel names, the app definitions and the factories. After `trpc.`, Tab completes the routers and then their procedures. For example, `trpc.post.withA` and Tab gives `trpc.post.withAuthors`. When more than one name matches, a second Tab lists them.
 
 #### Listing commands
 

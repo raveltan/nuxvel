@@ -11,9 +11,9 @@ import { allJobs } from "../jobs/registry";
 import { observeRun } from "../observe/channels";
 import { useCaller } from "../trpc/use-caller";
 import { appProcedures } from "./routes";
-import { actionModules } from "#nuxvel/actions";
 import * as factories from "#nuxvel/factories";
 import nitroRoutes from "#nuxvel/nitro-routes";
+import tinkerScope from "#nuxvel/tinker-scope";
 import * as schema from "#nuxvel/schema";
 
 const MAX_LABEL = 80;
@@ -87,7 +87,7 @@ function defineListings(repl: REPLServer) {
 
 export async function runTinker(): Promise<number> {
   // unimport rewrites static imports from #imports into the names they use, which leaves a namespace import empty
-  const autoImports = await import("#imports");
+  const nitroNames = await import("#imports");
   const colors = process.stdout.isTTY === true;
   configureFactories({ db: useDb });
   await mkdir(".nuxvel", { recursive: true });
@@ -103,7 +103,7 @@ export async function runTinker(): Promise<number> {
     terminal: true,
   });
 
-  Object.assign(repl.context, { schema, trpc: useCaller() }, schema, factories, autoImports, ...actionModules);
+  Object.assign(repl.context, { schema, trpc: useCaller() }, schema, factories, nitroNames, tinkerScope);
   // node:repl reads `eval` from the server on every line, though its type marks it readonly
   Object.defineProperty(repl, "eval", { value: observedEval(repl.eval) });
   // readline reads `completer` from the server on every Tab, and the caller's proxy lists no properties for the default one
