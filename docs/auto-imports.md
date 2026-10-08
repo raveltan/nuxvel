@@ -8,7 +8,7 @@ The helpers that nuxvel uses internally, such as the tRPC instance, the registri
 
 The exports of `shared/schemas/` are not auto-imported. Import them from `#shared/schemas/<file>`, for example `import { createPostInput } from "#shared/schemas/post"`. The pagination names, `SanitizedHtml` and `richText` are auto-imported in the app and in `shared/`, and not in `server/`. For app-side names, such as `$api`, `useUser()` and `useFlag()`, see [Frontend](./frontend.md) and [Calling from the client](./api.md#calling-from-the-client). For `useMaintenance()` and `isMaintenanceError()`, see [Maintenance mode](./maintenance.md#in-the-app). For `isNetworkError()`, see [When the server cannot be reached](./api.md#when-the-server-cannot-be-reached). Test fixtures are not auto-imported. Import them from `@nuxvel/nuxt/testing`, as [Testing](./testing.md) shows.
 
-The `$seeders` and `$backfills` namespaces do not exist. Import each seeder and each backfill from its own file, as [Seeding](./database.md#seeding) and [Backfills](./backfills.md) show.
+The app has no `$seeders` or `$backfills` namespace. Import each seeder and each backfill from its own file, as [Seeding](./database.md#seeding) and [Backfills](./backfills.md) show. A test can also use the stubs from `#nuxvel/test-namespaces`.
 
 `useS3()`, `useQueue()`, `useRedis()` and `useStripe()` are not auto-imported too. Their types load the AWS SDK, BullMQ, ioredis and Stripe, which makes the editor slow in every file. Import them on the server:
 
