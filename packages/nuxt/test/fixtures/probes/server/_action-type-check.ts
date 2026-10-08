@@ -1,7 +1,9 @@
 import { runAction } from "@nuxvel/nuxt/testing";
 import { z } from "zod";
-import * as testNamespaces from "#build/nuxvel/test-namespaces.mjs";
 import { postsTable } from "~~/server/database/schema/posts.schema";
+import { createPostAction } from "#server/actions/posts/create-post.action";
+import { defineAction, isActionError } from "@nuxvel/nuxt/server/actions";
+import type { ActionErrorCode } from "@nuxvel/nuxt/server/actions";
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
@@ -64,7 +66,7 @@ export const errorCodesAreTyped: ActionErrorCode<typeof archivePost> extends "po
   ? true
   : never = true;
 
-type NamespacedAction = typeof $actions.posts.createPost;
+type NamespacedAction = typeof createPostAction;
 
 export const actionsNamespaceIsTyped: IsAny<NamespacedAction> extends true
   ? never
@@ -74,14 +76,14 @@ export const actionsNamespaceIsTyped: IsAny<NamespacedAction> extends true
 
 export async function runActionTakesADefinitionOrATestStub() {
   const actingAs = { id: "user-1" };
-  const post = await runAction(testNamespaces.$actions.posts.createPost, { title: "Hi", body: "" }, { actingAs });
+  const post = await runAction(createPostAction, { title: "Hi", body: "" }, { actingAs });
   const postId: number = post.id;
   const postIdIsTyped: IsAny<typeof post.id> extends true ? never : true = true;
 
-  await runAction($actions.posts.createPost, { title: "Hi", body: "" }, { actingAs });
+  await runAction(createPostAction, { title: "Hi", body: "" }, { actingAs });
 
   // @ts-expect-error the definition's input needs a title
-  await runAction(testNamespaces.$actions.posts.createPost, { body: "" }, { actingAs });
+  await runAction(createPostAction, { body: "" }, { actingAs });
 
   return { postId, postIdIsTyped };
 }

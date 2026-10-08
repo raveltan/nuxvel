@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { defineAction } from "@nuxvel/nuxt/server/actions";
 
 export const secretRow = defineAction({
   procedure: "public",

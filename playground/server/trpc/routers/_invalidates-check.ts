@@ -2,6 +2,7 @@ import { z } from "zod";
 import { invalidateDeclared } from "#server/actions/_probes/invalidate-declared";
 import { invalidateEmpty } from "#server/actions/_probes/invalidate-empty";
 import { invalidateNothing } from "#server/actions/_probes/invalidate-nothing";
+import { authedProcedure } from "@nuxvel/nuxt/server/api";
 
 export default {
   declared: authedProcedure

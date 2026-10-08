@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { eraseUserData } from "@nuxvel/nuxt/server/privacy";
 
 const body = z.object({ userId: z.string() });
 

@@ -1,3 +1,5 @@
+import { useDb } from "@nuxvel/nuxt/server/database";
+
 export default defineEventHandler(() => {
   const db = useDb();
 

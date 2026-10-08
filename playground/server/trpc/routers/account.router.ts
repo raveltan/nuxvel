@@ -2,6 +2,8 @@ import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { userTable } from "#nuxvel/schema";
 import { postsTable } from "#nuxvel/schema";
+import { adminProcedure, authedProcedure } from "@nuxvel/nuxt/server/api";
+import { notTrashed, useDb } from "@nuxvel/nuxt/server/database";
 
 export const accountRouter = {
   posts: authedProcedure

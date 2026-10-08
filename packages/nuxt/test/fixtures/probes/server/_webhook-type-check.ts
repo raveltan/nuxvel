@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { defineWebhook } from "@nuxvel/nuxt/server/webhooks";
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 

@@ -98,6 +98,29 @@ After:
 const name = "new-editor";
 ```
 
+## A `$<kind>` namespace indexed by a variable
+
+The `explicit-imports` codemod rewrites only a member written with a dot. It
+does not rewrite `$products[name]`. Import each definition and map the name
+to it yourself.
+
+Before:
+
+```ts
+const definition = $products[name];
+```
+
+After:
+
+```ts
+import { proProduct } from "#server/products/_pro.product";
+import { courseProduct } from "#server/products/_course.product";
+
+const products = { _pro: proProduct, _course: courseProduct };
+
+const definition = products[name];
+```
+
 ## A `.vue` file with a `<script>` block but no `<script setup>`
 
 The codemod adds the imports to an existing `<script setup>` block. It

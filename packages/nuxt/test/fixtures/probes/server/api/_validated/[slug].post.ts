@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { defineValidatedHandler } from "@nuxvel/nuxt/server/api";
 
 export default defineValidatedHandler(
   {

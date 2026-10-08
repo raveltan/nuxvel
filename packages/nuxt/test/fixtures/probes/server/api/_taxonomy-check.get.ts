@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import { useCaller } from "@nuxvel/nuxt/server/api";
 
 const errorNames = [
   "NotFoundError",

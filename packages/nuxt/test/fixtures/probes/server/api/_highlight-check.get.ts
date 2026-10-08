@@ -1,4 +1,5 @@
 import { postsTable } from "~~/server/database/schema/posts.schema";
+import { highlight, search, useDb } from "@nuxvel/nuxt/server/database";
 
 export default defineEventHandler(async (event) => {
   const { q } = getQuery(event);

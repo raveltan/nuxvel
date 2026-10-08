@@ -1,11 +1,13 @@
 import { eq } from "drizzle-orm";
-import * as $seeders from "#nuxvel/seeders-namespace";
 import { userTable } from "#nuxvel/schema";
 import { postsTable } from "#nuxvel/schema";
 import { postFactory } from "#nuxvel/factories";
+import authorSeeder from "#server/seeders/_probe/author";
+import { audit } from "@nuxvel/nuxt/server/audit";
+import { defineSeeder, firstOrFail, useDb } from "@nuxvel/nuxt/server/database";
 
 export default defineSeeder(async ({ call }) => {
-  await call("_probe.author", $seeders._probe.author);
+  await call("_probe.author", authorSeeder);
 
   const author = await useDb()
     .select()

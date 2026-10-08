@@ -1,4 +1,7 @@
 import { outboxTable } from "~~/server/database/schema/outbox.schema";
+import { useDb } from "@nuxvel/nuxt/server/database";
+import { now } from "@nuxvel/nuxt/server/observability";
+import { pruneOutbox } from "@nuxvel/nuxt/server/queues";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

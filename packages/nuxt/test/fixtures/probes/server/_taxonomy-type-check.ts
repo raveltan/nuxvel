@@ -1,3 +1,5 @@
+import { isTaxonomyError } from "@nuxvel/nuxt/server/api";
+
 declare const caught: unknown;
 
 export const taxonomyCodeAccepted = isTaxonomyError(caught, "NOT_FOUND");

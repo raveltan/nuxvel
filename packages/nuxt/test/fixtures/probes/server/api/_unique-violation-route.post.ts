@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { userTable } from "~~/server/database/schema/auth.schema";
+import { useDb } from "@nuxvel/nuxt/server/database";
 
 export default defineEventHandler(async () => {
   const email = `${randomUUID()}@example.com`;

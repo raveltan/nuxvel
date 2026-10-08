@@ -1,5 +1,7 @@
 import { flagConversionsTable } from "~~/server/database/schema/flag-conversions.schema";
 import { flagExposuresTable } from "~~/server/database/schema/flag-exposures.schema";
+import { useDb } from "@nuxvel/nuxt/server/database";
+import { experimentReport, track } from "@nuxvel/nuxt/server/flags";
 
 function units(variant: string, total: number) {
   return Array.from({ length: total }, (_, index) => `${variant}-${index}`);

@@ -1,4 +1,5 @@
 import { OpenFeature } from "@openfeature/server-sdk";
+import { nuxvelFlagProvider, setFlagTargeting } from "@nuxvel/nuxt/server/flags";
 
 export default defineEventHandler(async () => {
   await OpenFeature.setProviderAndWait("_openfeature-check", nuxvelFlagProvider());

@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import { TRPCError } from "@trpc/server";
 import { t } from "../../../../../src/runtime/server/trpc/trpc";
 import { userTable } from "~~/server/database/schema/auth.schema";
+import { authedProcedure, publicProcedure } from "@nuxvel/nuxt/server/api";
+import { firstOrFail, useDb } from "@nuxvel/nuxt/server/database";
 
 const testRouter = t.router({
   publicPing: publicProcedure.query(() => "public-pong"),

@@ -1,7 +1,12 @@
-import * as $backfills from "#nuxvel/backfills-namespace";
-
 import { z } from "zod";
 import sharedProbe from "~~/server/rate-limits/_shared-probe";
+import _probeNamesBackfill from "#server/database/backfills/_probe-names";
+import _sharedProbeRateLimit from "#server/rate-limits/_shared-probe";
+import { loginRateLimit } from "#server/rate-limits/login.rate-limit";
+import { defineAction } from "@nuxvel/nuxt/server/actions";
+import { authedProcedure, publicProcedure } from "@nuxvel/nuxt/server/api";
+import { defineRateLimit, rateLimit, rateLimiter } from "@nuxvel/nuxt/server/security";
+import type { RateLimit, RateLimitName } from "@nuxvel/nuxt/server/security";
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
@@ -27,11 +32,11 @@ export async function consumesOnlyDeclaredLimiters() {
 }
 
 export async function consumesALimiterByItsDefinition() {
-  await rateLimiter($rateLimits._sharedProbe).consume("key");
+  await rateLimiter(_sharedProbeRateLimit).consume("key");
   await rateLimiter(sharedProbe).consume("key");
 
   // @ts-expect-error a backfill is not a rate limit
-  rateLimiter($backfills._probeNames);
+  rateLimiter(_probeNamesBackfill);
 }
 
 export const definedLimitIsNamed: IsAny<typeof sharedProbe> extends true
@@ -99,7 +104,7 @@ export function limitsAnAction() {
   });
 }
 
-type NamespacedRateLimit = typeof $rateLimits.login;
+type NamespacedRateLimit = typeof loginRateLimit;
 
 export const rateLimitsNamespaceIsTyped: IsAny<NamespacedRateLimit> extends true
   ? never

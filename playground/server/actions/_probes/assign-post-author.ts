@@ -1,6 +1,8 @@
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { postsTable } from "#nuxvel/schema";
+import { defineAction } from "@nuxvel/nuxt/server/actions";
+import { useDb } from "@nuxvel/nuxt/server/database";
 
 export const assignPostAuthor = defineAction({
   input: z.object({ postId: z.number(), authorId: z.string() }),

@@ -1,14 +1,20 @@
 import { z } from "zod";
 import { subscribeObserved } from "../../../../../src/runtime/server/observe/channels";
+import _probePublicChannel from "#server/channels/_probe-public";
+import { probeQueued } from "#server/events/_probe/queued";
+import recordJob from "#server/jobs/_probe/record";
+import { welcomeMail } from "#server/mail/welcome.mail";
+import { welcomeNotification } from "#server/notifications/welcome.notification";
+import { transaction } from "@nuxvel/nuxt/server/database";
 
 const query = z.object({ userId: z.string() });
 
 async function callEachKind(userId: string, label: string) {
-  await $jobs._probe.record.dispatch({ name: label });
-  await $channels._probePublic.broadcast("renamed", { id: 1 });
-  await $mails.welcome.send({ to: `${label}@nuxvel.test`, name: "Ada" });
-  await $events._probe.queued.emit({ name: label });
-  await $notifications.welcome.notify(userId, { name: "Ada" });
+  await recordJob.dispatch({ name: label });
+  await _probePublicChannel.broadcast("renamed", { id: 1 });
+  await welcomeMail.send({ to: `${label}@nuxvel.test`, name: "Ada" });
+  await probeQueued.emit({ name: label });
+  await welcomeNotification.notify(userId, { name: "Ada" });
 }
 
 export default defineEventHandler(async (event) => {

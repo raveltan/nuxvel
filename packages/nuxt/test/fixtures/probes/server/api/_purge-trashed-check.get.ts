@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { userTable } from "~~/server/database/schema/auth.schema";
 import { postsTable } from "~~/server/database/schema/posts.schema";
+import { purgeTrashed, useDb } from "@nuxvel/nuxt/server/database";
 
 export default defineEventHandler(async () => {
   const authorId = randomUUID();

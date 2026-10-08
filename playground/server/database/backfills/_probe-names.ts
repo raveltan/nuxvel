@@ -1,5 +1,7 @@
 import { eq, like } from "drizzle-orm";
 import { healthChecksTable } from "#nuxvel/schema";
+import { defineBackfill } from "@nuxvel/nuxt/server/backfills";
+import { useDb } from "@nuxvel/nuxt/server/database";
 
 export default defineBackfill({
   table: healthChecksTable,

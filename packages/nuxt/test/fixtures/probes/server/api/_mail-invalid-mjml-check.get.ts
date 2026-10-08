@@ -1,5 +1,6 @@
 import { h } from "vue";
 import { z } from "zod";
+import { defineMail } from "@nuxvel/nuxt/server/mail";
 
 const looseTextMail = defineMail({
   input: z.object({ to: z.email() }),

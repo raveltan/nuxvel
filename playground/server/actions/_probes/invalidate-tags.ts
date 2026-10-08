@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { defineAction } from "@nuxvel/nuxt/server/actions";
+import { cachePut } from "@nuxvel/nuxt/server/cache";
 
 export const invalidateTags = defineAction({
   input: z.object({ id: z.number(), fail: z.boolean().default(false) }),

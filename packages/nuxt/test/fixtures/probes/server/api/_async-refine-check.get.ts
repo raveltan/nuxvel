@@ -1,5 +1,10 @@
 import { z } from "zod";
 import { renderMail } from "../../../../../src/runtime/server/mail/render-mail";
+import _probePublicChannel from "#server/channels/_probe-public";
+import _probeCheckedMail from "#server/mail/_probe-checked";
+import { ValidationFailedError } from "@nuxvel/nuxt/server/api";
+import { defineEvent } from "@nuxvel/nuxt/server/events";
+import { defineJob } from "@nuxvel/nuxt/server/queues";
 
 const available = async (value: string) => value !== "taken";
 
@@ -29,7 +34,7 @@ export default defineEventHandler(async () => {
   seen.length = 0;
   await job.run({ version: 1, payload: { title: "free" } });
   await happened.emit({ title: "free" });
-  await $channels._probePublic.broadcast("checked", { title: "accepted" });
+  await _probePublicChannel.broadcast("checked", { title: "accepted" });
 
   return {
     job: {
@@ -42,10 +47,10 @@ export default defineEventHandler(async () => {
     },
     mail: {
       subject: (await renderMail("_probe-checked", { to: "ada@example.com", name: "Ada" })).subject,
-      rejected: await fieldsOfRejection(() => $mails._probeChecked.send({ to: "ada@example.com", name: "taken" })),
+      rejected: await fieldsOfRejection(() => _probeCheckedMail.send({ to: "ada@example.com", name: "taken" })),
     },
     broadcast: {
-      rejected: await fieldsOfRejection(() => $channels._probePublic.broadcast("checked", { title: "rejected" })),
+      rejected: await fieldsOfRejection(() => _probePublicChannel.broadcast("checked", { title: "rejected" })),
     },
   };
 });

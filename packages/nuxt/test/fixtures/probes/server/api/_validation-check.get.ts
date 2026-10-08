@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { toValidationError } from "@nuxvel/nuxt/server/api";
 
 const schema = z.object({
   name: z.string().min(3),

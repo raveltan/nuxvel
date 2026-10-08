@@ -1,3 +1,6 @@
+import { UnauthenticatedError } from "@nuxvel/nuxt/server/api";
+import { requireAuth, useAuth } from "@nuxvel/nuxt/server/auth";
+
 export default defineEventHandler(async () => {
   const { user } = await useAuth();
 

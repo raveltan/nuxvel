@@ -1,4 +1,5 @@
 import { createPostAsCaller } from "~~/server/actions/_probes/create-post-as-caller";
+import { audit } from "@nuxvel/nuxt/server/audit";
 
 async function errorOf(run: () => Promise<unknown>) {
   try {

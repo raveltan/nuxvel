@@ -1,3 +1,5 @@
+import { ConflictError, TransientError, defineErrorClassifier } from "@nuxvel/nuxt/server/api";
+
 export class FakeSdkError extends Error {
   override name = "FakeSdkError";
 

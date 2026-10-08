@@ -1,4 +1,5 @@
 import { tagsTable } from "#nuxvel/schema";
+import { definePolicy } from "@nuxvel/nuxt/server/authorization";
 
 export const tagsPolicy = definePolicy(tagsTable, {
   preload: (actor) => {

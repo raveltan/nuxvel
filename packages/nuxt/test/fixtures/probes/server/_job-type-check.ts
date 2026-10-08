@@ -1,3 +1,13 @@
+import alwaysFailsJob from "#server/jobs/_probe/always-fails";
+import recordJob from "#server/jobs/_probe/record";
+import { namedExportJob } from "#server/jobs/_probe/named-export.job";
+import { postNotifyFollowersJob } from "#server/jobs/post/notify-followers.job";
+import { systemActor } from "@nuxvel/nuxt/server/actions";
+import type { Actor } from "@nuxvel/nuxt/server/actions";
+import { defineJob } from "@nuxvel/nuxt/server/queues";
+import type { Job, JobInput, JobName } from "@nuxvel/nuxt/server/queues";
+import { signedUrl } from "@nuxvel/nuxt/server/security";
+
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
 export const jobNameIsTyped: IsAny<JobName> extends true
@@ -14,10 +24,10 @@ export const jobInputIsTyped: IsAny<JobInput<"_probe.record">> extends true
     ? true
     : never = true;
 
-type NamespacedJob = typeof $jobs._probe.namedExport;
+type NamespacedJob = typeof namedExportJob;
 
 export const jobsNamespaceIsTyped: IsAny<NamespacedJob> extends true ? never : NamespacedJob extends Job ? true : never = true;
-export const nestedJobIsReachable: Job = $jobs.post.notifyFollowers;
+export const nestedJobIsReachable: Job = postNotifyFollowersJob;
 
 type Equals<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
 
@@ -30,14 +40,14 @@ export const jobDispatcherIsTyped = defineJob({
 });
 
 export async function dispatchesAsADispatcher() {
-  await $jobs._probe.record.dispatch({ name: "typed" }, { dispatcher: systemActor("typed") });
-  await $jobs._probe.record.dispatch({ name: "typed" }, { dispatcher: null });
+  await recordJob.dispatch({ name: "typed" }, { dispatcher: systemActor("typed") });
+  await recordJob.dispatch({ name: "typed" }, { dispatcher: null });
 
   // @ts-expect-error a dispatcher is an actor
-  await $jobs._probe.record.dispatch({ name: "typed" }, { dispatcher: "system" });
+  await recordJob.dispatch({ name: "typed" }, { dispatcher: "system" });
 }
 
-type DispatchInput = Parameters<typeof $jobs._probe.record.dispatch>[0];
+type DispatchInput = Parameters<typeof recordJob.dispatch>[0];
 
 export const dispatchInputIsTyped: IsAny<DispatchInput> extends true
   ? never
@@ -46,16 +56,14 @@ export const dispatchInputIsTyped: IsAny<DispatchInput> extends true
     : never = true;
 
 export async function dispatchesThroughTheDefinition() {
-  await $jobs._probe.record.dispatch({ name: "typed" });
-  await $jobs._probe.record.dispatch({ name: "typed" }, { delay: { seconds: 30 }, priority: 1, dispatcher: null });
-  await $jobs._probe.alwaysFails.dispatch();
+  await recordJob.dispatch({ name: "typed" });
+  await recordJob.dispatch({ name: "typed" }, { delay: { seconds: 30 }, priority: 1, dispatcher: null });
+  await alwaysFailsJob.dispatch();
 
   // @ts-expect-error the definition's input takes a string name
-  await $jobs._probe.record.dispatch({ name: 1 });
+  await recordJob.dispatch({ name: 1 });
   // @ts-expect-error the definition's input needs its name
-  await $jobs._probe.record.dispatch();
-  // @ts-expect-error no job is named probe.missing
-  await $jobs.probe.missing.dispatch({});
+  await recordJob.dispatch();
 }
 
 export async function takesDurations() {
@@ -66,7 +74,7 @@ export async function takesDurations() {
   // @ts-expect-error a timeout is a duration, not milliseconds
   defineJob({ timeout: 30_000, handler: () => undefined });
   // @ts-expect-error a delay is a duration, not milliseconds
-  await $jobs._probe.record.dispatch({ name: "typed" }, { delay: 60_000 });
+  await recordJob.dispatch({ name: "typed" }, { delay: 60_000 });
   // @ts-expect-error an expiry is a duration, not seconds
   signedUrl("/invites/1", { expiresIn: 60 });
 }

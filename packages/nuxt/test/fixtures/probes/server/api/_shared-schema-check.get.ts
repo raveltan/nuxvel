@@ -1,3 +1,6 @@
+import { healthCheckIdInput } from "#shared/schemas/health-check";
+import { toValidationError } from "@nuxvel/nuxt/server/api";
+
 export default defineEventHandler(() => {
   const valid = healthCheckIdInput.safeParse({ id: 1 });
   const invalid = healthCheckIdInput.safeParse({ id: "not-a-number" });

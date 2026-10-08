@@ -3,6 +3,9 @@ import { actorContext } from "../../../../../src/runtime/server/actions/context"
 import { healthChecksTable } from "~~/server/database/schema/health-check.schema";
 import { userTable } from "~~/server/database/schema/auth.schema";
 import { healthCheckPolicy } from "~~/server/policies/health-check.policy";
+import { ForbiddenError } from "@nuxvel/nuxt/server/api";
+import { authorize } from "@nuxvel/nuxt/server/authorization";
+import { firstOrFail, useDb } from "@nuxvel/nuxt/server/database";
 
 export default defineEventHandler(async () => {
   const owner = await useDb()

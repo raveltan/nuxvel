@@ -2,6 +2,9 @@ import { z } from "zod";
 import { findJob } from "../../../../../src/runtime/server/jobs/registry";
 import { outboxTable } from "~~/server/database/schema/outbox.schema";
 import { useQueue } from "@nuxvel/nuxt/server/queues";
+import { welcomeMail } from "#server/mail/welcome.mail";
+import { transaction, useDb } from "@nuxvel/nuxt/server/database";
+import { relayOutbox } from "@nuxvel/nuxt/server/queues";
 
 const query = z.object({ rolledBack: z.email(), committed: z.email() });
 
@@ -12,12 +15,12 @@ export default defineEventHandler(async (event) => {
   await useDb().delete(outboxTable);
 
   await transaction(async () => {
-    await $mails.welcome.send({ to: rolledBack, name: "Rolled Back" });
+    await welcomeMail.send({ to: rolledBack, name: "Rolled Back" });
     throw new Error("probe rollback");
   }).catch(() => undefined);
 
   await transaction(async () => {
-    await $mails.welcome.send({ to: committed, name: "Ada" });
+    await welcomeMail.send({ to: committed, name: "Ada" });
   });
 
   await relayOutbox();

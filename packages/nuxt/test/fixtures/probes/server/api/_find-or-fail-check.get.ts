@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { userTable } from "~~/server/database/schema/auth.schema";
 import { healthChecksTable } from "~~/server/database/schema/health-check.schema";
+import { NotFoundError, isTaxonomyError } from "@nuxvel/nuxt/server/api";
+import { findOrFail, firstOrFail, useDb } from "@nuxvel/nuxt/server/database";
 
 export default defineEventHandler(async () => {
   const inserted = await useDb()

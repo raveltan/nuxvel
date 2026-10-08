@@ -1,4 +1,5 @@
 import { healthChecksTable } from "#nuxvel/schema";
+import { useDb } from "@nuxvel/nuxt/server/database";
 
 export default defineTask({
   meta: {

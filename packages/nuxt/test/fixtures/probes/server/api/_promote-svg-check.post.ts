@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { promoteUpload } from "@nuxvel/nuxt/server/storage";
 
 const promoteSchema = z.object({
   upload: z.enum(["_svg-rasterized", "_svg-sanitized"]),

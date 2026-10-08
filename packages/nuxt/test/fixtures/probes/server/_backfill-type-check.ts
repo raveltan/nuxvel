@@ -1,6 +1,8 @@
-import * as $backfills from "#nuxvel/backfills-namespace";
-
 import type probeNames from "~~/server/database/backfills/_probe-names";
+import _probeNamesBackfill from "#server/database/backfills/_probe-names";
+import { loginRateLimit } from "#server/rate-limits/login.rate-limit";
+import { runBackfill } from "@nuxvel/nuxt/server/backfills";
+import type { Backfill, BackfillName } from "@nuxvel/nuxt/server/backfills";
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
@@ -30,13 +32,13 @@ export async function runsOnlyDefinedBackfills() {
 }
 
 export async function runsABackfillByItsDefinition() {
-  await runBackfill($backfills._probeNames);
+  await runBackfill(_probeNamesBackfill);
 
   // @ts-expect-error a rate limit is not a backfill
-  await runBackfill($rateLimits.login);
+  await runBackfill(loginRateLimit);
 }
 
-type NamespacedBackfill = typeof $backfills._probeNames;
+type NamespacedBackfill = typeof _probeNamesBackfill;
 
 export const backfillsNamespaceIsTyped: IsAny<NamespacedBackfill> extends true
   ? never

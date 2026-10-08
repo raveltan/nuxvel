@@ -2,6 +2,10 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { t } from "../../../../../src/runtime/server/trpc/trpc";
 import { userTable } from "~~/server/database/schema/auth.schema";
+import { defineAction, systemActor, userActor } from "@nuxvel/nuxt/server/actions";
+import { authedProcedure, publicProcedure } from "@nuxvel/nuxt/server/api";
+import { useAuth } from "@nuxvel/nuxt/server/auth";
+import { firstOrFail, useDb } from "@nuxvel/nuxt/server/database";
 
 async function readNestedAuth() {
   const { user, actor } = await useAuth();

@@ -1,4 +1,6 @@
 import { setTimeout as sleep } from "node:timers/promises";
+import { countdownInput } from "#shared/schemas/countdown";
+import { defineJob } from "@nuxvel/nuxt/server/queues";
 
 const STEP_MS = 250;
 

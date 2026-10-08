@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { defineAction, systemActor } from "@nuxvel/nuxt/server/actions";
+import { publicProcedure } from "@nuxvel/nuxt/server/api";
+import { currentLocale } from "@nuxvel/nuxt/server/i18n";
 
 const titleInput = z.object({ title: z.string().min(3) });
 

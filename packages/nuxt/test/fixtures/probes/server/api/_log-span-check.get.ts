@@ -1,3 +1,5 @@
+import { useLogger } from "@nuxvel/nuxt/server/observability";
+
 export default defineEventHandler(() => {
   const cause = new Error("log-span-check inner");
 

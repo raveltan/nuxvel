@@ -1,4 +1,8 @@
 import { postsTable } from "#nuxvel/schema";
+import { updatePostInput } from "#shared/schemas/post";
+import { defineAction } from "@nuxvel/nuxt/server/actions";
+import { findAuthorized } from "@nuxvel/nuxt/server/authorization";
+import { updateOne } from "@nuxvel/nuxt/server/database";
 
 export const updatePostAction = defineAction({
   input: updatePostInput,

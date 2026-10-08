@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { promoteUpload } from "@nuxvel/nuxt/server/storage";
 
 const promoteSchema = z.object({ key: z.string(), to: z.string() });
 

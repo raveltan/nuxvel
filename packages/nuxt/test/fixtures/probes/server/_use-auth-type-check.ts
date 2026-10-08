@@ -1,3 +1,7 @@
+import type { Actor } from "@nuxvel/nuxt/server/actions";
+import { useAuth } from "@nuxvel/nuxt/server/auth";
+import type { SessionUser } from "@nuxvel/nuxt/server/auth";
+
 type IsAny<T> = 0 extends 1 & T ? true : false;
 type Equals<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
 

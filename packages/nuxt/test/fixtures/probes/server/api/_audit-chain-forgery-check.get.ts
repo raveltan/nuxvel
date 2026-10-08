@@ -2,6 +2,9 @@ import { createHash } from "node:crypto";
 import { type SQL, sql } from "drizzle-orm";
 import { auditContent } from "../../../../../src/runtime/server/audit/chain/hash";
 import { auditLogTable } from "~~/server/database/schema/audit-log.schema";
+import { defineAction, systemActor } from "@nuxvel/nuxt/server/actions";
+import { audit, verifyAuditChain } from "@nuxvel/nuxt/server/audit";
+import { transaction, useDb } from "@nuxvel/nuxt/server/database";
 
 const writeTwo = probeNamed("_audit-chain-forgery-check.writeTwo", defineAction({
   handler: async () => {

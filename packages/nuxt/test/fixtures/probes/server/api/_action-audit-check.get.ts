@@ -1,6 +1,8 @@
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { outboxTable } from "~~/server/database/schema/outbox.schema";
+import { defineAction, systemActor } from "@nuxvel/nuxt/server/actions";
+import { firstOrFail, useDb } from "@nuxvel/nuxt/server/database";
 
 const created = probeNamed("_action-audit-check.created", defineAction({
   audit: "_action-audit-check.created",

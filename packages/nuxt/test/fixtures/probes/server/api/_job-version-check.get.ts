@@ -2,6 +2,8 @@ import { inArray } from "drizzle-orm";
 import { findJob } from "../../../../../src/runtime/server/jobs/registry";
 import { healthChecksTable } from "~~/server/database/schema/health-check.schema";
 import { outboxTable } from "~~/server/database/schema/outbox.schema";
+import recordRenamedJob from "#server/jobs/_probe/record-renamed";
+import { transaction, useDb } from "@nuxvel/nuxt/server/database";
 
 const NAMES = ["upcast-me", "already-current"];
 
@@ -22,7 +24,7 @@ export default defineEventHandler(async () => {
     .where(inArray(healthChecksTable.name, NAMES));
 
   await transaction(async () => {
-    await $jobs._probe.recordRenamed.dispatch({ name: "dispatched" });
+    await recordRenamedJob.dispatch({ name: "dispatched" });
   });
 
   const queued = await useDb().select().from(outboxTable);

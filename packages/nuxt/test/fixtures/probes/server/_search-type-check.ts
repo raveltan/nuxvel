@@ -1,5 +1,6 @@
 import { postsTable } from "~~/server/database/schema/posts.schema";
 import { tagsTable } from "~~/server/database/schema/tags.schema";
+import { highlight, search, searchRank } from "@nuxvel/nuxt/server/database";
 
 export const searchesASearchableTable = [search(postsTable, "run"), searchRank(postsTable, "run"), highlight(postsTable.title, "run")];
 

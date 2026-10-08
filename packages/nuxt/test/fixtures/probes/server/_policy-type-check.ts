@@ -3,6 +3,9 @@ import { healthChecksTable } from "~~/server/database/schema/health-check.schema
 import { postsTable } from "~~/server/database/schema/posts.schema";
 import { healthCheckPolicy } from "~~/server/policies/health-check.policy";
 import { postPolicy } from "~~/server/policies/post.policy";
+import { systemActor } from "@nuxvel/nuxt/server/actions";
+import { authorize, can, canMany, definePolicy, findAuthorized, withAbilities } from "@nuxvel/nuxt/server/authorization";
+import type { AbilityRef } from "@nuxvel/nuxt/server/authorization";
 
 declare const post: typeof postsTable.$inferSelect;
 declare const healthCheck: typeof healthChecksTable.$inferSelect;
@@ -73,12 +76,12 @@ export const canManyByRefWrongKeys: Promise<Record<"restore", boolean>[]> = canM
 // @ts-expect-error a policy field is not a rule ref
 export const fieldIsNoRef: AbilityRef = definePolicy(postsTable, { table: () => true }).table;
 
-export const canPostByNamespace: Promise<boolean> = can($policies.post.update, post);
+export const canPostByNamespace: Promise<boolean> = can(postPolicy.update, post);
 
-export const namespacedPolicyIsTheExport: typeof healthCheckPolicy = $policies.healthCheck;
+export const namespacedPolicyIsTheExport: typeof healthCheckPolicy = healthCheckPolicy;
 
-// @ts-expect-error a posts ref from $policies takes a posts row
-export const canNamespaceRefWrongRow = can($policies.post.update, healthCheck);
+// @ts-expect-error a posts ref takes a posts row
+export const canNamespaceRefWrongRow = can(postPolicy.update, healthCheck);
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 

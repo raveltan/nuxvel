@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { postsTable } from "~~/server/database/schema/posts.schema";
+import { useDb } from "@nuxvel/nuxt/server/database";
 
 export default defineEventHandler(async () => {
   for (let id = 1; id <= 5; id += 1) {

@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { healthChecksTable } from "~~/server/database/schema/health-check.schema";
+import { defineAction, systemActor } from "@nuxvel/nuxt/server/actions";
+import { useDb } from "@nuxvel/nuxt/server/database";
 
 const transactional = probeNamed("_action-transaction-check.transactional", defineAction({
   input: z.object({}),

@@ -1,9 +1,11 @@
 import { outboxTable } from "~~/server/database/schema/outbox.schema";
+import recordJob from "#server/jobs/_probe/record";
+import { useDb } from "@nuxvel/nuxt/server/database";
 
 export default defineEventHandler(async () => {
   await useDb().delete(outboxTable);
 
-  await $jobs._probe.record.dispatch({ name: "outside" });
+  await recordJob.dispatch({ name: "outside" });
 
   const rows = await useDb().select().from(outboxTable);
 

@@ -1,5 +1,8 @@
+import { probeHappened } from "#server/events/_probe/happened";
+import { defineListener } from "@nuxvel/nuxt/server/events";
+
 export default defineListener({
-  event: $events._probe.happened,
+  event: probeHappened,
   sync: true,
   handler: () => {},
 });

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { signedReadUrl } from "@nuxvel/nuxt/server/storage";
 
 const query = z.object({ key: z.string() });
 

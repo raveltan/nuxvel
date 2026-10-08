@@ -1,5 +1,7 @@
 import jobs from "#nuxvel/jobs";
 import record from "~~/server/jobs/_probe/record";
+import { allowRepeatedQueries } from "@nuxvel/nuxt/server/database";
+import { renamed, useLogger } from "@nuxvel/nuxt/server/observability";
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 

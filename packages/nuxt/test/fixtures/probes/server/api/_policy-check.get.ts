@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import discoveredPolicies from "#nuxvel/policies";
 import { healthChecksTable } from "~~/server/database/schema/health-check.schema";
 import { userTable } from "~~/server/database/schema/auth.schema";
+import type { Policy } from "@nuxvel/nuxt/server/authorization";
+import { firstOrFail, useDb } from "@nuxvel/nuxt/server/database";
 
 export default defineEventHandler(async () => {
   const owner = await useDb()

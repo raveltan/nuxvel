@@ -1,3 +1,5 @@
+import { defineJob } from "@nuxvel/nuxt/server/queues";
+
 export default defineJob({
   channel: { public: true },
   handler: async (_input, { reportProgress }) => {

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { richText } from "@nuxvel/nuxt/shared/html";
 
 export const actionFormProbeInput = z.object({
   teamId: z.number(),

@@ -3,12 +3,22 @@ import { z } from "zod";
 import { createPostAction } from "#server/actions/posts/create-post.action";
 import { userTable } from "#nuxvel/schema";
 import { postsTable } from "#nuxvel/schema";
+import { deletePostAction } from "#server/actions/posts/delete-post.action";
+import { restorePostAction } from "#server/actions/posts/restore-post.action";
+import { updatePostAction } from "#server/actions/posts/update-post.action";
+import { postPolicy } from "#server/policies/post.policy";
+import { createPostInput, postIdInput, postSchema } from "#shared/schemas/post";
+import { authedProcedure, flash, idempotent, publicProcedure } from "@nuxvel/nuxt/server/api";
+import { withAbilities } from "@nuxvel/nuxt/server/authorization";
+import { remember } from "@nuxvel/nuxt/server/cache";
+import { findOrFail, loader, notTrashed, paginate, paginateCursor, search, searchRank, useDb } from "@nuxvel/nuxt/server/database";
+import { paginated, paginationSchema } from "@nuxvel/nuxt/shared/pagination";
 
 const { searchVector: _searchVector, ...postColumns } = getTableColumns(postsTable);
 
 const postOutputSchema = postSchema.extend({ deletedAt: z.coerce.date().nullable() });
 
-const postWithAbilities = withAbilities(postOutputSchema, [$policies.post.update, $policies.post.delete]);
+const postWithAbilities = withAbilities(postOutputSchema, [postPolicy.update, postPolicy.delete]);
 
 export const postRouter = {
   list: publicProcedure
@@ -66,7 +76,7 @@ export const postRouter = {
       flash("Post created");
       return post;
     }),
-  update: authedProcedure.output(postOutputSchema).action($actions.posts.updatePost),
-  delete: authedProcedure.output(postIdInput).action($actions.posts.deletePost),
-  restore: authedProcedure.output(postOutputSchema).action($actions.posts.restorePost),
+  update: authedProcedure.output(postOutputSchema).action(updatePostAction),
+  delete: authedProcedure.output(postIdInput).action(deletePostAction),
+  restore: authedProcedure.output(postOutputSchema).action(restorePostAction),
 };

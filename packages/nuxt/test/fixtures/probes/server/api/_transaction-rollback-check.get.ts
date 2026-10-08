@@ -1,4 +1,5 @@
 import { healthChecksTable } from "~~/server/database/schema/health-check.schema";
+import { transaction, useDb } from "@nuxvel/nuxt/server/database";
 
 async function nestedInsert() {
   await useDb().insert(healthChecksTable).values({});

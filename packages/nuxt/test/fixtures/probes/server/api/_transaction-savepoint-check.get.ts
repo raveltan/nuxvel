@@ -1,4 +1,5 @@
 import { healthChecksTable } from "~~/server/database/schema/health-check.schema";
+import { firstOrFail, transaction, useDb } from "@nuxvel/nuxt/server/database";
 
 export default defineEventHandler(async () => {
   let outerId: number | undefined;

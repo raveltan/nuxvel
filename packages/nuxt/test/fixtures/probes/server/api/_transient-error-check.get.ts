@@ -2,6 +2,9 @@ import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { userTable } from "~~/server/database/schema/auth.schema";
+import { defineAction, systemActor } from "@nuxvel/nuxt/server/actions";
+import { isTaxonomyError } from "@nuxvel/nuxt/server/api";
+import { useDb } from "@nuxvel/nuxt/server/database";
 
 function signal() {
   let resolve = () => {};

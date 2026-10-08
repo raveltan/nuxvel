@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import { useDb } from "@nuxvel/nuxt/server/database";
 
 export default defineEventHandler(async () => {
   const [row] = await useDb().execute<{ statement: string; idleInTransaction: string }>(

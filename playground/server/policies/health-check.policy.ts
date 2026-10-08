@@ -1,4 +1,5 @@
 import { healthChecksTable } from "#nuxvel/schema";
+import { allowGuest, allowSystem, definePolicy } from "@nuxvel/nuxt/server/authorization";
 
 export const healthCheckPolicy = definePolicy(healthChecksTable, {
   update: (actor, row) => row.userId === actor.id,

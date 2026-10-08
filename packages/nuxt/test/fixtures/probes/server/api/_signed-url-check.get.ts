@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { TRPCError } from "@trpc/server";
+import { requireSignature, signedUrl } from "@nuxvel/nuxt/server/security";
 
 const TARGET = "/api/_signed-url-target?invite=42";
 const GRACE_MS = 24 * 60 * 60 * 1000;

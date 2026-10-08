@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { invalidateNested } from "#server/actions/_probes/invalidate-nested";
+import { defineAction } from "@nuxvel/nuxt/server/actions";
 
 export const invalidateDeclared = defineAction({
   input: z.object({ nested: z.boolean(), fail: z.boolean() }),

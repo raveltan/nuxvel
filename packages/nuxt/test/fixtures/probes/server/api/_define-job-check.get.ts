@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { ValidationFailedError } from "@nuxvel/nuxt/server/api";
+import { defineJob } from "@nuxvel/nuxt/server/queues";
 
 const seen: unknown[] = [];
 

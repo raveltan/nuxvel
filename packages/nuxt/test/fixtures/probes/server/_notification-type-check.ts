@@ -1,4 +1,9 @@
 import { z } from "zod";
+import _updateMail from "#server/mail/_update.mail";
+import { welcomeMail } from "#server/mail/welcome.mail";
+import { welcomeNotification } from "#server/notifications/welcome.notification";
+import { defineNotification } from "@nuxvel/nuxt/server/notifications";
+import type { NotificationData, NotificationName } from "@nuxvel/nuxt/server/notifications";
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
@@ -17,15 +22,13 @@ export const notificationDataIsTyped: IsAny<NotificationData<"welcome">> extends
     : never = true;
 
 export async function notifiesOnlyDefinedNotifications() {
-  await $notifications.welcome.notify("user-1", { name: "Ada" });
-  await $notifications.welcome.notify(["user-1", "user-2"], { name: "Ada" });
+  await welcomeNotification.notify("user-1", { name: "Ada" });
+  await welcomeNotification.notify(["user-1", "user-2"], { name: "Ada" });
 
-  // @ts-expect-error no notification is named goodbye
-  await $notifications.goodbye.notify("user-1", { name: "Ada" });
   // @ts-expect-error welcome needs a name
-  await $notifications.welcome.notify("user-1", {});
+  await welcomeNotification.notify("user-1", {});
   // @ts-expect-error welcome's name is a string
-  await $notifications.welcome.notify(["user-1"], { name: 1 });
+  await welcomeNotification.notify(["user-1"], { name: 1 });
 }
 
 export const databaseOnly = defineNotification({
@@ -33,7 +36,7 @@ export const databaseOnly = defineNotification({
   via: ["database"],
   toDatabase: ({ title }) => ({ title, body: "" }),
   // @ts-expect-error mail is not in via
-  toMail: () => ({ mail: $mails.welcome, input: { name: "Ada" } }),
+  toMail: () => ({ mail: welcomeMail, input: { name: "Ada" } }),
 });
 
 // @ts-expect-error database is in via, so toDatabase is required
@@ -45,7 +48,7 @@ export const missingBuilder = defineNotification({
 export const typedMail = defineNotification({
   input: z.object({ name: z.string() }),
   via: ["mail"],
-  // @ts-expect-error a mail is its $mails definition, not its name
+  // @ts-expect-error a mail is its definition, not its name
   toMail: ({ name }) => ({ mail: "welcome", input: { name } }),
 });
 
@@ -53,7 +56,7 @@ export const typedMailData = defineNotification({
   input: z.object({ name: z.string() }),
   via: ["mail"],
   // @ts-expect-error welcome's name is a string
-  toMail: () => ({ mail: $mails.welcome, input: { name: 1 } }),
+  toMail: () => ({ mail: welcomeMail, input: { name: 1 } }),
 });
 
 export const pushOnly = defineNotification({
@@ -71,7 +74,7 @@ export const typedPush = defineNotification({
   toPush: ({ name }) => ({ title: name }),
 });
 
-type NamespacedNotification = typeof $notifications.welcome;
+type NamespacedNotification = typeof welcomeNotification;
 
 export const notificationsNamespaceIsTyped: IsAny<NamespacedNotification> extends true
   ? never
@@ -83,7 +86,7 @@ export const typedMailInputMissing = defineNotification({
   input: z.object({ title: z.string() }),
   via: ["mail"],
   // @ts-expect-error welcome needs a name
-  toMail: () => ({ mail: $mails.welcome, input: {} }),
+  toMail: () => ({ mail: welcomeMail, input: {} }),
 });
 
 export const messageGetsTypedInput = defineNotification({
@@ -100,7 +103,7 @@ export const messageFeedsMail = defineNotification({
   input: z.object({ name: z.string() }),
   via: ["mail"],
   message: ({ name }) => ({ title: name, body: "" }),
-  mail: $mails._update,
+  mail: _updateMail,
 });
 
 export const messageMailNeedsMessageInput = defineNotification({
@@ -108,7 +111,7 @@ export const messageMailNeedsMessageInput = defineNotification({
   via: ["mail"],
   message: ({ name }) => ({ title: name, body: "" }),
   // @ts-expect-error welcome takes a name, not the message
-  mail: $mails.welcome,
+  mail: welcomeMail,
 });
 
 // @ts-expect-error mail is in via, so message needs mail or toMail
@@ -121,9 +124,9 @@ export const messageWithoutMail = defineNotification({
 export const mailNeedsMessage = defineNotification({
   input: z.object({ name: z.string() }),
   via: ["mail"],
-  mail: $mails._update,
+  mail: _updateMail,
   // @ts-expect-error mail sends the message, so it takes message, not toMail
-  toMail: ({ name }) => ({ mail: $mails.welcome, input: { name } }),
+  toMail: ({ name }) => ({ mail: welcomeMail, input: { name } }),
 });
 
 const welcomeMailInput = z.object({ to: z.email(), name: z.string() });
@@ -139,7 +142,7 @@ export const unfedMailNamesTheProblem: [WelcomeAsMessageMail] extends [never]
     ? true
     : never = true;
 
-type NotifyData = Parameters<typeof $notifications.welcome.notify>[1];
+type NotifyData = Parameters<typeof welcomeNotification.notify>[1];
 
 export const notifyDataIsTyped: IsAny<NotifyData> extends true
   ? never

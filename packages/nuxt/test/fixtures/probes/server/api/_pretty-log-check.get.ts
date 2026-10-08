@@ -1,3 +1,5 @@
+import { useLogger } from "@nuxvel/nuxt/server/observability";
+
 export default defineEventHandler(() => {
   const logger = useLogger("pretty-log-check");
   const failure = new Error("pretty outer failure", {

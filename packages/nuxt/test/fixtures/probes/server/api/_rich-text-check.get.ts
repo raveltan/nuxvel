@@ -1,3 +1,6 @@
+import { richTextProbeInput } from "#shared/schemas/_rich-text-probe";
+import { toValidationError } from "@nuxvel/nuxt/server/api";
+
 export default defineEventHandler(() => {
   const parsed = richTextProbeInput.parse({
     body: '<p>See <a href="javascript:alert(1)">this</a> and <a href="https://example.com" rel="follow">that</a></p>',

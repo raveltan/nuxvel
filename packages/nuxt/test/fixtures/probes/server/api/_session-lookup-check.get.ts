@@ -1,4 +1,5 @@
 import { countQueries } from "../../../../../src/runtime/server/database/query-counter";
+import { useCaller } from "@nuxvel/nuxt/server/api";
 
 export default defineEventHandler(async () => {
   const caller = useCaller();

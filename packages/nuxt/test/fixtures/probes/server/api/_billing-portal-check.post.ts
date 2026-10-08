@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { billingPortal } from "@nuxvel/nuxt/server/billing";
 
 const body = z.object({ user: z.object({ id: z.string(), email: z.string() }), returnUrl: z.string().default("/billing") });
 

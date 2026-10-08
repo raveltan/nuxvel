@@ -1,4 +1,13 @@
 import { z } from "zod";
+import { runBackfill } from "@nuxvel/nuxt/server/backfills";
+import { defineEvent } from "@nuxvel/nuxt/server/events";
+import { defineFlag, flag } from "@nuxvel/nuxt/server/flags";
+import type { FlagName } from "@nuxvel/nuxt/server/flags";
+import { defineJob, defineSchedule } from "@nuxvel/nuxt/server/queues";
+import type { JobName, ScheduleName } from "@nuxvel/nuxt/server/queues";
+import type { ChannelName } from "@nuxvel/nuxt/server/realtime";
+import { defineWebhook } from "@nuxvel/nuxt/server/webhooks";
+import type { WebhookName } from "@nuxvel/nuxt/server/webhooks";
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
@@ -17,8 +26,6 @@ export const flagNamesKeepKebabCase: Includes<FlagName, "probe-rollout"> = true;
 export const channelNamesArePaths: Includes<ChannelName, "_probe-public"> = true;
 
 export async function oldNamesNoLongerCompile() {
-  // @ts-expect-error the job moved to server/jobs/_probe/record.ts, so it is _probe.record
-  await $jobs.probe.record.dispatch({ name: "old" });
   // @ts-expect-error the flag in server/flags/probe-rollout.flag.ts is probe-rollout
   await flag("probeRollout");
   // @ts-expect-error the backfill in server/database/backfills/_probe-names.ts is _probe-names

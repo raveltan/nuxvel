@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { roleProcedure } from "@nuxvel/nuxt/server/api";
 
 export default {
   staff: roleProcedure(["admin", "agent"]).input(z.object({ id: z.number() })).query(({ ctx, input }) => ({ email: ctx.user.email, id: input.id })),

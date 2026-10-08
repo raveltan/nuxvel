@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ConflictError, ForbiddenError, NotFoundError, RateLimitedError, TransientError, UnauthenticatedError, UnknownError, publicProcedure } from "@nuxvel/nuxt/server/api";
 
 const errorsByName = {
   NotFoundError,

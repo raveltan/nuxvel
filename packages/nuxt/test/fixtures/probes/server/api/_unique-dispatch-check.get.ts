@@ -1,6 +1,9 @@
+import tunedJob from "#server/jobs/_probe/tuned";
+import { transaction } from "@nuxvel/nuxt/server/database";
+
 export default defineEventHandler(async () => {
   await transaction(async () => {
-    await $jobs._probe.tuned.dispatch({ name: "a" });
+    await tunedJob.dispatch({ name: "a" });
   });
 
   return { ok: true };

@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { z } from "zod";
+import { useDb } from "@nuxvel/nuxt/server/database";
 
 export const failureKindSchema = z.object({ kind: z.enum(["plain", "postgres", "transient", "upstream", "zod"]) });
 

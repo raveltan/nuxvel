@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { defineChannel } from "@nuxvel/nuxt/server/realtime";
 
 export const postsChannel = defineChannel({
   events: {

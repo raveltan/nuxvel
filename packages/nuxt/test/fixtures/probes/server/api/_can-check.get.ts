@@ -4,6 +4,9 @@ import { healthChecksTable } from "~~/server/database/schema/health-check.schema
 import { userTable } from "~~/server/database/schema/auth.schema";
 import { postsTable } from "~~/server/database/schema/posts.schema";
 import { healthCheckPolicy } from "~~/server/policies/health-check.policy";
+import { userActor } from "@nuxvel/nuxt/server/actions";
+import { can, canMany } from "@nuxvel/nuxt/server/authorization";
+import { firstOrFail, useDb } from "@nuxvel/nuxt/server/database";
 
 export default defineEventHandler(async () => {
   const owner = await useDb()

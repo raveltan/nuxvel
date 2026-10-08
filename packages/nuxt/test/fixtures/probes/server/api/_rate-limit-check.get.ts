@@ -1,4 +1,6 @@
 import { setTimeout as sleep } from "node:timers/promises";
+import { RateLimitedError } from "@nuxvel/nuxt/server/api";
+import { rateLimiter } from "@nuxvel/nuxt/server/security";
 
 async function attempt(key: string) {
   try {

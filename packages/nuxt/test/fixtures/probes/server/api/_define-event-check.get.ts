@@ -1,4 +1,5 @@
 import { probeHappened } from "~~/server/events/_probe/happened";
+import { ValidationFailedError } from "@nuxvel/nuxt/server/api";
 
 export default defineEventHandler(async () => {
   const parsed = await probeHappened.parse({ name: "Hello", count: 3 });

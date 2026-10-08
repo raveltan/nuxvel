@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { findListener } from "../../../../../src/runtime/server/events/registry";
 import { healthChecksTable } from "~~/server/database/schema/health-check.schema";
+import { useDb } from "@nuxvel/nuxt/server/database";
 
 export default defineEventHandler(async () => {
   const listener = findListener("_record-probe-queued");

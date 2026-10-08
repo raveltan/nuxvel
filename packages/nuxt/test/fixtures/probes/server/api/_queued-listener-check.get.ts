@@ -3,6 +3,9 @@ import { announceQueuedProbe } from "~~/server/actions/_probes/announce-queued-p
 import { healthChecksTable } from "~~/server/database/schema/health-check.schema";
 import { outboxTable } from "~~/server/database/schema/outbox.schema";
 import { useQueue } from "@nuxvel/nuxt/server/queues";
+import { systemActor } from "@nuxvel/nuxt/server/actions";
+import { useDb } from "@nuxvel/nuxt/server/database";
+import { relayOutbox } from "@nuxvel/nuxt/server/queues";
 
 export default defineEventHandler(async () => {
   await useQueue().obliterate({ force: true });

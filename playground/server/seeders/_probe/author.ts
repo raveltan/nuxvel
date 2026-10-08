@@ -1,5 +1,6 @@
 import { healthCheckFactory } from "#nuxvel/factories";
 import { userFactory } from "#nuxvel/factories";
+import { defineSeeder } from "@nuxvel/nuxt/server/database";
 
 export default defineSeeder(async () => {
   await healthCheckFactory({ name: "seeded-before-author" });

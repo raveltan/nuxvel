@@ -1,4 +1,6 @@
 import { z } from "zod";
+import webhookReceivedJob from "#server/jobs/_probe/webhook-received";
+import { defineWebhook, hmac } from "@nuxvel/nuxt/server/webhooks";
 
 const probeEvent = z.object({
   id: z.string(),
@@ -10,7 +12,7 @@ export default defineWebhook({
   verify: hmac({ header: "x-probe-signature", secret: "NUXT_PROBE_WEBHOOK_SECRET" }),
   eventId: ({ payload }) => payload.id,
   handler: async ({ payload: event }) => {
-    await $jobs._probe.webhookReceived.dispatch(event);
+    await webhookReceivedJob.dispatch(event);
 
     if (event.type === "probe.slow-failing") {
       await new Promise((resolve) => setTimeout(resolve, 1000));

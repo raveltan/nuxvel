@@ -1,3 +1,6 @@
+import { experiment, experimentReport, experimentState, flag, flagTargeting, setFlagTargeting, startExperiment, stopExperiment, track } from "@nuxvel/nuxt/server/flags";
+import type { Flag } from "@nuxvel/nuxt/server/flags";
+
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
 type FlagNameArg = Extract<Parameters<typeof flag>[0], string>;

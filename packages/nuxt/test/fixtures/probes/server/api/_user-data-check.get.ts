@@ -7,6 +7,10 @@ import { userTable } from "~~/server/database/schema/auth.schema";
 import { healthChecksTable } from "~~/server/database/schema/health-check.schema";
 import { notificationsTable } from "~~/server/database/schema/notifications.schema";
 import { postsTable } from "~~/server/database/schema/posts.schema";
+import { welcomeNotification } from "#server/notifications/welcome.notification";
+import { apiKeyActor, userActor } from "@nuxvel/nuxt/server/actions";
+import { firstOrFail, softDelete, useDb } from "@nuxvel/nuxt/server/database";
+import { eraseUserData, exportUserData } from "@nuxvel/nuxt/server/privacy";
 
 async function createUserWithData(name: string) {
   const owner = await useDb()
@@ -20,7 +24,7 @@ async function createUserWithData(name: string) {
   await createPostAction({ title: `${name} two`, body: "second" }, { actor });
   await useDb().insert(healthChecksTable).values({ name: `${name} check`, userId: owner.id });
   await useDb().insert(healthChecksTable).values({ name: owner.id });
-  await $notifications.welcome.notify(owner.id, { name });
+  await welcomeNotification.notify(owner.id, { name });
 
   return owner;
 }

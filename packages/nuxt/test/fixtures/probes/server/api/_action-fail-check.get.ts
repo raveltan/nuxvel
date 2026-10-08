@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ActionError, defineAction, isActionError, systemActor } from "@nuxvel/nuxt/server/actions";
 
 const doThing = probeNamed("_action-fail-check.doThing", defineAction({
   input: z.object({ shouldFail: z.boolean() }),

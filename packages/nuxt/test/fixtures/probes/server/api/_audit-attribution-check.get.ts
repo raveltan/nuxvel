@@ -2,6 +2,9 @@ import { randomUUID } from "node:crypto";
 import { eq, inArray, type SQL, sql } from "drizzle-orm";
 import { auditContextTable, auditLogTable, auditSubjectsTable } from "~~/server/database/schema/audit-log.schema";
 import { userTable } from "~~/server/database/schema/auth.schema";
+import { defineAction } from "@nuxvel/nuxt/server/actions";
+import { audit, verifyAuditChain } from "@nuxvel/nuxt/server/audit";
+import { firstOrFail, useDb } from "@nuxvel/nuxt/server/database";
 
 const post = probeNamed("_audit-attribution-check.post", defineAction({
   handler: () => audit("post.created", { id: 1 }),

@@ -1,6 +1,8 @@
 import { eq } from "drizzle-orm";
 import { announceProbe } from "~~/server/actions/_probes/announce-probe";
 import { healthChecksTable } from "~~/server/database/schema/health-check.schema";
+import { systemActor } from "@nuxvel/nuxt/server/actions";
+import { useDb } from "@nuxvel/nuxt/server/database";
 
 async function names(name: string) {
   const rows = await useDb()

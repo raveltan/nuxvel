@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { defineJob } from "@nuxvel/nuxt/server/queues";
 
 export default defineJob({
   attempts: 5,

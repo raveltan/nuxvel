@@ -1,5 +1,3 @@
-import * as $backfills from "#nuxvel/backfills-namespace";
-import * as $seeders from "#nuxvel/seeders-namespace";
 import {
   actingAs,
   can,
@@ -46,6 +44,16 @@ import { postFactory } from "~~/server/factories/posts.factory";
 import { userFactory } from "~~/server/factories/users.factory";
 import { healthChecksTable } from "~~/server/database/schema/health-check.schema";
 import { userTable } from "~~/server/database/schema/auth.schema";
+import { postsChannel } from "#server/channels/posts.channel";
+import _probePublicChannel from "#server/channels/_probe-public";
+import postsSeeder from "#server/seeders/_probe/posts";
+import { loginRateLimit } from "#server/rate-limits/login.rate-limit";
+import _probeNamesBackfill from "#server/database/backfills/_probe-names";
+import { namedExportJob } from "#server/jobs/_probe/named-export.job";
+import recordJob from "#server/jobs/_probe/record";
+import { welcomeMail } from "#server/mail/welcome.mail";
+import { welcomeNotification } from "#server/notifications/welcome.notification";
+import { databaseSeeder } from "#server/seeders/database.seeder";
 
 export async function fakeAssertionsTakeOnlyDefinedNames() {
   await expectQueued("_probe.record", { name: "typed" });
@@ -136,71 +144,70 @@ export async function runScheduleTakesOnlyDefinedSchedules() {
 }
 
 export async function jobFixturesTakeADefinition() {
-  await runJob($jobs._probe.record, { name: "typed" });
-  await expectQueued($jobs._probe.record, { name: "typed" }, { times: 1 });
-  await expectNotQueued($jobs._probe.record);
-  await expectQueued($jobs._probe.namedExport, { name: "typed" });
-  await expectNotQueued($jobs._probe.namedExport);
+  await runJob(recordJob, { name: "typed" });
+  await expectQueued(recordJob, { name: "typed" }, { times: 1 });
+  await expectNotQueued(recordJob);
+  await expectQueued(namedExportJob, { name: "typed" });
+  await expectNotQueued(namedExportJob);
 
   // @ts-expect-error the definition's input takes a string name
-  await runJob($jobs._probe.record, { name: 1 });
+  await runJob(recordJob, { name: 1 });
   // @ts-expect-error the definition's input takes a string name
-  await expectQueued($jobs._probe.record, { name: 1 });
+  await expectQueued(recordJob, { name: 1 });
   // @ts-expect-error the definition's input takes a string name
-  await expectNotQueued($jobs._probe.namedExport, { name: 1 });
+  await expectNotQueued(namedExportJob, { name: 1 });
 }
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
-type TestJobStub = typeof testNamespaces.$jobs._probe.record;
+type TestJobStub = typeof recordJob;
 type TestFlagStub = typeof testNamespaces.$flags;
 
-export const testJobStubIsTheDefinition: IsAny<TestJobStub> extends true ? never : TestJobStub extends typeof $jobs._probe.record ? true : never = true;
+export const testJobStubIsTheDefinition: IsAny<TestJobStub> extends true ? never : TestJobStub extends typeof recordJob ? true : never = true;
 export const testFlagStubsAreTyped: IsAny<TestFlagStub> extends true ? never : true = true;
 
 export async function jobFixturesTakeATestStub() {
-  await runJob(testNamespaces.$jobs._probe.record, { name: "typed" });
-  await expectQueued(testNamespaces.$jobs._probe.namedExport, { name: "typed" });
+  await runJob(recordJob, { name: "typed" });
+  await expectQueued(namedExportJob, { name: "typed" });
 
   // @ts-expect-error the definition's input takes a string name
-  await runJob(testNamespaces.$jobs._probe.record, { name: 1 });
+  await runJob(recordJob, { name: 1 });
 }
 
 export async function mailFixturesTakeADefinitionOrATestStub() {
-  await renderMail($mails.welcome, { to: "ada@example.com", name: "Ada" });
-  await renderMail(testNamespaces.$mails.welcome, { to: "ada@example.com", name: "Ada" });
-  await expectMailSent($mails.welcome, { to: "ada@example.com" });
-  await expectMailSent(testNamespaces.$mails.welcome, { name: "Ada" });
-  await expectNoMailSent(testNamespaces.$mails.welcome);
+  await renderMail(welcomeMail, { to: "ada@example.com", name: "Ada" });
+  await expectMailSent(welcomeMail, { to: "ada@example.com" });
+  await expectMailSent(welcomeMail, { name: "Ada" });
+  await expectNoMailSent(welcomeMail);
 
   const sent: { to: string; name: string } = await expectMailSent("welcome");
-  const sentByDefinition: { to: string; name: string } = await expectMailSent($mails.welcome);
+  const sentByDefinition: { to: string; name: string } = await expectMailSent(welcomeMail);
   void [sent, sentByDefinition];
 
   // @ts-expect-error the definition's input needs a name
-  await renderMail(testNamespaces.$mails.welcome, { to: "ada@example.com" });
+  await renderMail(welcomeMail, { to: "ada@example.com" });
   // @ts-expect-error the definition's name is a string
-  await expectMailSent($mails.welcome, { name: 1 });
+  await expectMailSent(welcomeMail, { name: 1 });
 }
 
 export async function notificationFixturesTakeADefinitionOrATestStub() {
-  await sendNotification({ id: "user-1" }, $notifications.welcome, { name: "Ada" });
-  await sendNotification([{ id: "user-1" }], testNamespaces.$notifications.welcome, { name: "Ada" });
-  await expectNotified({ id: "user-1" }, testNamespaces.$notifications.welcome, { title: "Welcome, Ada" });
-  await expectNotNotified({ id: "user-1" }, $notifications.welcome);
+  await sendNotification({ id: "user-1" }, welcomeNotification, { name: "Ada" });
+  await sendNotification([{ id: "user-1" }], welcomeNotification, { name: "Ada" });
+  await expectNotified({ id: "user-1" }, welcomeNotification, { title: "Welcome, Ada" });
+  await expectNotNotified({ id: "user-1" }, welcomeNotification);
 
   // @ts-expect-error the definition's data needs a name
-  await sendNotification({ id: "user-1" }, testNamespaces.$notifications.welcome, {});
+  await sendNotification({ id: "user-1" }, welcomeNotification, {});
   // @ts-expect-error the definition's name is a string
-  await sendNotification({ id: "user-1" }, $notifications.welcome, { name: 1 });
+  await sendNotification({ id: "user-1" }, welcomeNotification, { name: 1 });
 }
 
 export async function expectPresentTakesADefinitionOrATestStub() {
-  const member = await expectPresent(testNamespaces.$channels.posts, { id: 1 }, { id: "user-1" });
+  const member = await expectPresent(postsChannel, { id: 1 }, { id: "user-1" });
   const typing: boolean | undefined = member.state.typing;
-  await expectPresent($channels.posts, { id: 1 }, { id: "user-1" });
+  await expectPresent(postsChannel, { id: 1 }, { id: "user-1" });
 
   // @ts-expect-error _probe-public sets no presence
-  await expectPresent(testNamespaces.$channels._probePublic, {}, { id: "user-1" });
+  await expectPresent(_probePublicChannel, {}, { id: "user-1" });
 
   return typing;
 }
@@ -358,15 +365,14 @@ export async function flagFixturesTakeADefinitionOrATestStub() {
 }
 
 export async function backfillAndSeederFixturesTakeADefinitionOrATestStub() {
-  await runBackfill(testNamespaces.$backfills._probeNames);
-  await runBackfill($backfills._probeNames);
-  await runSeeder(testNamespaces.$seeders._probe.posts);
-  await runSeeder($seeders.database);
+  await runBackfill(_probeNamesBackfill);
+  await runSeeder(postsSeeder);
+  await runSeeder(databaseSeeder);
 
   // @ts-expect-error a seeder is not a backfill
-  await runBackfill(testNamespaces.$seeders.database);
+  await runBackfill(databaseSeeder);
   // @ts-expect-error a rate limit is not a seeder
-  await runSeeder(testNamespaces.$rateLimits.login);
+  await runSeeder(loginRateLimit);
 }
 
 export async function flagFixturesTakeOnlyDefinedNames() {

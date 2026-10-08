@@ -1,3 +1,6 @@
+import { defineUpload } from "@nuxvel/nuxt/server/storage";
+import type { UploadName } from "@nuxvel/nuxt/server/storage";
+
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
 export const uploadNameIsTyped: IsAny<UploadName> extends true

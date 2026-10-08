@@ -1,3 +1,5 @@
+import { sanitizeHtml } from "@nuxvel/nuxt/shared/html";
+
 const HOSTILE = [
   '<p onclick="steal()">Hello <strong>world</strong></p>',
   "<script>alert(1)</script>",

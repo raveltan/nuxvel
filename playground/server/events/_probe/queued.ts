@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { defineEvent } from "@nuxvel/nuxt/server/events";
 
 const v1 = z.object({ label: z.string().min(1) });
 

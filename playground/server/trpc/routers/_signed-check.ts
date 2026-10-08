@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { publicProcedure, signedProcedure } from "@nuxvel/nuxt/server/api";
+import { useAuth } from "@nuxvel/nuxt/server/auth";
+import { signedUrl } from "@nuxvel/nuxt/server/security";
 
 const linkInput = z.object({ id: z.number(), expires: z.string(), signature: z.string() });
 const textLinkInput = z.object({ id: z.string(), expires: z.string(), signature: z.string() });

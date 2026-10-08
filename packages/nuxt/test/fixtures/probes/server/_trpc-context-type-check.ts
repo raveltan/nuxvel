@@ -1,3 +1,8 @@
+import { apiKeyActor, systemActor, userActor } from "@nuxvel/nuxt/server/actions";
+import type { Actor } from "@nuxvel/nuxt/server/actions";
+import { authedProcedure, publicProcedure, roleProcedure } from "@nuxvel/nuxt/server/api";
+import type { SessionUser } from "@nuxvel/nuxt/server/auth";
+
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
 export const authedContext = authedProcedure.query(({ ctx }) => {

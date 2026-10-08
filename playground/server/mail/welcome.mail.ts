@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { defineMail } from "@nuxvel/nuxt/server/mail";
 
 export const welcomeMail = defineMail({
   input: z.object({ to: z.email(), name: z.string() }),

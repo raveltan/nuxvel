@@ -1,5 +1,9 @@
 import { outboxTable } from "~~/server/database/schema/outbox.schema";
 import { useQueue } from "@nuxvel/nuxt/server/queues";
+import recordJob from "#server/jobs/_probe/record";
+import recordReportJob from "#server/jobs/_probe/record-report";
+import { transaction, useDb } from "@nuxvel/nuxt/server/database";
+import { relayOutbox } from "@nuxvel/nuxt/server/queues";
 
 export default defineEventHandler(async () => {
   await useQueue().obliterate({ force: true });
@@ -7,8 +11,8 @@ export default defineEventHandler(async () => {
   await useDb().delete(outboxTable);
 
   await transaction(async () => {
-    await $jobs._probe.record.dispatch({ name: "default" });
-    await $jobs._probe.recordReport.dispatch({ name: "report" });
+    await recordJob.dispatch({ name: "default" });
+    await recordReportJob.dispatch({ name: "report" });
   });
   await relayOutbox();
 

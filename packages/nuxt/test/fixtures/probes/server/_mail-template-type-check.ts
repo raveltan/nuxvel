@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { defineMail } from "@nuxvel/nuxt/server/mail";
+import type { MailTemplateName, MailTemplateProps } from "@nuxvel/nuxt/server/mail";
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 

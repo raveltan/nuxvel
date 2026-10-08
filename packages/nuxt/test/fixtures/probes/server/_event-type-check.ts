@@ -5,8 +5,12 @@ import {
   expectListenerRan,
   runListener,
 } from "@nuxvel/nuxt/testing";
-import * as testNamespaces from "#build/nuxvel/test-namespaces.mjs";
 import { probeTransformed } from "~~/server/events/_probe/transformed";
+import { probeHappened } from "#server/events/_probe/happened";
+import _recordProbeSyncListener from "#server/listeners/_record-probe-sync";
+import _recordProbeQueuedListener from "#server/listeners/_record-probe-queued";
+import { defineListener } from "@nuxvel/nuxt/server/events";
+import type { DomainEvent, EventName, EventPayload, Listener } from "@nuxvel/nuxt/server/events";
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
@@ -43,37 +47,33 @@ export const eventPayloadIsParsedOutput: EventPayload<"_probe.transformed"> exte
   : never = true;
 
 export async function emitsByName() {
-  await $events._probe.transformed.emit({ names: "a,b" });
-
-  // @ts-expect-error no event has this name
-  await $events._probe.missing.emit({ names: "a,b" });
+  await probeTransformed.emit({ names: "a,b" });
 
   // @ts-expect-error the payload type follows the event name
-  await $events._probe.transformed.emit({ names: ["a", "b"] });
+  await probeTransformed.emit({ names: ["a", "b"] });
 }
 
-type NamespacedEvent = typeof $events._probe.happened;
-type NamespacedListener = typeof $listeners._recordProbeSync;
+type NamespacedEvent = typeof probeHappened;
+type NamespacedListener = typeof _recordProbeSyncListener;
 
 export const eventsNamespaceIsTyped: IsAny<NamespacedEvent> extends true ? never : NamespacedEvent extends DomainEvent ? true : never = true;
 export const listenersNamespaceIsTyped: IsAny<NamespacedListener> extends true ? never : NamespacedListener extends Listener ? true : never = true;
 
 export async function eventFixturesTakeADefinitionOrATestStub() {
-  await emitInTest($events._probe.transformed, { names: "a,b" });
-  await emitInTest(testNamespaces.$events._probe.transformed, { names: "a,b" });
-  await expectEmitted(testNamespaces.$events._probe.transformed, { names: ["a", "b"] });
-  await expectEmitted($events._probe.happened);
-  await runListener(testNamespaces.$listeners._recordProbeQueued, { name: "typed" });
-  await expectListenerRan($listeners._recordProbeSync);
-  await expectListenerQueued(testNamespaces.$listeners._recordProbeQueued);
+  await emitInTest(probeTransformed, { names: "a,b" });
+  await expectEmitted(probeTransformed, { names: ["a", "b"] });
+  await expectEmitted(probeHappened);
+  await runListener(_recordProbeQueuedListener, { name: "typed" });
+  await expectListenerRan(_recordProbeSyncListener);
+  await expectListenerQueued(_recordProbeQueuedListener);
 
   // @ts-expect-error the test emit takes the schema's input, not its parsed output
-  await emitInTest(testNamespaces.$events._probe.transformed, { names: ["a", "b"] });
+  await emitInTest(probeTransformed, { names: ["a", "b"] });
   // @ts-expect-error expectEmitted matches the parsed payload
-  await expectEmitted($events._probe.transformed, { names: "a,b" });
+  await expectEmitted(probeTransformed, { names: "a,b" });
 }
 
-type EmitPayload = Parameters<typeof $events._probe.transformed.emit>[0];
+type EmitPayload = Parameters<typeof probeTransformed.emit>[0];
 
 export const emitPayloadIsTyped: IsAny<EmitPayload> extends true
   ? never

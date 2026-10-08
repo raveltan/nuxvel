@@ -1,3 +1,6 @@
+import { createPostInput, updatePostInput } from "#shared/schemas/post";
+import { toValidationError } from "@nuxvel/nuxt/server/api";
+
 export default defineEventHandler(() => {
   const validCreate = createPostInput.safeParse({
     title: "Hello",

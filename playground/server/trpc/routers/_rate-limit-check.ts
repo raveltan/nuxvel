@@ -1,3 +1,6 @@
+import { authedProcedure, publicProcedure } from "@nuxvel/nuxt/server/api";
+import { rateLimit } from "@nuxvel/nuxt/server/security";
+
 export default {
   byKey: publicProcedure
     .use(

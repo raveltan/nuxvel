@@ -1,3 +1,5 @@
+import { useLogger } from "@nuxvel/nuxt/server/observability";
+
 export default defineEventHandler(() => {
   const log = useLogger("logger-check");
 

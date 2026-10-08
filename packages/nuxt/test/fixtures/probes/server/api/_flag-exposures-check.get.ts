@@ -1,4 +1,6 @@
 import { flagExposuresTable } from "~~/server/database/schema/flag-exposures.schema";
+import { useDb } from "@nuxvel/nuxt/server/database";
+import { experiment, flag } from "@nuxvel/nuxt/server/flags";
 
 export default defineEventHandler(async (event) => {
   const { subject } = getQuery(event);

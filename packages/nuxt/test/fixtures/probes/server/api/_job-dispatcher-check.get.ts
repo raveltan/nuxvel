@@ -6,18 +6,22 @@ import { userTable } from "~~/server/database/schema/auth.schema";
 import { healthChecksTable } from "~~/server/database/schema/health-check.schema";
 import { outboxTable } from "~~/server/database/schema/outbox.schema";
 import whoami from "~~/server/jobs/_probe/whoami";
+import whoamiJob from "#server/jobs/_probe/whoami";
+import { defineAction, systemActor, userActor } from "@nuxvel/nuxt/server/actions";
+import { authedProcedure } from "@nuxvel/nuxt/server/api";
+import { firstOrFail, useDb } from "@nuxvel/nuxt/server/database";
 
 const dispatchWhoami = probeNamed("_job-dispatcher-check.dispatch", defineAction({
   input: z.object({ name: z.string() }),
-  handler: ({ name }) => $jobs._probe.whoami.dispatch({ name }),
+  handler: ({ name }) => whoamiJob.dispatch({ name }),
 }));
 
 const testRouter = t.router({
-  fromProcedure: authedProcedure.mutation(() => $jobs._probe.whoami.dispatch({ name: "procedure" })),
+  fromProcedure: authedProcedure.mutation(() => whoamiJob.dispatch({ name: "procedure" })),
   overridden: authedProcedure.mutation(() =>
-    $jobs._probe.whoami.dispatch({ name: "overridden" }, { dispatcher: systemActor("_job-dispatcher-check") }),
+    whoamiJob.dispatch({ name: "overridden" }, { dispatcher: systemActor("_job-dispatcher-check") }),
   ),
-  cleared: authedProcedure.mutation(() => $jobs._probe.whoami.dispatch({ name: "cleared" }, { dispatcher: null })),
+  cleared: authedProcedure.mutation(() => whoamiJob.dispatch({ name: "cleared" }, { dispatcher: null })),
 });
 
 export default defineEventHandler(async () => {
@@ -34,7 +38,7 @@ export default defineEventHandler(async () => {
   await dispatchWhoami({ name: "action" }, { actor: userActor(user) });
   await signedIn.overridden();
   await signedIn.cleared();
-  await $jobs._probe.whoami.dispatch({ name: "signed-out" });
+  await whoamiJob.dispatch({ name: "signed-out" });
 
   const rows = await useDb().select().from(outboxTable).where(eq(outboxTable.jobName, "_probe.whoami")).orderBy(outboxTable.id);
 

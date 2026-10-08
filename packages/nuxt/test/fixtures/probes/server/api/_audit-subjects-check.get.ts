@@ -3,6 +3,9 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { auditContextTable, auditLogTable, auditSubjectsTable } from "~~/server/database/schema/audit-log.schema";
 import { userTable } from "~~/server/database/schema/auth.schema";
+import { defineAction } from "@nuxvel/nuxt/server/actions";
+import { audit } from "@nuxvel/nuxt/server/audit";
+import { firstOrFail, useDb } from "@nuxvel/nuxt/server/database";
 
 const promote = probeNamed("_audit-subjects-check.promote", defineAction({
   input: z.object({ userId: z.string() }),

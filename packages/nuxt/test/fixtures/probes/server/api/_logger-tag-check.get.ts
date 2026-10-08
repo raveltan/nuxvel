@@ -1,3 +1,7 @@
+import { defineAction, systemActor } from "@nuxvel/nuxt/server/actions";
+import { useLogger } from "@nuxvel/nuxt/server/observability";
+import { defineJob } from "@nuxvel/nuxt/server/queues";
+
 const tagged = probeNamed("_logger-tag-check.tagged", defineAction({
   handler: () => {
     useLogger().info("logger-tag-check in action");

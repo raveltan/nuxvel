@@ -1,4 +1,9 @@
 import { z } from "zod";
+import { checkout } from "@nuxvel/nuxt/server/billing";
+import { proProduct } from "#server/products/_pro.product";
+import { courseProduct } from "#server/products/_course.product";
+
+const products = { _pro: proProduct, _course: courseProduct };
 
 const body = z.object({
   user: z.object({ id: z.string(), email: z.string() }),
@@ -11,7 +16,7 @@ export default defineEventHandler(async (event) => {
   const { user, product, successUrl, cancelUrl } = body.parse(await readBody(event));
 
   try {
-    return { url: await checkout(user, $products[product], { successUrl, cancelUrl }) };
+    return { url: await checkout(user, products[product], { successUrl, cancelUrl }) };
   } catch (error) {
     return { error: error instanceof Error ? error.message : String(error) };
   }

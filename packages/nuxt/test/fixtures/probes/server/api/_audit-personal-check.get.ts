@@ -2,6 +2,9 @@ import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { auditLogTable } from "~~/server/database/schema/audit-log.schema";
+import { defineAction, systemActor } from "@nuxvel/nuxt/server/actions";
+import { audit } from "@nuxvel/nuxt/server/audit";
+import { useDb } from "@nuxvel/nuxt/server/database";
 
 const changeEmail = probeNamed("_audit-personal-check.change-email", defineAction({
   input: z.object({ userId: z.string() }),

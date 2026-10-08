@@ -1,5 +1,8 @@
 import { z } from "zod";
 import { healthChecksTable } from "#nuxvel/schema";
+import { richTextProbeInput } from "#shared/schemas/_rich-text-probe";
+import { publicProcedure } from "@nuxvel/nuxt/server/api";
+import { firstOrFail, useDb } from "@nuxvel/nuxt/server/database";
 
 export default {
   save: publicProcedure

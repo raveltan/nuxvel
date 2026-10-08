@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { ValidationFailedError } from "@nuxvel/nuxt/server/api";
+import { checkUpload } from "@nuxvel/nuxt/server/storage";
 
 export default defineEventHandler(async (event) => {
   const { key } = await readValidatedBody(event, z.object({ key: z.string() }).parse);

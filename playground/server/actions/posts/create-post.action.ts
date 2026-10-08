@@ -1,4 +1,11 @@
 import { postsTable } from "#nuxvel/schema";
+import { postsChannel } from "#server/channels/posts.channel";
+import { postNotifyFollowersJob } from "#server/jobs/post/notify-followers.job";
+import { createPostInput } from "#shared/schemas/post";
+import { defineAction } from "@nuxvel/nuxt/server/actions";
+import { ForbiddenError } from "@nuxvel/nuxt/server/api";
+import { audit } from "@nuxvel/nuxt/server/audit";
+import { insertOne } from "@nuxvel/nuxt/server/database";
 
 export const createPostAction = defineAction({
   input: createPostInput,
@@ -9,8 +16,8 @@ export const createPostAction = defineAction({
     const post = await insertOne(postsTable, { title: input.title, body: input.body, authorId: actor.userId });
 
     await audit("post.created", { type: "posts", id: post.id });
-    await $jobs.post.notifyFollowers.dispatch({ postId: post.id });
-    await $channels.posts.broadcast("created", post);
+    await postNotifyFollowersJob.dispatch({ postId: post.id });
+    await postsChannel.broadcast("created", post);
 
     return post;
   },

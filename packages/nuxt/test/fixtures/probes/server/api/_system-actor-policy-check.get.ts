@@ -4,6 +4,10 @@ import { healthChecksTable } from "~~/server/database/schema/health-check.schema
 import { userTable } from "~~/server/database/schema/auth.schema";
 import { tagsTable } from "~~/server/database/schema/tags.schema";
 import { webhookEndpointsTable } from "~~/server/database/schema/webhook-endpoints.schema";
+import { systemActor } from "@nuxvel/nuxt/server/actions";
+import type { Actor } from "@nuxvel/nuxt/server/actions";
+import { can, canMany } from "@nuxvel/nuxt/server/authorization";
+import { firstOrFail, useDb } from "@nuxvel/nuxt/server/database";
 
 export default defineEventHandler(async () => {
   const owner = await useDb()

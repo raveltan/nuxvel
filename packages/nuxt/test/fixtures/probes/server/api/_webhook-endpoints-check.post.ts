@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { transaction } from "@nuxvel/nuxt/server/database";
+import { addWebhookEndpoint, listWebhookEndpoints, removeWebhookEndpoint, sendWebhook } from "@nuxvel/nuxt/server/webhooks";
 
 const body = z.union([
   z.object({ add: z.string() }),

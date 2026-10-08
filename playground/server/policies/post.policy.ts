@@ -1,6 +1,8 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { userTable } from "#nuxvel/schema";
 import { postsTable } from "#nuxvel/schema";
+import { definePolicy } from "@nuxvel/nuxt/server/authorization";
+import { useDb } from "@nuxvel/nuxt/server/database";
 
 async function adminAuthors(actor: { role?: string }, rows: { authorId: string }[]) {
   if (actor.role !== "admin") return new Set<string>();

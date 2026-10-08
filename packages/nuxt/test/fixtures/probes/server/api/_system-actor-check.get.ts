@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { defineAction, systemActor } from "@nuxvel/nuxt/server/actions";
 
 const echo = probeNamed("_system-actor-check.echo", defineAction({
   input: z.object({ value: z.string() }),

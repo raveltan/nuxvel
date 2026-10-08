@@ -1,3 +1,6 @@
+import { defineUpload } from "@nuxvel/nuxt/server/storage";
+import type { FileSize } from "@nuxvel/nuxt/server/storage";
+
 function refusal(maxSize: FileSize) {
   try {
     return defineUpload({ maxSize, allowedTypes: ["image/png"] }).maxSize;

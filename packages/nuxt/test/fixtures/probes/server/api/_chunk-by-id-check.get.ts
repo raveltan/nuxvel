@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { healthChecksTable } from "~~/server/database/schema/health-check.schema";
+import { chunkById, useDb } from "@nuxvel/nuxt/server/database";
 
 export default defineEventHandler(async () => {
   const name = randomUUID();

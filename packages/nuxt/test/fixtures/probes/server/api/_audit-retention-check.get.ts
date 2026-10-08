@@ -3,6 +3,9 @@ import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { useS3 } from "@nuxvel/nuxt/server/storage";
 import { eq, sql } from "drizzle-orm";
 import { auditLogTable } from "~~/server/database/schema/audit-log.schema";
+import { maintainAuditPartitions } from "@nuxvel/nuxt/server/audit";
+import { useDb } from "@nuxvel/nuxt/server/database";
+import { useBucket } from "@nuxvel/nuxt/server/storage";
 
 function monthsAgo(months: number) {
   const now = new Date();

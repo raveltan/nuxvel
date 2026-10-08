@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { defineAction, systemActor } from "@nuxvel/nuxt/server/actions";
 
 const limitedEcho = probeNamed("_rate-limit-action.echo", defineAction({
   input: z.object({ key: z.string() }),

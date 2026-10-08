@@ -1,4 +1,6 @@
 import { runSeeder } from "@nuxvel/nuxt/testing";
+import { defineSeeder } from "@nuxvel/nuxt/server/database";
+import type { SeederName } from "@nuxvel/nuxt/server/database";
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 

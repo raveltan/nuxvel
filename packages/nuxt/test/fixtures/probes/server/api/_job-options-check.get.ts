@@ -1,15 +1,19 @@
 import { outboxTable } from "~~/server/database/schema/outbox.schema";
 import { useQueue } from "@nuxvel/nuxt/server/queues";
+import recordJob from "#server/jobs/_probe/record";
+import tunedJob from "#server/jobs/_probe/tuned";
+import { transaction, useDb } from "@nuxvel/nuxt/server/database";
+import { relayOutbox } from "@nuxvel/nuxt/server/queues";
 
 export default defineEventHandler(async () => {
   await useQueue().obliterate({ force: true });
   await useDb().delete(outboxTable);
 
   await transaction(async () => {
-    await $jobs._probe.tuned.dispatch({ name: "a" });
-    await $jobs._probe.tuned.dispatch({ name: "a" });
-    await $jobs._probe.tuned.dispatch({ name: "b" });
-    await $jobs._probe.record.dispatch({ name: "plain" });
+    await tunedJob.dispatch({ name: "a" });
+    await tunedJob.dispatch({ name: "a" });
+    await tunedJob.dispatch({ name: "b" });
+    await recordJob.dispatch({ name: "plain" });
   });
   await relayOutbox();
 

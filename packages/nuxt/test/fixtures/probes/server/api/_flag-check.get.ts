@@ -1,3 +1,5 @@
+import { defineFlag, experiment, flag, setFlagTargeting, startExperiment } from "@nuxvel/nuxt/server/flags";
+
 const USERS = Array.from({ length: 200 }, (_, index) => ({
   id: `flag-user-${index}`,
   role: index % 2 === 0 ? "beta-tester" : "user",

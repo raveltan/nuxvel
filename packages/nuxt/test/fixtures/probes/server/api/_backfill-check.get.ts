@@ -1,7 +1,9 @@
-import * as $backfills from "#nuxvel/backfills-namespace";
 import { asc, eq } from "drizzle-orm";
 import { backfillsTable } from "~~/server/database/schema/backfills.schema";
 import { healthChecksTable } from "~~/server/database/schema/health-check.schema";
+import _probeNamesBackfill from "#server/database/backfills/_probe-names";
+import { runBackfill } from "@nuxvel/nuxt/server/backfills";
+import { firstOrFail, useDb } from "@nuxvel/nuxt/server/database";
 
 const NAMES = ["backfill-1", "backfill-2", "backfill-3-crash", "backfill-4", "backfill-5"];
 
@@ -33,7 +35,7 @@ export default defineEventHandler(async () => {
     .set({ name: "backfill-3" })
     .where(eq(healthChecksTable.name, "backfill-3-crash"));
 
-  await runBackfill($backfills._probeNames);
+  await runBackfill(_probeNamesBackfill);
   const afterResume = await probeState();
 
   const names = await useDb()

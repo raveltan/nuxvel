@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { healthChecksTable } from "#nuxvel/schema";
+import { useDb } from "@nuxvel/nuxt/server/database";
+import { defineJob } from "@nuxvel/nuxt/server/queues";
 
 const v1 = z.object({ label: z.string().min(1) });
 

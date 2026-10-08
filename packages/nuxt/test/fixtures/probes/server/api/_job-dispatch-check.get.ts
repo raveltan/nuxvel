@@ -1,26 +1,29 @@
+import recordJob from "#server/jobs/_probe/record";
+import { transaction } from "@nuxvel/nuxt/server/database";
+
 export default defineEventHandler(async () => {
   try {
     await transaction(async () => {
-      await $jobs._probe.record.dispatch({ name: "rolled-back" });
+      await recordJob.dispatch({ name: "rolled-back" });
       throw new Error("boom");
     });
   } catch {}
 
   await transaction(async () => {
-    await $jobs._probe.record.dispatch({ name: "committed" });
+    await recordJob.dispatch({ name: "committed" });
   });
 
-  await $jobs._probe.record.dispatch({ name: "immediate" });
+  await recordJob.dispatch({ name: "immediate" });
 
   await transaction(async () => {
     try {
       await transaction(async () => {
-        await $jobs._probe.record.dispatch({ name: "nested-rolled-back" });
+        await recordJob.dispatch({ name: "nested-rolled-back" });
         throw new Error("inner boom");
       });
     } catch {}
 
-    await $jobs._probe.record.dispatch({ name: "nested-committed" });
+    await recordJob.dispatch({ name: "nested-committed" });
   });
 
   return { ok: true };

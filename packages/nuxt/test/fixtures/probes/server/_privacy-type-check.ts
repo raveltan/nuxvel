@@ -1,6 +1,7 @@
 import { userTable } from "~~/server/database/schema/auth.schema";
 import { healthChecksTable } from "~~/server/database/schema/health-check.schema";
 import { postsTable } from "~~/server/database/schema/posts.schema";
+import { defineUserData } from "@nuxvel/nuxt/server/privacy";
 
 export const declaresAStringColumnOfItsOwnTable = defineUserData(postsTable, postsTable.authorId);
 

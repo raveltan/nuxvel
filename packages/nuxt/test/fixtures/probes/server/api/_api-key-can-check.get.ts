@@ -1,5 +1,7 @@
 import { healthChecksTable } from "~~/server/database/schema/health-check.schema";
 import { captureSqlQueries } from "../../../../../src/runtime/server/database/query-counter";
+import { authorize, can } from "@nuxvel/nuxt/server/authorization";
+import { insertOne } from "@nuxvel/nuxt/server/database";
 
 export default defineEventHandler(async () => {
   const row = await insertOne(healthChecksTable, { name: "api key can" });

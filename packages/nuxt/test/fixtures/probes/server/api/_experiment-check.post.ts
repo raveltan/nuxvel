@@ -1,3 +1,5 @@
+import { startExperiment, stopExperiment } from "@nuxvel/nuxt/server/flags";
+
 export default defineEventHandler(async (event) => {
   const { running } = await readBody<{ running: boolean }>(event);
 

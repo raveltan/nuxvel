@@ -1,5 +1,6 @@
 import { policyRegistry } from "../../../../../src/runtime/server/policies/registry";
 import { postsTable } from "~~/server/database/schema/posts.schema";
+import { definePolicy } from "@nuxvel/nuxt/server/authorization";
 
 export default defineEventHandler(() => {
   const first = definePolicy(postsTable, { update: () => true });

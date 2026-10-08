@@ -2,6 +2,8 @@ import { useQueue } from "@nuxvel/nuxt/server/queues";
 import { useRedis } from "@nuxvel/nuxt/server/redis";
 import { goDown, goUp } from "../../../../../src/runtime/server/maintenance/state";
 import { channelTopic, revokedSessionsTopic } from "../../../../../src/runtime/server/realtime/streams/channel-topic";
+import { remember, withLock } from "@nuxvel/nuxt/server/cache";
+import { rateLimiter } from "@nuxvel/nuxt/server/security";
 
 export default defineEventHandler(async () => {
   await remember("probe:prefixed", { minutes: 1 }, () => "value");

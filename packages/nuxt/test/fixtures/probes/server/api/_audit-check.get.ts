@@ -1,4 +1,7 @@
 import { auditLogTable } from "~~/server/database/schema/audit-log.schema";
+import { defineAction, systemActor } from "@nuxvel/nuxt/server/actions";
+import { audit } from "@nuxvel/nuxt/server/audit";
+import { useDb } from "@nuxvel/nuxt/server/database";
 
 const rolledBack = probeNamed("_audit-check.rolledBack", defineAction({
   handler: async () => {

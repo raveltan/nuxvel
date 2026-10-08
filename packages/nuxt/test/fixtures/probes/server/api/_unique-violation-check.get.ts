@@ -1,6 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { userTable } from "~~/server/database/schema/auth.schema";
+import { defineAction, systemActor } from "@nuxvel/nuxt/server/actions";
+import { isTaxonomyError, useCaller } from "@nuxvel/nuxt/server/api";
+import { transaction, useDb } from "@nuxvel/nuxt/server/database";
 
 const insertUser = probeNamed("_unique-violation-check.insertUser", defineAction({
   input: z.object({ email: z.string() }),

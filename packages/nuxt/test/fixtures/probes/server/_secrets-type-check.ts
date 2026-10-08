@@ -1,3 +1,5 @@
+import { useSecrets } from "@nuxvel/nuxt/server/security";
+
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
 type Secrets = ReturnType<typeof useSecrets>;

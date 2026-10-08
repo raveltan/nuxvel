@@ -1,4 +1,5 @@
 import { createHmac, randomBytes } from "node:crypto";
+import { useSecrets } from "@nuxvel/nuxt/server/security";
 
 const NAME = "NUXT_PROBE_SIGNING_SECRET";
 const GRACE_MS = 24 * 60 * 60 * 1000;

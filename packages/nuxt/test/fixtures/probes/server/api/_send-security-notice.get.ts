@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { sendMailNow } from "@nuxvel/nuxt/server/mail";
 
 const query = z.object({ to: z.email() });
 

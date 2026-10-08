@@ -1,3 +1,6 @@
+import { useCaller } from "@nuxvel/nuxt/server/api";
+import { useAuth } from "@nuxvel/nuxt/server/auth";
+
 async function runAsBackgroundJob() {
   const caller = useCaller();
   return caller.health.ping();

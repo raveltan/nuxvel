@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import { CopyObjectCommand } from "@aws-sdk/client-s3";
 import { useS3 } from "@nuxvel/nuxt/server/storage";
 import { z } from "zod";
+import { UnknownError, publicProcedure } from "@nuxvel/nuxt/server/api";
+import { useBucket } from "@nuxvel/nuxt/server/storage";
 
 export default {
   query: publicProcedure

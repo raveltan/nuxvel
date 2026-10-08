@@ -1,19 +1,22 @@
 import { outboxTable } from "~~/server/database/schema/outbox.schema";
 import { useQueue } from "@nuxvel/nuxt/server/queues";
+import recordJob from "#server/jobs/_probe/record";
+import { transaction, useDb } from "@nuxvel/nuxt/server/database";
+import { relayOutbox } from "@nuxvel/nuxt/server/queues";
 
 export default defineEventHandler(async () => {
   await useQueue().obliterate({ force: true });
   await useDb().delete(outboxTable);
 
   await transaction(async () => {
-    await $jobs._probe.record.dispatch({ name: "rolled-back" });
+    await recordJob.dispatch({ name: "rolled-back" });
     throw new Error("probe rollback");
   }).catch(() => undefined);
 
   const afterRollback = await useDb().select().from(outboxTable);
 
   await transaction(async () => {
-    await $jobs._probe.record.dispatch({ name: "crashed" });
+    await recordJob.dispatch({ name: "crashed" });
   });
 
   const beforeRelay = await useQueue().getWaiting();

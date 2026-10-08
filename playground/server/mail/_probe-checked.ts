@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { defineMail } from "@nuxvel/nuxt/server/mail";
 
 export default defineMail({
   input: z.object({

@@ -1,13 +1,16 @@
 import { isNull } from "drizzle-orm";
 import { outboxTable } from "~~/server/database/schema/outbox.schema";
 import { useQueue } from "@nuxvel/nuxt/server/queues";
+import recordJob from "#server/jobs/_probe/record";
+import { transaction, useDb } from "@nuxvel/nuxt/server/database";
+import { relayOutbox } from "@nuxvel/nuxt/server/queues";
 
 export default defineEventHandler(async () => {
   await useQueue().obliterate({ force: true });
   await useDb().delete(outboxTable);
 
   await transaction(async () => {
-    await $jobs._probe.record.dispatch({ name: "queued" });
+    await recordJob.dispatch({ name: "queued" });
   });
 
   const pending = await useDb().select().from(outboxTable).where(isNull(outboxTable.dispatchedAt));

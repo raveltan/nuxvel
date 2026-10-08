@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { postsTable } from "#nuxvel/schema";
+import { allowRepeatedQueries, useDb } from "@nuxvel/nuxt/server/database";
 
 export default defineEventHandler(async (event) => {
   const { times, allowed } = getQuery(event);

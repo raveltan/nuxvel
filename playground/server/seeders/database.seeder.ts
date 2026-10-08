@@ -1,5 +1,6 @@
 import { postFactory } from "#nuxvel/factories";
 import { userFactory } from "#nuxvel/factories";
+import { defineSeeder } from "@nuxvel/nuxt/server/database";
 
 const DEMO_EMAIL = "demo@example.com";
 const DEMO_PASSWORD = "demo-password";

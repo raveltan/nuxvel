@@ -1,5 +1,8 @@
 import { z } from "zod";
 import type { ConsolaReporter } from "consola/core";
+import { defineAction, systemActor } from "@nuxvel/nuxt/server/actions";
+import { currentRequestId } from "@nuxvel/nuxt/server/api";
+import { useLogger } from "@nuxvel/nuxt/server/observability";
 
 const tracedPing = probeNamed("_action-tracing-check.tracedPing", defineAction({
   input: z.object({}),

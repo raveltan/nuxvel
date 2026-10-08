@@ -1,3 +1,5 @@
+import { defineStreamHandler } from "@nuxvel/nuxt/server/realtime";
+
 export default defineStreamHandler({
   authorize: () => true,
   handler: async (stream) => {

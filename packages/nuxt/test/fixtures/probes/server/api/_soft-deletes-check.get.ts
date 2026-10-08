@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { userTable } from "~~/server/database/schema/auth.schema";
 import { postsTable } from "~~/server/database/schema/posts.schema";
+import { NotFoundError } from "@nuxvel/nuxt/server/api";
+import { findOrFail, firstOrFail, forceDelete, notTrashed, onlyTrashed, restore, softDelete, useDb } from "@nuxvel/nuxt/server/database";
 
 async function notFound(find: () => Promise<unknown>) {
   try {

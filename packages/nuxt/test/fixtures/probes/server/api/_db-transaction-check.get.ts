@@ -1,4 +1,5 @@
 import { healthChecksTable } from "~~/server/database/schema/health-check.schema";
+import { onCommit, useDb } from "@nuxvel/nuxt/server/database";
 
 export default defineEventHandler(async () => {
   const fired: string[] = [];

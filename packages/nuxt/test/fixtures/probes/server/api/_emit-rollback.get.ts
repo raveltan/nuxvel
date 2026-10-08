@@ -1,4 +1,5 @@
 import { probeHappened } from "~~/server/events/_probe/happened";
+import { transaction } from "@nuxvel/nuxt/server/database";
 
 export default defineEventHandler(async () => {
   await transaction(async () => {

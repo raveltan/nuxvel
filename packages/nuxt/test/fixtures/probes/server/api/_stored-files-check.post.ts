@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { transaction } from "@nuxvel/nuxt/server/database";
+import { deleteStoredFiles, promoteUpload } from "@nuxvel/nuxt/server/storage";
 
 const body = z.object({
   scenario: z.enum(["promote-rollback", "promote-savepoint-rollback", "promote-outer-rollback", "delete-commit", "delete-rollback"]),

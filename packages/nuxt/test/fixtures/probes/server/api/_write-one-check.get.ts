@@ -3,6 +3,8 @@ import { eq } from "drizzle-orm";
 import { userTable } from "~~/server/database/schema/auth.schema";
 import { healthChecksTable } from "~~/server/database/schema/health-check.schema";
 import { postsTable } from "~~/server/database/schema/posts.schema";
+import { NotFoundError } from "@nuxvel/nuxt/server/api";
+import { insertOne, softDelete, transaction, updateOne, useDb } from "@nuxvel/nuxt/server/database";
 
 async function notFound(write: () => Promise<unknown>) {
   try {

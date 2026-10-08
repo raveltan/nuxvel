@@ -1,6 +1,10 @@
+import _probePublicChannel from "#server/channels/_probe-public";
+import { ValidationFailedError } from "@nuxvel/nuxt/server/api";
+import { transaction } from "@nuxvel/nuxt/server/database";
+
 export default defineEventHandler(async () => {
   await transaction(async () => {
-    await $channels._probePublic.broadcast("renamed", { id: 1 });
+    await _probePublicChannel.broadcast("renamed", { id: 1 });
     throw new Error("roll back");
   }).catch(() => {});
 
@@ -8,11 +12,11 @@ export default defineEventHandler(async () => {
 
   await transaction(async () => {
     // @ts-expect-error the runtime check behind the compile-time one
-    rejected = await $channels._probePublic.broadcast("renamed", { id: "3" }).then(
+    rejected = await _probePublicChannel.broadcast("renamed", { id: "3" }).then(
       () => false,
       (error: unknown) => error instanceof ValidationFailedError,
     );
-    await $channels._probePublic.broadcast("renamed", { id: 2 });
+    await _probePublicChannel.broadcast("renamed", { id: 2 });
   });
 
   return { rejected };
