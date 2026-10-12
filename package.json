@@ -33,7 +33,7 @@
     "@storybook/addon-a11y": "^10.6.1",
     "@storybook/addon-vitest": "^10.6.1",
     "@vitest/browser-playwright": "^5.0.1",
-    "monocart-coverage-reports": "^2.13.0",
+    "monocart-coverage-reports": "^2.13.2",
     "storybook": "^10.6.1"
   },
   "allowScripts": {
