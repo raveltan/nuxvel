@@ -29,10 +29,10 @@
     }
   },
   "devDependencies": {
-    "@storybook-vue/nuxt": "^10.0.0",
-    "@storybook/addon-a11y": "^10.6.1",
-    "@storybook/addon-vitest": "^10.6.1",
-    "@vitest/browser-playwright": "^5.0.1",
+    "@storybook-vue/nuxt": "^10.0.3",
+    "@storybook/addon-a11y": "^10.6.3",
+    "@storybook/addon-vitest": "^10.6.3",
+    "@vitest/browser-playwright": "^5.0.5",
     "monocart-coverage-reports": "^2.13.0",
     "storybook": "^10.6.1"
   },
