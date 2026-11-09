@@ -16,11 +16,11 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "postgres": "^3.4.9",
+    "postgres": "^4.1.0",
     "vitest": "^5.0.1"
   },
   "devDependencies": {
-    "@types/node": "^22.20.3",
-    "typescript": "^5.9.3"
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2"
   }
 }
